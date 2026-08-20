@@ -70,7 +70,7 @@ pr-lens comment --graph pr-lens/drawn.graph.json --manifest pr-lens/manifest.jso
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 ```
 
-Composes the markdown — the `<picture>` pairs that read in both GitHub themes, the headline chips, the nested `<details>` tree — and prints it. The two files have to belong to each other: the manifest records the hash of the document it came from, and a mismatched pair is refused rather than composed into a comment describing diagrams nobody drew. It posts nothing; posting is the caller's business, and `--print-marker` gives that caller the hidden marker that identifies an existing comment to update.
+Composes the markdown — the `<picture>` pairs that read in both GitHub themes, the headline chips, the nested `<details>` tree — and prints it. Each diagram links to itself: a comment column is about 830 pixels wide and a system with several lanes is several times that, so it arrives scaled to fit and one click gives a reader the size the labels were drawn at. The two files have to belong to each other: the manifest records the hash of the document it came from, and a mismatched pair is refused rather than composed into a comment describing diagrams nobody drew. It posts nothing; posting is the caller's business, and `--print-marker` gives that caller the hidden marker that identifies an existing comment to update.
 
 ### `validate`
 

@@ -53,6 +53,21 @@ test("a light and a dark render become one picture, so both GitHub themes read",
   expect(body).toContain('<img alt="Touch the health check — Architecture"');
 });
 
+test("a diagram wider than a comment column is one click from its full size", () => {
+  const body = composeComment({
+    graph: minimalGraph,
+    manifest: localManifest([
+      asset({}),
+      asset({ id: "architecture-dark", theme: "dark", path: "architecture-dark.svg" }),
+    ]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+  });
+
+  expect(body).toContain('<a href="https://example.com/a/architecture-light.svg"><picture>');
+  expect(body).toContain("</picture></a>");
+});
+
 test("a single theme is an img, not a picture with one source", () => {
   const body = composeComment({
     graph: minimalGraph,

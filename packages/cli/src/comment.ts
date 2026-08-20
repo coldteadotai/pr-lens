@@ -72,20 +72,30 @@ const pairsByLens = (assets: readonly RenderAsset[]): Map<Lens, ThemePair> => {
  * A `<picture>` is what makes one comment readable in both GitHub themes: the
  * dark source is swapped in by the browser, with the light asset as the `img`
  * every other reader — email, mobile, an old client — falls back to.
+ *
+ * The whole thing is a link to the image itself, because a comment column is
+ * about 830 pixels wide and a diagram of a system with several lanes is
+ * several times that. It arrives scaled to fit, which is right for scanning,
+ * and one click gives a reader the size the labels were drawn at.
  */
 const picture = (pair: ThemePair, alt: string, assetBaseUrl: string | undefined): string => {
   const fallback = pair.light ?? pair.dark;
   if (fallback === undefined) return "";
 
-  const image = `<img alt="${text(alt)}" src="${escape(href(fallback, assetBaseUrl))}" width="${fallback.width}">`;
-  if (pair.dark === undefined || pair.light === undefined) return image;
+  const source = escape(href(fallback, assetBaseUrl));
+  const image = `<img alt="${text(alt)}" src="${source}" width="${fallback.width}">`;
 
-  return [
-    "<picture>",
-    `  <source media="(prefers-color-scheme: dark)" srcset="${escape(href(pair.dark, assetBaseUrl))}">`,
-    `  ${image}`,
-    "</picture>",
-  ].join("\n");
+  const shown =
+    pair.dark === undefined || pair.light === undefined
+      ? image
+      : [
+          "<picture>",
+          `  <source media="(prefers-color-scheme: dark)" srcset="${escape(href(pair.dark, assetBaseUrl))}">`,
+          `  ${image}`,
+          "</picture>",
+        ].join("\n");
+
+  return `<a href="${source}">${shown}</a>`;
 };
 
 const lensLabel = (lens: Lens): string => {
