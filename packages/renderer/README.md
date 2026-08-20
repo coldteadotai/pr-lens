@@ -66,7 +66,9 @@ A repository's `.github/pr-lens.yml` is an overlay, applied here before layout a
 render(doc, { lens: "architecture", theme: "dark", config });
 ```
 
-`rename`, `lane` and `group` address nodes by `id:<node-id>` or by a glob over the paths backing them. `exclude` takes with it every edge and flow step that touched what it removed, and every view that pointed at nothing else — half an arrow is worse than none.
+`rename`, `lane` and `group` address nodes by `id:<node-id>` or by a glob over the paths backing them. A `lane` correction may name a band the document never declared; it gets created, with the id for a label, so write `lane: infrastructure` rather than `lane: l3`.
+
+`exclude` takes with it every edge and flow step that touched what it removed, every view that pointed at nothing else, and every layout hint left naming something that is gone — half an arrow is worse than none, and the corrected document is a document like any other, so it still parses.
 
 ## Addresses
 

@@ -129,5 +129,38 @@ export const applyCorrections = (doc: GraphDoc, corrections: MapCorrections): Gr
     flow: (id: string) => flows.some((flow) => flow.id === id),
   };
 
-  return { ...doc, lanes, nodes, edges, flows, views: narrowViews(doc.views, survives) };
+  return {
+    ...doc,
+    lanes,
+    nodes,
+    edges,
+    flows,
+    views: narrowViews(doc.views, survives),
+    layout: narrowLayout(doc.layout, survives),
+  };
+};
+
+/**
+ * Layout hints name nodes and lanes, so an exclusion can leave one pointing at
+ * something that is no longer there. The renderer would not notice — a hint
+ * for a node it is not drawing simply goes unread — but the corrected document
+ * is a document like any other, and a surface that writes it out and parses it
+ * back is entitled to have it still be valid.
+ */
+const narrowLayout = (
+  layout: GraphDoc["layout"],
+  survives: Parameters<typeof narrowScope>[1],
+): GraphDoc["layout"] => {
+  if (layout === undefined) return undefined;
+
+  const rank =
+    layout.rank === undefined
+      ? undefined
+      : Object.fromEntries(Object.entries(layout.rank).filter(([id]) => survives.node(id)));
+
+  return {
+    ...layout,
+    laneOrder: layout.laneOrder.filter(survives.lane),
+    ...(rank === undefined ? {} : { rank }),
+  };
 };

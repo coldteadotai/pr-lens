@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Config, GraphDoc } from "@coldtea/pr-lens-schema";
-import { parseConfig } from "@coldtea/pr-lens-schema";
+import { parseConfig, parseGraphDoc } from "@coldtea/pr-lens-schema";
 import { minimalGraph, postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
 import {
@@ -237,5 +237,30 @@ describe("errors", () => {
       expect(error).toBeInstanceOf(PrLensRenderError);
       if (error instanceof PrLensRenderError) expect(error.code).toBe("LENS_NOT_DECLARED");
     }
+  });
+});
+
+describe("layout hints survive a correction", () => {
+  it("lose the entries that named something the overlay removed", () => {
+    const corrected = applyCorrections(
+      postmarkRefactorGraph,
+      corrections({ exclude: ["id:send-broadcast-bulk"] }),
+    );
+    expect(corrected.layout?.rank).toBeDefined();
+    expect(Object.keys(corrected.layout?.rank ?? {})).not.toContain("send-broadcast-bulk");
+  });
+
+  it("leave a document the contract still accepts", () => {
+    const corrected = applyCorrections(
+      postmarkRefactorGraph,
+      corrections({ exclude: ["id:send-broadcast-bulk", "id:postmark", "id:queue-route"] }),
+    );
+    expect(() => parseGraphDoc(JSON.parse(JSON.stringify(corrected)))).not.toThrow();
+  });
+
+  it("keep the entries that still name something", () => {
+    const corrected = applyCorrections(postmarkRefactorGraph, corrections({}));
+    expect(corrected.layout?.rank).toEqual(postmarkRefactorGraph.layout?.rank);
+    expect(corrected.layout?.laneOrder).toEqual(postmarkRefactorGraph.layout?.laneOrder);
   });
 });
