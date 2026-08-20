@@ -1,51 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 701 418" width="701" height="418" role="img" aria-label="The new batch path">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 885 418" width="885" height="418" role="img" aria-label="The new batch path">
 <title>The new batch path</title>
 <desc>What replaced the per-recipient loop.</desc>
 <style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:rgba(110,118,129,.07)}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#9198a1}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.card-modified{stroke:#d29922;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#f85149;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#e6edf3}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:rgba(110,118,129,.18)}.glyph{fill:#9198a1}.glyph-stroke{stroke:#9198a1;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.bdg-added text{fill:#3fb950}.bdg-modified rect{fill:rgba(187,128,9,.15);stroke:rgba(210,153,34,.4)}.bdg-modified text{fill:#d29922}.bdg-removed rect{fill:rgba(248,81,73,.12);stroke:rgba(248,81,73,.4)}.bdg-removed text{fill:#f85149}.bdg-neutral rect{fill:rgba(110,118,129,.18);stroke:#3d444d}.bdg-neutral text{fill:#9198a1}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#3fb950}.edge-modified{stroke:#d29922}.edge-removed{stroke:#f85149;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#6e7681}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#e6edf3}.lpill{fill:#0d1117;stroke:#21262d;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#9198a1}.ltext-added{fill:#3fb950}.ltext-modified{fill:#d29922}.ltext-removed{fill:#f85149}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}.pcard{fill:#1c2128;stroke:#3d444d;stroke-width:1}.ptitle{font-size:12px;font-weight:600;fill:#e6edf3;text-anchor:middle}.lifeline{stroke:#30363d;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.msg{fill:none;stroke-width:1.4}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-label{font-size:11px;fill:#e6edf3;text-anchor:middle}.msg-strong{stroke-width:2}</style>
 <defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker></defs>
-<rect x="0" y="0" width="701" height="418" rx="12" fill="#0d1117"/>
-<rect x="0" y="0" width="701" height="418" rx="12" fill="url(#dots)"/>
-<g transform="translate(25,0)"><g><rect class="lanebox" x="16" y="44" width="432" height="358" rx="12"/>
+<rect x="0" y="0" width="885" height="418" rx="12" fill="#0d1117"/>
+<rect x="0" y="0" width="885" height="418" rx="12" fill="url(#dots)"/>
+<g transform="translate(25,0)"><g><rect class="lanebox" x="16" y="44" width="404" height="358" rx="12"/>
 <text class="lanelabel" x="32" y="68">CLOUD FUNCTIONS · FIREBASE</text>
-<rect class="lanebox" x="468" y="44" width="192" height="358" rx="12"/>
-<text class="lanelabel" x="484" y="68">EXTERNAL · POSTMARK</text></g>
-<g><path class="edge edge-added" d="M352,154 C352,178 337.5,182 337.5,206" marker-end="url(#mk-added)"/>
-<path class="edge edge-added" d="M112,154 C112,203.8 -9,187.2 -9,237 C-9,286.8 131,270.2 131,320" marker-end="url(#mk-added)"/>
-<path class="edge edge-added" d="M272,154 C272,203.8 473,187.2 473,237 C473,286.8 337,270.2 337,320" marker-end="url(#mk-added)"/>
-<path class="edge edge-added" d="M230,346 C345.95,346 368.05,133.33 484,133.33" marker-end="url(#mk-added)"/>
-<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M230,346 C345.95,346 368.05,133.33 484,133.33"/></circle>
-<path class="glow" stroke="#3fb950" d="M432,123 C456,123 460,112.67 484,112.67"/>
-<path class="edge edge-added hero" d="M432,123 C456,123 460,112.67 484,112.67" marker-end="url(#mk-added)"/>
-<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M432,123 C456,123 460,112.67 484,112.67"/></circle>
-<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="0.7s" repeatCount="indefinite" path="M432,123 C456,123 460,112.67 484,112.67"/></circle>
-<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="1.4s" repeatCount="indefinite" path="M432,123 C456,123 460,112.67 484,112.67"/></circle>
-<path class="edge edge-added" d="M192,154 C192,181.92 131.5,178.08 131.5,206" marker-end="url(#mk-added)"/></g>
-<g><g class="cardsh"><rect class="card card-added" x="32" y="92" width="400" height="62" rx="10"/>
+<rect class="lanebox" x="440" y="44" width="404" height="358" rx="12"/>
+<text class="lanelabel" x="456" y="68">EXTERNAL · POSTMARK</text></g>
+<g><path class="edge edge-added" d="M255.2,154 C255.2,182 316,178 316,206" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M106.4,154 C106.4,203.8 -9,187.2 -9,237 C-9,286.8 124,270.2 124,320" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M329.6,154 C329.6,203.8 445,187.2 445,237 C445,286.8 316,270.2 316,320" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M216,346 C328.23,346 343.77,133.33 456,133.33" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M216,346 C328.23,346 343.77,133.33 456,133.33"/></circle>
+<path class="glow" stroke="#3fb950" d="M404,123 C428,123 432,112.67 456,112.67"/>
+<path class="edge edge-added hero" d="M404,123 C428,123 432,112.67 456,112.67" marker-end="url(#mk-added)"/>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M404,123 C428,123 432,112.67 456,112.67"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="0.7s" repeatCount="indefinite" path="M404,123 C428,123 432,112.67 456,112.67"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="1.4s" repeatCount="indefinite" path="M404,123 C428,123 432,112.67 456,112.67"/></circle>
+<path class="edge edge-added" d="M180.8,154 C180.8,180.95 124,179.05 124,206" marker-end="url(#mk-added)"/></g>
+<g><g class="cardsh"><rect class="card card-added" x="32" y="92" width="372" height="62" rx="10"/>
 <rect class="chip" x="46" y="110" width="26" height="26" rx="7"/><g><text class="glyph" x="59" y="127.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
 <text class="ntitle" x="82" y="119" font-size="13">sendBroadcastBulk</text>
 <text class="nsub" x="82" y="137">onWrite trigger</text>
-<g class="bdg bdg-neutral"><rect x="342.4" y="84" width="36.05" height="16" rx="8"/><text x="360.42" y="95" text-anchor="middle">new</text></g>
-<g class="bdg bdg-added"><rect x="384.45" y="84" width="40.55" height="16" rx="8"/><text x="404.73" y="95" text-anchor="middle">NEW</text></g></g>
-<g class="cardsh"><rect class="card card-modified" x="32" y="206" width="199" height="62" rx="10"/>
+<g class="bdg bdg-neutral"><rect x="314.4" y="84" width="36.05" height="16" rx="8"/><text x="332.42" y="95" text-anchor="middle">new</text></g>
+<g class="bdg bdg-added"><rect x="356.45" y="84" width="40.55" height="16" rx="8"/><text x="376.73" y="95" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="32" y="206" width="184" height="62" rx="10"/>
 <text class="ntitle" x="46" y="233" font-size="11.5">broadcastQueue</text>
 <text class="nsub" x="46" y="251">Firestore collection</text>
-<g class="bdg bdg-modified"><rect x="157.38" y="198" width="66.62" height="16" rx="8"/><text x="190.69" y="209" text-anchor="middle">CHANGED</text></g></g>
-<g class="cardsh"><rect class="card card-added" x="243" y="206" width="189" height="52" rx="10"/>
-<text class="ntitle" x="257" y="237" font-size="11.5">buildBulkPayload</text>
-<g class="bdg bdg-added"><rect x="384.45" y="198" width="40.55" height="16" rx="8"/><text x="404.73" y="209" text-anchor="middle">NEW</text></g></g>
-<g class="cardsh"><rect class="card card-added" x="32" y="320" width="198" height="52" rx="10"/>
+<g class="bdg bdg-modified"><rect x="142.38" y="198" width="66.62" height="16" rx="8"/><text x="175.69" y="209" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="228" y="206" width="176" height="52" rx="10"/>
+<text class="ntitle" x="242" y="237" font-size="11.5">buildBulkPayload</text>
+<g class="bdg bdg-added"><rect x="356.45" y="198" width="40.55" height="16" rx="8"/><text x="376.73" y="209" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="32" y="320" width="184" height="52" rx="10"/>
 <text class="ntitle" x="46" y="351" font-size="11.5">getSuppressedEmails</text>
-<g class="bdg bdg-added"><rect x="182.45" y="312" width="40.55" height="16" rx="8"/><text x="202.73" y="323" text-anchor="middle">NEW</text></g></g>
-<g class="cardsh"><rect class="card card-added" x="242" y="320" width="190" height="62" rx="10"/>
-<text class="ntitle" x="256" y="347" font-size="11.5">broadcast-lib</text>
-<text class="nsub" x="256" y="365">packages/broadcast-lib</text>
-<g class="bdg bdg-neutral"><rect x="301.75" y="312" width="76.7" height="16" rx="8"/><text x="340.1" y="323" text-anchor="middle">new package</text></g>
-<g class="bdg bdg-added"><rect x="384.45" y="312" width="40.55" height="16" rx="8"/><text x="404.73" y="323" text-anchor="middle">NEW</text></g></g>
-<g class="cardsh"><rect class="card card-modified" x="484" y="92" width="160" height="62" rx="10"/>
-<text class="ntitle" x="498" y="119" font-size="11.5">Postmark</text>
-<text class="nsub" x="498" y="137">Email API</text>
-<g class="bdg bdg-modified"><rect x="570.38" y="84" width="66.62" height="16" rx="8"/><text x="603.69" y="95" text-anchor="middle">CHANGED</text></g></g></g>
-<g><g><rect class="lpill" x="262.21" y="281.46" width="121.78" height="15" rx="7.5"/><text class="ltext ltext-added" x="323.1" y="292.46" text-anchor="middle">GET suppression dump</text></g>
-<g><rect class="lpill" x="419.22" y="110.33" width="77.56" height="15" rx="7.5"/><text class="ltext ltext-added" x="458" y="121.33" text-anchor="middle">500 msgs/call</text></g>
-<g><rect class="lpill" x="126.9" y="172.5" width="69.71" height="15" rx="7.5"/><text class="ltext ltext-added" x="161.75" y="183.5" text-anchor="middle">write results</text></g></g></g>
+<g class="bdg bdg-added"><rect x="168.45" y="312" width="40.55" height="16" rx="8"/><text x="188.73" y="323" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="228" y="320" width="176" height="62" rx="10"/>
+<text class="ntitle" x="242" y="347" font-size="11.5">broadcast-lib</text>
+<text class="nsub" x="242" y="365">packages/broadcast-lib</text>
+<g class="bdg bdg-neutral"><rect x="273.75" y="312" width="76.7" height="16" rx="8"/><text x="312.1" y="323" text-anchor="middle">new package</text></g>
+<g class="bdg bdg-added"><rect x="356.45" y="312" width="40.55" height="16" rx="8"/><text x="376.73" y="323" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="456" y="92" width="372" height="62" rx="10"/>
+<rect class="chip" x="470" y="110" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="475" y="117" width="16" height="12" rx="2"/>
+<path class="glyph-stroke" d="M475,119 l8,6 8,-6"/></g>
+<text class="ntitle" x="506" y="119" font-size="13">Postmark</text>
+<text class="nsub" x="506" y="137">Email API</text>
+<g class="bdg bdg-modified"><rect x="754.38" y="84" width="66.62" height="16" rx="8"/><text x="787.69" y="95" text-anchor="middle">CHANGED</text></g></g></g>
+<g><g><rect class="lpill" x="243.65" y="281.46" width="121.78" height="15" rx="7.5"/><text class="ltext ltext-added" x="304.54" y="292.46" text-anchor="middle">GET suppression dump</text></g>
+<g><rect class="lpill" x="391.22" y="110.33" width="77.56" height="15" rx="7.5"/><text class="ltext ltext-added" x="430" y="121.33" text-anchor="middle">500 msgs/call</text></g>
+<g><rect class="lpill" x="117.55" y="172.5" width="69.71" height="15" rx="7.5"/><text class="ltext ltext-added" x="152.4" y="183.5" text-anchor="middle">write results</text></g></g></g>
 </svg>

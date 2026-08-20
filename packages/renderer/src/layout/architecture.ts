@@ -22,9 +22,9 @@ import {
   LANE_GAP,
   LANE_LABEL_SIZE,
   LANE_LABEL_TRACKING,
+  LANE_CONTENT_WIDTH,
   LANE_PADDING_X,
   LANE_TOP,
-  LANE_WIDTH_STEP,
   ROW_GAP,
   SUBTITLE_SIZE,
   TITLE_SIZE,
@@ -268,24 +268,7 @@ export const layoutArchitecture = (
     return members.length === 0 ? [] : [{ lane, rows: rowsForLane(members, ranks, order) }];
   });
 
-  const laneWidths = lanes.map(({ rows }) =>
-    Math.max(
-      ...rows.map(({ row }) =>
-        row.kind === "single"
-          ? naturalWidth(row.node)
-          : naturalWidth(row.first) + naturalWidth(row.second) + CARD_GAP_X,
-      ),
-      CARD_MIN_WIDTH,
-    ),
-  );
-
-  const laneBoxWidths = lanes.map((placed, index) => {
-    const wanted = Math.max(
-      (laneWidths[index] ?? CARD_MIN_WIDTH) + LANE_PADDING_X * 2,
-      laneHeaderWidth(placed.lane) + LANE_PADDING_X * 2,
-    );
-    return Math.ceil(wanted / LANE_WIDTH_STEP) * LANE_WIDTH_STEP;
-  });
+  const laneBoxWidth = LANE_CONTENT_WIDTH + LANE_PADDING_X * 2;
 
   const gridHeights = new Map<number, number>();
   for (const { rows } of lanes)
@@ -308,13 +291,12 @@ export const layoutArchitecture = (
   let laneX = DIAGRAM_MARGIN;
 
   lanes.forEach(({ lane, rows }, laneIndex) => {
-    const boxWidth = laneBoxWidths[laneIndex] ?? CARD_MIN_WIDTH;
     const contentX = laneX + LANE_PADDING_X;
-    const contentWidth = boxWidth - LANE_PADDING_X * 2;
+    const contentWidth = LANE_CONTENT_WIDTH;
 
     placedLanes.push({
       lane,
-      box: { x: laneX, y: LANE_TOP, width: boxWidth, height: laneBottom - LANE_TOP },
+      box: { x: laneX, y: LANE_TOP, width: laneBoxWidth, height: laneBottom - LANE_TOP },
     });
 
     for (const { row, grid } of rows) {
@@ -337,7 +319,7 @@ export const layoutArchitecture = (
       });
     }
 
-    laneX += boxWidth + LANE_GAP;
+    laneX += laneBoxWidth + LANE_GAP;
   });
 
   return {
@@ -362,8 +344,38 @@ const splitPair = (
   return [share, available - share];
 };
 
-const laneHeaderWidth = (lane: Lane): number =>
-  trackedWidth(laneHeaderText(lane), "sans-bold", LANE_LABEL_SIZE, LANE_LABEL_TRACKING);
+/**
+ * The lane's own name over its band. Lanes no longer widen to fit their
+ * headers — that would put content back in charge of where the next lane
+ * starts — so a header longer than the band gives up its tail instead.
+ */
+export const laneHeaderText = (lane: Lane): string => {
+  const full = (
+    lane.subtitle === undefined ? lane.label : `${lane.label} · ${lane.subtitle}`
+  ).toUpperCase();
 
-export const laneHeaderText = (lane: Lane): string =>
-  (lane.subtitle === undefined ? lane.label : `${lane.label} · ${lane.subtitle}`).toUpperCase();
+  return truncateTracked(full, LANE_LABEL_SIZE, LANE_LABEL_TRACKING, LANE_CONTENT_WIDTH);
+};
+
+const ELLIPSIS = "…";
+
+/** `truncate`, but counting the extra step letter-spacing puts after each glyph. */
+const truncateTracked = (
+  text: string,
+  fontSize: number,
+  tracking: number,
+  maxWidth: number,
+): string => {
+  const width = (value: string) => trackedWidth(value, "sans-bold", fontSize, tracking);
+  if (width(text) <= maxWidth) return text;
+
+  const characters = [...text];
+  let kept = 0;
+  while (kept < characters.length) {
+    const next = characters.slice(0, kept + 1).join("") + ELLIPSIS;
+    if (width(next) > maxWidth) break;
+    kept += 1;
+  }
+
+  return kept === 0 ? ELLIPSIS : characters.slice(0, kept).join("").trimEnd() + ELLIPSIS;
+};

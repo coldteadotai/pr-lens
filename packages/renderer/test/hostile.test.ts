@@ -1,5 +1,5 @@
 import type { Flow, GraphDoc, GraphNode } from "@coldtea/pr-lens-schema";
-import { parseGraphDoc } from "@coldtea/pr-lens-schema";
+import { parseGraphDoc, parseRenderManifest } from "@coldtea/pr-lens-schema";
 import { minimalGraph, postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
 import { render, renderAll, renderAssetFileName, renderAssetId } from "../src/index.js";
@@ -68,6 +68,37 @@ describe("a view id is not a file path", () => {
   it("keeps an ordinary id readable", () => {
     expect(renderAssetId({ lens: "architecture", theme: "dark", view: "new-batch-path" })).toBe(
       "new-batch-path-dark",
+    );
+  });
+
+  it("stays a legal id however long the view id was", () => {
+    const longest = `a${"_".repeat(127)}`;
+    const doc = graph({
+      views: [
+        {
+          id: longest,
+          title: "Long",
+          lens: "architecture",
+          scope: { kind: "all" },
+          defaultOpen: false,
+          children: [],
+        },
+      ],
+    });
+    const { manifest } = renderAll(doc);
+
+    for (const asset of manifest.assets) {
+      expect(asset.id.length).toBeLessThanOrEqual(128);
+      expect(asset.id).toMatch(/^[A-Za-z0-9][A-Za-z0-9._:/-]*$/);
+    }
+    expect(() => parseRenderManifest(JSON.parse(JSON.stringify(manifest)))).not.toThrow();
+  });
+
+  it("still tells two long view ids apart", () => {
+    const dark = { lens: "architecture" as const, theme: "dark" as const };
+    const stem = "a" + "_".repeat(100);
+    expect(renderAssetId({ ...dark, view: `${stem}one` })).not.toBe(
+      renderAssetId({ ...dark, view: `${stem}two` }),
     );
   });
 
@@ -221,12 +252,18 @@ describe("a long flow still animates in order", () => {
   });
 });
 
-describe("lane widths", () => {
+describe("columns", () => {
   const layoutOf = (doc: GraphDoc) =>
     layoutArchitecture(
       { lanes: doc.lanes, nodes: doc.nodes, edges: doc.edges, flows: doc.flows },
       doc.layout,
     );
+
+  const withNode = (extra: Record<string, unknown>): GraphDoc =>
+    parseGraphDoc({
+      ...JSON.parse(JSON.stringify(postmarkRefactorGraph)),
+      nodes: [...JSON.parse(JSON.stringify(postmarkRefactorGraph.nodes)), extra],
+    });
 
   const retitled = (label: string): GraphDoc =>
     parseGraphDoc({
@@ -236,16 +273,61 @@ describe("lane widths", () => {
       ),
     });
 
-  it("absorb an ordinary rename without moving another lane", () => {
-    const before = layoutOf(postmarkRefactorGraph);
-    const after = layoutOf(retitled("Broadcast composer v2"));
-    expect(after.lanes.map(({ box }) => box.x)).toEqual(before.lanes.map(({ box }) => box.x));
+  const columnsOf = (doc: GraphDoc) =>
+    layoutOf(doc).lanes.map(({ lane, box }) => `${lane.id}@${box.x}+${box.width}`);
+
+  const base = columnsOf(postmarkRefactorGraph);
+
+  it("are the same width whatever a lane happens to hold", () => {
+    const widths = new Set(layoutOf(postmarkRefactorGraph).lanes.map(({ box }) => box.width));
+    expect(widths.size).toBe(1);
   });
 
-  it("are never wider than the widest card a lane may hold", () => {
-    const stretched = layoutOf(retitled("B".repeat(120)));
-    const web = stretched.lanes.find(({ lane }) => lane.id === "web");
-    expect(web?.box.width).toBeLessThanOrEqual(300 + 16 * 2 + 16);
+  it("do not move when a card is retitled", () => {
+    expect(columnsOf(retitled("B".repeat(120)))).toEqual(base);
+  });
+
+  it("do not move when a node is added to an earlier lane", () => {
+    const enlarged = withNode({
+      id: "postmark-webhooks",
+      label: "W".repeat(120),
+      kind: "external",
+      delta: "added",
+      lane: "web",
+      files: [],
+      badges: [],
+    });
+    expect(columnsOf(enlarged)).toEqual(base);
+  });
+
+  it("leaves every card in a later lane exactly where it was", () => {
+    const enlarged = withNode({
+      id: "postmark-webhooks",
+      label: "W".repeat(120),
+      kind: "external",
+      delta: "added",
+      lane: "web",
+      files: [],
+      badges: [],
+    });
+    const before = new Map(
+      layoutOf(postmarkRefactorGraph).nodes.map(({ node: entry, box }) => [entry.id, box]),
+    );
+    const after = new Map(layoutOf(enlarged).nodes.map(({ node: entry, box }) => [entry.id, box]));
+
+    for (const entry of postmarkRefactorGraph.nodes)
+      if (entry.lane !== "web") expect(after.get(entry.id)).toEqual(before.get(entry.id));
+  });
+
+  it("gives a lane header that does not fit the band its tail back", () => {
+    const doc = parseGraphDoc({
+      ...JSON.parse(JSON.stringify(postmarkRefactorGraph)),
+      lanes: JSON.parse(JSON.stringify(postmarkRefactorGraph.lanes)).map((lane: { id: string }) =>
+        lane.id === "web" ? { ...lane, label: "N".repeat(110), subtitle: "Vercel" } : lane,
+      ),
+    });
+    expect(columnsOf(doc)).toEqual(base);
+    expect(render(doc, { lens: "architecture", theme: "dark" }).svg).toContain("…");
   });
 });
 

@@ -9,14 +9,21 @@ export const LANE_HEADER_BASELINE = 68;
 export const LANE_PADDING_X = 16;
 export const LANE_GAP = 20;
 export const LANE_BOTTOM_PADDING = 20;
+
 /**
- * Lane widths are rounded up to a step, because a lane's width sets where
- * every lane after it begins. Without the step, retitling one card by a few
- * characters would nudge every column to its right; with it, ordinary edits
- * change nothing at all and only a real change in what a lane has to hold
- * moves anything.
+ * Every lane is the same width, and that width is a constant rather than
+ * anything derived from what the lanes hold.
+ *
+ * A lane's width decides where the lane after it starts, so a width drawn
+ * from content couples every column to the contents of the ones before it:
+ * adding one node with a long name to the first lane would slide every card
+ * in every later lane sideways, which is exactly the teleport a reviewer
+ * comparing two pushes must never be shown. The cost is that a lane holding
+ * something narrow is wider than it needs to be. Stability is worth more.
+ *
+ * Sized so that two cards sharing a row still each get a readable width.
  */
-export const LANE_WIDTH_STEP = 16;
+export const LANE_CONTENT_WIDTH = 372;
 export const LANE_RADIUS = 12;
 export const LANE_LABEL_SIZE = 10;
 export const LANE_LABEL_TRACKING = 0.12;

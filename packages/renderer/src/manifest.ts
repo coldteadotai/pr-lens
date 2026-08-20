@@ -57,8 +57,38 @@ const FILE_NAME_ESCAPES: readonly [string, string][] = [
   [".", "_d"],
 ];
 
-const fileNameSafe = (id: string): string =>
+const escapeForFileName = (id: string): string =>
   FILE_NAME_ESCAPES.reduce((text, [character, escape]) => text.split(character).join(escape), id);
+
+/** The contract's ceiling on an `Id`, which an asset id has to stay under. */
+const ASSET_ID_MAX = 128;
+const THEME_SUFFIX_MAX = "-light".length;
+const STEM_MAX = ASSET_ID_MAX - THEME_SUFFIX_MAX;
+const DIGEST_LENGTH = 12;
+
+/**
+ * `_h` cannot occur in an escaped id — every `_` there opens one of the four
+ * escapes above — so it can mark the digest without ever being mistaken for
+ * text that was already in the id.
+ */
+const DIGEST_MARKER = "_h";
+const PREFIX_MAX = STEM_MAX - DIGEST_MARKER.length - DIGEST_LENGTH;
+
+/**
+ * A view id spelled so that it is both a legal file name and a legal `Id`.
+ *
+ * Escaping can double the length of an id that is already near the contract's
+ * limit, so a stem that would overflow keeps a readable prefix and ends in a
+ * digest of the whole original. The digest is what preserves the one property
+ * that matters: two different views can never be handed the same address.
+ */
+const fileNameSafe = (id: string): string => {
+  const escaped = escapeForFileName(id);
+  if (escaped.length <= STEM_MAX) return escaped;
+
+  const prefix = escaped.slice(0, PREFIX_MAX).replace(/_$/, "");
+  return `${prefix}${DIGEST_MARKER}${contentHash(id).slice(0, DIGEST_LENGTH)}`;
+};
 
 /**
  * The identity of one rendered SVG within a render: the drill-down section it

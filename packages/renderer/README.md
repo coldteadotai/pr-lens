@@ -49,9 +49,9 @@ The hard requirement is that a diagram does not rearrange itself between two pus
 - **Depth is counted within a lane.** A lane that only enters the story late still starts at the top of its column, and a rank no card in the lane occupies leaves no empty row behind.
 - **Text is measured from a table**, never from a font engine, so a CI runner with no fonts installed lays out identically to a laptop with all of them.
 - **Every coordinate is rounded before it is written**, and every comparison is by code unit rather than by `localeCompare`. Arithmetic that differs in the last bit — or a sort that consults the host's collation data — would change the bytes, and the render hash with it.
-- **Lane widths are rounded up to a step**, because a lane's width decides where the lanes after it begin. Retitling a card by a few characters therefore moves nothing at all.
+- **Every lane is the same fixed width**, a constant rather than anything derived from what the lanes hold. A width drawn from content couples every column to the contents of the ones before it, so adding one node with a long name to the first lane would slide every card in every later lane sideways. The cost is that a lane holding something narrow is wider than it needs to be; stability is worth more. A lane header too long for its band gives up its tail rather than widening the band.
 
-Adding a node to one lane leaves every card in the lanes before it exactly where it was. There is a test for that, and golden SVGs for the reference documents: a change to one is a change to what a reviewer sees, so it is reviewed by a person before it is committed.
+Adding a node to one lane leaves every card in every other lane exactly where it was — before it or after it. There are tests for that, and golden SVGs for the reference documents: a change to one is a change to what a reviewer sees, so it is reviewed by a person before it is committed.
 
 ```bash
 pnpm test                 # compares against the goldens
@@ -72,7 +72,7 @@ render(doc, { lens: "architecture", theme: "dark", config });
 
 Renders are content-addressed because GitHub's image proxy caches hard: a changed diagram has to arrive as a new URL, not as new bytes at the old one. `contentHash`, `renderAssetId` and `renderAssetFileName` are the single owners of that format, and every surface that builds such a URL must go through them.
 
-An asset's `path` is safe to join to an output directory. View ids are authored by an extraction model and the contract lets one contain `/`, `:` and `.`, so `a/../../elsewhere` is a valid id; those characters are re-spelled one-for-one on the way into an address, which cannot produce a separator or a dot segment and cannot give two different views the same name.
+An asset's `path` is safe to join to an output directory, and its `id` is always a legal `Id`. View ids are authored by an extraction model and the contract lets one contain `/`, `:` and `.`, so `a/../../elsewhere` is a valid id; those characters are re-spelled one-for-one on the way into an address, which cannot produce a separator or a dot segment. Re-spelling can lengthen an id that was already near the contract's limit, so one that would overflow keeps a readable prefix and ends in a digest of the whole original — which is what stops two different views being handed the same address.
 
 ## Untrusted text
 
