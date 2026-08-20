@@ -4,6 +4,7 @@ export {
   Delta,
   DELTAS,
   FileRef,
+  FullSha,
   Id,
   Label,
   Lens,
@@ -58,7 +59,7 @@ export {
   type SchemaIssue,
 } from "./errors.js";
 
-export { graphIntegrityIssues } from "./integrity.js";
+export { graphIntegrityIssues, graphSnapshotIssues } from "./integrity.js";
 
 export {
   parseConfig,

@@ -7,7 +7,8 @@ export type SchemaErrorCode =
   | "BROKEN_REFERENCE"
   | "DUPLICATE_ID"
   | "UNSUPPORTED_SCHEMA_VERSION"
-  | "PATCH_CONFLICT";
+  | "PATCH_CONFLICT"
+  | "NOT_A_SNAPSHOT";
 
 export type SchemaIssue = {
   code: SchemaErrorCode;

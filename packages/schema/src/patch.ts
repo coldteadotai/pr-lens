@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Flow, GraphEdge, GraphNode, Lane, Stats } from "./graph.js";
-import { Id, SchemaVersionField, Sha, Summary } from "./primitives.js";
+import { FullSha, Id, SchemaVersionField, Summary } from "./primitives.js";
 
 /**
  * Update payloads are the element minus its id: a patch never renames the
@@ -70,11 +70,15 @@ export const PatchDoc = z
     target: z
       .strictObject({
         graphId: Id.describe("Id of the stored graph being patched."),
-        fromSha: Sha.describe("Commit the stored graph reflects before the operations run."),
-        toSha: Sha.describe("Commit it reflects once they have."),
+        fromSha: FullSha.describe("Commit the stored graph reflects before the operations run."),
+        toSha: FullSha.describe("Commit it reflects once they have."),
+      })
+      .refine((target) => target.fromSha !== target.toSha, {
+        message: "a patch has to move the map to a different commit",
+        path: ["toSha"],
       })
       .describe(
-        "Which stored graph these operations belong to, and which commits they carry it between. All three are required: they are what stops a patch landing on the wrong map, on a stale one, or twice.",
+        "Which stored graph these operations belong to, and which commits they carry it between. All three are required, and the commits must differ: they are what stops a patch landing on the wrong map, on a stale one, or twice.",
       ),
     ops: z.array(PatchOp).min(1).max(512).describe("Applied in array order."),
   })

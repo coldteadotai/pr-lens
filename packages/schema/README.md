@@ -38,11 +38,11 @@ Every node, edge and flow step declares how it relates to the base commit: `adde
 
 Parsing runs three things in one pass, and reports every problem it finds rather than only the first:
 
-1. **Structure** — types, lengths, enums, and no unknown keys.
+1. **Structure** — types, lengths, enums, no unknown keys, and file paths that can actually become a diff permalink (repository-relative, POSIX, no `..` segment).
 2. **Contract version** — below `1.0.0` an exact `major.minor` match; from `1.0.0` on, the same major and a minor no newer than this package's.
 3. **Referential integrity** — every node sits in a declared lane, every edge joins declared nodes, every flow step runs between declared participants, every drill-down view and layout hint names elements that exist, and a document carrying flows declares the `data-flow` lens.
 
-Failures arrive as a `PrLensSchemaError` with a machine-readable `code` (`INVALID_DOCUMENT`, `BROKEN_REFERENCE`, `DUPLICATE_ID`, `UNSUPPORTED_SCHEMA_VERSION`, `PATCH_CONFLICT`) and an `issues` array carrying a path and message each.
+Failures arrive as a `PrLensSchemaError` with a machine-readable `code` (`INVALID_DOCUMENT`, `BROKEN_REFERENCE`, `DUPLICATE_ID`, `UNSUPPORTED_SCHEMA_VERSION`, `PATCH_CONFLICT`, `NOT_A_SNAPSHOT`) and an `issues` array carrying a path and message each.
 
 ## Evolving a stored graph
 
@@ -54,8 +54,9 @@ import { applyPatchDoc, parseGraphDoc, parsePatchDoc } from "@coldtea/pr-lens-sc
 const result = applyPatchDoc(parseGraphDoc(baseline), parsePatchDoc(patch));
 ```
 
-- A patch names the map it targets and the commits it carries it between — `graphId`, `fromSha` and `toSha` are all required. The target is checked before anything is applied: a patch aimed at another map, or written against a commit the map has already moved past, is a `PATCH_CONFLICT` rather than a merge, so replaying a patch fails.
-- A stored map is a snapshot rather than a diff, so `base` and `head` both name the single commit it reflects, and both advance to `toSha`. The commit it came from stays recorded on the patch.
+- A patch names the map it targets and the commits it carries it between — `graphId`, `fromSha` and `toSha` are all required, they are full 40-character commit names, and they must differ. Abbreviations are fine for something a human reads but not for deciding whether two records mean the same commit, and a patch that does not move the map is a patch that can be replayed.
+- The target is checked before anything is applied: a patch aimed at another map, or written against a commit the map has already moved past, is a `PATCH_CONFLICT` rather than a merge.
+- A stored map is a snapshot rather than a diff, so `base` and `head` both name the single commit it reflects, and both advance to `toSha`. That rule is enforced, not assumed: a patch is free to carry `added` or `modified` elements, and one that leaves any in the map — including in the steps of a flow — fails with `NOT_A_SNAPSHOT` rather than handing the next pull request a baseline that already claims to be mid change. `graphSnapshotIssues` is exported for anything that stores a map.
 - Operations apply in array order, and the first conflict stops the batch — a later operation was written against the state an earlier one was supposed to produce.
 - `add_*` refuses an id that is taken; `update_*` and `remove_*` refuse an id that is absent; `update_*` writes only the fields it names.
 - Removing a node takes its edges and flow steps with it, and drops a flow left with fewer than two participants or no steps. Removed ids are pruned out of the drill-down tree and the layout hints, and a view whose selection loses its last element is dropped rather than widened.
@@ -100,13 +101,14 @@ A `match` beginning with `id:` addresses one node exactly; anything else is a pa
 
 They describe **what an author may write**: a field with a default is one you may leave out. Rules are carried across wherever JSON Schema can state them — the supported contract versions, the repository-relative path rule, `endLine` requiring `startLine`, an asset needing a `url` or a `path`, a `selection` view having to select something.
 
-Exactly three rules cannot be stated in JSON Schema and stay the parser's job:
+Exactly four rules cannot be stated in JSON Schema and stay the parser's job, each of them a comparison between two values:
 
 1. referential integrity between elements,
 2. a line range that ends before it starts,
-3. the agreement between a self message's endpoints.
+3. the agreement between a self message's endpoints,
+4. a patch whose two commits are the same.
 
-The tests run a table of documents through both representations and assert the same verdict, accept and reject alike — including a case per divergence above, so the three are deliberate and cannot quietly become four.
+The tests run a table of documents through both representations and assert the same verdict, accept and reject alike — including a case per divergence above, so they stay deliberate and cannot quietly grow a fifth.
 
 ## Goldens
 

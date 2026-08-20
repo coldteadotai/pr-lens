@@ -41,7 +41,18 @@ export const Summary = z
 export const Sha = z
   .string()
   .regex(/^[0-9a-f]{7,40}$/, "must be a lowercase hex git object name")
-  .describe("Git commit sha (short or full).");
+  .describe("Git commit sha, abbreviated or full.");
+
+/**
+ * Abbreviations are fine for something a human reads, but not for deciding
+ * whether two records mean the same commit: two abbreviations of different
+ * lengths compare unequal, and a short one can collide as a repository grows.
+ * Anything a machine compares uses the full name.
+ */
+export const FullSha = z
+  .string()
+  .regex(/^[0-9a-f]{40}$/, "must be a full 40-character lowercase hex git object name")
+  .describe("Git commit sha, in full.");
 
 /**
  * The two lenses PR Lens ships. The enum is additive: a future contract
@@ -65,8 +76,12 @@ export type Delta = z.infer<typeof Delta>;
 
 export const DELTAS = Delta.options;
 
-/** Rejects absolute paths and any `..` segment, in one rule both representations share. */
-const REPOSITORY_PATH = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$)).+$/;
+/**
+ * One rule both representations share: no absolute path in any spelling a
+ * platform recognises, and no `..` segment. A path that breaks it cannot
+ * produce a diff permalink, whatever else it might mean.
+ */
+const REPOSITORY_PATH = /^(?!\/)(?![A-Za-z]:)(?!.*\\)(?!.*(?:^|\/)\.\.(?:\/|$)).+$/;
 
 /**
  * A pointer into the head tree, used to build diff permalinks. Line numbers
@@ -79,7 +94,10 @@ export const FileRef = z
       .string()
       .min(1)
       .max(1024)
-      .regex(REPOSITORY_PATH, "must be a repository-relative path without '..' segments")
+      .regex(
+        REPOSITORY_PATH,
+        "must be a repository-relative POSIX path, without a drive letter, a backslash or a '..' segment",
+      )
       .describe("Repository-relative path, POSIX separators."),
     startLine: z.int().min(1).optional().describe("1-based first line."),
     endLine: z.int().min(1).optional().describe("1-based last line, inclusive."),

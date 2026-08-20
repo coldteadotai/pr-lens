@@ -1,5 +1,6 @@
 import type { SchemaIssue } from "./errors.js";
 import type { GraphDoc, View } from "./graph.js";
+import type { Delta } from "./primitives.js";
 import { assertNever } from "./utils.js";
 
 const duplicates = (ids: readonly string[]): string[] => {
@@ -133,6 +134,54 @@ export const graphIntegrityIssues = (doc: GraphDoc): SchemaIssue[] => {
       if (!nodeIds.has(id)) broken(`layout.rank.${id}`, `unknown node '${id}'`);
     }
   }
+
+  return issues;
+};
+
+/**
+ * A stored map describes a system, not a change to one: it reflects a single
+ * commit, and nothing in it is annotated as a change. A map that fails this
+ * would hand the next pull request a baseline that already claims to be mid
+ * change, and every delta computed against it would inherit the mistake.
+ */
+export const graphSnapshotIssues = (doc: GraphDoc): SchemaIssue[] => {
+  const issues: SchemaIssue[] = [];
+
+  const requireUnchanged = (delta: Delta | undefined, path: string, subject: string) => {
+    if (delta === undefined || delta === "unchanged") return;
+    issues.push({
+      code: "NOT_A_SNAPSHOT",
+      path,
+      message: `${subject} is marked '${delta}', but a stored map describes a system rather than a change`,
+    });
+  };
+
+  if (doc.provenance.base.sha !== doc.provenance.head.sha)
+    issues.push({
+      code: "NOT_A_SNAPSHOT",
+      path: "provenance",
+      message: `a stored map reflects one commit, but base is ${doc.provenance.base.sha} and head is ${doc.provenance.head.sha}`,
+    });
+
+  doc.lanes.forEach((lane, index) =>
+    requireUnchanged(lane.delta, `lanes[${index}].delta`, `lane '${lane.id}'`),
+  );
+  doc.nodes.forEach((node, index) =>
+    requireUnchanged(node.delta, `nodes[${index}].delta`, `node '${node.id}'`),
+  );
+  doc.edges.forEach((edge, index) =>
+    requireUnchanged(edge.delta, `edges[${index}].delta`, `edge '${edge.id}'`),
+  );
+  doc.flows.forEach((flow, flowIndex) => {
+    requireUnchanged(flow.delta, `flows[${flowIndex}].delta`, `flow '${flow.id}'`);
+    flow.messages.forEach((message, index) =>
+      requireUnchanged(
+        message.delta,
+        `flows[${flowIndex}].messages[${index}].delta`,
+        `step '${message.id}' of flow '${flow.id}'`,
+      ),
+    );
+  });
 
   return issues;
 };

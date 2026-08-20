@@ -50,6 +50,7 @@ const divergences = [
   "referential integrity between elements",
   "a line range that ends before it starts",
   "the agreement between a self message's endpoints",
+  "a patch whose two commits are the same",
 ] as const;
 
 const withoutKey = (document: object, key: string): object =>
@@ -219,6 +220,37 @@ const parityCases: ParityCase[] = [
           ),
         },
       ],
+    },
+    accepted: false,
+    acceptedByJsonSchema: true,
+  },
+  {
+    name: "a file reference spelled for a different operating system",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withFileRef({ path: "C:\\Windows\\system32\\file.ts" }),
+    accepted: false,
+  },
+  {
+    name: "a patch targeting an abbreviated commit",
+    schema: "patch-doc.schema.json",
+    parse: safeParsePatchDoc,
+    document: {
+      ...broadcastBaselinePatchInput,
+      target: { ...broadcastBaselinePatchInput.target, fromSha: "3f5c1ab" },
+    },
+    accepted: false,
+  },
+  {
+    name: `${divergences[3]}, which only the parser can catch`,
+    schema: "patch-doc.schema.json",
+    parse: safeParsePatchDoc,
+    document: {
+      ...broadcastBaselinePatchInput,
+      target: {
+        ...broadcastBaselinePatchInput.target,
+        fromSha: broadcastBaselinePatchInput.target.toSha,
+      },
     },
     accepted: false,
     acceptedByJsonSchema: true,

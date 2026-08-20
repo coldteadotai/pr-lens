@@ -1,7 +1,9 @@
-import { PrLensSchemaError, type Parsed, type SchemaIssue } from "./errors.js";
+import { formatIssues, PrLensSchemaError, type Parsed, type SchemaIssue } from "./errors.js";
 import { safeParseGraphDoc } from "./validate.js";
 import type { Flow, GraphDoc, GraphEdge, Lane, View } from "./graph.js";
+import { graphSnapshotIssues } from "./integrity.js";
 import type { PatchDoc, PatchOp } from "./patch.js";
+import { FullSha } from "./primitives.js";
 import { assertNever } from "./utils.js";
 
 type Collections = {
@@ -322,6 +324,10 @@ export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<Gra
  * advance to the patch's `toSha` — leaving `base` behind would claim the
  * elements this patch just added had been there, unchanged, all along. The
  * commit the map came from stays recorded on the patch itself.
+ *
+ * That snapshot rule is checked rather than assumed: a patch is free to carry
+ * `added` or `modified` elements, and one that leaves them in the map would
+ * hand the next pull request a baseline that already claims to be mid change.
  */
 export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc> => {
   const { graphId, fromSha, toSha } = patch.target;
@@ -333,6 +339,22 @@ export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc
         "PATCH_CONFLICT",
         `patch targets graph '${graphId}' but was applied to '${graph.id ?? "an unidentified graph"}'`,
         [{ code: "PATCH_CONFLICT", path: "target.graphId", message: "wrong graph" }],
+      ),
+    };
+
+  if (!FullSha.safeParse(graph.provenance.head.sha).success)
+    return {
+      ok: false,
+      error: new PrLensSchemaError(
+        "PATCH_CONFLICT",
+        `a stored map must record the full commit it reflects, but this one records '${graph.provenance.head.sha}'`,
+        [
+          {
+            code: "PATCH_CONFLICT",
+            path: "provenance.head.sha",
+            message: "abbreviated commit name",
+          },
+        ],
       ),
     };
 
@@ -349,15 +371,25 @@ export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc
   const applied = applyPatch(graph, patch.ops);
   if (!applied.ok) return applied;
 
-  return {
-    ok: true,
-    value: {
-      ...applied.value,
-      provenance: {
-        ...applied.value.provenance,
-        base: { ...applied.value.provenance.base, sha: toSha },
-        head: { ...applied.value.provenance.head, sha: toSha },
-      },
+  const snapshot: GraphDoc = {
+    ...applied.value,
+    provenance: {
+      ...applied.value.provenance,
+      base: { ...applied.value.provenance.base, sha: toSha },
+      head: { ...applied.value.provenance.head, sha: toSha },
     },
   };
+
+  const issues = graphSnapshotIssues(snapshot);
+  if (issues.length > 0)
+    return {
+      ok: false,
+      error: new PrLensSchemaError(
+        "NOT_A_SNAPSHOT",
+        `patch leaves a map that is not a snapshot:\n${formatIssues(issues)}`,
+        issues,
+      ),
+    };
+
+  return { ok: true, value: snapshot };
 };

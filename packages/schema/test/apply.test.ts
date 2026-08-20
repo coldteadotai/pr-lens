@@ -6,7 +6,8 @@ import {
   minimalGraph,
   postmarkRefactorGraph,
 } from "../src/examples/index.js";
-import { graphIntegrityIssues } from "../src/integrity.js";
+import type { GraphDoc } from "../src/graph.js";
+import { graphIntegrityIssues, graphSnapshotIssues } from "../src/integrity.js";
 import type { PatchDoc, PatchOp } from "../src/patch.js";
 import { safeParseGraphDoc } from "../src/validate.js";
 
@@ -212,11 +213,85 @@ describe("applying a patch document", () => {
   it("leaves the map describing a system, not a change", () => {
     const patched = applied();
     const deltas = new Set([
+      ...patched.lanes.map((lane) => lane.delta ?? "unchanged"),
       ...patched.nodes.map((node) => node.delta),
       ...patched.edges.map((edge) => edge.delta),
-      ...patched.flows.map((flow) => flow.delta),
+      ...patched.flows.flatMap((flow) => [
+        flow.delta,
+        ...flow.messages.map((message) => message.delta),
+      ]),
     ]);
     expect([...deltas]).toEqual(["unchanged"]);
+    expect(graphSnapshotIssues(patched)).toEqual([]);
+  });
+
+  it("refuses a patch that would leave a change annotation in the map", () => {
+    const patch: PatchDoc = {
+      ...broadcastBaselinePatch,
+      ops: [{ op: "update_node", id: "queue-route", patch: { delta: "modified" } }],
+    };
+    const result = applyPatchDoc(broadcastBaselineGraph, patch);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("NOT_A_SNAPSHOT");
+    expect(result.error.message).toContain("node 'queue-route' is marked 'modified'");
+  });
+
+  it("refuses a patch whose new flow carries change annotations in its steps", () => {
+    const source = broadcastBaselineGraph.flows[0]!;
+    const patch: PatchDoc = {
+      ...broadcastBaselinePatch,
+      ops: [
+        { op: "remove_flow", id: source.id },
+        {
+          op: "add_flow",
+          flow: {
+            ...source,
+            messages: source.messages.map((message, index) =>
+              index === 0 ? { ...message, delta: "added" } : message,
+            ),
+          },
+        },
+      ],
+    };
+    const result = applyPatchDoc(broadcastBaselineGraph, patch);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("NOT_A_SNAPSHOT");
+    expect(result.error.message).toContain("step 'enqueue'");
+  });
+
+  it("refuses to patch a map that is already mid change", () => {
+    const midChange: GraphDoc = {
+      ...broadcastBaselineGraph,
+      nodes: broadcastBaselineGraph.nodes.map((node) =>
+        node.id === "queue-route" ? { ...node, delta: "modified" } : node,
+      ),
+    };
+    const result = applyPatchDoc(midChange, broadcastBaselinePatch);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("NOT_A_SNAPSHOT");
+  });
+
+  it("refuses a map that records only an abbreviated commit", () => {
+    const abbreviated: GraphDoc = {
+      ...broadcastBaselineGraph,
+      provenance: {
+        ...broadcastBaselineGraph.provenance,
+        base: { ...broadcastBaselineGraph.provenance.base, sha: "3f5c1ab" },
+        head: { ...broadcastBaselineGraph.provenance.head, sha: "3f5c1ab" },
+      },
+    };
+    const result = applyPatchDoc(abbreviated, broadcastBaselinePatch);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("PATCH_CONFLICT");
+    expect(result.error.issues[0]?.message).toBe("abbreviated commit name");
   });
 
   it("swaps the single-send path for the batch path", () => {

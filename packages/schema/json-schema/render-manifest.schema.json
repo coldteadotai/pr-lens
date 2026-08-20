@@ -32,7 +32,7 @@
         "headSha": {
           "type": "string",
           "pattern": "^[0-9a-f]{7,40}$",
-          "description": "Git commit sha (short or full)."
+          "description": "Git commit sha, abbreviated or full."
         },
         "contentHash": {
           "type": "string",

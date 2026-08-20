@@ -87,7 +87,7 @@
             "sha": {
               "type": "string",
               "pattern": "^[0-9a-f]{7,40}$",
-              "description": "Git commit sha (short or full)."
+              "description": "Git commit sha, abbreviated or full."
             },
             "ref": {
               "type": "string",
@@ -106,7 +106,7 @@
             "sha": {
               "type": "string",
               "pattern": "^[0-9a-f]{7,40}$",
-              "description": "Git commit sha (short or full)."
+              "description": "Git commit sha, abbreviated or full."
             },
             "ref": {
               "type": "string",
@@ -321,7 +321,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 1024,
-                  "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
+                  "pattern": "^(?!\\/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                   "description": "Repository-relative path, POSIX separators."
                 },
                 "startLine": {
@@ -470,7 +470,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 1024,
-                  "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
+                  "pattern": "^(?!\\/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                   "description": "Repository-relative path, POSIX separators."
                 },
                 "startLine": {
@@ -665,7 +665,7 @@
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 1024,
-                        "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
+                        "pattern": "^(?!\\/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                         "description": "Repository-relative path, POSIX separators."
                       },
                       "startLine": {

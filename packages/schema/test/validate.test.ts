@@ -106,12 +106,22 @@ describe("graph document validation", () => {
     expect(error.message).toContain("endLine must be greater than or equal to startLine");
   });
 
-  it("rejects a path that escapes the repository", () => {
-    const doc = clone(minimalGraphInput);
-    doc.nodes[0]!.files = [{ path: "../../etc/passwd" }];
+  it.each(["../../etc/passwd", "/etc/passwd", "C:\\Windows\\system32\\file.ts", "src\\index.ts"])(
+    "rejects '%s', which cannot become a diff permalink",
+    (path) => {
+      const doc = clone(minimalGraphInput);
+      doc.nodes[0]!.files = [{ path }];
 
-    const error = expectRejected(doc);
-    expect(error.message).toContain("repository-relative path");
+      const error = expectRejected(doc);
+      expect(error.message).toContain("repository-relative POSIX path");
+    },
+  );
+
+  it("keeps a filename that merely contains dots", () => {
+    const doc = clone(minimalGraphInput);
+    doc.nodes[0]!.files = [{ path: "src/fine..name/health.ts" }];
+
+    expect(safeParseGraphDoc(doc).ok).toBe(true);
   });
 
   it("rejects a document written against a different contract version", () => {
