@@ -1,0 +1,52 @@
+{
+  "name": "@coldtea/pr-lens-renderer",
+  "version": "0.1.0",
+  "description": "The PR Lens renderer: a schema-valid graph document in, a self-contained animated SVG out.",
+  "license": "MIT",
+  "author": "Ohans Emmanuel",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coldteadotai/pr-lens.git",
+    "directory": "packages/renderer"
+  },
+  "homepage": "https://github.com/coldteadotai/pr-lens/tree/main/packages/renderer#readme",
+  "keywords": [
+    "pr-lens",
+    "code-review",
+    "architecture-diagram",
+    "data-flow",
+    "svg",
+    "diagram"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@coldtea/pr-lens-schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

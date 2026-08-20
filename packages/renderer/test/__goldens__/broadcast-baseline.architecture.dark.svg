@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 758 408" width="758" height="408" role="img" aria-label="Broadcast sending">
+<title>Broadcast sending</title>
+<desc>How a broadcast reaches its recipients: queued from the web app, sent one message at a time by a Firestore trigger.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:rgba(110,118,129,.07)}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#9198a1}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.card-modified{stroke:#d29922;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#f85149;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#e6edf3}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:rgba(110,118,129,.18)}.glyph{fill:#9198a1}.glyph-stroke{stroke:#9198a1;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.bdg-added text{fill:#3fb950}.bdg-modified rect{fill:rgba(187,128,9,.15);stroke:rgba(210,153,34,.4)}.bdg-modified text{fill:#d29922}.bdg-removed rect{fill:rgba(248,81,73,.12);stroke:rgba(248,81,73,.4)}.bdg-removed text{fill:#f85149}.bdg-neutral rect{fill:rgba(110,118,129,.18);stroke:#3d444d}.bdg-neutral text{fill:#9198a1}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#3fb950}.edge-modified{stroke:#d29922}.edge-removed{stroke:#f85149;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#6e7681}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#e6edf3}.lpill{fill:#0d1117;stroke:#21262d;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#9198a1}.ltext-added{fill:#3fb950}.ltext-modified{fill:#d29922}.ltext-removed{fill:#f85149}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}.pcard{fill:#1c2128;stroke:#3d444d;stroke-width:1}.ptitle{font-size:12px;font-weight:600;fill:#e6edf3;text-anchor:middle}.lifeline{stroke:#30363d;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.msg{fill:none;stroke-width:1.4}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-label{font-size:11px;fill:#e6edf3;text-anchor:middle}.msg-strong{stroke-width:2}</style>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker></defs>
+<rect x="0" y="0" width="758" height="408" rx="12" fill="#0d1117"/>
+<rect x="0" y="0" width="758" height="408" rx="12" fill="url(#dots)"/>
+<g><rect class="lanebox" x="16" y="44" width="272.94" height="348" rx="12"/>
+<text class="lanelabel" x="32" y="68">NEXT.JS · VERCEL</text>
+<rect class="lanebox" x="308.94" y="44" width="229.76" height="348" rx="12"/>
+<text class="lanelabel" x="324.94" y="68">CLOUD FUNCTIONS · FIREBASE</text>
+<rect class="lanebox" x="558.7" y="44" width="182.5" height="348" rx="12"/>
+<text class="lanelabel" x="574.7" y="68">EXTERNAL · POSTMARK</text></g>
+<g><path class="edge edge-neutral context" d="M152.47,154 L152.47,206" marker-end="url(#mk-neutral)"/>
+<g><rect class="lpill" x="110.05" y="172.5" width="84.85" height="15" rx="7.5"/><text class="ltext" x="152.47" y="183.5" text-anchor="middle">send broadcast</text></g>
+<path class="edge edge-neutral context" d="M272.94,232 C315.21,232 282.67,123 324.94,123" marker-end="url(#mk-neutral)"/>
+<g><rect class="lpill" x="263.23" y="170" width="71.43" height="15" rx="7.5"/><text class="ltext" x="298.94" y="181" text-anchor="middle">enqueue job</text></g>
+<path class="edge edge-neutral context" d="M423.82,154 L423.82,206" marker-end="url(#mk-neutral)"/>
+<g><rect class="lpill" x="398.48" y="172.5" width="50.69" height="15" rx="7.5"/><text class="ltext" x="423.82" y="183.5" text-anchor="middle">onWrite</text></g>
+<path class="edge edge-neutral context" d="M423.82,268 L423.82,320" marker-end="url(#mk-neutral)"/>
+<g><rect class="lpill" x="388.12" y="286.5" width="71.41" height="15" rx="7.5"/><text class="ltext" x="423.82" y="297.5" text-anchor="middle">per recipient</text></g>
+<path class="edge edge-neutral context" d="M522.7,346 C602.84,346 494.56,123 574.7,123" marker-end="url(#mk-neutral)"/>
+<g><rect class="lpill" x="488.89" y="278.69" width="130.04" height="15" rx="7.5"/><text class="ltext" x="553.91" y="289.69" text-anchor="middle">POST /email · 1 msg/call</text></g></g>
+<g><g class="cardsh context"><rect class="card" x="32" y="92" width="240.94" height="62" rx="10"/>
+<rect class="chip" x="46" y="110" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="117" width="14" height="12" rx="2"/>
+<path class="glyph-stroke" d="M56.5,117 v12"/></g>
+<text class="ntitle" x="82" y="119" font-size="13">Broadcast composer</text>
+<text class="nsub" x="82" y="137">app/broadcasts/new</text></g>
+<g class="cardsh context"><rect class="card" x="32" y="206" width="240.94" height="52" rx="10"/>
+<rect class="chip" x="46" y="219" width="26" height="26" rx="7"/><g><path class="glyph" d="M52,226 L66,232 L52,238 Z"/></g>
+<text class="ntitle" x="82" y="237" font-size="13">POST /api/broadcasts/queue</text></g>
+<g class="cardsh context"><rect class="card" x="324.94" y="92" width="197.76" height="62" rx="10"/>
+<text class="ntitle" x="338.94" y="119" font-size="11.5">broadcastQueue</text>
+<text class="nsub" x="338.94" y="137">Firestore collection</text></g>
+<g class="cardsh context"><rect class="card" x="324.94" y="206" width="197.76" height="62" rx="10"/>
+<text class="ntitle" x="338.94" y="233" font-size="11.5">processBroadcast</text>
+<text class="nsub" x="338.94" y="251">onWrite trigger</text></g>
+<g class="cardsh context"><rect class="card" x="324.94" y="320" width="197.76" height="52" rx="10"/>
+<text class="ntitle" x="338.94" y="351" font-size="11.5">sendSingleEmail</text></g>
+<g class="cardsh context"><rect class="card" x="574.7" y="92" width="150.5" height="62" rx="10"/>
+<text class="ntitle" x="588.7" y="119" font-size="11.5">Postmark</text>
+<text class="nsub" x="588.7" y="137">Email API</text></g></g>
+</svg>

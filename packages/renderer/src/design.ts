@@ -1,0 +1,65 @@
+/**
+ * The measurements of the validated prototype, in one place. These are the
+ * design system: change a number here and every diagram moves with it.
+ */
+export const DIAGRAM_MARGIN = 16;
+
+export const LANE_TOP = 44;
+export const LANE_HEADER_BASELINE = 68;
+export const LANE_PADDING_X = 16;
+export const LANE_GAP = 20;
+export const LANE_BOTTOM_PADDING = 20;
+export const LANE_RADIUS = 12;
+export const LANE_LABEL_SIZE = 10;
+export const LANE_LABEL_TRACKING = 0.12;
+
+export const CONTENT_TOP = 92;
+export const ROW_GAP = 52;
+
+export const CARD_RADIUS = 10;
+export const CARD_GAP_X = 12;
+export const CARD_HEIGHT = 52;
+export const CARD_HEIGHT_WITH_SUBTITLE = 62;
+export const CARD_PADDING_X = 14;
+export const CARD_MIN_WIDTH = 132;
+export const CARD_MAX_WIDTH = 300;
+
+export const ICON_CHIP_SIZE = 26;
+export const ICON_CHIP_GAP = 10;
+export const ICON_CHIP_RADIUS = 7;
+/** Below this the icon chip costs more room than the recognition it buys. */
+export const ICON_MIN_CARD_WIDTH = 200;
+
+export const TITLE_SIZE = 13;
+export const TITLE_SIZE_SMALL = 11.5;
+export const SUBTITLE_SIZE = 9.5;
+
+export const BADGE_HEIGHT = 16;
+export const BADGE_PADDING_X = 9;
+export const BADGE_TEXT_SIZE = 8.5;
+export const BADGE_TRACKING = 0.06;
+export const BADGE_GAP = 6;
+export const BADGE_RADIUS = 8;
+/** How far the badge row rides above the top edge of the card it labels. */
+export const BADGE_RISE = 8;
+
+export const PILL_HEIGHT = 15;
+export const PILL_PADDING_X = 8;
+export const PILL_TEXT_SIZE = 9.5;
+
+export const EDGE_SLACK_MIN = 24;
+export const EDGE_SLACK_RATIO = 0.35;
+
+/** One turn of the architecture pulse, and of the staggered hero triplet. */
+export const PULSE_DURATION = 1.6;
+export const HERO_PULSE_DURATION = 2.1;
+export const HERO_PULSE_COUNT = 3;
+
+/** One turn of the data-flow sequence, long enough to read every step. */
+export const FLOW_CYCLE_DURATION = 8;
+/** Share of the cycle a pulse spends travelling its own message. */
+export const FLOW_PULSE_TRAVEL = 0.08;
+/** Dead time before a pulse sets off inside its slot. */
+export const FLOW_PULSE_LEAD = 0.02;
+/** More repeats than this and the arrows stop reading as separate calls. */
+export const FLOW_MAX_PULSES_PER_MESSAGE = 3;
