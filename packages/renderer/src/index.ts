@@ -20,6 +20,7 @@ export {
   contentHash,
   CONTENT_HASH_LENGTH,
   graphContentHash,
+  RENDER_ASSET_MAX,
   renderAssetFileName,
   renderAssetId,
   type AssetAddress,

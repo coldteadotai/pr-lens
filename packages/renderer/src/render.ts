@@ -2,7 +2,13 @@ import type { Config, GraphDoc, Lens, RenderAsset, RenderManifest, View, ViewSco
 import { assertNever } from "@coldtea/pr-lens-schema";
 import { applyCorrections } from "./corrections.js";
 import { PrLensRenderError } from "./errors.js";
-import { buildManifest, contentHash, renderAssetFileName, renderAssetId } from "./manifest.js";
+import {
+  buildManifest,
+  contentHash,
+  RENDER_ASSET_MAX,
+  renderAssetFileName,
+  renderAssetId,
+} from "./manifest.js";
 import { findView, flattenViews, resolveScope, type ScopedGraph } from "./scope.js";
 import { paletteFor, THEMES, type Theme } from "./theme.js";
 import { paintArchitecture } from "./svg/architecture.js";
@@ -137,6 +143,13 @@ export const renderAll = (doc: GraphDoc, options: RenderAllOptions = {}): Render
       : prepared.lenses
           .filter((lens) => lens !== "data-flow" || prepared.flows.length > 0)
           .map((lens) => ({ lens, view: undefined }));
+
+  if (targets.length * themes.length > RENDER_ASSET_MAX)
+    throw new PrLensRenderError(
+      "TOO_MANY_ASSETS",
+      `this document asks for ${targets.length * themes.length} pictures across ${targets.length} views ` +
+        `and ${themes.length} themes, and a render manifest carries at most ${RENDER_ASSET_MAX}`,
+    );
 
   const assets: RenderedAsset[] = [];
 

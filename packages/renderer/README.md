@@ -82,4 +82,6 @@ Labels, subtitles and titles come from a model. They are escaped for XML at the 
 
 ## Refusals
 
-`PrLensRenderError` carries a `code` a caller can switch on: `UNKNOWN_VIEW`, `LENS_NOT_DECLARED`, `NOTHING_TO_RENDER`, `NO_FLOW_IN_SCOPE`. A document that parsed is otherwise safe to render — the renderer trusts `@coldtea/pr-lens-schema` and never re-validates it.
+`PrLensRenderError` carries a `code` a caller can switch on: `UNKNOWN_VIEW`, `LENS_NOT_DECLARED`, `NOTHING_TO_RENDER`, `NO_FLOW_IN_SCOPE`, `TOO_MANY_ASSETS`. A document that parsed is otherwise safe to render — the renderer trusts `@coldtea/pr-lens-schema` and never re-validates it.
+
+`TOO_MANY_ASSETS` is the one refusal that is really a gap in the contract rather than a fault in the document. A view tree has no global size limit — each `children` array is capped, but nesting is not — while a render manifest carries at most 256 assets, which is 128 views in the two themes a `<picture>` pair needs. `renderAll` refuses rather than returning a manifest the schema would reject.

@@ -1,8 +1,14 @@
-import type { Flow, GraphDoc, GraphNode } from "@coldtea/pr-lens-schema";
+import type { Flow, GraphDoc, GraphNode, ViewInput } from "@coldtea/pr-lens-schema";
 import { parseGraphDoc, parseRenderManifest } from "@coldtea/pr-lens-schema";
 import { minimalGraph, postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
-import { render, renderAll, renderAssetFileName, renderAssetId } from "../src/index.js";
+import {
+  RENDER_ASSET_MAX,
+  render,
+  renderAll,
+  renderAssetFileName,
+  renderAssetId,
+} from "../src/index.js";
 import { layoutArchitecture } from "../src/layout/architecture.js";
 
 const node = (id: string, lane: string, label = id): GraphNode => ({
@@ -346,5 +352,60 @@ describe("ordering does not depend on the machine's locale", () => {
       doc.layout,
     );
     expect(placed.nodes.map(({ node: placedNode }) => placedNode.id)).toEqual(["upper", "lower"]);
+  });
+});
+
+describe("a view tree deeper than a manifest can describe", () => {
+  const nested = (count: number): ViewInput[] => {
+    let children: ViewInput[] = [];
+    for (let index = count - 1; index >= 0; index -= 1)
+      children = [
+        { id: `v${index}`, title: `v${index}`, lens: "architecture", scope: { kind: "all" }, children },
+      ];
+    return children;
+  };
+
+  const withViews = (count: number): GraphDoc =>
+    parseGraphDoc({ ...JSON.parse(JSON.stringify(minimalGraph)), views: nested(count) });
+
+  it("fills a manifest exactly at the limit, and it round-trips", () => {
+    const { assets, manifest } = renderAll(withViews(RENDER_ASSET_MAX / 2));
+    expect(assets).toHaveLength(RENDER_ASSET_MAX);
+    expect(() => parseRenderManifest(JSON.parse(JSON.stringify(manifest)))).not.toThrow();
+  });
+
+  it("refuses one view past it rather than returning a manifest the contract rejects", () => {
+    expect(() => renderAll(withViews(RENDER_ASSET_MAX / 2 + 1))).toThrowError(
+      expect.objectContaining({ code: "TOO_MANY_ASSETS" }),
+    );
+  });
+
+  it("still renders that tree when only one theme is asked for", () => {
+    const { assets } = renderAll(withViews(RENDER_ASSET_MAX / 2 + 1), { themes: ["light"] });
+    expect(assets).toHaveLength(RENDER_ASSET_MAX / 2 + 1);
+  });
+
+  it("agrees with the contract about where the limit is", () => {
+    const asset = {
+      id: "a",
+      lens: "architecture",
+      theme: "light",
+      mediaType: "image/svg+xml",
+      contentHash: "0123456789abcdef",
+      bytes: 1,
+      width: 1,
+      height: 1,
+      path: "a.svg",
+    };
+    const manifest = (count: number) => ({
+      schemaVersion: "0.1.0",
+      kind: "render-manifest",
+      graph: { contentHash: "0123456789abcdef" },
+      renderer: { name: "x", version: "1" },
+      assets: Array.from({ length: count }, () => asset),
+    });
+
+    expect(() => parseRenderManifest(manifest(RENDER_ASSET_MAX))).not.toThrow();
+    expect(() => parseRenderManifest(manifest(RENDER_ASSET_MAX + 1))).toThrow();
   });
 });

@@ -7,7 +7,8 @@ export type RenderErrorCode =
   | "UNKNOWN_VIEW"
   | "LENS_NOT_DECLARED"
   | "NOTHING_TO_RENDER"
-  | "NO_FLOW_IN_SCOPE";
+  | "NO_FLOW_IN_SCOPE"
+  | "TOO_MANY_ASSETS";
 
 export class PrLensRenderError extends Error {
   readonly code: RenderErrorCode;

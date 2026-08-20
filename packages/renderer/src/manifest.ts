@@ -105,6 +105,15 @@ export const renderAssetId = ({ lens, theme, view }: AssetAddress): string =>
 export const renderAssetFileName = (address: AssetAddress, hash: string): string =>
   `${renderAssetId(address)}-${hash}.svg`;
 
+/**
+ * How many assets a render manifest can carry, mirroring the contract's own
+ * ceiling on `RenderManifest.assets`. A document's view tree has no matching
+ * global limit — each `children` array is capped, but nesting is not — so a
+ * deep enough tree can ask for more pictures than a manifest can describe. A
+ * test pins this to the schema so the two cannot drift apart quietly.
+ */
+export const RENDER_ASSET_MAX = 256;
+
 export const buildManifest = (doc: GraphDoc, assets: readonly RenderAsset[]): RenderManifest => ({
   schemaVersion: SCHEMA_VERSION,
   kind: "render-manifest",
