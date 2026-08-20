@@ -1,14 +1,13 @@
 import type { Flow, GraphDoc, GraphNode, ViewInput } from "@coldtea/pr-lens-schema";
-import { parseGraphDoc, parseRenderManifest } from "@coldtea/pr-lens-schema";
+import {
+  MAX_RENDER_ASSETS,
+  MAX_VIEWS,
+  parseGraphDoc,
+  parseRenderManifest,
+} from "@coldtea/pr-lens-schema";
 import { minimalGraph, postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
-import {
-  RENDER_ASSET_MAX,
-  render,
-  renderAll,
-  renderAssetFileName,
-  renderAssetId,
-} from "../src/index.js";
+import { render, renderAll, renderAssetFileName, renderAssetId } from "../src/index.js";
 import { layoutArchitecture } from "../src/layout/architecture.js";
 
 const node = (id: string, lane: string, label = id): GraphNode => ({
@@ -368,21 +367,45 @@ describe("a view tree deeper than a manifest can describe", () => {
   const withViews = (count: number): GraphDoc =>
     parseGraphDoc({ ...JSON.parse(JSON.stringify(minimalGraph)), views: nested(count) });
 
-  it("fills a manifest exactly at the limit, and it round-trips", () => {
-    const { assets, manifest } = renderAll(withViews(RENDER_ASSET_MAX / 2));
-    expect(assets).toHaveLength(RENDER_ASSET_MAX);
+  /**
+   * One view past what the contract allows. It cannot be parsed — that is the
+   * point of the contract's cap — so it is built by extending a document that
+   * was, which is exactly how a caller reaches this state: the cap lives in a
+   * refinement, and a refinement does not survive into the inferred type.
+   */
+  const beyondTheCap = (): GraphDoc => {
+    const parsed = withViews(MAX_VIEWS);
+    return {
+      ...parsed,
+      views: [
+        ...parsed.views,
+        {
+          id: "one-too-many",
+          title: "One too many",
+          lens: "architecture",
+          scope: { kind: "all" },
+          defaultOpen: false,
+          children: [],
+        },
+      ],
+    };
+  };
+
+  it("renders the largest tree the contract allows, and the manifest round-trips", () => {
+    const { assets, manifest } = renderAll(withViews(MAX_VIEWS));
+    expect(assets).toHaveLength(MAX_RENDER_ASSETS);
     expect(() => parseRenderManifest(JSON.parse(JSON.stringify(manifest)))).not.toThrow();
   });
 
-  it("refuses one view past it rather than returning a manifest the contract rejects", () => {
-    expect(() => renderAll(withViews(RENDER_ASSET_MAX / 2 + 1))).toThrowError(
+  it("refuses a hand-built tree past it rather than returning a manifest the contract rejects", () => {
+    expect(() => renderAll(beyondTheCap())).toThrowError(
       expect.objectContaining({ code: "TOO_MANY_ASSETS" }),
     );
   });
 
-  it("still renders that tree when only one theme is asked for", () => {
-    const { assets } = renderAll(withViews(RENDER_ASSET_MAX / 2 + 1), { themes: ["light"] });
-    expect(assets).toHaveLength(RENDER_ASSET_MAX / 2 + 1);
+  it("counts the pictures asked for, not the views, so one theme still renders that tree", () => {
+    const { assets } = renderAll(beyondTheCap(), { themes: ["light"] });
+    expect(assets).toHaveLength(MAX_VIEWS + 1);
   });
 
   it("agrees with the contract about where the limit is", () => {
@@ -405,7 +428,13 @@ describe("a view tree deeper than a manifest can describe", () => {
       assets: Array.from({ length: count }, () => asset),
     });
 
-    expect(() => parseRenderManifest(manifest(RENDER_ASSET_MAX))).not.toThrow();
-    expect(() => parseRenderManifest(manifest(RENDER_ASSET_MAX + 1))).toThrow();
+    expect(() => parseRenderManifest(manifest(MAX_RENDER_ASSETS))).not.toThrow();
+    expect(() => parseRenderManifest(manifest(MAX_RENDER_ASSETS + 1))).toThrow();
+  });
+
+  it("is a cap the contract enforces, so a parsed document can never reach the guard", () => {
+    expect(() => withViews(MAX_VIEWS + 1)).toThrowError(
+      expect.objectContaining({ code: "INVALID_DOCUMENT" }),
+    );
   });
 });

@@ -1,13 +1,15 @@
-import { assertNever } from "@coldtea/pr-lens-schema";
+import { assertNever, THEMES, type Theme } from "@coldtea/pr-lens-schema";
 
 /**
  * The two halves of a GitHub `<picture>` pair. A comment ships both and the
  * client picks; neither half may depend on the page it lands in, because an
  * SVG served as an image cannot see it.
+ *
+ * The contract owns the pair, because the number of themes is one half of the
+ * arithmetic that bounds a document's view tree. Re-exported here so a caller
+ * rendering a diagram does not have to reach into the schema for it.
  */
-export type Theme = "light" | "dark";
-
-export const THEMES = ["light", "dark"] as const satisfies readonly Theme[];
+export { THEMES, type Theme };
 
 /**
  * Every colour the renderer can paint, resolved to a literal before it

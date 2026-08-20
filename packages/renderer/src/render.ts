@@ -1,14 +1,8 @@
 import type { Config, GraphDoc, Lens, RenderAsset, RenderManifest, View, ViewScope } from "@coldtea/pr-lens-schema";
-import { assertNever } from "@coldtea/pr-lens-schema";
+import { assertNever, MAX_RENDER_ASSETS } from "@coldtea/pr-lens-schema";
 import { applyCorrections } from "./corrections.js";
 import { PrLensRenderError } from "./errors.js";
-import {
-  buildManifest,
-  contentHash,
-  RENDER_ASSET_MAX,
-  renderAssetFileName,
-  renderAssetId,
-} from "./manifest.js";
+import { buildManifest, contentHash, renderAssetFileName, renderAssetId } from "./manifest.js";
 import { findView, flattenViews, resolveScope, type ScopedGraph } from "./scope.js";
 import { paletteFor, THEMES, type Theme } from "./theme.js";
 import { paintArchitecture } from "./svg/architecture.js";
@@ -144,11 +138,19 @@ export const renderAll = (doc: GraphDoc, options: RenderAllOptions = {}): Render
           .filter((lens) => lens !== "data-flow" || prepared.flows.length > 0)
           .map((lens) => ({ lens, view: undefined }));
 
-  if (targets.length * themes.length > RENDER_ASSET_MAX)
+  /**
+   * The contract caps a view tree at the number of views a two-theme render
+   * fits inside a manifest, so a parsed document cannot reach this. A
+   * hand-built one can: the cap lives in a refinement, and a refinement does
+   * not survive into the inferred type. This is a postcondition on what is
+   * about to be produced rather than a re-reading of what came in — the count
+   * depends on how many themes the caller asked for, which no document knows.
+   */
+  if (targets.length * themes.length > MAX_RENDER_ASSETS)
     throw new PrLensRenderError(
       "TOO_MANY_ASSETS",
       `this document asks for ${targets.length * themes.length} pictures across ${targets.length} views ` +
-        `and ${themes.length} themes, and a render manifest carries at most ${RENDER_ASSET_MAX}`,
+        `and ${themes.length} themes, and a render manifest carries at most ${MAX_RENDER_ASSETS}`,
     );
 
   const assets: RenderedAsset[] = [];
