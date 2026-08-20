@@ -16,9 +16,25 @@ cli() {
 # comment with an older picture. Asking GitHub is what makes this answerable —
 # an older checkout does not contain the newer commit, so no amount of local
 # history could settle it.
+#
+# `set -e` does not apply inside a function used as an `if` condition, so a
+# failed lookup has to be caught here by hand — otherwise an outage or a rate
+# limit would leave `current` empty, read as "the pull request moved on", and
+# turn a broken run into a green one with no comment. Not knowing is a failure,
+# not a reason to stay quiet, so this exits the script rather than returning:
+# a `return` in this position would be read as "not overtaken" and post anyway.
 overtaken() {
   local current
-  current="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq .head.sha)"
+
+  if ! current="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq .head.sha)"; then
+    echo "::error::Could not ask GitHub what #${PR_NUMBER} points at, so this run cannot tell whether its diagram is still the current one."
+    exit 1
+  fi
+
+  if [ -z "${current}" ]; then
+    echo "::error::GitHub named no head commit for #${PR_NUMBER}."
+    exit 1
+  fi
 
   if [ "${current}" = "${HEAD_SHA}" ]; then
     return 1
