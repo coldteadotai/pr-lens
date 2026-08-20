@@ -49,7 +49,9 @@ export type MapCorrections = z.infer<typeof MapCorrections>;
 /** The `.github/pr-lens.yml` a repository may commit. Every field is optional. */
 export const Config = z
   .strictObject({
-    schemaVersion: SchemaVersionField.optional().describe("Omitted means the current version."),
+    schemaVersion: SchemaVersionField.describe(
+      "Declared explicitly so a repository's corrections keep their meaning across contract versions.",
+    ),
     lenses: z
       .array(Lens)
       .min(1)

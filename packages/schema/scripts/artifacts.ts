@@ -26,6 +26,11 @@ const serialize = (value: unknown): string => `${JSON.stringify(value, null, 2)}
  * The zod schemas are the source of truth; these files exist so producers in
  * other languages, and editors validating `.github/pr-lens.yml`, can hold the
  * same contract without running our code.
+ *
+ * Emitted from the input side: the audience is authors, and a field with a
+ * default is one they may leave out. Constraints JSON Schema cannot express —
+ * referential integrity, and the equality between a self message's endpoints —
+ * stay the runtime parser's job.
  */
 export const buildJsonSchemas = (): Map<string, string> =>
   new Map(
@@ -36,7 +41,7 @@ export const buildJsonSchemas = (): Map<string, string> =>
         $id: `${BASE_ID}/${file}`,
         title,
         version: SCHEMA_VERSION,
-        ...z.toJSONSchema(schema, { target: "draft-2020-12", io: "output" }),
+        ...z.toJSONSchema(schema, { target: "draft-2020-12", io: "input" }),
       }),
     ]),
   );

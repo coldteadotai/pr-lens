@@ -3,10 +3,22 @@ import { join } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { goldenDocuments } from "../src/examples/index.js";
+import { broadcastBaselinePatchInput } from "../src/examples/baseline.js";
+import { minimalGraphInput } from "../src/examples/minimal.js";
+import {
+  exampleConfigInput,
+  postmarkRefactorGraphInput,
+  postmarkRefactorManifestInput,
+} from "../src/examples/postmark-refactor.js";
+import type { Parsed } from "../src/errors.js";
+import {
+  safeParseConfig,
+  safeParseGraphDoc,
+  safeParsePatchDoc,
+  safeParseRenderManifest,
+} from "../src/validate.js";
 
 const packageRoot = join(import.meta.dirname, "..");
-
 const JsonObject = z.record(z.string(), z.unknown());
 
 const loadValidator = async (file: string) => {
@@ -19,40 +31,143 @@ const loadValidator = async (file: string) => {
   return ajv.compile(source);
 };
 
-const cases = [
-  { schema: "graph-doc.schema.json", golden: "postmark-refactor.graph.json" },
-  { schema: "graph-doc.schema.json", golden: "minimal.graph.json" },
-  { schema: "patch-doc.schema.json", golden: "postmark-refactor.patch.json" },
-  { schema: "config.schema.json", golden: "pr-lens.config.json" },
-  { schema: "render-manifest.schema.json", golden: "postmark-refactor.render-manifest.json" },
-] as const;
+type ParityCase = {
+  name: string;
+  schema: string;
+  parse: (input: unknown) => Parsed<unknown>;
+  document: unknown;
+  accepted: boolean;
+};
+
+const withoutKey = (document: object, key: string): object =>
+  Object.fromEntries(Object.entries(document).filter(([name]) => name !== key));
 
 /**
- * A published JSON Schema that disagrees with the zod schemas would be worse
- * than shipping none: every non-TypeScript producer would build against it.
+ * The exported JSON Schemas describe what an author may write, which is the
+ * input side of the contract: a field with a default is one they may leave
+ * out. These cases pin the two representations to the same answer, in both
+ * directions — a JSON Schema that quietly accepts more, or demands more, than
+ * the parser would send every non-TypeScript producer down the wrong path.
  */
+const parityCases: ParityCase[] = [
+  {
+    name: "the reference pull-request document",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: postmarkRefactorGraphInput,
+    accepted: true,
+  },
+  {
+    name: "a minimal document that leans on every default",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: minimalGraphInput,
+    accepted: true,
+  },
+  {
+    name: "a document missing its provenance",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withoutKey(minimalGraphInput, "provenance"),
+    accepted: false,
+  },
+  {
+    name: "a document carrying security findings",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: { ...minimalGraphInput, findings: [] },
+    accepted: false,
+  },
+  {
+    name: "a document with an unknown lens",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: { ...minimalGraphInput, lenses: ["security"] },
+    accepted: false,
+  },
+  {
+    name: "a view scoped to nothing at all",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: {
+      ...minimalGraphInput,
+      views: [{ id: "empty", title: "Empty", lens: "architecture", scope: { kind: "selection" } }],
+    },
+    accepted: false,
+  },
+  {
+    name: "the baseline patch",
+    schema: "patch-doc.schema.json",
+    parse: safeParsePatchDoc,
+    document: broadcastBaselinePatchInput,
+    accepted: true,
+  },
+  {
+    name: "a patch with no operations",
+    schema: "patch-doc.schema.json",
+    parse: safeParsePatchDoc,
+    document: { ...broadcastBaselinePatchInput, ops: [] },
+    accepted: false,
+  },
+  {
+    name: "the example repository config",
+    schema: "config.schema.json",
+    parse: safeParseConfig,
+    document: exampleConfigInput,
+    accepted: true,
+  },
+  {
+    name: "a config that only declares its version",
+    schema: "config.schema.json",
+    parse: safeParseConfig,
+    document: { schemaVersion: exampleConfigInput.schemaVersion },
+    accepted: true,
+  },
+  {
+    name: "a config with no version",
+    schema: "config.schema.json",
+    parse: safeParseConfig,
+    document: {},
+    accepted: false,
+  },
+  {
+    name: "the render manifest",
+    schema: "render-manifest.schema.json",
+    parse: safeParseRenderManifest,
+    document: postmarkRefactorManifestInput,
+    accepted: true,
+  },
+  {
+    name: "a manifest asset that is nowhere",
+    schema: "render-manifest.schema.json",
+    parse: safeParseRenderManifest,
+    document: {
+      ...postmarkRefactorManifestInput,
+      assets: [withoutKey(postmarkRefactorManifestInput.assets[0]!, "url")],
+    },
+    accepted: false,
+  },
+];
+
 describe("exported JSON Schemas", () => {
-  it.each(cases)("$schema accepts $golden", async ({ schema, golden }) => {
-    const validate = await loadValidator(schema);
+  it.each(parityCases)("$schema and the parser agree on $name", async (parityCase) => {
+    const validate = await loadValidator(parityCase.schema);
+    const document = JsonObject.parse(JSON.parse(JSON.stringify(parityCase.document)));
+
+    expect(validate(document), JSON.stringify(validate.errors, null, 2)).toBe(parityCase.accepted);
+    expect(parityCase.parse(parityCase.document).ok).toBe(parityCase.accepted);
+  });
+
+  it.each([
+    "postmark-refactor.graph.json",
+    "broadcast-baseline.graph.json",
+    "minimal.graph.json",
+  ])("accepts the published %s", async (golden) => {
+    const validate = await loadValidator("graph-doc.schema.json");
     const document = JsonObject.parse(
       JSON.parse(await readFile(join(packageRoot, "examples", golden), "utf8")),
     );
 
     expect(validate(document), JSON.stringify(validate.errors, null, 2)).toBe(true);
-  });
-
-  it("rejects a graph document that drops a required field", async () => {
-    const validate = await loadValidator("graph-doc.schema.json");
-    const { provenance, ...withoutProvenance } = goldenDocuments["minimal.graph.json"];
-
-    expect(validate(withoutProvenance)).toBe(false);
-    expect(validate.errors?.some((error) => error.message?.includes("provenance"))).toBe(true);
-  });
-
-  it("rejects security findings the same way the zod schema does", async () => {
-    const validate = await loadValidator("graph-doc.schema.json");
-    const document = { ...goldenDocuments["minimal.graph.json"], findings: [] };
-
-    expect(validate(document)).toBe(false);
   });
 });

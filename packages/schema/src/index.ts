@@ -71,6 +71,6 @@ export {
   safeParseRenderManifest,
 } from "./validate.js";
 
-export { applyPatch } from "./apply.js";
+export { applyPatch, applyPatchDoc } from "./apply.js";
 
 export { assertNever } from "./utils.js";

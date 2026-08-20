@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { goldenDocuments, postmarkRefactorGraph } from "../src/examples/index.js";
+import { broadcastBaselineGraph, goldenDocuments, postmarkRefactorGraph } from "../src/examples/index.js";
 import { DELTAS } from "../src/primitives.js";
 import { buildExamples, buildJsonSchemas } from "../scripts/artifacts.js";
 
@@ -41,8 +41,25 @@ describe("golden documents", () => {
   });
 
   it("declares both lenses across its drill-down tree", () => {
-    const lenses = new Set(postmarkRefactorGraph.views.flatMap((view) => [view.lens, ...view.children.map((child) => child.lens)]));
+    const lenses = new Set(
+      postmarkRefactorGraph.views.flatMap((view) => [
+        view.lens,
+        ...view.children.map((child) => child.lens),
+      ]),
+    );
     expect([...lenses].sort()).toEqual(["architecture", "data-flow"]);
+  });
+
+  it("describes a system rather than a change in the stored baseline", () => {
+    const deltas = new Set([
+      ...broadcastBaselineGraph.nodes.map((node) => node.delta),
+      ...broadcastBaselineGraph.edges.map((edge) => edge.delta),
+      ...broadcastBaselineGraph.flows.map((flow) => flow.delta),
+    ]);
+    expect([...deltas]).toEqual(["unchanged"]);
+    expect(broadcastBaselineGraph.provenance.head.sha).toBe(
+      broadcastBaselineGraph.provenance.base.sha,
+    );
   });
 });
 

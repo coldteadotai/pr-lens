@@ -1,0 +1,289 @@
+{
+  "schemaVersion": "0.1.0",
+  "kind": "graph",
+  "id": "bestregards-broadcast-baseline",
+  "generatedAt": "2026-08-12T09:02:00.000Z",
+  "title": "Broadcast sending",
+  "summary": "How a broadcast reaches its recipients: queued from the web app, sent one message at a time by a Firestore trigger.",
+  "lenses": [
+    "architecture",
+    "data-flow"
+  ],
+  "provenance": {
+    "repo": {
+      "owner": "ohansemmanuel",
+      "name": "bestregards",
+      "host": "github.com"
+    },
+    "base": {
+      "sha": "3f5c1ab9d24e7f08c6b1a5d3e9074c2b8a6f1d40",
+      "ref": "main"
+    },
+    "head": {
+      "sha": "3f5c1ab9d24e7f08c6b1a5d3e9074c2b8a6f1d40",
+      "ref": "main"
+    },
+    "generator": {
+      "name": "pr-lens-examples",
+      "version": "0.1.0"
+    }
+  },
+  "lanes": [
+    {
+      "id": "web",
+      "label": "Next.js",
+      "subtitle": "Vercel",
+      "order": 0
+    },
+    {
+      "id": "functions",
+      "label": "Cloud Functions",
+      "subtitle": "Firebase",
+      "order": 1
+    },
+    {
+      "id": "external",
+      "label": "External",
+      "subtitle": "Postmark",
+      "order": 2
+    }
+  ],
+  "nodes": [
+    {
+      "id": "broadcast-composer",
+      "label": "Broadcast composer",
+      "kind": "ui",
+      "delta": "unchanged",
+      "lane": "web",
+      "subtitle": "app/broadcasts/new",
+      "files": [
+        {
+          "path": "app/broadcasts/new/page.tsx"
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "queue-route",
+      "label": "POST /api/broadcasts/queue",
+      "kind": "route",
+      "delta": "unchanged",
+      "lane": "web",
+      "files": [
+        {
+          "path": "app/api/broadcasts/queue/route.ts"
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "broadcast-queue",
+      "label": "broadcastQueue",
+      "kind": "datastore",
+      "delta": "unchanged",
+      "lane": "functions",
+      "subtitle": "Firestore collection",
+      "files": [
+        {
+          "path": "functions/src/broadcast/schema.ts"
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "process-broadcast",
+      "label": "processBroadcast",
+      "kind": "function",
+      "delta": "unchanged",
+      "lane": "functions",
+      "subtitle": "onWrite trigger",
+      "summary": "Walks the recipient list and sends one message at a time.",
+      "files": [
+        {
+          "path": "functions/src/broadcast/processBroadcast.ts"
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "send-single-email",
+      "label": "sendSingleEmail",
+      "kind": "function",
+      "delta": "unchanged",
+      "lane": "functions",
+      "files": [
+        {
+          "path": "functions/src/broadcast/sendSingleEmail.ts"
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "postmark",
+      "label": "Postmark",
+      "kind": "external",
+      "delta": "unchanged",
+      "lane": "external",
+      "subtitle": "Email API",
+      "files": [],
+      "badges": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "composer-to-queue",
+      "from": "broadcast-composer",
+      "to": "queue-route",
+      "kind": "http",
+      "delta": "unchanged",
+      "label": "send broadcast",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "queue-to-firestore",
+      "from": "queue-route",
+      "to": "broadcast-queue",
+      "kind": "data",
+      "delta": "unchanged",
+      "label": "enqueue job",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "firestore-to-process",
+      "from": "broadcast-queue",
+      "to": "process-broadcast",
+      "kind": "event",
+      "delta": "unchanged",
+      "label": "onWrite",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "process-to-single",
+      "from": "process-broadcast",
+      "to": "send-single-email",
+      "kind": "call",
+      "delta": "unchanged",
+      "label": "per recipient",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "single-to-postmark",
+      "from": "send-single-email",
+      "to": "postmark",
+      "kind": "http",
+      "delta": "unchanged",
+      "label": "POST /email · 1 msg/call",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    }
+  ],
+  "flows": [
+    {
+      "id": "send-pipeline",
+      "title": "Sending a broadcast",
+      "delta": "unchanged",
+      "participants": [
+        {
+          "node": "queue-route",
+          "label": "queue route"
+        },
+        {
+          "node": "broadcast-queue",
+          "label": "Firestore"
+        },
+        {
+          "node": "process-broadcast",
+          "label": "processBroadcast"
+        },
+        {
+          "node": "postmark",
+          "label": "Postmark"
+        }
+      ],
+      "messages": [
+        {
+          "id": "enqueue",
+          "from": "queue-route",
+          "to": "broadcast-queue",
+          "label": "enqueue broadcast job",
+          "kind": "async",
+          "delta": "unchanged",
+          "animated": true,
+          "files": []
+        },
+        {
+          "id": "trigger",
+          "from": "broadcast-queue",
+          "to": "process-broadcast",
+          "label": "onWrite trigger",
+          "kind": "async",
+          "delta": "unchanged",
+          "animated": true,
+          "files": []
+        },
+        {
+          "id": "single-post",
+          "from": "process-broadcast",
+          "to": "postmark",
+          "label": "POST /email",
+          "kind": "sync",
+          "delta": "unchanged",
+          "animated": true,
+          "repeat": 2000,
+          "note": "One request per recipient.",
+          "files": []
+        },
+        {
+          "id": "single-result",
+          "from": "postmark",
+          "to": "process-broadcast",
+          "label": "message id",
+          "kind": "return",
+          "delta": "unchanged",
+          "animated": true,
+          "files": []
+        },
+        {
+          "id": "write-result",
+          "from": "process-broadcast",
+          "to": "broadcast-queue",
+          "label": "write result",
+          "kind": "async",
+          "delta": "unchanged",
+          "animated": true,
+          "repeat": 2000,
+          "files": []
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "overview",
+      "title": "Broadcast sending",
+      "lens": "architecture",
+      "scope": {
+        "kind": "all"
+      },
+      "defaultOpen": true,
+      "children": []
+    }
+  ],
+  "layout": {
+    "direction": "right",
+    "laneOrder": [
+      "web",
+      "functions",
+      "external"
+    ]
+  }
+}

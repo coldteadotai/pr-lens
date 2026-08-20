@@ -1,5 +1,6 @@
 import type { SchemaIssue } from "./errors.js";
 import type { GraphDoc, View } from "./graph.js";
+import { assertNever } from "./utils.js";
 
 const duplicates = (ids: readonly string[]): string[] => {
   const seen = new Set<string>();
@@ -97,20 +98,30 @@ export const graphIntegrityIssues = (doc: GraphDoc): SchemaIssue[] => {
     if (!lenses.has(view.lens))
       broken(`${path}.lens`, `view '${view.id}' uses lens '${view.lens}', which the document does not declare`);
 
-    const scoped: [keyof typeof view.scope, Set<string>][] = [
-      ["lanes", laneIds],
-      ["nodes", nodeIds],
-      ["edges", edgeIds],
-      ["flows", flowIds],
-    ];
-    for (const [collection, known] of scoped) {
-      view.scope[collection].forEach((id, index) => {
-        if (!known.has(id))
-          broken(
-            `${path}.scope.${collection}[${index}]`,
-            `view '${view.id}' scopes unknown ${collection.slice(0, -1)} '${id}'`,
-          );
-      });
+    switch (view.scope.kind) {
+      case "all":
+        break;
+      case "selection": {
+        const selection = view.scope;
+        const scoped: [keyof Omit<typeof selection, "kind">, string, ReadonlySet<string>][] = [
+          ["lanes", "lane", laneIds],
+          ["nodes", "node", nodeIds],
+          ["edges", "edge", edgeIds],
+          ["flows", "flow", flowIds],
+        ];
+        for (const [collection, singular, known] of scoped) {
+          selection[collection].forEach((id, index) => {
+            if (!known.has(id))
+              broken(
+                `${path}.scope.${collection}[${index}]`,
+                `view '${view.id}' scopes unknown ${singular} '${id}'`,
+              );
+          });
+        }
+        break;
+      }
+      default:
+        assertNever(view.scope, "Unhandled view scope");
     }
   }
 

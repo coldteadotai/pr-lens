@@ -33,6 +33,7 @@ export const RenderAsset = z
     message: "an asset needs a url or a path",
     path: ["url"],
   })
+  .meta({ anyOf: [{ required: ["url"] }, { required: ["path"] }] })
   .describe("One rendered SVG.");
 export type RenderAsset = z.infer<typeof RenderAsset>;
 

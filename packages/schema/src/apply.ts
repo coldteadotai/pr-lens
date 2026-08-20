@@ -1,6 +1,7 @@
 import { PrLensSchemaError, type Parsed, type SchemaIssue } from "./errors.js";
+import { safeParseGraphDoc } from "./validate.js";
 import type { Flow, GraphDoc, GraphEdge, Lane, View } from "./graph.js";
-import type { PatchOp } from "./patch.js";
+import type { PatchDoc, PatchOp } from "./patch.js";
 import { assertNever } from "./utils.js";
 
 type Collections = {
@@ -40,17 +41,51 @@ const nothingRemoved: RemovedIds = {
   flows: new Set(),
 };
 
+/**
+ * A view whose selection loses its last element no longer has a subject, so
+ * it goes rather than being left to render as an empty section.
+ */
 const pruneViews = (views: readonly View[], removed: RemovedIds): View[] =>
-  views.map((view) => ({
-    ...view,
-    scope: {
-      lanes: view.scope.lanes.filter((id) => !removed.lanes.has(id)),
-      nodes: view.scope.nodes.filter((id) => !removed.nodes.has(id)),
-      edges: view.scope.edges.filter((id) => !removed.edges.has(id)),
-      flows: view.scope.flows.filter((id) => !removed.flows.has(id)),
-    },
-    children: pruneViews(view.children, removed),
-  }));
+  views.flatMap((view) => {
+    const children = pruneViews(view.children, removed);
+
+    switch (view.scope.kind) {
+      case "all":
+        return [{ ...view, children }];
+      case "selection": {
+        const scope = {
+          kind: "selection",
+          lanes: view.scope.lanes.filter((id) => !removed.lanes.has(id)),
+          nodes: view.scope.nodes.filter((id) => !removed.nodes.has(id)),
+          edges: view.scope.edges.filter((id) => !removed.edges.has(id)),
+          flows: view.scope.flows.filter((id) => !removed.flows.has(id)),
+        } as const;
+
+        const selected =
+          scope.lanes.length + scope.nodes.length + scope.edges.length + scope.flows.length;
+        return selected === 0 ? [] : [{ ...view, scope, children }];
+      }
+      default:
+        return assertNever(view.scope, "Unhandled view scope");
+    }
+  });
+
+/** Layout hints name elements, so they strand the same way view scopes do. */
+const pruneLayout = (layout: GraphDoc["layout"], removed: RemovedIds): GraphDoc["layout"] => {
+  if (layout === undefined) return undefined;
+
+  const rank = layout.rank
+    ? Object.fromEntries(
+        Object.entries(layout.rank).filter(([nodeId]) => !removed.nodes.has(nodeId)),
+      )
+    : undefined;
+
+  return {
+    ...layout,
+    laneOrder: layout.laneOrder.filter((id) => !removed.lanes.has(id)),
+    ...(rank ? { rank } : {}),
+  };
+};
 
 /**
  * Deleting a node would strand every edge and flow step that touched it, so
@@ -92,6 +127,11 @@ const cascadeNodeRemoval = (working: Collections, nodeId: string): RemovedIds =>
  * Operations apply in order and the first conflict stops the batch: a later
  * operation in the same patch was written against the state the earlier one
  * was supposed to produce.
+ *
+ * A successful result is a fully valid graph document: per-operation checks
+ * catch the common mistakes with a message naming the operation, and the
+ * candidate is validated as a whole before it is handed back, so no patch can
+ * quietly leave a document the renderer would choke on.
  */
 export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<GraphDoc> => {
   const working: Collections = {
@@ -102,6 +142,12 @@ export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<Gra
     stats: graph.stats,
   };
   let views = graph.views;
+  let layout = graph.layout;
+
+  const prune = (removed: RemovedIds): void => {
+    views = pruneViews(views, removed);
+    layout = pruneLayout(layout, removed);
+  };
 
   for (const [index, op] of ops.entries()) {
     const at = `ops[${index}]`;
@@ -138,7 +184,7 @@ export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<Gra
           );
 
         working.lanes.splice(position, 1);
-        views = pruneViews(views, { ...nothingRemoved, lanes: new Set([op.id]) });
+        prune({ ...nothingRemoved, lanes: new Set([op.id]) });
         break;
       }
 
@@ -163,7 +209,7 @@ export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<Gra
         const position = indexOfId(working.nodes, op.id);
         if (position === -1) return reject(conflict(`${at}.id`, `unknown node '${op.id}'`));
         working.nodes.splice(position, 1);
-        views = pruneViews(views, cascadeNodeRemoval(working, op.id));
+        prune(cascadeNodeRemoval(working, op.id));
         break;
       }
 
@@ -198,7 +244,7 @@ export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<Gra
         const position = indexOfId(working.edges, op.id);
         if (position === -1) return reject(conflict(`${at}.id`, `unknown edge '${op.id}'`));
         working.edges.splice(position, 1);
-        views = pruneViews(views, { ...nothingRemoved, edges: new Set([op.id]) });
+        prune({ ...nothingRemoved, edges: new Set([op.id]) });
         break;
       }
 
@@ -237,7 +283,7 @@ export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<Gra
         const position = indexOfId(working.flows, op.id);
         if (position === -1) return reject(conflict(`${at}.id`, `unknown flow '${op.id}'`));
         working.flows.splice(position, 1);
-        views = pruneViews(views, { ...nothingRemoved, flows: new Set([op.id]) });
+        prune({ ...nothingRemoved, flows: new Set([op.id]) });
         break;
       }
 
@@ -251,16 +297,64 @@ export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<Gra
     }
   }
 
+  return safeParseGraphDoc({
+    ...graph,
+    lanes: working.lanes,
+    nodes: working.nodes,
+    edges: working.edges,
+    flows: working.flows,
+    stats: working.stats,
+    views,
+    layout,
+  });
+};
+
+/**
+ * Applies a patch document, honouring the target it declares.
+ *
+ * `applyPatch` takes bare operations and trusts the caller to have picked the
+ * right document; this checks first. A baseline map is long-lived and patched
+ * repeatedly, so applying a patch to the wrong map, or to one that has moved
+ * on since the patch was written, has to fail loudly rather than merge.
+ *
+ * On success the map records the commit it now reflects: `head` becomes the
+ * patch's `toSha`, and `base` becomes the commit the map came from.
+ */
+export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc> => {
+  const { graphId, fromSha, toSha } = patch.target;
+
+  if (graphId !== undefined && graph.id !== graphId)
+    return {
+      ok: false,
+      error: new PrLensSchemaError(
+        "PATCH_CONFLICT",
+        `patch targets graph '${graphId}' but was applied to '${graph.id ?? "an unidentified graph"}'`,
+        [{ code: "PATCH_CONFLICT", path: "target.graphId", message: "wrong graph" }],
+      ),
+    };
+
+  if (fromSha !== undefined && graph.provenance.head.sha !== fromSha)
+    return {
+      ok: false,
+      error: new PrLensSchemaError(
+        "PATCH_CONFLICT",
+        `patch expects the graph at ${fromSha} but it reflects ${graph.provenance.head.sha}`,
+        [{ code: "PATCH_CONFLICT", path: "target.fromSha", message: "stale baseline" }],
+      ),
+    };
+
+  const applied = applyPatch(graph, patch.ops);
+  if (!applied.ok || toSha === undefined) return applied;
+
   return {
     ok: true,
     value: {
-      ...graph,
-      lanes: working.lanes,
-      nodes: working.nodes,
-      edges: working.edges,
-      flows: working.flows,
-      stats: working.stats,
-      views,
+      ...applied.value,
+      provenance: {
+        ...applied.value.provenance,
+        base: applied.value.provenance.head,
+        head: { ...applied.value.provenance.head, sha: toSha },
+      },
     },
   };
 };

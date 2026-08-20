@@ -343,9 +343,7 @@
                   "label",
                   "kind",
                   "delta",
-                  "lane",
-                  "files",
-                  "badges"
+                  "lane"
                 ],
                 "additionalProperties": false,
                 "description": "A node in the architecture graph."
@@ -650,10 +648,7 @@
                   "from",
                   "to",
                   "kind",
-                  "delta",
-                  "emphasis",
-                  "animated",
-                  "files"
+                  "delta"
                 ],
                 "additionalProperties": false,
                 "description": "A directed connection between two nodes."
@@ -950,7 +945,7 @@
                           "description": "Times the step occurs per run, e.g. 4 batched requests.",
                           "type": "integer",
                           "minimum": 1,
-                          "maximum": 999
+                          "maximum": 1000000
                         },
                         "note": {
                           "description": "Aside rendered beside the step in the drill-down.",
@@ -1005,10 +1000,7 @@
                         "from",
                         "to",
                         "label",
-                        "kind",
-                        "delta",
-                        "animated",
-                        "files"
+                        "delta"
                       ],
                       "additionalProperties": false,
                       "description": "One ordered step in a flow."
@@ -1019,7 +1011,6 @@
                 "required": [
                   "id",
                   "title",
-                  "delta",
                   "participants",
                   "messages"
                 ],
@@ -1164,7 +1155,7 @@
                           "description": "Times the step occurs per run, e.g. 4 batched requests.",
                           "type": "integer",
                           "minimum": 1,
-                          "maximum": 999
+                          "maximum": 1000000
                         },
                         "note": {
                           "description": "Aside rendered beside the step in the drill-down.",
@@ -1219,10 +1210,7 @@
                         "from",
                         "to",
                         "label",
-                        "kind",
-                        "delta",
-                        "animated",
-                        "files"
+                        "delta"
                       ],
                       "additionalProperties": false,
                       "description": "One ordered step in a flow."
@@ -1320,17 +1308,13 @@
                       },
                       "required": [
                         "label",
-                        "value",
-                        "tone"
+                        "value"
                       ],
                       "additionalProperties": false,
                       "description": "A headline chip above the diagram."
                     }
                   }
                 },
-                "required": [
-                  "chips"
-                ],
                 "additionalProperties": false,
                 "description": "Headline numbers for the comment header."
               }

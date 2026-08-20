@@ -77,8 +77,7 @@
           },
           "required": [
             "owner",
-            "name",
-            "host"
+            "name"
           ],
           "additionalProperties": false
         },
@@ -370,9 +369,7 @@
           "label",
           "kind",
           "delta",
-          "lane",
-          "files",
-          "badges"
+          "lane"
         ],
         "additionalProperties": false,
         "description": "A node in the architecture graph."
@@ -503,10 +500,7 @@
           "from",
           "to",
           "kind",
-          "delta",
-          "emphasis",
-          "animated",
-          "files"
+          "delta"
         ],
         "additionalProperties": false,
         "description": "A directed connection between two nodes."
@@ -640,7 +634,7 @@
                   "description": "Times the step occurs per run, e.g. 4 batched requests.",
                   "type": "integer",
                   "minimum": 1,
-                  "maximum": 999
+                  "maximum": 1000000
                 },
                 "note": {
                   "description": "Aside rendered beside the step in the drill-down.",
@@ -695,10 +689,7 @@
                 "from",
                 "to",
                 "label",
-                "kind",
-                "delta",
-                "animated",
-                "files"
+                "delta"
               ],
               "additionalProperties": false,
               "description": "One ordered step in a flow."
@@ -709,7 +700,6 @@
         "required": [
           "id",
           "title",
-          "delta",
           "participants",
           "messages"
         ],
@@ -769,17 +759,13 @@
             },
             "required": [
               "label",
-              "value",
-              "tone"
+              "value"
             ],
             "additionalProperties": false,
             "description": "A headline chip above the diagram."
           }
         }
       },
-      "required": [
-        "chips"
-      ],
       "additionalProperties": false,
       "description": "Headline numbers for the comment header."
     },
@@ -833,10 +819,6 @@
           }
         }
       },
-      "required": [
-        "direction",
-        "laneOrder"
-      ],
       "additionalProperties": false,
       "description": "Optional, non-binding placement hints."
     }
@@ -848,10 +830,7 @@
     "lenses",
     "provenance",
     "lanes",
-    "nodes",
-    "edges",
-    "flows",
-    "views"
+    "nodes"
   ],
   "additionalProperties": false,
   "description": "A PR Lens graph document.",
@@ -888,70 +867,127 @@
         },
         "scope": {
           "default": {
-            "lanes": [],
-            "nodes": [],
-            "edges": [],
-            "flows": []
+            "kind": "all"
           },
-          "type": "object",
-          "properties": {
-            "lanes": {
-              "default": [],
-              "maxItems": 64,
-              "type": "array",
-              "items": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 128,
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
-                "description": "Stable identifier, unique within its collection in a document."
-              }
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "all"
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "additionalProperties": false
             },
-            "nodes": {
-              "default": [],
-              "maxItems": 256,
-              "type": "array",
-              "items": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 128,
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
-                "description": "Stable identifier, unique within its collection in a document."
-              }
-            },
-            "edges": {
-              "default": [],
-              "maxItems": 512,
-              "type": "array",
-              "items": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 128,
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
-                "description": "Stable identifier, unique within its collection in a document."
-              }
-            },
-            "flows": {
-              "default": [],
-              "maxItems": 32,
-              "type": "array",
-              "items": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 128,
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
-                "description": "Stable identifier, unique within its collection in a document."
-              }
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "selection"
+                },
+                "lanes": {
+                  "default": [],
+                  "maxItems": 64,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                    "description": "Stable identifier, unique within its collection in a document."
+                  }
+                },
+                "nodes": {
+                  "default": [],
+                  "maxItems": 256,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                    "description": "Stable identifier, unique within its collection in a document."
+                  }
+                },
+                "edges": {
+                  "default": [],
+                  "maxItems": 512,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                    "description": "Stable identifier, unique within its collection in a document."
+                  }
+                },
+                "flows": {
+                  "default": [],
+                  "maxItems": 32,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                    "description": "Stable identifier, unique within its collection in a document."
+                  }
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "additionalProperties": false,
+              "anyOf": [
+                {
+                  "properties": {
+                    "lanes": {
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "lanes"
+                  ]
+                },
+                {
+                  "properties": {
+                    "nodes": {
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "nodes"
+                  ]
+                },
+                {
+                  "properties": {
+                    "edges": {
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "edges"
+                  ]
+                },
+                {
+                  "properties": {
+                    "flows": {
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "flows"
+                  ]
+                }
+              ]
             }
-          },
-          "required": [
-            "lanes",
-            "nodes",
-            "edges",
-            "flows"
           ],
-          "additionalProperties": false,
-          "description": "Element ids this view is limited to. All empty means the whole document."
+          "description": "What a drill-down section shows."
         },
         "defaultOpen": {
           "default": false,
@@ -969,10 +1005,7 @@
       "required": [
         "id",
         "title",
-        "lens",
-        "scope",
-        "defaultOpen",
-        "children"
+        "lens"
       ],
       "additionalProperties": false,
       "description": "A drill-down section; children nest as further <details> blocks."

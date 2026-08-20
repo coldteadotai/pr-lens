@@ -1,11 +1,10 @@
 import type { GraphDocInput } from "../graph.js";
-import type { PatchDocInput } from "../patch.js";
 import type { RenderManifestInput } from "../manifest.js";
 import type { ConfigInput } from "../config.js";
 import { SCHEMA_VERSION } from "../version.js";
 
 /**
- * Golden document #1, hand-authored from the validated bestregards Postmark
+ * The reference pull-request document, hand-authored from the validated bestregards Postmark
  * refactor: broadcast sending moved from one Postmark request per recipient
  * to batched requests of 500, behind a shared library. Every downstream
  * renderer golden is measured against this document, so it exercises all
@@ -14,7 +13,6 @@ import { SCHEMA_VERSION } from "../version.js";
 export const postmarkRefactorGraphInput: GraphDocInput = {
   schemaVersion: SCHEMA_VERSION,
   kind: "graph",
-  id: "bestregards-broadcast-baseline",
   generatedAt: "2026-08-19T18:24:00.000Z",
   title: "Batch broadcast sending through Postmark",
   summary:
@@ -355,6 +353,7 @@ export const postmarkRefactorGraphInput: GraphDocInput = {
       lens: "architecture",
       summary: "Everything this change touches, across all three lanes.",
       defaultOpen: true,
+      scope: { kind: "all" },
       children: [
         {
           id: "new-batch-path",
@@ -362,6 +361,7 @@ export const postmarkRefactorGraphInput: GraphDocInput = {
           lens: "architecture",
           summary: "What replaced the per-recipient loop.",
           scope: {
+            kind: "selection",
             nodes: ["send-broadcast-bulk", "build-bulk-payload", "get-suppressed-emails", "broadcast-lib", "postmark"],
             edges: [
               "bulk-to-payload",
@@ -379,6 +379,7 @@ export const postmarkRefactorGraphInput: GraphDocInput = {
           lens: "architecture",
           summary: "The single-send path, kept visible so a reviewer can confirm nothing else called it.",
           scope: {
+            kind: "selection",
             nodes: ["process-broadcast", "send-single-email"],
             edges: ["firestore-to-process", "process-to-single", "single-to-postmark"],
           },
@@ -389,50 +390,17 @@ export const postmarkRefactorGraphInput: GraphDocInput = {
       id: "send-pipeline-view",
       title: "Data flow — sending a broadcast",
       lens: "data-flow",
-      scope: { flows: ["send-pipeline"] },
+      scope: { kind: "selection", flows: ["send-pipeline"] },
     },
   ],
   layout: {
     direction: "right",
     laneOrder: ["web", "functions", "external"],
+    rank: { "queue-route": 0, "send-broadcast-bulk": 1, postmark: 2 },
   },
 };
 
-/**
- * Golden document #2: the same change expressed as an update to a stored
- * baseline map, which is what the map records once the pull request merges.
- */
-export const postmarkRefactorPatchInput: PatchDocInput = {
-  schemaVersion: SCHEMA_VERSION,
-  kind: "patch",
-  generatedAt: "2026-08-19T18:31:00.000Z",
-  summary: "Fold the batch send path into the baseline map and drop the retired single-send path.",
-  target: {
-    graphId: "bestregards-broadcast-baseline",
-    fromSha: "3f5c1ab9d24e7f08c6b1a5d3e9074c2b8a6f1d40",
-    toSha: "b71e0d4c8a92f5361de7c0b4a8f2593d6c1e8a77",
-  },
-  ops: [
-    { op: "remove_node", id: "process-broadcast" },
-    { op: "remove_node", id: "send-single-email" },
-    {
-      op: "update_node",
-      id: "send-broadcast-bulk",
-      patch: { delta: "unchanged", badges: [] },
-    },
-    {
-      op: "update_edge",
-      id: "bulk-to-postmark",
-      patch: { delta: "unchanged", emphasis: "normal" },
-    },
-    {
-      op: "set_stats",
-      stats: { chips: [{ label: "Batch size", value: "500", tone: "neutral" }] },
-    },
-  ],
-};
-
-/** Golden document #3: what a repository may commit as `.github/pr-lens.yml`. */
+/** What a repository may commit as `.github/pr-lens.yml`. */
 export const exampleConfigInput: ConfigInput = {
   schemaVersion: SCHEMA_VERSION,
   lenses: ["architecture", "data-flow"],
@@ -445,13 +413,12 @@ export const exampleConfigInput: ConfigInput = {
   branding: true,
 };
 
-/** Golden document #4: the inventory a render of document #1 produces. */
+/** The inventory a render of the pull-request document produces. */
 export const postmarkRefactorManifestInput: RenderManifestInput = {
   schemaVersion: SCHEMA_VERSION,
   kind: "render-manifest",
   generatedAt: "2026-08-19T18:32:10.000Z",
   graph: {
-    id: "bestregards-broadcast-baseline",
     headSha: "b71e0d4c8a92f5361de7c0b4a8f2593d6c1e8a77",
     contentHash: "6a1f0b8c7d2e4359",
   },

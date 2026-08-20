@@ -6,9 +6,9 @@
   "type": "object",
   "properties": {
     "schemaVersion": {
-      "description": "Omitted means the current version.",
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Declared explicitly so a repository's corrections keep their meaning across contract versions."
     },
     "lenses": {
       "default": [
@@ -136,12 +136,6 @@
           }
         }
       },
-      "required": [
-        "rename",
-        "exclude",
-        "lane",
-        "group"
-      ],
       "additionalProperties": false,
       "description": "Overlay applied over inference, never mutated by it."
     },
@@ -152,9 +146,7 @@
     }
   },
   "required": [
-    "lenses",
-    "map",
-    "branding"
+    "schemaVersion"
   ],
   "additionalProperties": false,
   "description": "Repository configuration for PR Lens."

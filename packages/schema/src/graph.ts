@@ -124,7 +124,7 @@ export const FlowMessage = z
     repeat: z
       .int()
       .min(1)
-      .max(999)
+      .max(1_000_000)
       .optional()
       .describe("Times the step occurs per run, e.g. 4 batched requests."),
     note: Summary.optional().describe("Aside rendered beside the step in the drill-down."),
@@ -181,14 +181,38 @@ export const Stats = z
   .describe("Headline numbers for the comment header.");
 export type Stats = z.infer<typeof Stats>;
 
+/**
+ * A view either shows the whole document or a named selection. The two are
+ * distinct states rather than "a selection that happens to be empty", so
+ * removing the last element a view pointed at can never silently turn it into
+ * a view of everything.
+ */
 export const ViewScope = z
-  .strictObject({
-    lanes: z.array(Id).max(64).default([]),
-    nodes: z.array(Id).max(256).default([]),
-    edges: z.array(Id).max(512).default([]),
-    flows: z.array(Id).max(32).default([]),
-  })
-  .describe("Element ids this view is limited to. All empty means the whole document.");
+  .discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("all") }),
+    z
+      .strictObject({
+        kind: z.literal("selection"),
+        lanes: z.array(Id).max(64).default([]),
+        nodes: z.array(Id).max(256).default([]),
+        edges: z.array(Id).max(512).default([]),
+        flows: z.array(Id).max(32).default([]),
+      })
+      .meta({
+        anyOf: [
+          { properties: { lanes: { minItems: 1 } }, required: ["lanes"] },
+          { properties: { nodes: { minItems: 1 } }, required: ["nodes"] },
+          { properties: { edges: { minItems: 1 } }, required: ["edges"] },
+          { properties: { flows: { minItems: 1 } }, required: ["flows"] },
+        ],
+      })
+      .refine(
+        (scope) =>
+          scope.lanes.length + scope.nodes.length + scope.edges.length + scope.flows.length > 0,
+        { message: "a selection must name at least one element" },
+      ),
+  ])
+  .describe("What a drill-down section shows.");
 export type ViewScope = z.infer<typeof ViewScope>;
 
 export type View = {
@@ -210,7 +234,9 @@ export type ViewInput = {
   title: string;
   lens: Lens;
   summary?: string;
-  scope?: Partial<ViewScope>;
+  scope?:
+    | { kind: "all" }
+    | { kind: "selection"; lanes?: string[]; nodes?: string[]; edges?: string[]; flows?: string[] };
   defaultOpen?: boolean;
   children?: ViewInput[];
 };
@@ -222,7 +248,7 @@ export const View: z.ZodType<View, ViewInput> = z.lazy(() =>
       title: Label,
       lens: Lens,
       summary: Summary.optional(),
-      scope: ViewScope.default({ lanes: [], nodes: [], edges: [], flows: [] }),
+      scope: ViewScope.default({ kind: "all" }),
       defaultOpen: z.boolean().default(false),
       children: z.array(View).max(32).default([]),
     })

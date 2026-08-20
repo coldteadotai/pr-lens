@@ -1,0 +1,321 @@
+{
+  "schemaVersion": "0.1.0",
+  "kind": "patch",
+  "generatedAt": "2026-08-19T18:31:00.000Z",
+  "summary": "Fold the batch send path into the baseline map and retire the single-send path.",
+  "target": {
+    "graphId": "bestregards-broadcast-baseline",
+    "fromSha": "3f5c1ab9d24e7f08c6b1a5d3e9074c2b8a6f1d40",
+    "toSha": "b71e0d4c8a92f5361de7c0b4a8f2593d6c1e8a77"
+  },
+  "ops": [
+    {
+      "op": "add_node",
+      "node": {
+        "id": "send-broadcast-bulk",
+        "label": "sendBroadcastBulk",
+        "kind": "function",
+        "delta": "unchanged",
+        "lane": "functions",
+        "subtitle": "onWrite trigger",
+        "summary": "Fetches suppressions once, then posts batched payloads of 500 to Postmark.",
+        "files": [
+          {
+            "path": "functions/src/broadcast/sendBroadcastBulk.ts"
+          }
+        ],
+        "badges": []
+      }
+    },
+    {
+      "op": "add_node",
+      "node": {
+        "id": "build-bulk-payload",
+        "label": "buildBulkPayload",
+        "kind": "function",
+        "delta": "unchanged",
+        "lane": "functions",
+        "files": [
+          {
+            "path": "packages/broadcast-lib/src/buildBulkPayload.ts"
+          }
+        ],
+        "badges": []
+      }
+    },
+    {
+      "op": "add_node",
+      "node": {
+        "id": "get-suppressed-emails",
+        "label": "getSuppressedEmails",
+        "kind": "function",
+        "delta": "unchanged",
+        "lane": "functions",
+        "files": [
+          {
+            "path": "packages/broadcast-lib/src/getSuppressedEmails.ts"
+          }
+        ],
+        "badges": []
+      }
+    },
+    {
+      "op": "add_node",
+      "node": {
+        "id": "broadcast-lib",
+        "label": "broadcast-lib",
+        "kind": "package",
+        "delta": "unchanged",
+        "lane": "functions",
+        "subtitle": "packages/broadcast-lib",
+        "files": [
+          {
+            "path": "packages/broadcast-lib/src/index.ts"
+          }
+        ],
+        "badges": []
+      }
+    },
+    {
+      "op": "add_edge",
+      "edge": {
+        "id": "firestore-to-bulk",
+        "from": "broadcast-queue",
+        "to": "send-broadcast-bulk",
+        "kind": "event",
+        "delta": "unchanged",
+        "label": "onWrite",
+        "emphasis": "normal",
+        "animated": false,
+        "files": []
+      }
+    },
+    {
+      "op": "add_edge",
+      "edge": {
+        "id": "bulk-to-payload",
+        "from": "send-broadcast-bulk",
+        "to": "build-bulk-payload",
+        "kind": "call",
+        "delta": "unchanged",
+        "emphasis": "normal",
+        "animated": false,
+        "files": []
+      }
+    },
+    {
+      "op": "add_edge",
+      "edge": {
+        "id": "bulk-to-suppressions",
+        "from": "send-broadcast-bulk",
+        "to": "get-suppressed-emails",
+        "kind": "call",
+        "delta": "unchanged",
+        "emphasis": "normal",
+        "animated": false,
+        "files": []
+      }
+    },
+    {
+      "op": "add_edge",
+      "edge": {
+        "id": "bulk-to-lib",
+        "from": "send-broadcast-bulk",
+        "to": "broadcast-lib",
+        "kind": "dependency",
+        "delta": "unchanged",
+        "emphasis": "normal",
+        "animated": false,
+        "files": []
+      }
+    },
+    {
+      "op": "add_edge",
+      "edge": {
+        "id": "queue-to-lib",
+        "from": "queue-route",
+        "to": "broadcast-lib",
+        "kind": "dependency",
+        "delta": "unchanged",
+        "label": "batch size",
+        "emphasis": "normal",
+        "animated": false,
+        "files": []
+      }
+    },
+    {
+      "op": "add_edge",
+      "edge": {
+        "id": "suppressions-to-postmark",
+        "from": "get-suppressed-emails",
+        "to": "postmark",
+        "kind": "http",
+        "delta": "unchanged",
+        "label": "GET suppression dump",
+        "emphasis": "normal",
+        "animated": false,
+        "files": []
+      }
+    },
+    {
+      "op": "add_edge",
+      "edge": {
+        "id": "bulk-to-postmark",
+        "from": "send-broadcast-bulk",
+        "to": "postmark",
+        "kind": "http",
+        "delta": "unchanged",
+        "label": "500 msgs/call",
+        "emphasis": "normal",
+        "animated": false,
+        "files": []
+      }
+    },
+    {
+      "op": "add_edge",
+      "edge": {
+        "id": "bulk-to-firestore",
+        "from": "send-broadcast-bulk",
+        "to": "broadcast-queue",
+        "kind": "data",
+        "delta": "unchanged",
+        "label": "write results",
+        "emphasis": "normal",
+        "animated": false,
+        "files": []
+      }
+    },
+    {
+      "op": "remove_flow",
+      "id": "send-pipeline"
+    },
+    {
+      "op": "remove_node",
+      "id": "process-broadcast"
+    },
+    {
+      "op": "remove_node",
+      "id": "send-single-email"
+    },
+    {
+      "op": "update_node",
+      "id": "broadcast-queue",
+      "patch": {
+        "summary": "Queue documents carry the batch size and suppressed count the sender works from.",
+        "files": [],
+        "badges": []
+      }
+    },
+    {
+      "op": "add_flow",
+      "flow": {
+        "id": "send-pipeline",
+        "title": "Sending a broadcast",
+        "delta": "unchanged",
+        "participants": [
+          {
+            "node": "queue-route",
+            "label": "queue route"
+          },
+          {
+            "node": "broadcast-queue",
+            "label": "Firestore"
+          },
+          {
+            "node": "send-broadcast-bulk",
+            "label": "sendBroadcastBulk"
+          },
+          {
+            "node": "postmark",
+            "label": "Postmark"
+          }
+        ],
+        "messages": [
+          {
+            "id": "enqueue",
+            "from": "queue-route",
+            "to": "broadcast-queue",
+            "label": "enqueue broadcast job",
+            "kind": "async",
+            "delta": "unchanged",
+            "animated": true,
+            "files": []
+          },
+          {
+            "id": "trigger",
+            "from": "broadcast-queue",
+            "to": "send-broadcast-bulk",
+            "label": "onWrite trigger",
+            "kind": "async",
+            "delta": "unchanged",
+            "animated": true,
+            "files": []
+          },
+          {
+            "id": "suppressions-request",
+            "from": "send-broadcast-bulk",
+            "to": "postmark",
+            "label": "GET suppression dump",
+            "kind": "sync",
+            "delta": "unchanged",
+            "animated": true,
+            "files": []
+          },
+          {
+            "id": "suppressions-response",
+            "from": "postmark",
+            "to": "send-broadcast-bulk",
+            "label": "suppressed addresses",
+            "kind": "return",
+            "delta": "unchanged",
+            "animated": true,
+            "files": []
+          },
+          {
+            "id": "batch-post",
+            "from": "send-broadcast-bulk",
+            "to": "postmark",
+            "label": "POST /email/batch · 500 msgs",
+            "kind": "sync",
+            "delta": "unchanged",
+            "animated": true,
+            "repeat": 4,
+            "files": []
+          },
+          {
+            "id": "batch-results",
+            "from": "postmark",
+            "to": "send-broadcast-bulk",
+            "label": "per-message results",
+            "kind": "return",
+            "delta": "unchanged",
+            "animated": true,
+            "files": []
+          },
+          {
+            "id": "write-results",
+            "from": "send-broadcast-bulk",
+            "to": "broadcast-queue",
+            "label": "write results",
+            "kind": "async",
+            "delta": "unchanged",
+            "animated": true,
+            "files": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "set_stats",
+      "stats": {
+        "chips": [
+          {
+            "label": "Batch size",
+            "value": "500",
+            "tone": "neutral"
+          }
+        ]
+      }
+    }
+  ]
+}

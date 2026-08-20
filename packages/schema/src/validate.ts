@@ -95,7 +95,7 @@ export const parsePatchDoc = (input: unknown): PatchDoc => unwrap(safeParsePatch
 
 export const safeParseConfig = (input: unknown): Parsed<Config> =>
   parseDocument(Config, "config", input, (config) =>
-    config.schemaVersion === undefined ? [] : versionIssues(config.schemaVersion, "schemaVersion"),
+    versionIssues(config.schemaVersion, "schemaVersion"),
   );
 
 export const parseConfig = (input: unknown): Config => unwrap(safeParseConfig(input));

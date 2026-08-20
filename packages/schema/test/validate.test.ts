@@ -85,7 +85,7 @@ describe("graph document validation", () => {
 
   it("rejects a view scoped to an element that does not exist", () => {
     const doc = clone(postmarkRefactorGraphInput);
-    doc.views![0]!.children![0]!.scope!.nodes = ["not-a-node"];
+    doc.views![0]!.children![0]!.scope = { kind: "selection", nodes: ["not-a-node"] };
 
     const error = expectRejected(doc);
     expect(error.issues[0]?.path).toBe("views[0].children[0].scope.nodes[0]");
@@ -135,7 +135,7 @@ describe("graph document validation", () => {
 
 describe("config validation", () => {
   it("fills in the defaults a repository omits", () => {
-    const result = safeParseConfig({});
+    const result = safeParseConfig({ schemaVersion: SCHEMA_VERSION });
     if (!result.ok) throw result.error;
     expect(result.value.lenses).toEqual(["architecture", "data-flow"]);
     expect(result.value.branding).toBe(true);
@@ -143,7 +143,12 @@ describe("config validation", () => {
   });
 
   it("rejects lenses this version does not ship", () => {
-    const result = safeParseConfig({ lenses: ["security"] });
+    const result = safeParseConfig({ schemaVersion: SCHEMA_VERSION, lenses: ["security"] });
+    expect(result.ok).toBe(false);
+  });
+
+  it("requires a repository to declare which contract its corrections target", () => {
+    const result = safeParseConfig({ lenses: ["architecture"] });
     expect(result.ok).toBe(false);
   });
 });

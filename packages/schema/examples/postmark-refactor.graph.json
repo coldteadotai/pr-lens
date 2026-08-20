@@ -1,7 +1,6 @@
 {
   "schemaVersion": "0.1.0",
   "kind": "graph",
-  "id": "bestregards-broadcast-baseline",
   "generatedAt": "2026-08-19T18:24:00.000Z",
   "title": "Batch broadcast sending through Postmark",
   "summary": "Broadcast delivery moves from one Postmark request per recipient to batched requests of 500, with suppression filtering pulled in front of the send and the payload builder extracted into a shared library.",
@@ -492,10 +491,7 @@
       "lens": "architecture",
       "summary": "Everything this change touches, across all three lanes.",
       "scope": {
-        "lanes": [],
-        "nodes": [],
-        "edges": [],
-        "flows": []
+        "kind": "all"
       },
       "defaultOpen": true,
       "children": [
@@ -505,6 +501,7 @@
           "lens": "architecture",
           "summary": "What replaced the per-recipient loop.",
           "scope": {
+            "kind": "selection",
             "lanes": [],
             "nodes": [
               "send-broadcast-bulk",
@@ -532,6 +529,7 @@
           "lens": "architecture",
           "summary": "The single-send path, kept visible so a reviewer can confirm nothing else called it.",
           "scope": {
+            "kind": "selection",
             "lanes": [],
             "nodes": [
               "process-broadcast",
@@ -554,6 +552,7 @@
       "title": "Data flow — sending a broadcast",
       "lens": "data-flow",
       "scope": {
+        "kind": "selection",
         "lanes": [],
         "nodes": [],
         "edges": [],
@@ -571,6 +570,11 @@
       "web",
       "functions",
       "external"
-    ]
+    ],
+    "rank": {
+      "queue-route": 0,
+      "send-broadcast-bulk": 1,
+      "postmark": 2
+    }
   }
 }

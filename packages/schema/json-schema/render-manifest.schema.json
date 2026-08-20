@@ -152,10 +152,21 @@
           "contentHash",
           "bytes",
           "width",
-          "height",
-          "animated"
+          "height"
         ],
         "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "url"
+            ]
+          },
+          {
+            "required": [
+              "path"
+            ]
+          }
+        ],
         "description": "One rendered SVG."
       }
     }
