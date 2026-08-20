@@ -5,7 +5,7 @@ import { GraphDoc } from "./graph.js";
 import { graphIntegrityIssues } from "./integrity.js";
 import { RenderManifest } from "./manifest.js";
 import { PatchDoc } from "./patch.js";
-import { SCHEMA_VERSION } from "./version.js";
+import { isSupportedVersion, SCHEMA_VERSION } from "./version.js";
 
 const formatPath = (path: readonly PropertyKey[]): string =>
   path.reduce<string>((acc, segment) => {
@@ -19,20 +19,6 @@ const toIssues = (error: z.ZodError): SchemaIssue[] =>
     path: formatPath(issue.path),
     message: issue.message,
   }));
-
-const [currentMajor, currentMinor] = SCHEMA_VERSION.split(".");
-
-/**
- * Below 1.0 a minor bump is allowed to be breaking, so only an exact
- * major.minor match is accepted; from 1.0 on, the major must match and a
- * newer minor is readable because minor releases only add optional fields.
- */
-const isSupportedVersion = (version: string): boolean => {
-  const [major, minor] = version.split(".");
-  if (major !== currentMajor) return false;
-  if (currentMajor === "0") return minor === currentMinor;
-  return Number(minor) <= Number(currentMinor);
-};
 
 const versionIssues = (version: string, path: string): SchemaIssue[] =>
   isSupportedVersion(version)

@@ -37,10 +37,28 @@ type ParityCase = {
   parse: (input: unknown) => Parsed<unknown>;
   document: unknown;
   accepted: boolean;
+  /** Set only where JSON Schema cannot express the rule; see `divergences`. */
+  acceptedByJsonSchema?: boolean;
 };
+
+/**
+ * The rules the parser enforces and JSON Schema cannot state. Each one has a
+ * case below asserting the divergence, so it stays deliberate rather than
+ * becoming a surprise for a producer working from the published files.
+ */
+const divergences = [
+  "referential integrity between elements",
+  "a line range that ends before it starts",
+  "the agreement between a self message's endpoints",
+] as const;
 
 const withoutKey = (document: object, key: string): object =>
   Object.fromEntries(Object.entries(document).filter(([name]) => name !== key));
+
+const withFileRef = (file: { path: string; startLine?: number; endLine?: number }) => ({
+  ...minimalGraphInput,
+  nodes: [{ ...minimalGraphInput.nodes[0]!, files: [file] }],
+});
 
 /**
  * The exported JSON Schemas describe what an author may write, which is the
@@ -147,6 +165,81 @@ const parityCases: ParityCase[] = [
     },
     accepted: false,
   },
+  {
+    name: "a document from a contract version this package does not read",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: { ...minimalGraphInput, schemaVersion: "9.0.0" },
+    accepted: false,
+  },
+  {
+    name: "a file reference that escapes the repository",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withFileRef({ path: "../../etc/passwd" }),
+    accepted: false,
+  },
+  {
+    name: "a line range with no start",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withFileRef({ path: "src/routes/health.ts", endLine: 12 }),
+    accepted: false,
+  },
+  {
+    name: `${divergences[1]}, which only the parser can catch`,
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withFileRef({ path: "src/routes/health.ts", startLine: 20, endLine: 2 }),
+    accepted: false,
+    acceptedByJsonSchema: true,
+  },
+  {
+    name: `${divergences[0]}, which only the parser can catch`,
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: {
+      ...minimalGraphInput,
+      nodes: [{ ...minimalGraphInput.nodes[0]!, lane: "no-such-lane" }],
+    },
+    accepted: false,
+    acceptedByJsonSchema: true,
+  },
+  {
+    name: `${divergences[2]}, which only the parser can catch`,
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: {
+      ...postmarkRefactorGraphInput,
+      flows: [
+        {
+          ...postmarkRefactorGraphInput.flows![0]!,
+          messages: postmarkRefactorGraphInput.flows![0]!.messages.map((message, index) =>
+            index === 0 ? { ...message, kind: "self" } : message,
+          ),
+        },
+      ],
+    },
+    accepted: false,
+    acceptedByJsonSchema: true,
+  },
+  {
+    name: "a patch that does not say which map it targets",
+    schema: "patch-doc.schema.json",
+    parse: safeParsePatchDoc,
+    document: { ...broadcastBaselinePatchInput, target: {} },
+    accepted: false,
+  },
+  {
+    name: "a patch that names a map but not the commits",
+    schema: "patch-doc.schema.json",
+    parse: safeParsePatchDoc,
+    document: {
+      ...broadcastBaselinePatchInput,
+      target: { graphId: broadcastBaselinePatchInput.target.graphId },
+    },
+    accepted: false,
+  },
 ];
 
 describe("exported JSON Schemas", () => {
@@ -154,8 +247,17 @@ describe("exported JSON Schemas", () => {
     const validate = await loadValidator(parityCase.schema);
     const document = JsonObject.parse(JSON.parse(JSON.stringify(parityCase.document)));
 
-    expect(validate(document), JSON.stringify(validate.errors, null, 2)).toBe(parityCase.accepted);
+    expect(validate(document), JSON.stringify(validate.errors, null, 2)).toBe(
+      parityCase.acceptedByJsonSchema ?? parityCase.accepted,
+    );
     expect(parityCase.parse(parityCase.document).ok).toBe(parityCase.accepted);
+  });
+
+  it("documents every rule it cannot carry", () => {
+    const asserted = parityCases.filter((parityCase) => parityCase.acceptedByJsonSchema === true);
+    expect(new Set(asserted.map((parityCase) => parityCase.name))).toEqual(
+      new Set(divergences.map((rule) => `${rule}, which only the parser can catch`)),
+    );
   });
 
   it.each([

@@ -69,11 +69,13 @@ export const PatchDoc = z
     summary: Summary.optional().describe("Why the map is changing, in prose."),
     target: z
       .strictObject({
-        graphId: Id.optional().describe("Id of the stored graph being patched."),
-        fromSha: Sha.optional().describe("Commit the stored graph was last built from."),
-        toSha: Sha.optional().describe("Commit the graph describes once the ops are applied."),
+        graphId: Id.describe("Id of the stored graph being patched."),
+        fromSha: Sha.describe("Commit the stored graph reflects before the operations run."),
+        toSha: Sha.describe("Commit it reflects once they have."),
       })
-      .describe("Which stored graph these operations belong to."),
+      .describe(
+        "Which stored graph these operations belong to, and which commits they carry it between. All three are required: they are what stops a patch landing on the wrong map, on a stale one, or twice.",
+      ),
     ops: z.array(PatchOp).min(1).max(512).describe("Applied in array order."),
   })
   .describe("A PR Lens patch document.");

@@ -204,8 +204,8 @@ describe("applying a patch document", () => {
   it("carries the baseline map from the base commit to the head commit", () => {
     const patched = applied();
 
-    expect(patched.provenance.base.sha).toBe(broadcastBaselineGraph.provenance.head.sha);
     expect(patched.provenance.head.sha).toBe(broadcastBaselinePatch.target.toSha);
+    expect(patched.provenance.base.sha).toBe(patched.provenance.head.sha);
     expect(graphIntegrityIssues(patched)).toEqual([]);
   });
 
@@ -244,6 +244,11 @@ describe("applying a patch document", () => {
       "batch-results",
       "write-results",
     ]);
+  });
+
+  it("keeps the map readable as a snapshot of one commit", () => {
+    const patched = applied();
+    expect(patched.provenance.base).toEqual(patched.provenance.head);
   });
 
   it("refuses a patch aimed at a different stored graph", () => {

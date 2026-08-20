@@ -7,7 +7,7 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "pattern": "^0\\.1\\.\\d+$",
       "description": "Contract version the document targets. Current: 0.1.0."
     },
     "kind": {

@@ -7,7 +7,7 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "pattern": "^0\\.1\\.\\d+$",
       "description": "Declared explicitly so a repository's corrections keep their meaning across contract versions."
     },
     "lenses": {

@@ -317,13 +317,16 @@ export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<Gra
  * repeatedly, so applying a patch to the wrong map, or to one that has moved
  * on since the patch was written, has to fail loudly rather than merge.
  *
- * On success the map records the commit it now reflects: `head` becomes the
- * patch's `toSha`, and `base` becomes the commit the map came from.
+ * A stored map is a snapshot, not a diff: everything in it is `unchanged`,
+ * and `base` and `head` both name the single commit it reflects. So both
+ * advance to the patch's `toSha` — leaving `base` behind would claim the
+ * elements this patch just added had been there, unchanged, all along. The
+ * commit the map came from stays recorded on the patch itself.
  */
 export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc> => {
   const { graphId, fromSha, toSha } = patch.target;
 
-  if (graphId !== undefined && graph.id !== graphId)
+  if (graph.id !== graphId)
     return {
       ok: false,
       error: new PrLensSchemaError(
@@ -333,7 +336,7 @@ export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc
       ),
     };
 
-  if (fromSha !== undefined && graph.provenance.head.sha !== fromSha)
+  if (graph.provenance.head.sha !== fromSha)
     return {
       ok: false,
       error: new PrLensSchemaError(
@@ -344,7 +347,7 @@ export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc
     };
 
   const applied = applyPatch(graph, patch.ops);
-  if (!applied.ok || toSha === undefined) return applied;
+  if (!applied.ok) return applied;
 
   return {
     ok: true,
@@ -352,7 +355,7 @@ export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc
       ...applied.value,
       provenance: {
         ...applied.value.provenance,
-        base: applied.value.provenance.head,
+        base: { ...applied.value.provenance.base, sha: toSha },
         head: { ...applied.value.provenance.head, sha: toSha },
       },
     },

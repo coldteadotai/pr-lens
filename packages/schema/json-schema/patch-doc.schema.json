@@ -7,7 +7,7 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "pattern": "^0\\.1\\.\\d+$",
       "description": "Contract version the document targets. Current: 0.1.0."
     },
     "kind": {
@@ -29,25 +29,30 @@
       "type": "object",
       "properties": {
         "graphId": {
-          "description": "Id of the stored graph being patched.",
           "type": "string",
           "minLength": 1,
           "maxLength": 128,
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+          "description": "Id of the stored graph being patched."
         },
         "fromSha": {
-          "description": "Commit the stored graph was last built from.",
           "type": "string",
-          "pattern": "^[0-9a-f]{7,40}$"
+          "pattern": "^[0-9a-f]{7,40}$",
+          "description": "Commit the stored graph reflects before the operations run."
         },
         "toSha": {
-          "description": "Commit the graph describes once the ops are applied.",
           "type": "string",
-          "pattern": "^[0-9a-f]{7,40}$"
+          "pattern": "^[0-9a-f]{7,40}$",
+          "description": "Commit it reflects once they have."
         }
       },
+      "required": [
+        "graphId",
+        "fromSha",
+        "toSha"
+      ],
       "additionalProperties": false,
-      "description": "Which stored graph these operations belong to."
+      "description": "Which stored graph these operations belong to, and which commits they carry it between. All three are required: they are what stops a patch landing on the wrong map, on a stale one, or twice."
     },
     "ops": {
       "minItems": 1,
@@ -295,6 +300,7 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 1024,
+                          "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                           "description": "Repository-relative path, POSIX separators."
                         },
                         "startLine": {
@@ -322,6 +328,11 @@
                         "path"
                       ],
                       "additionalProperties": false,
+                      "dependentRequired": {
+                        "endLine": [
+                          "startLine"
+                        ]
+                      },
                       "description": "A file (and optional line range) backing an element."
                     }
                   },
@@ -446,6 +457,7 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 1024,
+                          "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                           "description": "Repository-relative path, POSIX separators."
                         },
                         "startLine": {
@@ -473,6 +485,11 @@
                         "path"
                       ],
                       "additionalProperties": false,
+                      "dependentRequired": {
+                        "endLine": [
+                          "startLine"
+                        ]
+                      },
                       "description": "A file (and optional line range) backing an element."
                     }
                   },
@@ -612,6 +629,7 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 1024,
+                          "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                           "description": "Repository-relative path, POSIX separators."
                         },
                         "startLine": {
@@ -639,6 +657,11 @@
                         "path"
                       ],
                       "additionalProperties": false,
+                      "dependentRequired": {
+                        "endLine": [
+                          "startLine"
+                        ]
+                      },
                       "description": "A file (and optional line range) backing an element."
                     }
                   }
@@ -752,6 +775,7 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 1024,
+                          "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                           "description": "Repository-relative path, POSIX separators."
                         },
                         "startLine": {
@@ -779,6 +803,11 @@
                         "path"
                       ],
                       "additionalProperties": false,
+                      "dependentRequired": {
+                        "endLine": [
+                          "startLine"
+                        ]
+                      },
                       "description": "A file (and optional line range) backing an element."
                     }
                   }
@@ -964,6 +993,7 @@
                                 "type": "string",
                                 "minLength": 1,
                                 "maxLength": 1024,
+                                "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                                 "description": "Repository-relative path, POSIX separators."
                               },
                               "startLine": {
@@ -991,6 +1021,11 @@
                               "path"
                             ],
                             "additionalProperties": false,
+                            "dependentRequired": {
+                              "endLine": [
+                                "startLine"
+                              ]
+                            },
                             "description": "A file (and optional line range) backing an element."
                           }
                         }
@@ -1174,6 +1209,7 @@
                                 "type": "string",
                                 "minLength": 1,
                                 "maxLength": 1024,
+                                "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                                 "description": "Repository-relative path, POSIX separators."
                               },
                               "startLine": {
@@ -1201,6 +1237,11 @@
                               "path"
                             ],
                             "additionalProperties": false,
+                            "dependentRequired": {
+                              "endLine": [
+                                "startLine"
+                              ]
+                            },
                             "description": "A file (and optional line range) backing an element."
                           }
                         }

@@ -7,7 +7,7 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "pattern": "^0\\.1\\.\\d+$",
       "description": "Contract version the document targets. Current: 0.1.0."
     },
     "kind": {
@@ -321,6 +321,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 1024,
+                  "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                   "description": "Repository-relative path, POSIX separators."
                 },
                 "startLine": {
@@ -348,6 +349,11 @@
                 "path"
               ],
               "additionalProperties": false,
+              "dependentRequired": {
+                "endLine": [
+                  "startLine"
+                ]
+              },
               "description": "A file (and optional line range) backing an element."
             }
           },
@@ -464,6 +470,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 1024,
+                  "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                   "description": "Repository-relative path, POSIX separators."
                 },
                 "startLine": {
@@ -491,6 +498,11 @@
                 "path"
               ],
               "additionalProperties": false,
+              "dependentRequired": {
+                "endLine": [
+                  "startLine"
+                ]
+              },
               "description": "A file (and optional line range) backing an element."
             }
           }
@@ -653,6 +665,7 @@
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 1024,
+                        "pattern": "^(?!\\/)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
                         "description": "Repository-relative path, POSIX separators."
                       },
                       "startLine": {
@@ -680,6 +693,11 @@
                       "path"
                     ],
                     "additionalProperties": false,
+                    "dependentRequired": {
+                      "endLine": [
+                        "startLine"
+                      ]
+                    },
                     "description": "A file (and optional line range) backing an element."
                   }
                 }

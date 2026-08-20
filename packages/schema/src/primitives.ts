@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SCHEMA_VERSION } from "./version.js";
+import { SCHEMA_VERSION, SUPPORTED_VERSION_PATTERN } from "./version.js";
 
 /**
  * Identifiers are authored by an extraction model, so they are constrained to
@@ -17,9 +17,15 @@ export const Id = z
   .describe("Stable identifier, unique within its collection in a document.");
 export type Id = z.infer<typeof Id>;
 
+/**
+ * The loose shape is checked here and the supported range is checked by the
+ * parser, which can say which version it implements. The exported JSON
+ * Schemas carry the range instead, since they have no parser behind them.
+ */
 export const SchemaVersionField = z
   .string()
   .regex(/^\d+\.\d+\.\d+$/, "must be a semver string, e.g. 0.1.0")
+  .meta({ pattern: SUPPORTED_VERSION_PATTERN })
   .describe(`Contract version the document targets. Current: ${SCHEMA_VERSION}.`);
 
 /** Non-empty single-line label rendered on a card, lane header or edge. */
@@ -59,6 +65,9 @@ export type Delta = z.infer<typeof Delta>;
 
 export const DELTAS = Delta.options;
 
+/** Rejects absolute paths and any `..` segment, in one rule both representations share. */
+const REPOSITORY_PATH = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$)).+$/;
+
 /**
  * A pointer into the head tree, used to build diff permalinks. Line numbers
  * are 1-based and refer to the head revision except on `removed` elements,
@@ -70,9 +79,7 @@ export const FileRef = z
       .string()
       .min(1)
       .max(1024)
-      .refine((p) => !p.startsWith("/") && !p.split("/").includes(".."), {
-        message: "must be a repository-relative path without '..' segments",
-      })
+      .regex(REPOSITORY_PATH, "must be a repository-relative path without '..' segments")
       .describe("Repository-relative path, POSIX separators."),
     startLine: z.int().min(1).optional().describe("1-based first line."),
     endLine: z.int().min(1).optional().describe("1-based last line, inclusive."),
@@ -81,6 +88,7 @@ export const FileRef = z
       .optional()
       .describe("Which side of the diff the lines refer to. Defaults to head."),
   })
+  .meta({ dependentRequired: { endLine: ["startLine"] } })
   .refine((f) => f.endLine === undefined || f.startLine !== undefined, {
     message: "endLine requires startLine",
     path: ["endLine"],

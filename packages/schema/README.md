@@ -54,7 +54,8 @@ import { applyPatchDoc, parseGraphDoc, parsePatchDoc } from "@coldtea/pr-lens-sc
 const result = applyPatchDoc(parseGraphDoc(baseline), parsePatchDoc(patch));
 ```
 
-- The patch's `target` is checked before anything is applied: a patch aimed at another `graphId`, or written against a commit the map has already moved past, is a `PATCH_CONFLICT` rather than a merge. On success `head` becomes the patch's `toSha` and `base` becomes the commit the map came from, so replaying the same patch fails.
+- A patch names the map it targets and the commits it carries it between — `graphId`, `fromSha` and `toSha` are all required. The target is checked before anything is applied: a patch aimed at another map, or written against a commit the map has already moved past, is a `PATCH_CONFLICT` rather than a merge, so replaying a patch fails.
+- A stored map is a snapshot rather than a diff, so `base` and `head` both name the single commit it reflects, and both advance to `toSha`. The commit it came from stays recorded on the patch.
 - Operations apply in array order, and the first conflict stops the batch — a later operation was written against the state an earlier one was supposed to produce.
 - `add_*` refuses an id that is taken; `update_*` and `remove_*` refuse an id that is absent; `update_*` writes only the fields it names.
 - Removing a node takes its edges and flow steps with it, and drops a flow left with fewer than two participants or no steps. Removed ids are pruned out of the drill-down tree and the layout hints, and a view whose selection loses its last element is dropped rather than widened.
@@ -64,7 +65,7 @@ const result = applyPatchDoc(parseGraphDoc(baseline), parsePatchDoc(patch));
 
 The input document is never mutated. `applyPatch(graph, ops)` is the same thing without the target check, for callers that already know which document they hold.
 
-A stored map describes a system rather than a change, so everything in it is `unchanged`; the deltas belong to pull-request documents.
+A stored map describes a system rather than a change, so everything in it is `unchanged` and its `base` equals its `head`; the deltas belong to pull-request documents.
 
 ## Repository config
 
@@ -97,7 +98,15 @@ A `match` beginning with `id:` addresses one node exactly; anything else is a pa
 { "$ref": "node_modules/@coldtea/pr-lens-schema/json-schema/graph-doc.schema.json" }
 ```
 
-They describe **what an author may write**: a field with a default is one you may leave out. Cross-field rules are carried across where JSON Schema can express them — an asset needs a `url` or a `path`, a `selection` view must select something. Two rules cannot be expressed and stay the parser's job: referential integrity, and the agreement between a self message's endpoints. The tests run a table of documents through both representations and assert they reach the same verdict, accept and reject alike, so the two cannot drift apart.
+They describe **what an author may write**: a field with a default is one you may leave out. Rules are carried across wherever JSON Schema can state them — the supported contract versions, the repository-relative path rule, `endLine` requiring `startLine`, an asset needing a `url` or a `path`, a `selection` view having to select something.
+
+Exactly three rules cannot be stated in JSON Schema and stay the parser's job:
+
+1. referential integrity between elements,
+2. a line range that ends before it starts,
+3. the agreement between a self message's endpoints.
+
+The tests run a table of documents through both representations and assert the same verdict, accept and reject alike — including a case per divergence above, so the three are deliberate and cannot quietly become four.
 
 ## Goldens
 
