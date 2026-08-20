@@ -1,0 +1,25 @@
+{
+  "name": "@coldtea/pr-lens-action",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The PR Lens GitHub Action: analyze a pull request with your own model key, publish the diagrams, post one static comment.",
+  "license": "MIT",
+  "author": "Ohans Emmanuel",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coldteadotai/pr-lens.git",
+    "directory": "packages/action"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11",
+    "yaml": "^2.8.1",
+    "zod": "^4.4.3"
+  }
+}

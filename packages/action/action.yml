@@ -1,0 +1,187 @@
+name: PR Lens
+description: Post the architecture and data flow of a pull request as diagrams in its comments, using your own model key.
+author: Ohans Emmanuel
+
+branding:
+  icon: git-pull-request
+  color: purple
+
+inputs:
+  api-key:
+    description: Key for the model provider. It is passed to the CLI through the environment and never appears in a command line.
+    required: true
+  provider:
+    description: gemini, or openai-compatible for anything speaking /chat/completions.
+    default: gemini
+  model:
+    description: Model to ask. Required when provider is openai-compatible, since the endpoint decides which names exist.
+    default: ""
+  base-url:
+    description: Provider endpoint, for a compatible or self-hosted server.
+    default: ""
+  lens:
+    description: Comma-separated lenses to render. Defaults to both.
+    default: ""
+  branding:
+    description: Show the "Rendered by PR Lens" footer.
+    default: "true"
+  comment:
+    description: Post the comment. Set false to render and publish the SVGs without commenting.
+    default: "true"
+  data-branch:
+    description: Orphan branch the rendered SVGs are committed to. It holds no code and is never merged.
+    default: pr-lens
+  cli-version:
+    description: Version of @coldtea/pr-lens-cli to run.
+    default: 0.1.0
+  github-token:
+    description: Token used to publish the SVGs and post the comment.
+    default: ${{ github.token }}
+
+outputs:
+  graph:
+    description: Path of the graph document that was produced.
+    value: ${{ steps.analyze.outputs.graph }}
+  assets-url:
+    description: Base URL the rendered SVGs are published at.
+    value: ${{ steps.publish.outputs.assets-url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check the run has what it needs
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ -z "${PR_NUMBER}" ]; then
+          echo "::error::PR Lens runs on pull_request events — there is no pull request in this one."
+          exit 1
+        fi
+        for SHA in "${BASE_SHA}" "${HEAD_SHA}"; do
+          if ! git cat-file -e "${SHA}^{commit}" 2>/dev/null; then
+            echo "::error::${SHA} is not in this checkout. PR Lens diffs two commits, so check out with fetch-depth: 0."
+            exit 1
+          fi
+        done
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Analyze the diff
+      id: analyze
+      shell: bash
+      run: |
+        set -euo pipefail
+        npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}" analyze \
+          --base "${BASE_SHA}" \
+          --head "${HEAD_SHA}" \
+          --pr "${PR_NUMBER}" \
+          --provider "${PROVIDER}" \
+          --api-key-env PR_LENS_API_KEY \
+          ${MODEL:+--model "${MODEL}"} \
+          ${BASE_URL:+--base-url "${BASE_URL}"} \
+          ${LENS:+--lens "${LENS}"} \
+          --out "${RUNNER_TEMP}/pr-lens/graph.json"
+        echo "graph=${RUNNER_TEMP}/pr-lens/graph.json" >> "${GITHUB_OUTPUT}"
+      env:
+        CLI_VERSION: ${{ inputs.cli-version }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PROVIDER: ${{ inputs.provider }}
+        MODEL: ${{ inputs.model }}
+        BASE_URL: ${{ inputs.base-url }}
+        LENS: ${{ inputs.lens }}
+        PR_LENS_API_KEY: ${{ inputs.api-key }}
+
+    - name: Render the diagrams
+      shell: bash
+      run: |
+        set -euo pipefail
+        npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}" render "${RUNNER_TEMP}/pr-lens/graph.json" \
+          --out "${RUNNER_TEMP}/pr-lens/assets"
+      env:
+        CLI_VERSION: ${{ inputs.cli-version }}
+
+    # GitHub proxies comment images through a cache that never revalidates, so
+    # every render is published at its own content-hashed path rather than
+    # replacing the last one.
+    - name: Publish the SVGs
+      id: publish
+      shell: bash
+      run: |
+        set -euo pipefail
+        DIRECTORY="pr/${PR_NUMBER}/${HEAD_SHA}"
+        WORKSPACE="${RUNNER_TEMP}/pr-lens-publish"
+
+        rm -rf "${WORKSPACE}"
+        mkdir -p "${WORKSPACE}"
+        cd "${WORKSPACE}"
+
+        git init --quiet
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+        if git fetch --quiet --depth=1 origin "${DATA_BRANCH}" 2>/dev/null; then
+          git checkout --quiet -b "${DATA_BRANCH}" FETCH_HEAD
+        else
+          git checkout --quiet --orphan "${DATA_BRANCH}"
+        fi
+
+        mkdir -p "${DIRECTORY}"
+        cp "${RUNNER_TEMP}"/pr-lens/assets/*.svg "${DIRECTORY}/"
+        git add "${DIRECTORY}"
+
+        if git diff --quiet --cached; then
+          echo "This render is already published."
+        else
+          git commit --quiet -m "PR Lens: #${PR_NUMBER} at ${HEAD_SHA}"
+          git push --quiet origin "${DATA_BRANCH}"
+        fi
+
+        echo "assets-url=https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${DATA_BRANCH}/${DIRECTORY}" >> "${GITHUB_OUTPUT}"
+      env:
+        DATA_BRANCH: ${{ inputs.data-branch }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+
+    # One comment per pull request: the CLI owns the hidden marker, and this
+    # asks it for the string rather than spelling a second copy of it.
+    - name: Post the comment
+      if: inputs.comment == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        BODY="${RUNNER_TEMP}/pr-lens/comment.md"
+
+        npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}" comment \
+          --graph "${RUNNER_TEMP}/pr-lens/graph.json" \
+          --manifest "${RUNNER_TEMP}/pr-lens/assets/manifest.json" \
+          --asset-base-url "${ASSETS_URL}" \
+          ${BRANDING_OFF:+--no-branding} \
+          --out "${BODY}"
+
+        MARKER="$(npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}" comment --print-marker)"
+        EXISTING="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate \
+          --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" | head -n 1)"
+
+        if [ -n "${EXISTING}" ]; then
+          jq -Rs '{body: .}' < "${BODY}" \
+            | gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${EXISTING}" --input - --silent
+        else
+          jq -Rs '{body: .}' < "${BODY}" \
+            | gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --input - --silent
+        fi
+      env:
+        CLI_VERSION: ${{ inputs.cli-version }}
+        ASSETS_URL: ${{ steps.publish.outputs.assets-url }}
+        BRANDING_OFF: ${{ inputs.branding == 'false' && '1' || '' }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
