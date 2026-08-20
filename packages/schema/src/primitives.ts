@@ -73,8 +73,8 @@ export const THEMES = Theme.options;
 /**
  * A render is one asset per view per theme, so these two caps are one rule
  * rather than two numbers that happen to sit near each other: a document with
- * more views than a manifest can describe is a document no renderer can
- * finish, however well formed it looks.
+ * more views than a manifest can carry at every theme is one whose full
+ * render could never be described, however well formed it looks.
  *
  * Deriving the view cap from the asset budget keeps the relationship in one
  * place — raise the budget, or add a theme, and the other end moves with it

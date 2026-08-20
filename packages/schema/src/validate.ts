@@ -46,6 +46,12 @@ const fail = (label: string, issues: SchemaIssue[]): PrLensSchemaError => {
  * of ours can count anything. A `safeParse` that throws would be a worse
  * failure than the document it was handed, so the stack running out is
  * reported as what it is: a document too deep to read.
+ *
+ * Every `RangeError` is read that way, not only the ones provoked by depth.
+ * That is deliberate: failing closed keeps the promise that these functions
+ * return a verdict rather than throwing one, and nesting is the only way a
+ * document is known to provoke one. Narrowing this to rethrow would trade
+ * that promise for a diagnosis.
  */
 const attemptParse = <Schema extends z.ZodType>(
   schema: Schema,
