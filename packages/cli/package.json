@@ -1,0 +1,54 @@
+{
+  "name": "@coldtea/pr-lens-cli",
+  "version": "0.1.0",
+  "description": "The PR Lens command line: turn a pull request diff into a schema-valid graph with your own model key, render it, and compose the comment.",
+  "license": "MIT",
+  "author": "Ohans Emmanuel",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coldteadotai/pr-lens.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/coldteadotai/pr-lens/tree/main/packages/cli#readme",
+  "keywords": [
+    "pr-lens",
+    "code-review",
+    "architecture-diagram",
+    "data-flow",
+    "cli",
+    "byok"
+  ],
+  "type": "module",
+  "bin": {
+    "pr-lens": "./dist/bin.js"
+  },
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@coldtea/pr-lens-schema": "workspace:^",
+    "picomatch": "^4.0.2",
+    "yaml": "^2.8.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "@types/picomatch": "^4.0.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}
