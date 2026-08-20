@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "0.1.0",
+  "kind": "graph",
+  "title": "Touch the health check",
+  "lenses": [
+    "architecture"
+  ],
+  "provenance": {
+    "repo": {
+      "owner": "coldteadotai",
+      "name": "pr-lens",
+      "host": "github.com"
+    },
+    "base": {
+      "sha": "1111111"
+    },
+    "head": {
+      "sha": "2222222"
+    }
+  },
+  "lanes": [
+    {
+      "id": "api",
+      "label": "API"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "health-route",
+      "label": "GET /health",
+      "kind": "route",
+      "delta": "modified",
+      "lane": "api",
+      "files": [
+        {
+          "path": "src/routes/health.ts"
+        }
+      ],
+      "badges": []
+    }
+  ],
+  "edges": [],
+  "flows": [],
+  "views": []
+}

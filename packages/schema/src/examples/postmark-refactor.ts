@@ -1,0 +1,513 @@
+import type { GraphDocInput } from "../graph.js";
+import type { PatchDocInput } from "../patch.js";
+import type { RenderManifestInput } from "../manifest.js";
+import type { ConfigInput } from "../config.js";
+import { SCHEMA_VERSION } from "../version.js";
+
+/**
+ * Golden document #1, hand-authored from the validated bestregards Postmark
+ * refactor: broadcast sending moved from one Postmark request per recipient
+ * to batched requests of 500, behind a shared library. Every downstream
+ * renderer golden is measured against this document, so it exercises all
+ * four delta states, a hero edge, and a full data-flow sequence.
+ */
+export const postmarkRefactorGraphInput: GraphDocInput = {
+  schemaVersion: SCHEMA_VERSION,
+  kind: "graph",
+  id: "bestregards-broadcast-baseline",
+  generatedAt: "2026-08-19T18:24:00.000Z",
+  title: "Batch broadcast sending through Postmark",
+  summary:
+    "Broadcast delivery moves from one Postmark request per recipient to batched requests of 500, with suppression filtering pulled in front of the send and the payload builder extracted into a shared library.",
+  lenses: ["architecture", "data-flow"],
+  provenance: {
+    repo: { owner: "ohansemmanuel", name: "bestregards", host: "github.com" },
+    base: { sha: "3f5c1ab9d24e7f08c6b1a5d3e9074c2b8a6f1d40", ref: "main" },
+    head: { sha: "b71e0d4c8a92f5361de7c0b4a8f2593d6c1e8a77", ref: "batch-broadcast-send" },
+    pullRequest: {
+      number: 128,
+      title: "Send broadcasts in batches of 500",
+      url: "https://github.com/ohansemmanuel/bestregards/pull/128",
+    },
+    generator: { name: "pr-lens-examples", version: "0.1.0" },
+  },
+  lanes: [
+    { id: "web", label: "Next.js", subtitle: "Vercel", order: 0 },
+    { id: "functions", label: "Cloud Functions", subtitle: "Firebase", order: 1 },
+    { id: "external", label: "External", subtitle: "Postmark", order: 2 },
+  ],
+  nodes: [
+    {
+      id: "broadcast-composer",
+      label: "Broadcast composer",
+      kind: "ui",
+      delta: "unchanged",
+      lane: "web",
+      subtitle: "app/broadcasts/new",
+      summary: "Where an author writes a broadcast and hits send. Untouched by this change.",
+      files: [{ path: "app/broadcasts/new/page.tsx" }],
+    },
+    {
+      id: "queue-route",
+      label: "POST /api/broadcasts/queue",
+      kind: "route",
+      delta: "modified",
+      lane: "web",
+      summary:
+        "Writes the queue document. Now stamps the recipient count and batch size the sender will use instead of leaving batching to the worker.",
+      files: [{ path: "app/api/broadcasts/queue/route.ts", startLine: 24, endLine: 96 }],
+      badges: ["+38 / -12"],
+    },
+    {
+      id: "broadcast-queue",
+      label: "broadcastQueue",
+      kind: "datastore",
+      delta: "modified",
+      lane: "functions",
+      subtitle: "Firestore collection",
+      summary:
+        "Queue documents gained batchSize and suppressedCount fields, and results are now written back per batch rather than per recipient.",
+      files: [{ path: "functions/src/broadcast/schema.ts", startLine: 12, endLine: 48 }],
+    },
+    {
+      id: "send-broadcast-bulk",
+      label: "sendBroadcastBulk",
+      kind: "function",
+      delta: "added",
+      lane: "functions",
+      subtitle: "onWrite trigger",
+      summary:
+        "New trigger handler. Fetches suppressions once, builds batched payloads, and posts them to Postmark in chunks of 500.",
+      files: [{ path: "functions/src/broadcast/sendBroadcastBulk.ts", startLine: 1, endLine: 142 }],
+      badges: ["new"],
+    },
+    {
+      id: "build-bulk-payload",
+      label: "buildBulkPayload",
+      kind: "function",
+      delta: "added",
+      lane: "functions",
+      summary: "Turns a broadcast and its recipient slice into a Postmark batch request body.",
+      files: [{ path: "packages/broadcast-lib/src/buildBulkPayload.ts", startLine: 1, endLine: 74 }],
+    },
+    {
+      id: "get-suppressed-emails",
+      label: "getSuppressedEmails",
+      kind: "function",
+      delta: "added",
+      lane: "functions",
+      summary:
+        "Pulls the Postmark suppression dump once per broadcast so suppressed addresses are filtered before any batch is sent.",
+      files: [{ path: "packages/broadcast-lib/src/getSuppressedEmails.ts", startLine: 1, endLine: 58 }],
+    },
+    {
+      id: "broadcast-lib",
+      label: "broadcast-lib",
+      kind: "package",
+      delta: "added",
+      lane: "functions",
+      subtitle: "packages/broadcast-lib",
+      summary:
+        "New shared package so the queue route and the sender agree on payload shape and batch size.",
+      files: [{ path: "packages/broadcast-lib/src/index.ts" }],
+      badges: ["new package"],
+    },
+    {
+      id: "process-broadcast",
+      label: "processBroadcast",
+      kind: "function",
+      delta: "removed",
+      lane: "functions",
+      subtitle: "onWrite trigger",
+      summary: "The per-recipient loop this change replaces.",
+      files: [
+        {
+          path: "functions/src/broadcast/processBroadcast.ts",
+          startLine: 1,
+          endLine: 118,
+          revision: "base",
+        },
+      ],
+    },
+    {
+      id: "send-single-email",
+      label: "sendSingleEmail",
+      kind: "function",
+      delta: "removed",
+      lane: "functions",
+      summary: "One Postmark request per recipient. Gone with the loop that called it.",
+      files: [
+        {
+          path: "functions/src/broadcast/sendSingleEmail.ts",
+          startLine: 1,
+          endLine: 46,
+          revision: "base",
+        },
+      ],
+    },
+    {
+      id: "postmark",
+      label: "Postmark",
+      kind: "external",
+      delta: "modified",
+      lane: "external",
+      subtitle: "Email API",
+      summary:
+        "Same provider, different endpoints: the batch endpoint and the suppression dump replace repeated single sends.",
+    },
+  ],
+  edges: [
+    {
+      id: "composer-to-queue",
+      from: "broadcast-composer",
+      to: "queue-route",
+      kind: "http",
+      delta: "unchanged",
+      label: "send broadcast",
+    },
+    {
+      id: "queue-to-firestore",
+      from: "queue-route",
+      to: "broadcast-queue",
+      kind: "data",
+      delta: "modified",
+      label: "enqueue job",
+    },
+    {
+      id: "queue-to-lib",
+      from: "queue-route",
+      to: "broadcast-lib",
+      kind: "dependency",
+      delta: "added",
+      label: "batch size",
+    },
+    {
+      id: "firestore-to-bulk",
+      from: "broadcast-queue",
+      to: "send-broadcast-bulk",
+      kind: "event",
+      delta: "added",
+      label: "onWrite",
+    },
+    {
+      id: "firestore-to-process",
+      from: "broadcast-queue",
+      to: "process-broadcast",
+      kind: "event",
+      delta: "removed",
+      label: "onWrite",
+    },
+    {
+      id: "process-to-single",
+      from: "process-broadcast",
+      to: "send-single-email",
+      kind: "call",
+      delta: "removed",
+      label: "per recipient",
+    },
+    {
+      id: "single-to-postmark",
+      from: "send-single-email",
+      to: "postmark",
+      kind: "http",
+      delta: "removed",
+      label: "POST /email · 1 msg/call",
+    },
+    {
+      id: "bulk-to-payload",
+      from: "send-broadcast-bulk",
+      to: "build-bulk-payload",
+      kind: "call",
+      delta: "added",
+    },
+    {
+      id: "bulk-to-suppressions",
+      from: "send-broadcast-bulk",
+      to: "get-suppressed-emails",
+      kind: "call",
+      delta: "added",
+    },
+    {
+      id: "bulk-to-lib",
+      from: "send-broadcast-bulk",
+      to: "broadcast-lib",
+      kind: "dependency",
+      delta: "added",
+    },
+    {
+      id: "suppressions-to-postmark",
+      from: "get-suppressed-emails",
+      to: "postmark",
+      kind: "http",
+      delta: "added",
+      label: "GET suppression dump",
+      animated: true,
+    },
+    {
+      id: "bulk-to-postmark",
+      from: "send-broadcast-bulk",
+      to: "postmark",
+      kind: "http",
+      delta: "added",
+      label: "500 msgs/call",
+      emphasis: "hero",
+      animated: true,
+      summary: "The change in one edge: a broadcast to 10,000 recipients drops from 10,000 requests to 20.",
+    },
+    {
+      id: "bulk-to-firestore",
+      from: "send-broadcast-bulk",
+      to: "broadcast-queue",
+      kind: "data",
+      delta: "added",
+      label: "write results",
+    },
+  ],
+  flows: [
+    {
+      id: "send-pipeline",
+      title: "Sending a broadcast",
+      summary: "The path a queued broadcast takes now, from enqueue to per-message results.",
+      delta: "modified",
+      participants: [
+        { node: "queue-route", label: "queue route" },
+        { node: "broadcast-queue", label: "Firestore" },
+        { node: "send-broadcast-bulk", label: "sendBroadcastBulk" },
+        { node: "postmark", label: "Postmark" },
+      ],
+      messages: [
+        {
+          id: "enqueue",
+          from: "queue-route",
+          to: "broadcast-queue",
+          label: "enqueue broadcast job",
+          kind: "async",
+          delta: "modified",
+        },
+        {
+          id: "trigger",
+          from: "broadcast-queue",
+          to: "send-broadcast-bulk",
+          label: "onWrite trigger",
+          kind: "async",
+          delta: "added",
+        },
+        {
+          id: "suppressions-request",
+          from: "send-broadcast-bulk",
+          to: "postmark",
+          label: "GET suppression dump",
+          kind: "sync",
+          delta: "added",
+        },
+        {
+          id: "suppressions-response",
+          from: "postmark",
+          to: "send-broadcast-bulk",
+          label: "suppressed addresses",
+          kind: "return",
+          delta: "added",
+          note: "Fetched once per broadcast, not once per recipient.",
+        },
+        {
+          id: "batch-post",
+          from: "send-broadcast-bulk",
+          to: "postmark",
+          label: "POST /email/batch · 500 msgs",
+          kind: "sync",
+          delta: "added",
+          repeat: 4,
+          note: "One request per 500 recipients; four for this 2,000-recipient broadcast.",
+        },
+        {
+          id: "batch-results",
+          from: "postmark",
+          to: "send-broadcast-bulk",
+          label: "per-message results",
+          kind: "return",
+          delta: "added",
+        },
+        {
+          id: "write-results",
+          from: "send-broadcast-bulk",
+          to: "broadcast-queue",
+          label: "write results",
+          kind: "async",
+          delta: "added",
+        },
+      ],
+    },
+  ],
+  stats: {
+    filesChanged: 14,
+    additions: 486,
+    deletions: 212,
+    chips: [
+      { label: "Postmark calls", value: "500× fewer", tone: "hero" },
+      { label: "New", value: "4 units", tone: "added" },
+      { label: "Retired", value: "2 units", tone: "removed" },
+    ],
+  },
+  views: [
+    {
+      id: "overview",
+      title: "Architecture — blast radius",
+      lens: "architecture",
+      summary: "Everything this change touches, across all three lanes.",
+      defaultOpen: true,
+      children: [
+        {
+          id: "new-batch-path",
+          title: "The new batch path",
+          lens: "architecture",
+          summary: "What replaced the per-recipient loop.",
+          scope: {
+            nodes: ["send-broadcast-bulk", "build-bulk-payload", "get-suppressed-emails", "broadcast-lib", "postmark"],
+            edges: [
+              "bulk-to-payload",
+              "bulk-to-suppressions",
+              "bulk-to-lib",
+              "suppressions-to-postmark",
+              "bulk-to-postmark",
+              "bulk-to-firestore",
+            ],
+          },
+        },
+        {
+          id: "retired-path",
+          title: "What was retired",
+          lens: "architecture",
+          summary: "The single-send path, kept visible so a reviewer can confirm nothing else called it.",
+          scope: {
+            nodes: ["process-broadcast", "send-single-email"],
+            edges: ["firestore-to-process", "process-to-single", "single-to-postmark"],
+          },
+        },
+      ],
+    },
+    {
+      id: "send-pipeline-view",
+      title: "Data flow — sending a broadcast",
+      lens: "data-flow",
+      scope: { flows: ["send-pipeline"] },
+    },
+  ],
+  layout: {
+    direction: "right",
+    laneOrder: ["web", "functions", "external"],
+  },
+};
+
+/**
+ * Golden document #2: the same change expressed as an update to a stored
+ * baseline map, which is what the map records once the pull request merges.
+ */
+export const postmarkRefactorPatchInput: PatchDocInput = {
+  schemaVersion: SCHEMA_VERSION,
+  kind: "patch",
+  generatedAt: "2026-08-19T18:31:00.000Z",
+  summary: "Fold the batch send path into the baseline map and drop the retired single-send path.",
+  target: {
+    graphId: "bestregards-broadcast-baseline",
+    fromSha: "3f5c1ab9d24e7f08c6b1a5d3e9074c2b8a6f1d40",
+    toSha: "b71e0d4c8a92f5361de7c0b4a8f2593d6c1e8a77",
+  },
+  ops: [
+    { op: "remove_node", id: "process-broadcast" },
+    { op: "remove_node", id: "send-single-email" },
+    {
+      op: "update_node",
+      id: "send-broadcast-bulk",
+      patch: { delta: "unchanged", badges: [] },
+    },
+    {
+      op: "update_edge",
+      id: "bulk-to-postmark",
+      patch: { delta: "unchanged", emphasis: "normal" },
+    },
+    {
+      op: "set_stats",
+      stats: { chips: [{ label: "Batch size", value: "500", tone: "neutral" }] },
+    },
+  ],
+};
+
+/** Golden document #3: what a repository may commit as `.github/pr-lens.yml`. */
+export const exampleConfigInput: ConfigInput = {
+  schemaVersion: SCHEMA_VERSION,
+  lenses: ["architecture", "data-flow"],
+  map: {
+    rename: [{ match: "functions/src/broadcast/sendBroadcastBulk.ts", to: "Broadcast sender" }],
+    exclude: ["**/*.test.ts", "functions/src/legacy/**"],
+    lane: [{ match: "packages/broadcast-lib/**", lane: "functions" }],
+    group: [{ match: "id:build-bulk-payload", group: "broadcast-lib" }],
+  },
+  branding: true,
+};
+
+/** Golden document #4: the inventory a render of document #1 produces. */
+export const postmarkRefactorManifestInput: RenderManifestInput = {
+  schemaVersion: SCHEMA_VERSION,
+  kind: "render-manifest",
+  generatedAt: "2026-08-19T18:32:10.000Z",
+  graph: {
+    id: "bestregards-broadcast-baseline",
+    headSha: "b71e0d4c8a92f5361de7c0b4a8f2593d6c1e8a77",
+    contentHash: "6a1f0b8c7d2e4359",
+  },
+  renderer: { name: "@coldtea/pr-lens-renderer", version: "0.1.0" },
+  assets: [
+    {
+      id: "overview-light",
+      lens: "architecture",
+      theme: "light",
+      view: "overview",
+      mediaType: "image/svg+xml",
+      contentHash: "0c9d2e6b1a4f7385",
+      bytes: 48213,
+      width: 1280,
+      height: 720,
+      animated: true,
+      url: "https://cdn.example.com/pr-lens/6a1f0b8c7d2e4359/overview-light-0c9d2e6b1a4f7385.svg",
+    },
+    {
+      id: "overview-dark",
+      lens: "architecture",
+      theme: "dark",
+      view: "overview",
+      mediaType: "image/svg+xml",
+      contentHash: "7b3e5a0c9d1f6482",
+      bytes: 48477,
+      width: 1280,
+      height: 720,
+      animated: true,
+      url: "https://cdn.example.com/pr-lens/6a1f0b8c7d2e4359/overview-dark-7b3e5a0c9d1f6482.svg",
+    },
+    {
+      id: "send-pipeline-light",
+      lens: "data-flow",
+      theme: "light",
+      view: "send-pipeline-view",
+      mediaType: "image/svg+xml",
+      contentHash: "2f8a4c6e0b9d1375",
+      bytes: 31904,
+      width: 1120,
+      height: 640,
+      animated: true,
+      url: "https://cdn.example.com/pr-lens/6a1f0b8c7d2e4359/send-pipeline-light-2f8a4c6e0b9d1375.svg",
+    },
+    {
+      id: "send-pipeline-dark",
+      lens: "data-flow",
+      theme: "dark",
+      view: "send-pipeline-view",
+      mediaType: "image/svg+xml",
+      contentHash: "5d1b7f3a8c0e2946",
+      bytes: 32011,
+      width: 1120,
+      height: 640,
+      animated: true,
+      url: "https://cdn.example.com/pr-lens/6a1f0b8c7d2e4359/send-pipeline-dark-5d1b7f3a8c0e2946.svg",
+    },
+  ],
+};

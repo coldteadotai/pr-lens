@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/coldteadotai/pr-lens/main/packages/schema/json-schema/render-manifest.schema.json",
+  "title": "PR Lens render manifest",
+  "version": "0.1.0",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Contract version the document targets. Current: 0.1.0."
+    },
+    "kind": {
+      "type": "string",
+      "const": "render-manifest"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+    },
+    "graph": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+          "description": "Stable identifier, unique within its collection in a document."
+        },
+        "headSha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{7,40}$",
+          "description": "Git commit sha (short or full)."
+        },
+        "contentHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16,64}$",
+          "description": "Hash of the graph document this render came from."
+        }
+      },
+      "required": [
+        "contentHash"
+      ],
+      "additionalProperties": false,
+      "description": "The document that was rendered."
+    },
+    "renderer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "assets": {
+      "minItems": 1,
+      "maxItems": 256,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+            "description": "Stable identifier, unique within its collection in a document."
+          },
+          "lens": {
+            "type": "string",
+            "enum": [
+              "architecture",
+              "data-flow"
+            ],
+            "description": "Rendering lens."
+          },
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "description": "Half of a <picture> pair."
+          },
+          "view": {
+            "description": "Drill-down view this asset renders, when it is not the root.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"
+          },
+          "mediaType": {
+            "type": "string",
+            "const": "image/svg+xml"
+          },
+          "contentHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{16,64}$",
+            "description": "Hash of the asset bytes; the identity of this render."
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "animated": {
+            "default": false,
+            "description": "Contains SMIL animation.",
+            "type": "boolean"
+          },
+          "url": {
+            "description": "Where the asset is published, once it has been uploaded.",
+            "type": "string",
+            "format": "uri"
+          },
+          "path": {
+            "description": "Local path, for surfaces that write files instead of uploading.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "id",
+          "lens",
+          "theme",
+          "mediaType",
+          "contentHash",
+          "bytes",
+          "width",
+          "height",
+          "animated"
+        ],
+        "additionalProperties": false,
+        "description": "One rendered SVG."
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "graph",
+    "renderer",
+    "assets"
+  ],
+  "additionalProperties": false,
+  "description": "A PR Lens render manifest."
+}

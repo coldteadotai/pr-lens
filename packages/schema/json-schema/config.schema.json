@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/coldteadotai/pr-lens/main/packages/schema/json-schema/config.schema.json",
+  "title": "PR Lens repository config",
+  "version": "0.1.0",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "description": "Omitted means the current version.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "lenses": {
+      "default": [
+        "architecture",
+        "data-flow"
+      ],
+      "description": "Lenses to render for this repository.",
+      "minItems": 1,
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "architecture",
+          "data-flow"
+        ],
+        "description": "Rendering lens."
+      }
+    },
+    "map": {
+      "default": {
+        "rename": [],
+        "exclude": [],
+        "lane": [],
+        "group": []
+      },
+      "type": "object",
+      "properties": {
+        "rename": {
+          "default": [],
+          "description": "Replace the inferred label.",
+          "maxItems": 128,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "match": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "`id:<node-id>` for an exact node, otherwise a repository-relative path glob."
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "description": "Short display label."
+              }
+            },
+            "required": [
+              "match",
+              "to"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "exclude": {
+          "default": [],
+          "description": "Drop matching nodes, and any edge or flow step that touched them.",
+          "maxItems": 128,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "`id:<node-id>` for an exact node, otherwise a repository-relative path glob."
+          }
+        },
+        "lane": {
+          "default": [],
+          "description": "Move matching nodes into a lane.",
+          "maxItems": 128,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "match": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "`id:<node-id>` for an exact node, otherwise a repository-relative path glob."
+              },
+              "lane": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                "description": "Stable identifier, unique within its collection in a document."
+              }
+            },
+            "required": [
+              "match",
+              "lane"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "group": {
+          "default": [],
+          "description": "Cluster matching nodes under a sub-group within their lane.",
+          "maxItems": 128,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "match": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "`id:<node-id>` for an exact node, otherwise a repository-relative path glob."
+              },
+              "group": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                "description": "Stable identifier, unique within its collection in a document."
+              }
+            },
+            "required": [
+              "match",
+              "group"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "rename",
+        "exclude",
+        "lane",
+        "group"
+      ],
+      "additionalProperties": false,
+      "description": "Overlay applied over inference, never mutated by it."
+    },
+    "branding": {
+      "default": true,
+      "description": "Show the 'Rendered by PR Lens' footer on comments.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "lenses",
+    "map",
+    "branding"
+  ],
+  "additionalProperties": false,
+  "description": "Repository configuration for PR Lens."
+}

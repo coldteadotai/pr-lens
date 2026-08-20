@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.1.0",
+  "lenses": [
+    "architecture",
+    "data-flow"
+  ],
+  "map": {
+    "rename": [
+      {
+        "match": "functions/src/broadcast/sendBroadcastBulk.ts",
+        "to": "Broadcast sender"
+      }
+    ],
+    "exclude": [
+      "**/*.test.ts",
+      "functions/src/legacy/**"
+    ],
+    "lane": [
+      {
+        "match": "packages/broadcast-lib/**",
+        "lane": "functions"
+      }
+    ],
+    "group": [
+      {
+        "match": "id:build-bulk-payload",
+        "group": "broadcast-lib"
+      }
+    ]
+  },
+  "branding": true
+}
