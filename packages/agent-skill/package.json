@@ -1,0 +1,39 @@
+{
+  "name": "@coldtea/pr-lens-agent-skill",
+  "version": "0.1.0",
+  "description": "The PR Lens skill for coding agents: author a graph document from a diff, validate it, render it, and correct a repository's map.",
+  "license": "MIT",
+  "author": "Ohans Emmanuel",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coldteadotai/pr-lens.git",
+    "directory": "packages/agent-skill"
+  },
+  "homepage": "https://github.com/coldteadotai/pr-lens/tree/main/packages/agent-skill#readme",
+  "keywords": [
+    "pr-lens",
+    "agent-skill",
+    "claude-code",
+    "cursor",
+    "code-review",
+    "architecture-diagram"
+  ],
+  "type": "module",
+  "files": [
+    "SKILL.md",
+    "references",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@coldtea/pr-lens-schema": "workspace:^",
+    "@types/node": "^20.19.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11",
+    "yaml": "^2.8.1"
+  }
+}

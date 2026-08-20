@@ -33,6 +33,24 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
+  packages/agent-skill:
+    devDependencies:
+      '@coldtea/pr-lens-schema':
+        specifier: workspace:^
+        version: link:../schema
+      '@types/node':
+        specifier: ^20.19.0
+        version: 20.19.43
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@types/node@20.19.43)(vite@8.2.2(@types/node@20.19.43)(esbuild@0.28.2)(tsx@4.23.12)(yaml@2.9.0))
+      yaml:
+        specifier: ^2.8.1
+        version: 2.9.0
+
   packages/cli:
     dependencies:
       '@coldtea/pr-lens-schema':
