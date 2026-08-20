@@ -1,0 +1,28 @@
+{
+  "name": "pr-lens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Review what actually matters — PR diffs as animated, interactive diagrams inside the GitHub pull request.",
+  "license": "MIT",
+  "author": "Ohans Emmanuel",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coldteadotai/pr-lens.git"
+  },
+  "type": "module",
+  "packageManager": "pnpm@10.5.2",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "schema:emit": "pnpm --filter @coldtea/pr-lens-schema run schema:emit",
+    "verify": "pnpm run build && pnpm run typecheck && pnpm run test"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}
