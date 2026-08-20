@@ -79,6 +79,13 @@ export const THEMES = Theme.options;
  * Deriving the view cap from the asset budget keeps the relationship in one
  * place — raise the budget, or add a theme, and the other end moves with it
  * instead of every surface rediscovering the arithmetic.
+ *
+ * The cap is deliberately the worst case, every theme rendered, rather than
+ * what some particular render would emit. A renderer asked for one theme
+ * could describe twice as many views, but then whether a document is
+ * renderable would depend on how it was asked to be rendered, and the promise
+ * this package exists to make — if it parses, it renders — would need a
+ * second rule at a second boundary to stay true.
  */
 export const MAX_RENDER_ASSETS = 256;
 

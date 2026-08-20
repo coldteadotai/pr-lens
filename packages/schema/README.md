@@ -36,6 +36,8 @@ MAX_VIEWS * THEMES.length === MAX_RENDER_ASSETS; // 128 * 2 === 256
 
 Each array in the view tree is capped, but its depth is not, so the total is bounded by `graphIntegrityIssues`: a document carrying more views than a manifest could describe is rejected here rather than at the renderer, which would otherwise be left holding a document it was told was fine. Import `MAX_VIEWS`, `MAX_RENDER_ASSETS` and `THEMES` rather than restating any of them — raise the budget or add a theme and the other end moves with it.
 
+The cap is the worst case, every theme rendered, not what a particular render would emit. A single-theme render could describe twice as many views, but then whether a document is renderable would depend on how it was asked to be rendered — and **if it parses, it renders** is the promise this package exists to make.
+
 ## Two lenses
 
 `architecture` shows blast radius against the existing system. `data-flow` animates an ordered pipeline. There is deliberately no security lens and no findings field: PR Lens is the comprehension layer, and a document that carries findings is rejected rather than quietly stripped. The `Lens` enum is additive — a future contract version may add lenses, so treat one you do not recognise as a view to skip, not as a failure.

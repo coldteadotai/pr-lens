@@ -257,8 +257,10 @@ export const View: z.ZodType<View, ViewInput> = z.lazy(() =>
 
 /**
  * Hints, not instructions: the renderer owns final placement so that layout
- * stays deterministic for a given document and a stale hint can never break a
- * diagram. Absolute coordinates are intentionally not expressible.
+ * stays deterministic for a given document. A hint is a floor rather than an
+ * answer — it can push a node further down the page, never above something
+ * that feeds it — so a stale hint can leave a gap but can never invert an
+ * edge. Absolute coordinates are intentionally not expressible.
  */
 export const LayoutHints = z
   .strictObject({
