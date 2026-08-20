@@ -9,6 +9,9 @@ Two lenses ship: **architecture** (what this change touches, against the existin
 | Package | What it is |
 | --- | --- |
 | [`packages/schema`](packages/schema) | `@coldtea/pr-lens-schema` — the contract every other component speaks |
+| [`packages/cli`](packages/cli) | `@coldtea/pr-lens-cli` — read a diff with your own model key, render it, compose the comment |
+| [`packages/action`](packages/action) | the GitHub Action: analyze, publish, post one static comment |
+| [`packages/agent-skill`](packages/agent-skill) | `@coldtea/pr-lens-agent-skill` — teaches a coding agent to draw the change it just made |
 
 ## Working in this repo
 
