@@ -20,12 +20,30 @@ export type CommentOptions = {
   branding: boolean;
 };
 
-const escape = (text: string): string =>
-  text
+const escape = (value: string): string =>
+  value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+
+/**
+ * Model-authored prose, rendered as the words it is.
+ *
+ * Every string in the document was written by a model reading a diff, and a
+ * pull request can carry whatever text an author likes into that diff. So
+ * none of it may reach GitHub as markup: escaping the HTML is only half the
+ * job, because markdown would still turn `[Security update](http://…)` into a
+ * link that looks like ours. Each string therefore lands inside an HTML
+ * element — inside one, markdown is not parsed at all — on a single line, so
+ * a blank line cannot end the block and let the rest through.
+ *
+ * The zero-width space after an @ or a # is the last piece: those are matched
+ * after markdown, on the rendered text, and would otherwise notify a person
+ * or cross-link an issue on the say-so of a diff.
+ */
+const text = (value: string): string =>
+  escape(value.replace(/\s+/g, " ").trim()).replace(/([@#])(?=[\w-])/g, "$1&#8203;");
 
 const href = (asset: RenderAsset, assetBaseUrl: string | undefined): string => {
   if (asset.url !== undefined) return asset.url;
@@ -59,7 +77,7 @@ const picture = (pair: ThemePair, alt: string, assetBaseUrl: string | undefined)
   const fallback = pair.light ?? pair.dark;
   if (fallback === undefined) return "";
 
-  const image = `<img alt="${escape(alt)}" src="${escape(href(fallback, assetBaseUrl))}" width="${fallback.width}">`;
+  const image = `<img alt="${text(alt)}" src="${escape(href(fallback, assetBaseUrl))}" width="${fallback.width}">`;
   if (pair.dark === undefined || pair.light === undefined) return image;
 
   return [
@@ -94,7 +112,7 @@ const statsLine = (graph: GraphDoc): string => {
     ...stats.chips.map((chip) => `${chip.label} ${chip.value}`),
   ].filter((chip): chip is string => chip !== undefined);
 
-  return chips.map((chip) => `\`${chip}\``).join(" · ");
+  return `<p>${chips.map((chip) => `<code>${text(chip)}</code>`).join(" · ")}</p>`;
 };
 
 const viewSection = (
@@ -106,14 +124,14 @@ const viewSection = (
   const pair = pairsByLens(own).get(view.lens);
 
   const body = [
-    view.summary === undefined ? "" : escape(view.summary),
+    view.summary === undefined ? "" : `<p>${text(view.summary)}</p>`,
     pair === undefined ? "" : picture(pair, view.title, assetBaseUrl),
     ...view.children.map((child) => viewSection(child, assets, assetBaseUrl)),
   ].filter((part) => part !== "");
 
   return [
     `<details${view.defaultOpen ? " open" : ""}>`,
-    `<summary><b>${escape(view.title)}</b></summary>`,
+    `<summary><b>${text(view.title)}</b></summary>`,
     "",
     ...body.flatMap((part) => [part, ""]),
     "</details>",
@@ -148,8 +166,8 @@ export const composeComment = (options: CommentOptions): string => {
 
   return [
     COMMENT_MARKER,
-    `### ${escape(graph.title)}`,
-    graph.summary === undefined ? "" : escape(graph.summary),
+    `<h3>${text(graph.title)}</h3>`,
+    graph.summary === undefined ? "" : `<p>${text(graph.summary)}</p>`,
     statsLine(graph),
     ...diagrams,
     ...graph.views.map((view) => viewSection(view, assets, assetBaseUrl)),

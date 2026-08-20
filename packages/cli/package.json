@@ -40,14 +40,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@coldtea/pr-lens-renderer": "workspace:^",
     "@coldtea/pr-lens-schema": "workspace:^",
-    "picomatch": "^4.0.2",
     "yaml": "^2.8.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",
-    "@types/picomatch": "^4.0.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11"
   }

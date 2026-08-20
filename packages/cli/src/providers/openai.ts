@@ -14,13 +14,24 @@ const Response = z.object({
 });
 
 /**
- * The `/chat/completions` shape, which OpenAI, DeepSeek, Anthropic's
- * compatibility endpoint, OpenRouter, Ollama and llama.cpp all speak. The
- * system prompt is the first message rather than a separate field.
+ * What an output limit is called on this endpoint.
+ *
+ * OpenAI renamed the field to `max_completion_tokens` and its newer models
+ * reject the old one; the servers that copied the API before that rename —
+ * DeepSeek, Ollama, llama.cpp and the rest — only know `max_tokens`. There is
+ * no spelling both accept, so the caller says which endpoint it is talking to
+ * rather than the request guessing from a hostname.
+ */
+export type TokenLimitField = "max_tokens" | "max_completion_tokens";
+
+/**
+ * The `/chat/completions` shape. The system prompt is the first message rather
+ * than a separate field.
  */
 export const openAiCompleteJson = async (
   provider: Provider,
   request: JsonCompletion,
+  tokenLimitField: TokenLimitField,
 ): Promise<string> => {
   const body = await postJson(
     `${provider.baseUrl}/chat/completions`,
@@ -28,7 +39,7 @@ export const openAiCompleteJson = async (
     {
       model: provider.model,
       temperature: 0,
-      max_completion_tokens: request.maxOutputTokens,
+      [tokenLimitField]: request.maxOutputTokens,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: request.system },

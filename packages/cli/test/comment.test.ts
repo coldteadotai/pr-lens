@@ -101,6 +101,88 @@ test("model-authored text cannot smuggle markup into the comment", () => {
   expect(body).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
 });
 
+/**
+ * Markdown is not parsed inside an HTML element, so the defence is structural:
+ * every line carrying model-authored text has to be one.
+ */
+const linesCarrying = (body: string, needle: string): string[] =>
+  body.split("\n").filter((line) => line.includes(needle));
+
+const INJECTIONS = [
+  ["a disguised link", "[Security update](https://attacker.example/phish)", "attacker.example"],
+  ["an image", "![](https://attacker.example/tracker.png)", "attacker.example"],
+  ["a code fence", "```\nrm -rf /\n```", "```"],
+  ["a heading", "# Not our heading", "Not our heading"],
+] as const;
+
+test.each(INJECTIONS)("%s in a title never lands in a markdown context", (_what, payload, needle) => {
+  const body = composeComment({
+    graph: { ...minimalGraph, title: payload },
+    manifest: localManifest([asset({})]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+  });
+
+  const carrying = linesCarrying(body, needle);
+  expect(carrying.length).toBeGreaterThan(0);
+  for (const line of carrying) expect(line.startsWith("<")).toBe(true);
+});
+
+test("a summary, a chip and a view are held to the same rule as the title", () => {
+  const payload = "[click me](https://attacker.example) @ohansemmanuel";
+
+  const body = composeComment({
+    graph: {
+      ...minimalGraph,
+      summary: payload,
+      stats: { chips: [{ label: payload, value: "1", tone: "neutral" }] },
+      views: [
+        {
+          id: "v1",
+          title: payload,
+          lens: "architecture",
+          summary: payload,
+          scope: { kind: "all" },
+          defaultOpen: false,
+          children: [],
+        },
+      ],
+    },
+    manifest: localManifest([asset({})]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+  });
+
+  const carrying = linesCarrying(body, "attacker.example");
+  expect(carrying).toHaveLength(4);
+  for (const line of carrying) expect(line.startsWith("<")).toBe(true);
+});
+
+test("a mention in model prose does not notify the person it names", () => {
+  const body = composeComment({
+    graph: { ...minimalGraph, summary: "asked @ohansemmanuel about #12" },
+    manifest: localManifest([asset({})]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+  });
+
+  expect(body).not.toContain("@ohansemmanuel");
+  expect(body).not.toContain("#12");
+  expect(body).toContain("@&#8203;ohansemmanuel");
+  expect(body).toContain("#&#8203;12");
+});
+
+test("a newline in model prose cannot break out of the element that contains it", () => {
+  const body = composeComment({
+    graph: { ...minimalGraph, summary: "first line\n\n### heading that is not ours" },
+    manifest: localManifest([asset({})]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+  });
+
+  expect(body).toContain("<p>first line ### heading that is not ours</p>");
+});
+
 test("the drill-down tree keeps its nesting and its open sections", () => {
   const body = composeComment({
     graph: postmarkRefactorGraph,

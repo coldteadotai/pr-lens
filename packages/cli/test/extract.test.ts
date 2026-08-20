@@ -11,6 +11,7 @@ const known: KnownFields = {
     generator: { name: "pr-lens-cli", version: "0.1.0", model: "test-model" },
   },
   stats: { filesChanged: 3, additions: 40, deletions: 12 },
+  lenses: ["architecture"],
   generatedAt: "2026-08-20T21:00:00.000Z",
 };
 
@@ -38,14 +39,43 @@ test.each([
   ['{"a":1}', "plain"],
   ['```json\n{"a":1}\n```', "fenced"],
   ['Here you go:\n{"a":1}', "prefaced with prose"],
-])("a %s answer is read as an object (%s)", (text) => {
-  expect(readJsonObject(text)).toEqual({ a: 1 });
+])("a %s answer is read as an object (%s)", (answer) => {
+  expect(readJsonObject(answer)).toEqual({ ok: true, value: { a: 1 } });
 });
 
-test("an answer that holds no object is a typed failure, not a parse crash", () => {
-  expect(() => readJsonObject("I cannot help with that")).toThrow(
-    expect.objectContaining({ code: "MODEL_OUTPUT_INVALID" }),
+test("an answer that holds no object fails with a reason to hand back", () => {
+  const read = readJsonObject("I cannot help with that");
+  expect(read.ok).toBe(false);
+});
+
+test("a lens that was not asked for cannot come back in the answer", () => {
+  const stamped = applyKnownFields({ ...modelBody(), lenses: ["architecture", "data-flow"] }, known);
+  expect(stamped).toMatchObject({ lenses: ["architecture"] });
+});
+
+test("truncated JSON buys the same correction round a rejected document gets", async () => {
+  const complete = vi
+    .fn()
+    .mockResolvedValueOnce('{"title":"cut off"')
+    .mockResolvedValueOnce(JSON.stringify(modelBody()));
+
+  const { attempts } = await extractGraph(
+    { system: "s", user: "u", maxOutputTokens: 1024, known },
+    complete,
   );
+
+  expect(attempts).toBe(2);
+  const repair = complete.mock.calls[1]?.[0];
+  expect(repair.turns[2].text).toContain("could not be read as JSON");
+});
+
+test("a model that answers with prose twice fails saying so", async () => {
+  const complete = vi.fn().mockResolvedValue("I cannot help with that");
+
+  await expect(
+    extractGraph({ system: "s", user: "u", maxOutputTokens: 1024, known }, complete),
+  ).rejects.toThrow(expect.objectContaining({ code: "MODEL_OUTPUT_INVALID" }));
+  expect(complete).toHaveBeenCalledTimes(2);
 });
 
 test("an invalid document buys one correction round, and the errors go back to the model", async () => {

@@ -4,12 +4,16 @@ import { geminiCompleteJson } from "./gemini.js";
 import { openAiCompleteJson } from "./openai.js";
 
 /**
- * Two shapes rather than a list of vendors: Gemini's own API, and the
- * `/chat/completions` shape everyone else exposes. OpenAI, DeepSeek,
- * Anthropic, OpenRouter, Ollama and llama.cpp are all reached by pointing
- * `--base-url` at them, so a new vendor needs no code here.
+ * Three shapes rather than a list of vendors: Gemini's own API, OpenAI's own
+ * API, and the `/chat/completions` shape everyone else copied from it.
+ *
+ * OpenAI is separate from the servers that copied it because the two have
+ * drifted: it renamed the output limit to `max_completion_tokens` and its
+ * newer models reject `max_tokens`, which is the only spelling DeepSeek,
+ * Ollama and llama.cpp know. Everything else about the request is shared, and
+ * a new vendor still needs no code here — only a `--base-url`.
  */
-export const PROVIDER_IDS = ["gemini", "openai-compatible"] as const;
+export const PROVIDER_IDS = ["gemini", "openai", "openai-compatible"] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 export const isProviderId = (value: string): value is ProviderId =>
@@ -32,7 +36,7 @@ export type JsonCompletion = {
 
 type ProviderDefaults = {
   apiKeyEnv: string;
-  baseUrl: string;
+  baseUrl: string | undefined;
   model: string | undefined;
 };
 
@@ -44,10 +48,16 @@ export const providerDefaults = (id: ProviderId): ProviderDefaults => {
         baseUrl: "https://generativelanguage.googleapis.com/v1beta",
         model: "gemini-3.7-flash",
       };
-    case "openai-compatible":
+    case "openai":
       return {
         apiKeyEnv: "OPENAI_API_KEY",
         baseUrl: "https://api.openai.com/v1",
+        model: undefined,
+      };
+    case "openai-compatible":
+      return {
+        apiKeyEnv: "OPENAI_API_KEY",
+        baseUrl: undefined,
         model: undefined,
       };
     default:
@@ -85,24 +95,29 @@ export const resolveProvider = (
   if (model === undefined)
     throw new PrLensCliError(
       "USAGE",
-      "--model is required for an openai-compatible provider",
-      "the endpoint behind --base-url decides which model names exist, so there is no default worth guessing",
+      `--model is required for the ${options.id} provider`,
+      "the endpoint decides which model names exist, so there is no default worth guessing",
     );
 
-  return {
-    id: options.id,
-    model,
-    apiKey,
-    baseUrl: (options.baseUrl ?? defaults.baseUrl).replace(/\/+$/, ""),
-  };
+  const baseUrl = options.baseUrl ?? defaults.baseUrl;
+  if (baseUrl === undefined)
+    throw new PrLensCliError(
+      "USAGE",
+      "--base-url is required for an openai-compatible provider",
+      "it is the endpoint that is compatible: point it at DeepSeek, OpenRouter, Ollama or your own server. For OpenAI itself, use --provider openai",
+    );
+
+  return { id: options.id, model, apiKey, baseUrl: baseUrl.replace(/\/+$/, "") };
 };
 
 export const completeJson = (provider: Provider, request: JsonCompletion): Promise<string> => {
   switch (provider.id) {
     case "gemini":
       return geminiCompleteJson(provider, request);
+    case "openai":
+      return openAiCompleteJson(provider, request, "max_completion_tokens");
     case "openai-compatible":
-      return openAiCompleteJson(provider, request);
+      return openAiCompleteJson(provider, request, "max_tokens");
     default:
       return assertNever(provider.id, "Unhandled provider");
   }

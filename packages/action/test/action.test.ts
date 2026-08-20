@@ -65,6 +65,38 @@ test("a workflow only has to hand over the key; everything else has a default", 
   }
 });
 
+const step = (name: string) => {
+  const found = action.runs.steps.find((candidate) => candidate.name === name);
+  if (found === undefined) throw new Error(`no step named ${name}`);
+  return found.run ?? "";
+};
+
+test("a comment is only edited when the account this action comments as wrote it", () => {
+  const posting = step("Post the comment");
+
+  expect(posting).toContain("$author");
+  expect(posting).toContain(".user.login == $author");
+  expect(Object.keys(action.inputs)).toContain("comment-author");
+});
+
+test("a run that lost a race does not overwrite a comment for a newer commit", () => {
+  expect(step("Post the comment")).toContain("merge-base --is-ancestor");
+});
+
+test("publishing retries onto the branch tip rather than failing the run", () => {
+  const publishing = step("Publish the SVGs");
+
+  expect(publishing).toContain("retrying");
+  expect(publishing).toContain("git fetch");
+});
+
+test("the workflow the README hands out serialises runs of the same pull request", async () => {
+  const readme = await read("README.md");
+
+  expect(readme).toContain("concurrency:");
+  expect(readme).toContain("cancel-in-progress: true");
+});
+
 test("the CLI version the action runs is the CLI version in this repository", async () => {
   const cli: unknown = JSON.parse(await read("../cli/package.json"));
   expect(cli).toMatchObject({ version: action.inputs["cli-version"]?.default });

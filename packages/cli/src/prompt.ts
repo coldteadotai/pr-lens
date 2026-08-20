@@ -50,7 +50,7 @@ export const buildExtractionPrompt = (context: PromptContext, jsonSchema: string
     `Repository: ${context.repo.owner}/${context.repo.name}`,
     `Base commit: ${context.base.sha}${context.base.ref ? ` (${context.base.ref})` : ""}`,
     `Head commit: ${context.head.sha}${context.head.ref ? ` (${context.head.ref})` : ""}`,
-    `Lenses to fill: ${context.lenses.join(", ")}`,
+    `Lenses to fill: ${context.lenses.join(", ")} — exactly these, and no others. Anything needing a lens that is not listed is out of scope for this document.`,
     "",
     `Changed files (${context.diff.files.length}, +${context.diff.additions} -${context.diff.deletions}):`,
     fileList(context.diff),
@@ -67,6 +67,13 @@ export const buildExtractionPrompt = (context: PromptContext, jsonSchema: string
       : `It was truncated at ${context.diff.truncatedAt} bytes, so the tail of the change is missing; describe what you can see and do not invent the rest.`,
     "",
     context.diff.patch,
+  ].join("\n");
+
+export const buildJsonRepairPrompt = (reason: string): string =>
+  [
+    `That answer could not be read as JSON: ${reason}`,
+    "",
+    "Return the whole document again as a single JSON object and nothing else — no prose around it, no markdown fence, and nothing after the closing brace. If the previous answer was cut off, shorten the document so it fits: fewer nodes and one flow beat a document that never ends.",
   ].join("\n");
 
 export const buildRepairPrompt = (error: PrLensSchemaError): string =>

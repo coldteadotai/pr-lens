@@ -1,8 +1,7 @@
-import { LENSES, type GraphDoc, type GraphDocInput, type Lens } from "@coldtea/pr-lens-schema";
+import { LENSES, type GraphDocInput, type Lens } from "@coldtea/pr-lens-schema";
 import { createRequire } from "node:module";
 import { parseOptions, readBoolean, readInt, readList, readString } from "../args.js";
 import { discoverConfig, loadConfig, type LoadedConfig } from "../config-file.js";
-import { applyCorrections } from "../corrections.js";
 import { PrLensCliError, usageError } from "../errors.js";
 import { extractGraph } from "../extract.js";
 import { collectDiff, mergeBase, parseRepoSlug, remoteSlug, repositoryRoot, resolveCommit } from "../git.js";
@@ -30,8 +29,8 @@ environment, and the diff goes straight to the provider you name.
   --base-url <url>          provider endpoint, for a compatible or local server
   --api-key-env <name>      environment variable holding the key
   --lens <lens>             ${LENSES.join(", ")} (repeatable, default both)
-  --config <file>           corrections to apply (default the repository's, if any)
-  --no-config               ignore the repository's corrections
+  --config <file>           read the lenses from this config (default the repository's)
+  --no-config               ignore the repository's config
   --pr <number>             pull request number, recorded in provenance
   --repo-slug <owner/name>  override the slug read from the git remote
   --remote <name>           remote to read the slug from (default origin)
@@ -62,30 +61,6 @@ const graphJsonSchema = (): Promise<string> =>
   readTextFile(
     createRequire(import.meta.url).resolve("@coldtea/pr-lens-schema/json-schema/graph-doc.schema.json"),
   );
-
-/**
- * Corrections are an overlay over inference, re-applied on every run, so they
- * land here rather than in a file anyone edits by hand afterwards.
- */
-const correct = (
-  document: GraphDoc,
-  configured: LoadedConfig | undefined,
-  terminal: Terminal,
-): GraphDoc => {
-  if (configured === undefined) return document;
-
-  const { result, warnings } = applyCorrections(document, configured.config);
-  for (const warning of warnings) terminal.err(`${configured.path}: ${warning}`);
-
-  if (!result.ok)
-    throw new PrLensCliError(
-      "INVALID_DOCUMENT",
-      `${configured.path} leaves a document that no longer validates [${result.error.code}]`,
-      result.error.message,
-    );
-
-  return result.value;
-};
 
 export const analyzeCommand = async (
   args: readonly string[],
@@ -186,15 +161,11 @@ export const analyzeCommand = async (
     return;
   }
 
-  const pr = readString(values.pr, "pr");
-  const pullRequest = pr === undefined
-    ? undefined
-    : {
-        number: Number(pr),
-        url: `https://${slug.host}/${slug.owner}/${slug.name}/pull/${pr}`,
-      };
-  if (pullRequest !== undefined && !Number.isInteger(pullRequest.number))
-    throw usageError(`--pr needs a pull request number, got ${JSON.stringify(pr)}`);
+  const pr = values.pr === undefined ? undefined : readInt(values.pr, "pr", 0);
+  const pullRequest =
+    pr === undefined
+      ? undefined
+      : { number: pr, url: `https://${slug.host}/${slug.owner}/${slug.name}/pull/${pr}` };
 
   const provenance: GraphDocInput["provenance"] = {
     repo: slug,
@@ -213,6 +184,7 @@ export const analyzeCommand = async (
       maxOutputTokens: readInt(values["max-output-tokens"], "max-output-tokens", DEFAULT_MAX_OUTPUT_TOKENS),
       known: {
         provenance,
+        lenses,
         stats: {
           filesChanged: diff.files.length,
           additions: diff.additions,
@@ -227,10 +199,8 @@ export const analyzeCommand = async (
     (request) => completeJson(provider, request),
   );
 
-  const corrected = correct(document, configured, terminal);
-
-  const written = await writeJsonFile(readString(values.out, "out") ?? DEFAULT_OUT, corrected);
+  const written = await writeJsonFile(readString(values.out, "out") ?? DEFAULT_OUT, document);
   terminal.out(
-    `✓ ${written} — ${corrected.nodes.length} nodes, ${corrected.edges.length} edges, ${corrected.flows.length} flows${attempts > 1 ? ` (${attempts} attempts)` : ""}`,
+    `✓ ${written} — ${document.nodes.length} nodes, ${document.edges.length} edges, ${document.flows.length} flows${attempts > 1 ? ` (${attempts} attempts)` : ""}`,
   );
 };

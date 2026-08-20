@@ -17,14 +17,15 @@ export GEMINI_API_KEY=…
 pr-lens analyze --base origin/main --head HEAD
 ```
 
-Two shapes are implemented rather than a list of vendors:
+Three request shapes are implemented rather than a list of vendors:
 
 | `--provider` | Endpoint | Key |
 | --- | --- | --- |
 | `gemini` (default) | Google's own API | `GEMINI_API_KEY` |
-| `openai-compatible` | anything speaking `/chat/completions` | `OPENAI_API_KEY` |
+| `openai` | OpenAI's own API | `OPENAI_API_KEY` |
+| `openai-compatible` | anything else speaking `/chat/completions`, named by `--base-url` | `OPENAI_API_KEY` |
 
-So OpenAI, DeepSeek, Anthropic's compatibility endpoint, OpenRouter, Ollama and llama.cpp are all reached by pointing `--base-url` at them, and a new vendor needs no release here:
+DeepSeek, Anthropic's compatibility endpoint, OpenRouter, Ollama and llama.cpp are all reached by pointing `--base-url` at them, and a new vendor needs no release here. OpenAI is listed separately from the servers that copied it because the two have drifted: it renamed the output limit to `max_completion_tokens` and its newer models reject `max_tokens`, which is the only spelling the others know. There is no field both accept, so you say which endpoint you are talking to rather than the CLI guessing from a hostname.
 
 ```bash
 pr-lens analyze --base origin/main \
@@ -56,7 +57,9 @@ The answer is parsed against the contract. If it fails, the validation errors �
 pr-lens render pr-lens/graph.json -o pr-lens/
 ```
 
-Draws the document as self-contained light and dark SVGs and writes the manifest describing them.
+Draws the document as self-contained light and dark SVGs — one pair per drill-down section per lens, or one pair per lens when the document has no sections — and writes `manifest.json` beside them: what was drawn, how big, and under which file name. That manifest is what `comment` reads, so neither command has to re-derive the other's file names.
+
+The SVGs carry no script and no external reference, and the same document renders to the same bytes every time. `--theme light` or `--theme dark` draws one half of the pair.
 
 ### `comment`
 
@@ -87,7 +90,7 @@ The map is a snapshot, not a source of truth. Nothing reads it back into the pip
 
 ## Corrections
 
-A repository's `.github/pr-lens.yml` is picked up automatically and applied to every fresh analysis — renames, exclusions, lane pins, groupings. It is an overlay: inference never writes back into it, so a correction keeps holding as the code moves and the model renames things between runs.
+A repository's `.github/pr-lens.yml` is picked up automatically by `render` and applied at draw time — renames, exclusions, lane pins, groupings. It is an overlay: inference never writes back into it, so a correction keeps holding as the code moves and the model renames things between runs, and the document on disk stays the record of what was inferred.
 
 ```yaml
 schemaVersion: 0.1.0
@@ -99,8 +102,8 @@ map:
     - "**/*.test.ts"
 ```
 
-A correction that matches nothing is reported rather than swallowed, so a config that has drifted out of date is visible. `--config` points elsewhere, `--no-config` ignores it.
+`--config` points elsewhere and `--no-config` ignores it, on both `render` and `analyze` — `analyze` reads only `lenses` from it, since which lenses to fill is a question for extraction and the rest is a question for drawing.
 
 ## Failures
 
-Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDERER_UNAVAILABLE`. Misuse exits 2, everything else exits 1.
+Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`. Misuse exits 2, everything else exits 1.

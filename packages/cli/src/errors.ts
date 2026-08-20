@@ -14,7 +14,7 @@ export type CliErrorCode =
   | "MISSING_API_KEY"
   | "PROVIDER_FAILED"
   | "MODEL_OUTPUT_INVALID"
-  | "RENDERER_UNAVAILABLE";
+  | "RENDER_FAILED";
 
 export class PrLensCliError extends Error {
   readonly code: CliErrorCode;

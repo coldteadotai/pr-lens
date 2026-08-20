@@ -1,4 +1,5 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { parseRenderManifest } from "@coldtea/pr-lens-schema";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, expect, test } from "vitest";
@@ -91,7 +92,58 @@ test("the marker is printed by the CLI that owns it, so nothing else has to spel
   expect(out).toEqual([COMMENT_MARKER]);
 });
 
-test("rendering says what is missing, and only after the document checked out", async () => {
-  expect(await invoke("render", GOLDEN)).toBe(1);
-  expect(err.join("\n")).toContain("[RENDERER_UNAVAILABLE]");
+test("rendering writes every SVG the manifest promises, and the manifest validates", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-render-"));
+
+  expect(await invoke("render", GOLDEN, "--out", directory, "--no-config")).toBe(0);
+
+  const manifest = parseRenderManifest(JSON.parse(await readFile(join(directory, "manifest.json"), "utf8")));
+  expect(manifest.assets.length).toBeGreaterThan(0);
+
+  for (const asset of manifest.assets) {
+    expect(asset.path).toBeDefined();
+    const svg = await readFile(join(directory, asset.path ?? ""), "utf8");
+    expect(svg.startsWith("<svg")).toBe(true);
+    expect(svg).not.toContain("<script");
+  }
+});
+
+test("--theme draws one half of the pair, and nothing else", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-render-"));
+
+  expect(await invoke("render", GOLDEN, "--out", directory, "--theme", "dark", "--no-config")).toBe(0);
+
+  const manifest = parseRenderManifest(JSON.parse(await readFile(join(directory, "manifest.json"), "utf8")));
+  expect(manifest.assets.every((asset) => asset.theme === "dark")).toBe(true);
+});
+
+test("a theme that is not a theme is a misuse", async () => {
+  expect(await invoke("render", GOLDEN, "--theme", "sepia")).toBe(2);
+  expect(err.join("\n")).toContain("--theme takes light, dark or both");
+});
+
+test("render and comment agree on where the SVGs are, without either deriving the other's names", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-render-"));
+
+  expect(await invoke("render", GOLDEN, "--out", directory, "--no-config")).toBe(0);
+  out = [];
+
+  expect(
+    await invoke(
+      "comment",
+      "--graph",
+      GOLDEN,
+      "--manifest",
+      join(directory, "manifest.json"),
+      "--asset-base-url",
+      "https://raw.githubusercontent.com/o/r/pr-lens/42",
+    ),
+  ).toBe(0);
+
+  const body = out.join("\n");
+  const manifest = parseRenderManifest(JSON.parse(await readFile(join(directory, "manifest.json"), "utf8")));
+
+  for (const asset of manifest.assets) {
+    expect(body).toContain(`https://raw.githubusercontent.com/o/r/pr-lens/42/${asset.path}`);
+  }
 });
