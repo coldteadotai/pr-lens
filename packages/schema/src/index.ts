@@ -44,6 +44,7 @@ export {
   PatchDoc,
   PatchOp,
   PATCH_OPS,
+  targetDescribesATransition,
   type PatchDocInput,
 } from "./patch.js";
 

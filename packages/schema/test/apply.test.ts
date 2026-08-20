@@ -290,8 +290,75 @@ describe("applying a patch document", () => {
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.error.code).toBe("PATCH_CONFLICT");
-    expect(result.error.issues[0]?.message).toBe("abbreviated commit name");
+    expect(result.error.code).toBe("NOT_A_SNAPSHOT");
+    expect(result.error.message).toContain("records the commit it reflects in full");
+  });
+
+  it("refuses a map with no id, which no patch could name", () => {
+    const { id, ...unidentified } = broadcastBaselineGraph;
+    const result = applyPatchDoc(unidentified, broadcastBaselinePatch);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("NOT_A_SNAPSHOT");
+    expect(result.error.message).toContain("needs an id");
+  });
+
+  it("refuses to launder a contaminated map by patching the annotation away", () => {
+    const midChange: GraphDoc = {
+      ...broadcastBaselineGraph,
+      nodes: broadcastBaselineGraph.nodes.map((node) =>
+        node.id === "queue-route" ? { ...node, delta: "modified" } : node,
+      ),
+    };
+    const patch: PatchDoc = {
+      ...broadcastBaselinePatch,
+      ops: [{ op: "update_node", id: "queue-route", patch: { delta: "unchanged" } }],
+    };
+    const result = applyPatchDoc(midChange, patch);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("NOT_A_SNAPSHOT");
+    expect(result.error.message).toContain("the graph being patched is not a stored map");
+  });
+
+  it("refuses a map whose provenance straddles two commits", () => {
+    const straddling: GraphDoc = {
+      ...broadcastBaselineGraph,
+      provenance: {
+        ...broadcastBaselineGraph.provenance,
+        base: {
+          ...broadcastBaselineGraph.provenance.base,
+          sha: "0000000000000000000000000000000000000000",
+        },
+      },
+    };
+    const result = applyPatchDoc(straddling, broadcastBaselinePatch);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("NOT_A_SNAPSHOT");
+    expect(result.error.message).toContain("reflects one commit");
+  });
+
+  it("refuses a patch that describes no transition, even when it never went through a parser", () => {
+    const standingStill: PatchDoc = {
+      ...broadcastBaselinePatch,
+      target: {
+        ...broadcastBaselinePatch.target,
+        toSha: broadcastBaselinePatch.target.fromSha,
+      },
+      ops: [{ op: "set_stats", stats: { chips: [] } }],
+    };
+
+    for (const attempt of [1, 2]) {
+      const result = applyPatchDoc(broadcastBaselineGraph, standingStill);
+      expect(result.ok, `attempt ${attempt}`).toBe(false);
+      if (result.ok) return;
+      expect(result.error.code).toBe("PATCH_CONFLICT");
+      expect(result.error.issues[0]?.message).toBe("no transition");
+    }
   });
 
   it("swaps the single-send path for the batch path", () => {

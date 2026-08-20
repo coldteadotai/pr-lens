@@ -2,8 +2,7 @@ import { formatIssues, PrLensSchemaError, type Parsed, type SchemaIssue } from "
 import { safeParseGraphDoc } from "./validate.js";
 import type { Flow, GraphDoc, GraphEdge, Lane, View } from "./graph.js";
 import { graphSnapshotIssues } from "./integrity.js";
-import type { PatchDoc, PatchOp } from "./patch.js";
-import { FullSha } from "./primitives.js";
+import { targetDescribesATransition, type PatchDoc, type PatchOp } from "./patch.js";
 import { assertNever } from "./utils.js";
 
 type Collections = {
@@ -325,48 +324,60 @@ export const applyPatch = (graph: GraphDoc, ops: readonly PatchOp[]): Parsed<Gra
  * elements this patch just added had been there, unchanged, all along. The
  * commit the map came from stays recorded on the patch itself.
  *
- * That snapshot rule is checked rather than assumed: a patch is free to carry
- * `added` or `modified` elements, and one that leaves them in the map would
- * hand the next pull request a baseline that already claims to be mid change.
+ * That snapshot rule is checked rather than assumed, on the way in as well as
+ * on the way out: a patch is free to carry `added` or `modified` elements, and
+ * neither a patch that leaves them in the map nor one that quietly launders a
+ * map that already carries them is allowed through.
+ *
+ * The target rules are re-checked here rather than trusted from parsing. A
+ * zod refinement does not survive into the inferred type, so a caller holding
+ * a `PatchDoc` it assembled itself would otherwise skip them.
  */
 export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc> => {
   const { graphId, fromSha, toSha } = patch.target;
 
-  if (graph.id !== graphId)
-    return {
-      ok: false,
-      error: new PrLensSchemaError(
-        "PATCH_CONFLICT",
-        `patch targets graph '${graphId}' but was applied to '${graph.id ?? "an unidentified graph"}'`,
-        [{ code: "PATCH_CONFLICT", path: "target.graphId", message: "wrong graph" }],
-      ),
-    };
+  const reject = (
+    code: SchemaIssue["code"],
+    message: string,
+    issue: SchemaIssue,
+  ): Parsed<GraphDoc> => ({
+    ok: false,
+    error: new PrLensSchemaError(code, message, [issue]),
+  });
 
-  if (!FullSha.safeParse(graph.provenance.head.sha).success)
-    return {
-      ok: false,
-      error: new PrLensSchemaError(
-        "PATCH_CONFLICT",
-        `a stored map must record the full commit it reflects, but this one records '${graph.provenance.head.sha}'`,
-        [
-          {
-            code: "PATCH_CONFLICT",
-            path: "provenance.head.sha",
-            message: "abbreviated commit name",
-          },
-        ],
-      ),
-    };
+  const rejectIssues = (
+    code: SchemaIssue["code"],
+    message: string,
+    issues: SchemaIssue[],
+  ): Parsed<GraphDoc> => ({
+    ok: false,
+    error: new PrLensSchemaError(code, `${message}:\n${formatIssues(issues)}`, issues),
+  });
+
+  if (!targetDescribesATransition(patch.target))
+    return reject(
+      "PATCH_CONFLICT",
+      `patch moves the map from ${fromSha} to the same commit, so it describes no transition`,
+      { code: "PATCH_CONFLICT", path: "target.toSha", message: "no transition" },
+    );
+
+  const contamination = graphSnapshotIssues(graph);
+  if (contamination.length > 0)
+    return rejectIssues("NOT_A_SNAPSHOT", "the graph being patched is not a stored map", contamination);
+
+  if (graph.id !== graphId)
+    return reject(
+      "PATCH_CONFLICT",
+      `patch targets graph '${graphId}' but was applied to '${graph.id ?? "an unidentified graph"}'`,
+      { code: "PATCH_CONFLICT", path: "target.graphId", message: "wrong graph" },
+    );
 
   if (graph.provenance.head.sha !== fromSha)
-    return {
-      ok: false,
-      error: new PrLensSchemaError(
-        "PATCH_CONFLICT",
-        `patch expects the graph at ${fromSha} but it reflects ${graph.provenance.head.sha}`,
-        [{ code: "PATCH_CONFLICT", path: "target.fromSha", message: "stale baseline" }],
-      ),
-    };
+    return reject(
+      "PATCH_CONFLICT",
+      `patch expects the graph at ${fromSha} but it reflects ${graph.provenance.head.sha}`,
+      { code: "PATCH_CONFLICT", path: "target.fromSha", message: "stale baseline" },
+    );
 
   const applied = applyPatch(graph, patch.ops);
   if (!applied.ok) return applied;
@@ -382,14 +393,7 @@ export const applyPatchDoc = (graph: GraphDoc, patch: PatchDoc): Parsed<GraphDoc
 
   const issues = graphSnapshotIssues(snapshot);
   if (issues.length > 0)
-    return {
-      ok: false,
-      error: new PrLensSchemaError(
-        "NOT_A_SNAPSHOT",
-        `patch leaves a map that is not a snapshot:\n${formatIssues(issues)}`,
-        issues,
-      ),
-    };
+    return rejectIssues("NOT_A_SNAPSHOT", "patch leaves a map that is not a stored map", issues);
 
   return { ok: true, value: snapshot };
 };

@@ -1,6 +1,6 @@
 import type { SchemaIssue } from "./errors.js";
 import type { GraphDoc, View } from "./graph.js";
-import type { Delta } from "./primitives.js";
+import { FullSha, type Delta } from "./primitives.js";
 import { assertNever } from "./utils.js";
 
 const duplicates = (ids: readonly string[]): string[] => {
@@ -139,13 +139,33 @@ export const graphIntegrityIssues = (doc: GraphDoc): SchemaIssue[] => {
 };
 
 /**
- * A stored map describes a system, not a change to one: it reflects a single
- * commit, and nothing in it is annotated as a change. A map that fails this
- * would hand the next pull request a baseline that already claims to be mid
- * change, and every delta computed against it would inherit the mistake.
+ * Everything a document must satisfy to be stored as a map, and the check to
+ * run before storing one.
+ *
+ * A map describes a system, not a change to one: it is identified, it names
+ * the single commit it reflects in full, and nothing in it is annotated as a
+ * change. A map that fails this would hand the next pull request a baseline
+ * that already claims to be mid change, and every delta computed against it
+ * would inherit the mistake.
  */
 export const graphSnapshotIssues = (doc: GraphDoc): SchemaIssue[] => {
   const issues: SchemaIssue[] = [];
+
+  if (doc.id === undefined)
+    issues.push({
+      code: "NOT_A_SNAPSHOT",
+      path: "id",
+      message: "a stored map needs an id, so a patch can say which map it targets",
+    });
+
+  for (const side of ["base", "head"] as const) {
+    if (!FullSha.safeParse(doc.provenance[side].sha).success)
+      issues.push({
+        code: "NOT_A_SNAPSHOT",
+        path: `provenance.${side}.sha`,
+        message: `a stored map records the commit it reflects in full, but this one records '${doc.provenance[side].sha}'`,
+      });
+  }
 
   const requireUnchanged = (delta: Delta | undefined, path: string, subject: string) => {
     if (delta === undefined || delta === "unchanged") return;

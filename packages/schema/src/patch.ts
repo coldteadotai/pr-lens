@@ -60,6 +60,19 @@ export const PATCH_OPS = [
   "set_stats",
 ] as const;
 
+/**
+ * A patch has to move the map: the same commit at both ends describes no
+ * transition, and such a patch could be applied over and over.
+ *
+ * The rule lives here as a predicate because a zod refinement does not
+ * survive into the inferred type — a caller holding a `PatchDoc` it built
+ * itself has to be held to the same rule as one that came from a parser.
+ */
+export const targetDescribesATransition = (target: {
+  fromSha: string;
+  toSha: string;
+}): boolean => target.fromSha !== target.toSha;
+
 /** An ordered batch of operations against one stored graph. */
 export const PatchDoc = z
   .strictObject({
@@ -73,7 +86,7 @@ export const PatchDoc = z
         fromSha: FullSha.describe("Commit the stored graph reflects before the operations run."),
         toSha: FullSha.describe("Commit it reflects once they have."),
       })
-      .refine((target) => target.fromSha !== target.toSha, {
+      .refine(targetDescribesATransition, {
         message: "a patch has to move the map to a different commit",
         path: ["toSha"],
       })
