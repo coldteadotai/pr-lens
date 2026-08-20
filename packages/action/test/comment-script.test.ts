@@ -27,7 +27,12 @@ const stub = async (bin: string, name: string, body: string): Promise<void> => {
 
 type Comment = { id: number; user: { login: string }; body: string };
 
-const post = async (options: { currentHead?: string; comments?: Comment[] }) => {
+const post = async (options: {
+  currentHead?: string;
+  /** What the head becomes after this run has read it once. */
+  headAfterFirstRead?: string;
+  comments?: Comment[];
+}) => {
   const root = await mkdtemp(join(tmpdir(), "pr-lens-comment-"));
   const bin = join(root, "bin");
   const runnerTemp = join(root, "runner");
@@ -35,6 +40,8 @@ const post = async (options: { currentHead?: string; comments?: Comment[] }) => 
   await mkdir(join(runnerTemp, "pr-lens", "assets"), { recursive: true });
 
   const log = join(root, "gh.log");
+  const headCalls = join(root, "head-calls");
+  await writeFile(headCalls, "", "utf8");
   const comments = join(root, "comments.jsonl");
   await writeFile(comments, (options.comments ?? []).map((c) => JSON.stringify(c)).join("\n"), "utf8");
   await writeFile(log, "", "utf8");
@@ -45,7 +52,15 @@ const post = async (options: { currentHead?: string; comments?: Comment[] }) => 
     [
       'printf "%s\\n" "$*" >> "${GH_LOG}"',
       'case "$*" in',
-      '  *"/pulls/"*) printf "%s\\n" "${STUB_CURRENT_HEAD}" ;;',
+      '  *"/pulls/"*)',
+      '    asked="$(cat "${STUB_HEAD_CALLS}")x"',
+      '    printf "%s" "${asked}" > "${STUB_HEAD_CALLS}"',
+      '    if [ -n "${STUB_HEAD_AFTER_FIRST}" ] && [ "${#asked}" -gt 1 ]; then',
+      '      printf "%s\\n" "${STUB_HEAD_AFTER_FIRST}"',
+      '    else',
+      '      printf "%s\\n" "${STUB_CURRENT_HEAD}"',
+      '    fi',
+      '    ;;',
       '  *--paginate*) cat "${STUB_COMMENTS}" ;;',
       "  *) cat > /dev/null ;;",
       "esac",
@@ -80,6 +95,8 @@ const post = async (options: { currentHead?: string; comments?: Comment[] }) => 
       GH_TOKEN: "token",
       GH_LOG: log,
       STUB_CURRENT_HEAD: options.currentHead ?? HEAD,
+      STUB_HEAD_AFTER_FIRST: options.headAfterFirstRead ?? "",
+      STUB_HEAD_CALLS: headCalls,
       STUB_COMMENTS: comments,
     },
   });
@@ -90,6 +107,16 @@ const post = async (options: { currentHead?: string; comments?: Comment[] }) => 
 test("a run that was overtaken while it drew does not touch the comment", async () => {
   const { stdout, calls } = await post({
     currentHead: NEWER,
+    comments: [{ id: 1, user: { login: BOT }, body: `${MARKER}\nolder` }],
+  });
+
+  expect(stdout).toContain("has moved on to");
+  expect(calls.some((call) => call.includes("PATCH") || call.includes("POST"))).toBe(false);
+});
+
+test("a push while this run was composing takes the comment with it", async () => {
+  const { stdout, calls } = await post({
+    headAfterFirstRead: NEWER,
     comments: [{ id: 1, user: { login: BOT }, body: `${MARKER}\nolder` }],
   });
 

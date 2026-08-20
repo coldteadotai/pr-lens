@@ -13,14 +13,23 @@ cli() {
 # Whether this run still describes the pull request as it stands. A run that
 # was overtaken while it drew has nothing useful to say: its diagrams are of a
 # commit that is no longer the head, and posting them would replace a newer
-# comment with an older picture. Asking GitHub is what makes this reliable —
+# comment with an older picture. Asking GitHub is what makes this answerable —
 # an older checkout does not contain the newer commit, so no amount of local
-# history could answer it. A push in the seconds after this check still wins
-# the comment, which is what the workflow's concurrency group is for.
-CURRENT_HEAD="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq .head.sha)"
+# history could settle it.
+overtaken() {
+  local current
+  current="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq .head.sha)"
 
-if [ "${CURRENT_HEAD}" != "${HEAD_SHA}" ]; then
-  echo "::notice::#${PR_NUMBER} has moved on to ${CURRENT_HEAD}; leaving the comment to the run that is drawing it."
+  if [ "${current}" = "${HEAD_SHA}" ]; then
+    return 1
+  fi
+
+  echo "::notice::#${PR_NUMBER} has moved on to ${current}; leaving the comment to the run that is drawing it."
+  return 0
+}
+
+# Once here, to spend nothing on a comment that will not be posted.
+if overtaken; then
   exit 0
 fi
 
@@ -42,6 +51,15 @@ gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate --jq
 MINE="$(jq -c --arg author "${COMMENT_AUTHOR}" --arg marker "${MARKER}" \
   'select(.user.login == $author) | select(.body | startswith($marker))' \
   "${WORK}/comments.jsonl" | head -n 1)"
+
+# And again here, because everything between the two costs seconds — composing
+# the body, listing the comments — and this is the check that guards the write.
+# Cancelling an overtaken run is not a lock: the signal arrives when it arrives,
+# and a request already in flight still lands. The window that remains is the
+# one between this line and the next.
+if overtaken; then
+  exit 0
+fi
 
 if [ -n "${MINE}" ]; then
   jq -Rs '{body: .}' < "${BODY}" \

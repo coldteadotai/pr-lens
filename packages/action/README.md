@@ -32,7 +32,9 @@ jobs:
 
 That is the whole setup. The key is passed to the CLI through the environment, so it never appears in a command line or a log; the diff goes to the provider you named and nowhere else.
 
-The `concurrency` block is not decoration. Every run of every pull request writes to one shared branch and one shared comment, so two runs of the same pull request racing is ordinary — a group per pull request makes a new push supersede the render it replaces instead of the two fighting. The Action defends itself either way: publishing retries onto the branch tip, and a run that lost a race will not overwrite a comment describing a commit that already contains its own.
+The `concurrency` block is not decoration. Every run of every pull request writes to one shared branch and one shared comment, so two runs of the same pull request racing is ordinary — a group per pull request means a new push supersedes the render it replaces instead of the two fighting for the comment.
+
+It is not a lock, though, and the Action does not treat it as one: cancellation arrives when it arrives, and a request already on its way to GitHub still lands. So publishing replays onto the branch tip rather than failing, and the comment step asks GitHub for the pull request's head immediately before it writes — a run that was overtaken while it drew says so and posts nothing, rather than replacing a newer diagram with an older one.
 
 ## What it does, in order
 
