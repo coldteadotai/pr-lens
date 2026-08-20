@@ -9,6 +9,14 @@ export const LANE_HEADER_BASELINE = 68;
 export const LANE_PADDING_X = 16;
 export const LANE_GAP = 20;
 export const LANE_BOTTOM_PADDING = 20;
+/**
+ * Lane widths are rounded up to a step, because a lane's width sets where
+ * every lane after it begins. Without the step, retitling one card by a few
+ * characters would nudge every column to its right; with it, ordinary edits
+ * change nothing at all and only a real change in what a lane has to hold
+ * moves anything.
+ */
+export const LANE_WIDTH_STEP = 16;
 export const LANE_RADIUS = 12;
 export const LANE_LABEL_SIZE = 10;
 export const LANE_LABEL_TRACKING = 0.12;
@@ -57,9 +65,22 @@ export const HERO_PULSE_COUNT = 3;
 
 /** One turn of the data-flow sequence, long enough to read every step. */
 export const FLOW_CYCLE_DURATION = 8;
-/** Share of the cycle a pulse spends travelling its own message. */
-export const FLOW_PULSE_TRAVEL = 0.08;
-/** Dead time before a pulse sets off inside its slot. */
-export const FLOW_PULSE_LEAD = 0.02;
+
+/**
+ * A pulse's timings are shares of its own slot, not of the whole cycle: a flow
+ * may carry sixty-four steps, and a fixed share of the cycle would run several
+ * of the last ones together and tell a reviewer the wrong order. Together they
+ * come to less than one slot, which is what keeps every start strictly after
+ * the one before it without a clamp.
+ */
+export const FLOW_PULSE_LEAD = 0.18;
+export const FLOW_PULSE_TRAVEL = 0.62;
+export const FLOW_PULSE_RAMP = 0.06;
+/**
+ * However few the steps, a pulse crossing the screen for most of the cycle
+ * reads as drifting rather than as travelling, so the share has a ceiling in
+ * absolute cycle time as well.
+ */
+export const FLOW_PULSE_MAX_TRAVEL = 0.08;
 /** More repeats than this and the arrows stop reading as separate calls. */
 export const FLOW_MAX_PULSES_PER_MESSAGE = 3;

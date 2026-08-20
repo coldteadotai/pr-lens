@@ -1,5 +1,6 @@
 import type { Delta } from "@coldtea/pr-lens-schema";
 import { assertNever } from "@coldtea/pr-lens-schema";
+import type { Canvas } from "../bounds.js";
 import { coord } from "../geometry.js";
 import type { Palette } from "../theme.js";
 import { MONO_STACK, SANS_STACK } from "../text.js";
@@ -158,3 +159,14 @@ export const svgDocument = (input: {
     "</svg>",
   ]);
 };
+
+/**
+ * Moves painted content clear of the canvas edge when something was drawn
+ * above or to the left of the origin. Wrapping rather than re-deriving every
+ * coordinate keeps the geometry — and so the bytes — unchanged whenever the
+ * shift is zero, which is the ordinary case.
+ */
+export const shifted = (canvas: Canvas, body: string): string =>
+  canvas.shiftX === 0 && canvas.shiftY === 0
+    ? body
+    : wrap("g", { transform: `translate(${coord(canvas.shiftX)},${coord(canvas.shiftY)})` }, body);

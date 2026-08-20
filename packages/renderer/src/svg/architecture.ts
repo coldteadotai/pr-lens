@@ -21,6 +21,8 @@ import {
   PULSE_DURATION,
   SUBTITLE_SIZE,
 } from "../design.js";
+import { canvasFor, union } from "../bounds.js";
+import { DIAGRAM_MARGIN } from "../design.js";
 import { coord, type Box } from "../geometry.js";
 import {
   badgeRow,
@@ -31,11 +33,11 @@ import {
   layoutArchitecture,
   type PlacedNode,
 } from "../layout/architecture.js";
-import { labelBoxOn, routeEdges, type RoutedEdge } from "../layout/edges.js";
+import { curveBounds, labelBoxOn, routeEdges, type RoutedEdge } from "../layout/edges.js";
 import type { ScopedGraph } from "../scope.js";
 import { measure, truncate } from "../text.js";
 import type { Palette } from "../theme.js";
-import { markerFor, toneColour, toneFor, type Tone } from "./document.js";
+import { markerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
 import { glyphGroup } from "./icons.js";
 import { lines, tag, textNode, wrap } from "./primitives.js";
 
@@ -181,12 +183,16 @@ const pulses = (edge: GraphEdge, path: string, palette: Palette): string => {
  * Paints one edge and reports the room its label took, so the next edge can
  * route its own label around it. Labels are placed in edge order, which is the
  * document's order, so two runs of the same document place them identically.
+ *
+ * The line and the label come back separately because they belong to different
+ * layers: a line passes behind a card, and a pill — which is opaque precisely
+ * so that it can be read wherever it lands — passes in front of one.
  */
 const paintEdge = (
   routed: RoutedEdge,
   palette: Palette,
   obstacles: readonly Box[],
-): { markup: string; label: Box | undefined } => {
+): { markup: string; pill: string; label: Box | undefined } => {
   const { edge, path, curve } = routed;
   const tone = toneFor(edge.delta);
   const hero = edge.emphasis === "hero";
@@ -216,9 +222,12 @@ const paintEdge = (
     markup: lines([
       glow,
       tag("path", { class: classes.join(" "), d: path, "marker-end": markerFor(tone) }),
-      label === undefined || edge.label === undefined ? "" : paintLabelPill(edge.label, label, tone),
       pulses(edge, path, palette),
     ]),
+    pill:
+      label === undefined || edge.label === undefined
+        ? ""
+        : paintLabelPill(edge.label, label, tone),
     label,
   };
 };
@@ -261,9 +270,11 @@ export const paintArchitecture = (
     return row === undefined ? [node.box] : [node.box, row.box];
   });
   const edgeMarkup: string[] = [];
+  const pillMarkup: string[] = [];
   for (const edge of routed) {
-    const { markup, label } = paintEdge(edge, palette, obstacles);
+    const { markup, pill, label } = paintEdge(edge, palette, obstacles);
     edgeMarkup.push(markup);
+    pillMarkup.push(pill);
     if (label !== undefined) obstacles.push(label);
   }
 
@@ -284,13 +295,26 @@ export const paintArchitecture = (
     ]),
   );
 
-  return {
-    width: layout.width,
-    height: layout.height,
-    body: lines([
-      wrap("g", {}, lines(lanes)),
-      wrap("g", {}, lines(edgeMarkup)),
-      wrap("g", {}, lines(layout.nodes.map(paintCard))),
+  const canvas = canvasFor(
+    layout,
+    union([
+      ...layout.lanes.map(({ box }) => box),
+      ...obstacles,
+      ...routed.map(({ curve }) => curveBounds(curve)),
     ]),
+    DIAGRAM_MARGIN,
+  );
+
+  const painted = lines([
+    wrap("g", {}, lines(lanes)),
+    wrap("g", {}, lines(edgeMarkup)),
+    wrap("g", {}, lines(layout.nodes.map(paintCard))),
+    wrap("g", {}, lines(pillMarkup)),
+  ]);
+
+  return {
+    width: canvas.width,
+    height: canvas.height,
+    body: shifted(canvas, painted),
   };
 };

@@ -66,6 +66,34 @@ const pathOf = (curve: Curve): string =>
     })
     .join("");
 
+/**
+ * A box the route cannot leave. A cubic stays inside the hull of its own
+ * control points, so taking every point of every segment is a bound rather
+ * than an estimate — which is what the canvas needs, since a route that ran
+ * off the edge would simply be clipped.
+ */
+export const curveBounds = (curve: Curve): Box => {
+  const points: Point[] = [curve.from];
+  for (const segment of curve.segments) {
+    switch (segment.kind) {
+      case "line":
+        points.push(segment.to);
+        break;
+      case "cubic":
+        points.push(segment.first, segment.second, segment.to);
+        break;
+      default:
+        assertNever(segment, "Unhandled path segment");
+    }
+  }
+
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  const left = Math.min(...xs);
+  const top = Math.min(...ys);
+  return { x: left, y: top, width: Math.max(...xs) - left, height: Math.max(...ys) - top };
+};
+
 /** Which face of each card the arrow leaves from and arrives at. */
 const sidesFor = (from: PlacedNode, to: PlacedNode): [Side, Side] => {
   if (from.laneIndex !== to.laneIndex)

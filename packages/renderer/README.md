@@ -48,7 +48,8 @@ The hard requirement is that a diagram does not rearrange itself between two pus
 - **`layout.rank` and `layout.laneOrder` are hints**, applied as a floor rather than an answer. A hint can push a node further down; it cannot lift one above what feeds it. A stale hint from an extraction model therefore cannot invert an edge.
 - **Depth is counted within a lane.** A lane that only enters the story late still starts at the top of its column, and a rank no card in the lane occupies leaves no empty row behind.
 - **Text is measured from a table**, never from a font engine, so a CI runner with no fonts installed lays out identically to a laptop with all of them.
-- **Every coordinate is rounded before it is written.** Arithmetic that differs in the last bit would change the bytes, and the render hash with it.
+- **Every coordinate is rounded before it is written**, and every comparison is by code unit rather than by `localeCompare`. Arithmetic that differs in the last bit — or a sort that consults the host's collation data — would change the bytes, and the render hash with it.
+- **Lane widths are rounded up to a step**, because a lane's width decides where the lanes after it begin. Retitling a card by a few characters therefore moves nothing at all.
 
 Adding a node to one lane leaves every card in the lanes before it exactly where it was. There is a test for that, and golden SVGs for the reference documents: a change to one is a change to what a reviewer sees, so it is reviewed by a person before it is committed.
 
@@ -70,6 +71,12 @@ render(doc, { lens: "architecture", theme: "dark", config });
 ## Addresses
 
 Renders are content-addressed because GitHub's image proxy caches hard: a changed diagram has to arrive as a new URL, not as new bytes at the old one. `contentHash`, `renderAssetId` and `renderAssetFileName` are the single owners of that format, and every surface that builds such a URL must go through them.
+
+An asset's `path` is safe to join to an output directory. View ids are authored by an extraction model and the contract lets one contain `/`, `:` and `.`, so `a/../../elsewhere` is a valid id; those characters are re-spelled one-for-one on the way into an address, which cannot produce a separator or a dot segment and cannot give two different views the same name.
+
+## Untrusted text
+
+Labels, subtitles and titles come from a model. They are escaped for XML at the boundary, and the code points XML 1.0 has no spelling for — most control characters, lone surrogates, the two non-characters — are dropped there too, because the schema constrains how long a label is but not which characters it may contain, and one of those would make the file fail to parse rather than merely look wrong.
 
 ## Refusals
 

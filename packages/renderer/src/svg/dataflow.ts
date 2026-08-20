@@ -1,11 +1,17 @@
 import type { Flow, FlowMessage, GraphNode, MessageKind } from "@coldtea/pr-lens-schema";
 import { assertNever } from "@coldtea/pr-lens-schema";
 import {
+  DIAGRAM_MARGIN,
   FLOW_CYCLE_DURATION,
   FLOW_MAX_PULSES_PER_MESSAGE,
   FLOW_PULSE_LEAD,
+  FLOW_PULSE_MAX_TRAVEL,
+  FLOW_PULSE_RAMP,
   FLOW_PULSE_TRAVEL,
 } from "../design.js";
+import { canvasFor, union } from "../bounds.js";
+import type { Box } from "../geometry.js";
+import { measure } from "../text.js";
 import { coord } from "../geometry.js";
 import {
   ACTIVATION_HALF_WIDTH,
@@ -21,7 +27,7 @@ import {
   type PlacedMessage,
 } from "../layout/dataflow.js";
 import type { Palette } from "../theme.js";
-import { markerFor, toneColour, toneFor, type Tone } from "./document.js";
+import { markerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
 import { lines, tag, textNode, wrap } from "./primitives.js";
 
 /** A ratio inside the animation cycle, written to a fixed number of places. */
@@ -93,13 +99,14 @@ const pulsesFor = (
   const slotWidth = 1 / slotCount;
   const duration = `${coord(FLOW_CYCLE_DURATION)}s`;
 
+  const lead = slotWidth * FLOW_PULSE_LEAD;
+  const travel = Math.min(FLOW_PULSE_MAX_TRAVEL, slotWidth * FLOW_PULSE_TRAVEL);
+  const ramp = slotWidth * FLOW_PULSE_RAMP;
+
   return lines(
     Array.from({ length: placed.slot.count }, (_, index) => {
-      const start = Math.min(
-        (placed.slot.start + index) * slotWidth + FLOW_PULSE_LEAD,
-        1 - FLOW_PULSE_TRAVEL - 0.02,
-      );
-      const finish = start + FLOW_PULSE_TRAVEL;
+      const start = (placed.slot.start + index) * slotWidth + lead;
+      const finish = start + travel;
 
       return wrap(
         "circle",
@@ -117,7 +124,7 @@ const pulsesFor = (
             dur: duration,
             repeatCount: "indefinite",
             values: "0;0;1;1;0;0",
-            keyTimes: `0;${ratio(start)};${ratio(start + 0.01)};${ratio(finish)};${ratio(finish + 0.01)};1`,
+            keyTimes: `0;${ratio(start)};${ratio(start + ramp)};${ratio(finish)};${ratio(finish + ramp)};1`,
           }),
       );
     }),
@@ -239,6 +246,60 @@ const paintFlow = (
   ]);
 };
 
+const MESSAGE_LABEL_SIZE = 11;
+
+/**
+ * The room a flow's own drawing takes, labels included. A message label is
+ * centred on its arrow and a self-message label runs off to the right of one,
+ * so either can reach past the columns the layout sized the canvas from.
+ */
+const flowBounds = (layout: FlowLayout, columnWidth: number): Box[] => {
+  const activated = new Set(
+    layout.flow.participants
+      .filter((_, index) => layout.participants[index]?.activation !== undefined)
+      .map((participant) => participant.node),
+  );
+
+  const columns = layout.participants.map((participant) => ({
+    x: participant.centreX - columnWidth / 2,
+    y: layout.top + PARTICIPANT_TOP,
+    width: columnWidth,
+    height: layout.top + layout.height - (layout.top + PARTICIPANT_TOP),
+  }));
+
+  const labels = layout.messages.map((placed) => {
+    const width = measure(placed.label, "sans", MESSAGE_LABEL_SIZE);
+    const direction = travelDirection(placed.message.kind, placed.fromX, placed.toX);
+
+    if (direction === 0)
+      return {
+        x: placed.fromX + ACTIVATION_HALF_WIDTH + 12,
+        y: placed.y - 8 - MESSAGE_LABEL_SIZE,
+        width,
+        height: MESSAGE_LABEL_SIZE,
+      };
+
+    const { start, end } = endsFor(placed, activated, direction);
+    return {
+      x: (start + end) / 2 - width / 2,
+      y: placed.y - 7 - MESSAGE_LABEL_SIZE,
+      width,
+      height: MESSAGE_LABEL_SIZE,
+    };
+  });
+
+  const loops = layout.messages
+    .filter((placed) => placed.message.kind === "self")
+    .map((placed) => ({
+      x: placed.fromX,
+      y: placed.y,
+      width: SELF_LOOP_REACH + SELF_LOOP_CORNER + ACTIVATION_HALF_WIDTH,
+      height: SELF_LOOP_DROP + SELF_LOOP_CORNER * 2,
+    }));
+
+  return [...columns, ...labels, ...loops];
+};
+
 export type DataFlowPainting = { width: number; height: number; body: string };
 
 export const paintDataFlow = (
@@ -248,11 +309,20 @@ export const paintDataFlow = (
 ): DataFlowPainting => {
   const layout = layoutDataFlow(flows, nodes, FLOW_MAX_PULSES_PER_MESSAGE);
 
+  const canvas = canvasFor(
+    layout,
+    union(layout.flows.flatMap((flow) => flowBounds(flow, layout.columnWidth))),
+    DIAGRAM_MARGIN,
+  );
+
   return {
-    width: layout.width,
-    height: layout.height,
-    body: lines(
-      layout.flows.map((flow) => paintFlow(flow, layout.columnWidth, layout.slotCount, palette)),
+    width: canvas.width,
+    height: canvas.height,
+    body: shifted(
+      canvas,
+      lines(
+        layout.flows.map((flow) => paintFlow(flow, layout.columnWidth, layout.slotCount, palette)),
+      ),
     ),
   };
 };

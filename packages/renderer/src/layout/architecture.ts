@@ -24,6 +24,7 @@ import {
   LANE_LABEL_TRACKING,
   LANE_PADDING_X,
   LANE_TOP,
+  LANE_WIDTH_STEP,
   ROW_GAP,
   SUBTITLE_SIZE,
   TITLE_SIZE,
@@ -33,6 +34,12 @@ import type { Box } from "../geometry.js";
 import type { ScopedGraph } from "../scope.js";
 import { measure, type Face } from "../text.js";
 import { rankNodes } from "./rank.js";
+
+/**
+ * Ordering by code unit, not by `localeCompare`: the renderer must produce the
+ * same bytes on every machine, and collation depends on the host's locale data.
+ */
+const compareCodeUnits = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 export const deltaBadgeText = (delta: Delta): string | undefined => {
   switch (delta) {
@@ -216,7 +223,7 @@ const rowsForLane = (
     if (ghost !== 0) return ghost;
     const rank = (ranks.get(a.id) ?? 0) - (ranks.get(b.id) ?? 0);
     if (rank !== 0) return rank;
-    const group = (a.group ?? "").localeCompare(b.group ?? "");
+    const group = compareCodeUnits(a.group ?? "", b.group ?? "");
     if (group !== 0) return group;
     return (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
   });
@@ -272,12 +279,13 @@ export const layoutArchitecture = (
     ),
   );
 
-  const laneBoxWidths = lanes.map((placed, index) =>
-    Math.max(
+  const laneBoxWidths = lanes.map((placed, index) => {
+    const wanted = Math.max(
       (laneWidths[index] ?? CARD_MIN_WIDTH) + LANE_PADDING_X * 2,
       laneHeaderWidth(placed.lane) + LANE_PADDING_X * 2,
-    ),
-  );
+    );
+    return Math.ceil(wanted / LANE_WIDTH_STEP) * LANE_WIDTH_STEP;
+  });
 
   const gridHeights = new Map<number, number>();
   for (const { rows } of lanes)
