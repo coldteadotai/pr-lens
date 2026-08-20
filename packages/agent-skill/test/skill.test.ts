@@ -8,6 +8,8 @@ import {
   parseConfig,
   SCHEMA_VERSION,
 } from "@coldtea/pr-lens-schema";
+import { applyCorrections } from "@coldtea/pr-lens-renderer";
+import { minimalGraph } from "@coldtea/pr-lens-schema/examples";
 import { access, readFile } from "node:fs/promises";
 import { expect, test } from "vitest";
 import { parse } from "yaml";
@@ -59,6 +61,23 @@ test("the enums quoted to an agent are the enums the contract implements", () =>
     expect(graphGuide).toContain(`\`${value}\``);
 
   for (const lens of LENSES) expect(skill).toContain(lens);
+});
+
+test("the lane rule the pages teach is the lane rule the renderer implements", () => {
+  const declared = minimalGraph.lanes.map((lane) => lane.id);
+  const corrected = applyCorrections(minimalGraph, {
+    rename: [],
+    exclude: [],
+    lane: [{ match: `id:${minimalGraph.nodes[0]?.id ?? ""}`, lane: "infrastructure" }],
+    group: [],
+  });
+
+  expect(declared).not.toContain("infrastructure");
+  expect(corrected.lanes.map((lane) => lane.id)).toContain("infrastructure");
+  expect(corrected.lanes.find((lane) => lane.id === "infrastructure")?.label).toBe("infrastructure");
+
+  expect(configGuide).toContain("creating it");
+  expect(skill).toContain("may name a lane the document never declared");
 });
 
 test("the contract version the pages tell an agent to write is the one that ships", () => {

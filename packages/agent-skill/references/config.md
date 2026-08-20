@@ -39,10 +39,10 @@ A `match` beginning with `id:` addresses exactly one node — `id:build-bulk-pay
 | --- | --- |
 | `rename` | replaces the inferred label |
 | `exclude` | drops matching nodes, and the edges and flow steps that hung from them |
-| `lane` | moves matching nodes into a lane **the document already declares** |
+| `lane` | moves matching nodes into a lane, **creating it** when the document declares no such id |
 | `group` | clusters matching nodes under a sub-group inside their lane |
 
-Up to 128 of each. They are about intent, never structure: there is no way to add a node, draw an edge or invent a lane here. If the map is wrong in a way corrections cannot express, the fix belongs in the analysis, not in this file.
+Up to 128 of each. They are about intent rather than structure: there is no way to add a node or draw an edge here, and the one thing a correction can bring into existence is a lane — a band a repository wants that inference did not find. It takes the id for its label, because the id is the only name this file carries, so write `lane: infrastructure` rather than `lane: l3`. If the map is wrong in a way corrections cannot express, the fix belongs in the analysis, not in this file.
 
 ## Recipes
 
@@ -58,6 +58,14 @@ map:
   rename:
     - match: server/lib/broadcast/createBroadcastSendTask.ts
       to: Send task
+```
+
+**"These belong in a band of their own."** The lane need not exist yet:
+```yaml
+map:
+  lane:
+    - match: infra/**
+      lane: infrastructure
 ```
 
 **"Keep the shared library together."**
@@ -79,4 +87,4 @@ lenses: [architecture]
 npx @coldtea/pr-lens-cli validate .github/pr-lens.yml
 ```
 
-A correction that matches nothing is reported when the analysis runs — that is a config that has drifted out of date, not a silent no-op. A lane pin naming a lane the document never declared is skipped and said out loud for the same reason.
+`pr-lens render` reports any correction that changed nothing about the document it drew — that is a config that has drifted out of date, usually because the file a selector named has moved or gone. It is not an error and nothing stops, but it is worth fixing: a correction that matches nothing is a correction nobody is getting.

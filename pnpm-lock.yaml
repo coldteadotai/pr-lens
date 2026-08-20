@@ -35,6 +35,9 @@ importers:
 
   packages/agent-skill:
     devDependencies:
+      '@coldtea/pr-lens-renderer':
+        specifier: workspace:^
+        version: link:../renderer
       '@coldtea/pr-lens-schema':
         specifier: workspace:^
         version: link:../schema

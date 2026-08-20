@@ -108,6 +108,8 @@ runs:
         LENS: ${{ inputs.lens }}
         PR_LENS_API_KEY: ${{ inputs.api-key }}
 
+    # Corrections are applied here, so this writes the document the diagrams
+    # actually show alongside them, and the comment is composed from that one.
     - name: Render the diagrams
       shell: bash
       run: |
@@ -117,124 +119,20 @@ runs:
       env:
         CLI_VERSION: ${{ inputs.cli-version }}
 
-    # GitHub proxies comment images through a cache that never revalidates, so
-    # every render is published at its own content-hashed path rather than
-    # replacing the last one.
-    # GitHub proxies comment images through a cache that never revalidates, so
-    # every render is published at its own content-hashed path rather than
-    # replacing the last one.
     - name: Publish the SVGs
       id: publish
       shell: bash
-      run: |
-        set -euo pipefail
-        DIRECTORY="pr/${PR_NUMBER}/${HEAD_SHA}"
-        WORKSPACE="${RUNNER_TEMP}/pr-lens-publish"
-        PUSHED=""
-
-        # Every run of every pull request shares this one branch, so losing the
-        # race is ordinary rather than exceptional: pick the tip up again and
-        # replay onto it. Two runs never write the same path, so a retry only
-        # ever has to catch up, never merge.
-        for ATTEMPT in 1 2 3 4 5; do
-          rm -rf "${WORKSPACE}"
-          mkdir -p "${WORKSPACE}"
-          cd "${WORKSPACE}"
-
-          git init --quiet
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-
-          if git fetch --quiet --depth=1 origin "${DATA_BRANCH}" 2>/dev/null; then
-            git checkout --quiet -b "${DATA_BRANCH}" FETCH_HEAD
-          else
-            git checkout --quiet --orphan "${DATA_BRANCH}"
-          fi
-
-          mkdir -p "${DIRECTORY}"
-          cp "${RUNNER_TEMP}"/pr-lens/assets/*.svg "${DIRECTORY}/"
-          git add "${DIRECTORY}"
-
-          if git diff --quiet --cached; then
-            echo "This render is already published."
-            PUSHED="already"
-            break
-          fi
-
-          git commit --quiet -m "PR Lens: #${PR_NUMBER} at ${HEAD_SHA}"
-
-          if git push --quiet origin "${DATA_BRANCH}"; then
-            PUSHED="yes"
-            break
-          fi
-
-          echo "${DATA_BRANCH} moved under this run; retrying (${ATTEMPT}/5)."
-          sleep "$(( ATTEMPT * 3 ))"
-        done
-
-        if [ -z "${PUSHED}" ]; then
-          echo "::error::Could not publish the diagrams: ${DATA_BRANCH} kept moving. Give the workflow a per-pull-request concurrency group."
-          exit 1
-        fi
-
-        echo "assets-url=https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${DATA_BRANCH}/${DIRECTORY}" >> "${GITHUB_OUTPUT}"
+      run: bash "${GITHUB_ACTION_PATH}/scripts/publish.sh"
       env:
         DATA_BRANCH: ${{ inputs.data-branch }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
 
-    # One comment per pull request: the CLI owns the hidden marker, and this
-    # asks it for the string rather than spelling a second copy of it.
     - name: Post the comment
       if: inputs.comment == 'true'
       shell: bash
-      run: |
-        set -euo pipefail
-        WORK="${RUNNER_TEMP}/pr-lens"
-        BODY="${WORK}/comment.md"
-
-        npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}" comment \
-          --graph "${WORK}/graph.json" \
-          --manifest "${WORK}/assets/manifest.json" \
-          --asset-base-url "${ASSETS_URL}" \
-          ${BRANDING_OFF:+--no-branding} \
-          --out "${BODY}"
-
-        # Which commit this comment describes, so a run that lost a race cannot
-        # overwrite a newer one with its own stale diagram.
-        printf '\n<!-- pr-lens-head: %s -->\n' "${HEAD_SHA}" >> "${BODY}"
-
-        MARKER="$(npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}" comment --print-marker)"
-
-        gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate --jq '.[]' \
-          > "${WORK}/comments.jsonl"
-
-        # Anyone can post the marker; only the account this Action comments as
-        # owns the comment, so ownership is checked before anything is edited.
-        MINE="$(jq -c --arg author "${COMMENT_AUTHOR}" --arg marker "${MARKER}" \
-          'select(.user.login == $author) | select(.body | startswith($marker))' \
-          "${WORK}/comments.jsonl" | head -n 1)"
-
-        if [ -n "${MINE}" ]; then
-          POSTED_SHA="$(printf '%s' "${MINE}" | jq -r '.body' \
-            | sed -n 's/.*<!-- pr-lens-head: \([0-9a-f]\{7,40\}\) -->.*/\1/p' | head -n 1)"
-
-          if [ -n "${POSTED_SHA}" ] && [ "${POSTED_SHA}" != "${HEAD_SHA}" ] \
-            && git cat-file -e "${POSTED_SHA}^{commit}" 2>/dev/null \
-            && git merge-base --is-ancestor "${HEAD_SHA}" "${POSTED_SHA}"; then
-            echo "::notice::A comment for a newer commit is already posted; leaving it alone."
-            exit 0
-          fi
-
-          jq -Rs '{body: .}' < "${BODY}" \
-            | gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/$(printf '%s' "${MINE}" | jq -r '.id')" \
-              --input - --silent
-        else
-          jq -Rs '{body: .}' < "${BODY}" \
-            | gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --input - --silent
-        fi
+      run: bash "${GITHUB_ACTION_PATH}/scripts/comment.sh"
       env:
         CLI_VERSION: ${{ inputs.cli-version }}
         ASSETS_URL: ${{ steps.publish.outputs.assets-url }}

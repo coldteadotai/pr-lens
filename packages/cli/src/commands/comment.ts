@@ -1,3 +1,4 @@
+import { graphContentHash } from "@coldtea/pr-lens-renderer";
 import { parseOptions, readBoolean, readString } from "../args.js";
 import { composeComment, COMMENT_MARKER } from "../comment.js";
 import { loadConfig } from "../config-file.js";
@@ -12,7 +13,8 @@ Composes the pull request comment: the diagrams as light/dark <picture> pairs,
 the headline numbers, and the drill-down tree. It posts nothing — the markdown
 goes to stdout, or to a file, for whatever does the posting.
 
-      --graph <file>          the document that was rendered (required)
+      --graph <file>          the document that was rendered — the one the render
+                              wrote beside the manifest, not the one it read
       --manifest <file>       what the render produced (required)
       --asset-base-url <url>  where the rendered SVGs are published, when the
                               manifest records local paths
@@ -49,9 +51,18 @@ export const commentCommand = async (args: readonly string[], terminal: Terminal
   const configPath = readString(values.config, "config");
   const configured = configPath === undefined ? undefined : await loadConfig(configPath);
 
+  const graph = await readGraphDoc(graphPath);
+  const manifest = await readRenderManifest(manifestPath);
+
+  if (graphContentHash(graph) !== manifest.graph.contentHash)
+    throw usageError(
+      `${graphPath} is not the document ${manifestPath} describes`,
+      "corrections change what the diagrams show, so a comment built from a different document would announce sections that were never drawn. Pass the drawn.graph.json the render wrote beside the manifest",
+    );
+
   const body = composeComment({
-    graph: await readGraphDoc(graphPath),
-    manifest: await readRenderManifest(manifestPath),
+    graph,
+    manifest,
     assetBaseUrl: readString(values["asset-base-url"], "asset-base-url"),
     branding: readBoolean(values["no-branding"]) ? false : (configured?.config.branding ?? true),
   });

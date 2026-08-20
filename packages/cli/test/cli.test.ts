@@ -1,4 +1,5 @@
-import { parseRenderManifest } from "@coldtea/pr-lens-schema";
+import { graphContentHash } from "@coldtea/pr-lens-renderer";
+import { parseGraphDoc, parseRenderManifest } from "@coldtea/pr-lens-schema";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -122,6 +123,89 @@ test("a theme that is not a theme is a misuse", async () => {
   expect(err.join("\n")).toContain("--theme takes light, dark or both");
 });
 
+const CORRECTIONS = `schemaVersion: 0.1.0
+map:
+  exclude:
+    - "id:process-broadcast"
+    - "id:send-single-email"
+    - "src/nothing-is-here.ts"
+`;
+
+test("a comment never announces a section the corrections stopped the render from drawing", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-render-"));
+  const config = join(directory, "pr-lens.yml");
+  await writeFile(config, CORRECTIONS, "utf8");
+
+  expect(await invoke("render", GOLDEN, "--out", directory, "--config", config)).toBe(0);
+
+  const manifest = parseRenderManifest(JSON.parse(await readFile(join(directory, "manifest.json"), "utf8")));
+  expect(manifest.assets.some((asset) => asset.view === "retired-path")).toBe(false);
+
+  out = [];
+  expect(
+    await invoke(
+      "comment",
+      "--graph",
+      join(directory, "drawn.graph.json"),
+      "--manifest",
+      join(directory, "manifest.json"),
+      "--asset-base-url",
+      "https://example.com/a",
+    ),
+  ).toBe(0);
+
+  expect(out.join("\n")).not.toContain("What was retired");
+});
+
+test("the document that was read cannot stand in for the document that was drawn", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-render-"));
+  const config = join(directory, "pr-lens.yml");
+  await writeFile(config, CORRECTIONS, "utf8");
+
+  expect(await invoke("render", GOLDEN, "--out", directory, "--config", config)).toBe(0);
+  err = [];
+
+  expect(
+    await invoke(
+      "comment",
+      "--graph",
+      GOLDEN,
+      "--manifest",
+      join(directory, "manifest.json"),
+      "--asset-base-url",
+      "https://example.com/a",
+    ),
+  ).toBe(2);
+
+  expect(err.join("\n")).toContain("is not the document");
+});
+
+test("a correction that matches nothing is said out loud", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-render-"));
+  const config = join(directory, "pr-lens.yml");
+  await writeFile(config, CORRECTIONS, "utf8");
+
+  expect(await invoke("render", GOLDEN, "--out", directory, "--config", config)).toBe(0);
+
+  const reported = err.join("\n");
+  expect(reported).toContain("exclude 'src/nothing-is-here.ts' changed nothing");
+  expect(reported).not.toContain("id:process-broadcast");
+});
+
+test("the drawn document and the manifest are bound to each other", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-render-"));
+  const config = join(directory, "pr-lens.yml");
+  await writeFile(config, CORRECTIONS, "utf8");
+
+  expect(await invoke("render", GOLDEN, "--out", directory, "--config", config)).toBe(0);
+
+  const drawn = parseGraphDoc(JSON.parse(await readFile(join(directory, "drawn.graph.json"), "utf8")));
+  const manifest = parseRenderManifest(JSON.parse(await readFile(join(directory, "manifest.json"), "utf8")));
+
+  expect(graphContentHash(drawn)).toBe(manifest.graph.contentHash);
+  expect(drawn.nodes.map((node) => node.id)).not.toContain("process-broadcast");
+});
+
 test("render and comment agree on where the SVGs are, without either deriving the other's names", async () => {
   const directory = await mkdtemp(join(tmpdir(), "pr-lens-render-"));
 
@@ -132,7 +216,7 @@ test("render and comment agree on where the SVGs are, without either deriving th
     await invoke(
       "comment",
       "--graph",
-      GOLDEN,
+      join(directory, "drawn.graph.json"),
       "--manifest",
       join(directory, "manifest.json"),
       "--asset-base-url",

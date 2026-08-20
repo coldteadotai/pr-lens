@@ -68,7 +68,9 @@ map:
 
 `references/config.md` has the full format and the recipes. Validate it the same way: `npx @coldtea/pr-lens-cli validate .github/pr-lens.yml`.
 
-A `match` beginning with `id:` addresses one node exactly; anything else is a path glob matched against a node's file paths — prefer the glob, because it keeps holding when the next run names the node differently. A lane pin can only name a lane the document already declares.
+A `match` beginning with `id:` addresses one node exactly; anything else is a path glob matched against a node's file paths — prefer the glob, because it keeps holding when the next run names the node differently. A lane pin may name a lane the document never declared: the band is created, and takes the id for its label, so give it one a reader would want to see.
+
+`pr-lens render` says so when a correction matched nothing, which is how a config that has drifted — the file it named moved or was deleted — becomes visible instead of quietly doing nothing.
 
 ## Reference documents
 

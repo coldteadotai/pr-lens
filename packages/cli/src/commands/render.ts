@@ -1,8 +1,9 @@
-import { assertNever } from "@coldtea/pr-lens-schema";
-import { PrLensRenderError, renderAll, THEMES, type Theme } from "@coldtea/pr-lens-renderer";
+import { applyCorrections, PrLensRenderError, renderAll, THEMES, type Theme } from "@coldtea/pr-lens-renderer";
+import { safeParseGraphDoc, type Config, type GraphDoc } from "@coldtea/pr-lens-schema";
 import { join } from "node:path";
 import { expectOne, parseOptions, readBoolean, readString } from "../args.js";
 import { discoverConfig, loadConfig } from "../config-file.js";
+import { unmatchedCorrections } from "../corrections.js";
 import { readGraphDoc } from "../document.js";
 import { PrLensCliError, usageError } from "../errors.js";
 import { repositoryRoot } from "../git.js";
@@ -11,6 +12,17 @@ import type { Terminal } from "../terminal.js";
 
 const DEFAULT_OUT = "pr-lens";
 const MANIFEST = "manifest.json";
+
+/**
+ * The document as it was drawn, written beside the manifest.
+ *
+ * Corrections are applied here, so the document on the way in and the
+ * diagrams on the way out can describe different systems — a view whose every
+ * element was excluded is drawn by neither. Whatever composes the comment has
+ * to read the one the pictures came from, and it is a different file from the
+ * one analyze wrote so that neither overwrites the other.
+ */
+const DRAWN = "drawn.graph.json";
 
 export const USAGE = `pr-lens render <graph.json> [options]
 
@@ -36,6 +48,20 @@ const readThemes = (value: unknown): readonly Theme[] => {
   }
 };
 
+/**
+ * The overlay is applied here rather than by passing the config into
+ * `renderAll`, which would apply the same function to the same document — but
+ * out of reach, and the comment has to be composed from what was drawn.
+ */
+const correct = (graph: GraphDoc, config: Config): GraphDoc => {
+  try {
+    return applyCorrections(graph, config.map);
+  } catch (error) {
+    if (!(error instanceof PrLensRenderError)) throw error;
+    throw new PrLensCliError("RENDER_FAILED", `${error.message} [${error.code}]`);
+  }
+};
+
 export const renderCommand = async (args: readonly string[], terminal: Terminal): Promise<void> => {
   const { values, positionals } = parseOptions(args, {
     out: { type: "string", short: "o" },
@@ -54,12 +80,29 @@ export const renderCommand = async (args: readonly string[], terminal: Terminal)
       ? await discoverConfig(await repositoryRoot(process.cwd()).catch(() => process.cwd()))
       : await loadConfig(configPath);
 
+  const themes = readThemes(values.theme);
+
+  const drawn = (() => {
+    if (configured === undefined) return graph;
+
+    for (const warning of unmatchedCorrections(graph, configured.config))
+      terminal.err(`${configured.path}: ${warning}`);
+
+    const corrected = correct(graph, configured.config);
+    const parsed = safeParseGraphDoc(corrected);
+    if (!parsed.ok)
+      throw new PrLensCliError(
+        `INVALID_DOCUMENT`,
+        `${configured.path} leaves a document that no longer validates [${parsed.error.code}]`,
+        parsed.error.message,
+      );
+
+    return parsed.value;
+  })();
+
   const rendered = (() => {
     try {
-      return renderAll(graph, {
-        themes: readThemes(values.theme),
-        ...(configured === undefined ? {} : { config: configured.config }),
-      });
+      return renderAll(drawn, { themes });
     } catch (error) {
       if (!(error instanceof PrLensRenderError)) throw error;
       throw new PrLensCliError("RENDER_FAILED", `${error.message} [${error.code}]`);
@@ -72,10 +115,11 @@ export const renderCommand = async (args: readonly string[], terminal: Terminal)
       throw new PrLensCliError("RENDER_FAILED", `the render named no file for asset '${id}'`);
     await writeTextFile(join(out, path), drawing.svg);
   }
+  await writeJsonFile(join(out, DRAWN), drawn);
   await writeJsonFile(join(out, MANIFEST), rendered.manifest);
 
-  const drawn = new Set(rendered.assets.map((asset) => asset.asset.view ?? asset.lens));
+  const diagrams = new Set(rendered.assets.map((asset) => asset.asset.view ?? asset.lens));
   terminal.out(
-    `✓ ${join(out, MANIFEST)} — ${rendered.assets.length} SVGs across ${drawn.size} ${drawn.size === 1 ? "diagram" : "diagrams"}${configured === undefined ? "" : `, corrected by ${configured.path}`}`,
+    `✓ ${join(out, MANIFEST)} — ${rendered.assets.length} SVGs across ${diagrams.size} ${diagrams.size === 1 ? "diagram" : "diagrams"}${configured === undefined ? "" : `, corrected by ${configured.path}`}`,
   );
 };

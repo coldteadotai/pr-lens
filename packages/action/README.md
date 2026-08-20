@@ -37,7 +37,7 @@ The `concurrency` block is not decoration. Every run of every pull request write
 ## What it does, in order
 
 1. **Analyzes** the diff between the pull request's base and head commits, and validates the model's answer against the PR Lens contract before anything else happens.
-2. **Renders** it as self-contained light and dark SVGs.
+2. **Renders** it as self-contained light and dark SVGs, applying the repository's corrections and writing the document those pictures actually show — which is the one the comment is then composed from.
 3. **Publishes** them to an orphan `pr-lens` branch under `pr/<number>/<head-sha>/`. That branch holds no code and is never merged. GitHub proxies comment images through a cache that never revalidates, so each render lives at its own path rather than replacing the last one.
 4. **Comments** — one comment per pull request, updated in place on every push. The CLI owns the hidden marker that finds it, so nothing here spells a second copy of that string.
 

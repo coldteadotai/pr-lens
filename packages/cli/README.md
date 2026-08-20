@@ -57,18 +57,20 @@ The answer is parsed against the contract. If it fails, the validation errors �
 pr-lens render pr-lens/graph.json -o pr-lens/
 ```
 
-Draws the document as self-contained light and dark SVGs — one pair per drill-down section per lens, or one pair per lens when the document has no sections — and writes `manifest.json` beside them: what was drawn, how big, and under which file name. That manifest is what `comment` reads, so neither command has to re-derive the other's file names.
+Draws the document as self-contained light and dark SVGs — one pair per drill-down section per lens, or one pair per lens when the document has no sections — and writes two files beside them: `manifest.json`, which says what was drawn and under which file name, and `drawn.graph.json`, the document those pictures actually show.
+
+Both matter to what comes next. The manifest is where `comment` gets its file names, so neither command re-derives the other's. And `drawn.graph.json` exists because this is where corrections are applied: excluding a node can empty out a whole drill-down section, and the renderer then draws no picture for it. A comment composed from the document that went *in* would announce a section that came out of nothing.
 
 The SVGs carry no script and no external reference, and the same document renders to the same bytes every time. `--theme light` or `--theme dark` draws one half of the pair.
 
 ### `comment`
 
 ```bash
-pr-lens comment --graph pr-lens/graph.json --manifest pr-lens/manifest.json \
+pr-lens comment --graph pr-lens/drawn.graph.json --manifest pr-lens/manifest.json \
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 ```
 
-Composes the markdown — the `<picture>` pairs that read in both GitHub themes, the headline chips, the nested `<details>` tree — and prints it. It posts nothing; posting is the caller's business, and `--print-marker` gives that caller the hidden marker that identifies an existing comment to update.
+Composes the markdown — the `<picture>` pairs that read in both GitHub themes, the headline chips, the nested `<details>` tree — and prints it. The two files have to belong to each other: the manifest records the hash of the document it came from, and a mismatched pair is refused rather than composed into a comment describing diagrams nobody drew. It posts nothing; posting is the caller's business, and `--print-marker` gives that caller the hidden marker that identifies an existing comment to update.
 
 ### `validate`
 
@@ -101,6 +103,8 @@ map:
   exclude:
     - "**/*.test.ts"
 ```
+
+A lane pin may name a lane the document never declared; the band is created and takes the id for its label. And `render` reports any correction that changed nothing about what it drew — a config that has drifted, usually because the file a selector named has moved, otherwise fails silently and forever.
 
 `--config` points elsewhere and `--no-config` ignores it, on both `render` and `analyze` — `analyze` reads only `lenses` from it, since which lenses to fill is a question for extraction and the rest is a question for drawing.
 

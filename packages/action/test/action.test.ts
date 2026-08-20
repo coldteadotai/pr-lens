@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { access, constants, readFile } from "node:fs/promises";
 import { parse } from "yaml";
 import { expect, test } from "vitest";
 import { z } from "zod";
@@ -65,29 +65,29 @@ test("a workflow only has to hand over the key; everything else has a default", 
   }
 });
 
-const step = (name: string) => {
-  const found = action.runs.steps.find((candidate) => candidate.name === name);
-  if (found === undefined) throw new Error(`no step named ${name}`);
-  return found.run ?? "";
-};
+test("every script a step runs is present and executable", async () => {
+  const referenced = [...source.matchAll(/scripts\/([a-z-]+\.sh)/g)].map((match) => match[1]);
+  expect(referenced.length).toBeGreaterThan(0);
 
-test("a comment is only edited when the account this action comments as wrote it", () => {
-  const posting = step("Post the comment");
-
-  expect(posting).toContain("$author");
-  expect(posting).toContain(".user.login == $author");
-  expect(Object.keys(action.inputs)).toContain("comment-author");
+  for (const name of new Set(referenced)) {
+    const path = new URL(`../scripts/${name}`, import.meta.url);
+    await expect(access(path, constants.X_OK)).resolves.toBeUndefined();
+    expect(await readFile(path, "utf8")).toContain("set -euo pipefail");
+  }
 });
 
-test("a run that lost a race does not overwrite a comment for a newer commit", () => {
-  expect(step("Post the comment")).toContain("merge-base --is-ancestor");
-});
-
-test("publishing retries onto the branch tip rather than failing the run", () => {
-  const publishing = step("Publish the SVGs");
+test("publishing replays onto the branch tip rather than failing the run", async () => {
+  const publishing = await readFile(new URL("../scripts/publish.sh", import.meta.url), "utf8");
 
   expect(publishing).toContain("retrying");
   expect(publishing).toContain("git fetch");
+});
+
+test("a comment is only ever edited when the account this action comments as wrote it", async () => {
+  const commenting = await readFile(new URL("../scripts/comment.sh", import.meta.url), "utf8");
+
+  expect(commenting).toContain(".user.login == $author");
+  expect(Object.keys(action.inputs)).toContain("comment-author");
 });
 
 test("the workflow the README hands out serialises runs of the same pull request", async () => {

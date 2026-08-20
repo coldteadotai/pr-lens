@@ -30,6 +30,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@coldtea/pr-lens-renderer": "workspace:^",
     "@coldtea/pr-lens-schema": "workspace:^",
     "@types/node": "^20.19.0",
     "typescript": "7.0.2",
