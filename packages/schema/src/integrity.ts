@@ -1,6 +1,6 @@
 import type { SchemaIssue } from "./errors.js";
 import type { GraphDoc, View } from "./graph.js";
-import { FullSha, type Delta } from "./primitives.js";
+import { FullSha, MAX_VIEWS, THEMES, type Delta } from "./primitives.js";
 import { assertNever } from "./utils.js";
 
 const duplicates = (ids: readonly string[]): string[] => {
@@ -94,6 +94,15 @@ export const graphIntegrityIssues = (doc: GraphDoc): SchemaIssue[] => {
   const views = flattenViews(doc.views, "views");
   for (const id of duplicates(views.map(({ view }) => view.id)))
     duplicate("views", `duplicate view id '${id}'`);
+
+  // Each array in the tree is capped, but the tree's depth is not, so the
+  // total is only bounded here.
+  if (views.length > MAX_VIEWS)
+    issues.push({
+      code: "INVALID_DOCUMENT",
+      path: "views",
+      message: `drill-down tree carries ${views.length} views; a render is one asset per view per theme, and at ${THEMES.length} themes only ${MAX_VIEWS} fit a render manifest`,
+    });
 
   for (const { view, path } of views) {
     if (!lenses.has(view.lens))

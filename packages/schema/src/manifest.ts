@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Id, Lens, SchemaVersionField, Sha } from "./primitives.js";
+import { Id, Lens, MAX_RENDER_ASSETS, SchemaVersionField, Sha, Theme } from "./primitives.js";
 
 /**
  * GitHub serves comment images through a proxy that caches aggressively, so
@@ -10,7 +10,7 @@ export const RenderAsset = z
   .strictObject({
     id: Id,
     lens: Lens,
-    theme: z.enum(["light", "dark"]).describe("Half of a <picture> pair."),
+    theme: Theme.describe("Half of a <picture> pair."),
     view: Id.optional().describe("Drill-down view this asset renders, when it is not the root."),
     mediaType: z.literal("image/svg+xml"),
     contentHash: z
@@ -57,7 +57,7 @@ export const RenderManifest = z
       name: z.string().min(1).max(64),
       version: z.string().min(1).max(32),
     }),
-    assets: z.array(RenderAsset).min(1).max(256),
+    assets: z.array(RenderAsset).min(1).max(MAX_RENDER_ASSETS),
   })
   .describe("A PR Lens render manifest.");
 export type RenderManifest = z.infer<typeof RenderManifest>;

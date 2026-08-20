@@ -11,6 +11,8 @@ import {
   postmarkRefactorManifestInput,
 } from "../src/examples/postmark-refactor.js";
 import type { Parsed } from "../src/errors.js";
+import type { ViewInput } from "../src/graph.js";
+import { MAX_VIEWS } from "../src/primitives.js";
 import {
   safeParseConfig,
   safeParseGraphDoc,
@@ -51,10 +53,21 @@ const divergences = [
   "a line range that ends before it starts",
   "the agreement between a self message's endpoints",
   "a patch whose two commits are the same",
+  "more views than a render manifest could describe",
 ] as const;
 
 const withoutKey = (document: object, key: string): object =>
   Object.fromEntries(Object.entries(document).filter(([name]) => name !== key));
+
+/** Depth, not breadth: each array in the tree is capped, so only nesting reaches the total. */
+const nestedViews = (count: number): ViewInput[] => {
+  let children: ViewInput[] = [];
+  for (let index = count - 1; index >= 0; index -= 1)
+    children = [
+      { id: `v${index}`, title: `View ${index}`, lens: "architecture", scope: { kind: "all" }, children },
+    ];
+  return children;
+};
 
 const withFileRef = (file: { path: string; startLine?: number; endLine?: number }) => ({
   ...minimalGraphInput,
@@ -252,6 +265,14 @@ const parityCases: ParityCase[] = [
         fromSha: broadcastBaselinePatchInput.target.toSha,
       },
     },
+    accepted: false,
+    acceptedByJsonSchema: true,
+  },
+  {
+    name: `${divergences[4]}, which only the parser can catch`,
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: { ...minimalGraphInput, views: nestedViews(MAX_VIEWS + 1) },
     accepted: false,
     acceptedByJsonSchema: true,
   },

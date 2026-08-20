@@ -64,6 +64,26 @@ export type Lens = z.infer<typeof Lens>;
 
 export const LENSES = Lens.options;
 
+/** The two renders that make a `<picture>` pair. */
+export const Theme = z.enum(["light", "dark"]).describe("Which colour scheme a render targets.");
+export type Theme = z.infer<typeof Theme>;
+
+export const THEMES = Theme.options;
+
+/**
+ * A render is one asset per view per theme, so these two caps are one rule
+ * rather than two numbers that happen to sit near each other: a document with
+ * more views than a manifest can describe is a document no renderer can
+ * finish, however well formed it looks.
+ *
+ * Deriving the view cap from the asset budget keeps the relationship in one
+ * place — raise the budget, or add a theme, and the other end moves with it
+ * instead of every surface rediscovering the arithmetic.
+ */
+export const MAX_RENDER_ASSETS = 256;
+
+export const MAX_VIEWS = MAX_RENDER_ASSETS / THEMES.length;
+
 /**
  * How an element relates to the base branch. `unchanged` elements are the
  * context a reader needs to judge blast radius, so they are first-class

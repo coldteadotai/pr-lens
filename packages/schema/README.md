@@ -26,6 +26,16 @@ const result = safeParseGraphDoc(json);     // { ok: true, value } | { ok: false
 
 Every document carries a `schemaVersion`, config included: a repository's corrections have to keep their meaning as the contract moves.
 
+## Views and the render they imply
+
+A render is one asset per view per theme, so the size of a drill-down tree and the size of a render manifest are one rule, not two numbers:
+
+```ts
+MAX_VIEWS * THEMES.length === MAX_RENDER_ASSETS; // 128 * 2 === 256
+```
+
+Each array in the view tree is capped, but its depth is not, so the total is bounded by `graphIntegrityIssues`: a document carrying more views than a manifest could describe is rejected here rather than at the renderer, which would otherwise be left holding a document it was told was fine. Import `MAX_VIEWS`, `MAX_RENDER_ASSETS` and `THEMES` rather than restating any of them — raise the budget or add a theme and the other end moves with it.
+
 ## Two lenses
 
 `architecture` shows blast radius against the existing system. `data-flow` animates an ordered pipeline. There is deliberately no security lens and no findings field: PR Lens is the comprehension layer, and a document that carries findings is rejected rather than quietly stripped. The `Lens` enum is additive — a future contract version may add lenses, so treat one you do not recognise as a view to skip, not as a failure.
@@ -41,6 +51,9 @@ Parsing runs three things in one pass, and reports every problem it finds rather
 1. **Structure** — types, lengths, enums, no unknown keys, and file paths that can actually become a diff permalink (repository-relative, POSIX, no `..` segment).
 2. **Contract version** — below `1.0.0` an exact `major.minor` match; from `1.0.0` on, the same major and a minor no newer than this package's.
 3. **Referential integrity** — every node sits in a declared lane, every edge joins declared nodes, every flow step runs between declared participants, every drill-down view and layout hint names elements that exist, and a document carrying flows declares the `data-flow` lens.
+4. **That a render could describe the document** — see below.
+
+A document nested deeper than the stack can walk is reported as a document too deep to read, not thrown: `safeParse*` returns a result whatever it is handed.
 
 Failures arrive as a `PrLensSchemaError` with a machine-readable `code` (`INVALID_DOCUMENT`, `BROKEN_REFERENCE`, `DUPLICATE_ID`, `UNSUPPORTED_SCHEMA_VERSION`, `PATCH_CONFLICT`, `NOT_A_SNAPSHOT`) and an `issues` array carrying a path and message each.
 
@@ -102,12 +115,13 @@ A `match` beginning with `id:` addresses one node exactly; anything else is a pa
 
 They describe **what an author may write**: a field with a default is one you may leave out. Rules are carried across wherever JSON Schema can state them — the supported contract versions, the repository-relative path rule, `endLine` requiring `startLine`, an asset needing a `url` or a `path`, a `selection` view having to select something.
 
-Exactly four rules cannot be stated in JSON Schema and stay the parser's job, each of them a comparison between two values:
+Exactly five rules cannot be stated in JSON Schema and stay the parser's job, each of them a comparison the shape alone cannot make:
 
 1. referential integrity between elements,
 2. a line range that ends before it starts,
 3. the agreement between a self message's endpoints,
-4. a patch whose two commits are the same.
+4. a patch whose two commits are the same,
+5. more views than a render manifest could describe.
 
 The tests run a table of documents through both representations and assert the same verdict, accept and reject alike — including a case per divergence above, so they stay deliberate and cannot quietly grow a fifth.
 

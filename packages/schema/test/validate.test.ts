@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { postmarkRefactorGraphInput } from "../src/examples/postmark-refactor.js";
 import { minimalGraphInput } from "../src/examples/minimal.js";
 import type { GraphDocInput } from "../src/graph.js";
-import { safeParseConfig, safeParseGraphDoc } from "../src/validate.js";
+import type { ViewInput } from "../src/graph.js";
+import { MAX_RENDER_ASSETS, MAX_VIEWS, THEMES } from "../src/primitives.js";
+import { postmarkRefactorManifestInput } from "../src/examples/postmark-refactor.js";
+import { safeParseConfig, safeParseGraphDoc, safeParseRenderManifest } from "../src/validate.js";
 import { SCHEMA_VERSION } from "../src/version.js";
 
 const clone = (doc: GraphDocInput): GraphDocInput => structuredClone(doc);
@@ -140,6 +143,54 @@ describe("graph document validation", () => {
 
     const error = expectRejected(doc);
     expect(error.issues).toHaveLength(2);
+  });
+});
+
+/** One view per level, so the tree's depth rather than its breadth carries the count. */
+const nestedViews = (count: number): ViewInput[] => {
+  let children: ViewInput[] = [];
+  for (let index = count - 1; index >= 0; index -= 1)
+    children = [
+      { id: `v${index}`, title: `View ${index}`, lens: "architecture", scope: { kind: "all" }, children },
+    ];
+  return children;
+};
+
+describe("the drill-down tree and the render it implies", () => {
+  it("is one rule: every view fits a manifest at every theme", () => {
+    expect(MAX_VIEWS * THEMES.length).toBe(MAX_RENDER_ASSETS);
+  });
+
+  it("accepts a tree a render can describe", () => {
+    const doc = { ...minimalGraphInput, views: nestedViews(MAX_VIEWS) };
+    expect(safeParseGraphDoc(doc).ok).toBe(true);
+  });
+
+  it("rejects one view more, which no valid manifest could describe", () => {
+    const doc = { ...minimalGraphInput, views: nestedViews(MAX_VIEWS + 1) };
+
+    const error = expectRejected(doc);
+    expect(error.issues[0]?.path).toBe("views");
+    expect(error.message).toContain("one asset per view per theme");
+  });
+
+  it("reports a tree too deep to read rather than exhausting the stack", () => {
+    const doc = { ...minimalGraphInput, views: nestedViews(5000) };
+
+    const error = expectRejected(doc);
+    expect(error.code).toBe("INVALID_DOCUMENT");
+    expect(error.message).toContain("nests too deeply to read");
+  });
+
+  it("accepts a manifest at the asset budget and rejects one past it", () => {
+    const asset = postmarkRefactorManifestInput.assets[0]!;
+    const manifestOf = (count: number) => ({
+      ...postmarkRefactorManifestInput,
+      assets: Array.from({ length: count }, (_, index) => ({ ...asset, id: `asset-${index}` })),
+    });
+
+    expect(safeParseRenderManifest(manifestOf(MAX_RENDER_ASSETS)).ok).toBe(true);
+    expect(safeParseRenderManifest(manifestOf(MAX_RENDER_ASSETS + 1)).ok).toBe(false);
   });
 });
 

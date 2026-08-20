@@ -40,19 +40,50 @@ const fail = (label: string, issues: SchemaIssue[]): PrLensSchemaError => {
   );
 };
 
+/**
+ * Validating a recursive structure recurses, so a document nested deeply
+ * enough exhausts the stack while zod is still walking it — before any check
+ * of ours can count anything. A `safeParse` that throws would be a worse
+ * failure than the document it was handed, so the stack running out is
+ * reported as what it is: a document too deep to read.
+ */
+const attemptParse = <Schema extends z.ZodType>(
+  schema: Schema,
+  input: unknown,
+): { read: true; value: z.infer<Schema> } | { read: false; issues: SchemaIssue[] } => {
+  try {
+    const result = schema.safeParse(input);
+    return result.success
+      ? { read: true, value: result.data }
+      : { read: false, issues: toIssues(result.error) };
+  } catch (error) {
+    if (!(error instanceof RangeError)) throw error;
+    return {
+      read: false,
+      issues: [
+        {
+          code: "INVALID_DOCUMENT",
+          path: "",
+          message: "document nests too deeply to read",
+        },
+      ],
+    };
+  }
+};
+
 const parseDocument = <Schema extends z.ZodType>(
   schema: Schema,
   label: string,
   input: unknown,
   extraIssues: (value: z.infer<Schema>) => SchemaIssue[],
 ): Parsed<z.infer<Schema>> => {
-  const result = schema.safeParse(input);
-  if (!result.success) return { ok: false, error: fail(label, toIssues(result.error)) };
+  const result = attemptParse(schema, input);
+  if (!result.read) return { ok: false, error: fail(label, result.issues) };
 
-  const issues = extraIssues(result.data);
+  const issues = extraIssues(result.value);
   if (issues.length > 0) return { ok: false, error: fail(label, issues) };
 
-  return { ok: true, value: result.data };
+  return { ok: true, value: result.value };
 };
 
 const unwrap = <T>(parsed: Parsed<T>): T => {
