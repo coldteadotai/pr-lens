@@ -27,7 +27,7 @@ import {
   type PlacedMessage,
 } from "../layout/dataflow.js";
 import type { Palette } from "../theme.js";
-import { markerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
+import { markerFor, openMarkerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
 import { lines, tag, textNode, wrap } from "./primitives.js";
 
 /** A ratio inside the animation cycle, written to a fixed number of places. */
@@ -54,6 +54,43 @@ const messageClasses = (message: FlowMessage, tone: Tone): string => {
   return classes.join(" ");
 };
 
+/**
+ * Fire-and-forget gets the open head; everything else keeps the filled one.
+ *
+ * Deliberate deviation from strict UML 2, which draws replies with an open
+ * head as well: here each signal carries exactly one meaning, so a reader
+ * needs no legend. The dashed stroke is already the whole mark of "this is
+ * an answer", and the open head stays the exclusive mark of "nobody waits on
+ * this". Open-headed returns would put the async signature on every reply
+ * and dilute the one distinction the head shape exists to draw.
+ */
+const headFor = (kind: MessageKind, tone: Tone): string => {
+  switch (kind) {
+    case "async":
+      return openMarkerFor(tone);
+    case "sync":
+    case "return":
+    case "self":
+      return markerFor(tone);
+    default:
+      return assertNever(kind, "Unhandled message kind");
+  }
+};
+
+/** Whether an activation bar covers this column at this height. */
+type ActiveAt = (node: string, y: number) => boolean;
+
+const activationLookup = (layout: FlowLayout): ActiveAt => {
+  const byNode = new Map(
+    layout.flow.participants.map((participant, index) => [
+      participant.node,
+      layout.participants[index]?.activations ?? [],
+    ]),
+  );
+  return (node, y) =>
+    (byNode.get(node) ?? []).some((bar) => bar.top <= y && y <= bar.bottom);
+};
+
 type Ends = { start: number; end: number };
 
 /**
@@ -63,13 +100,16 @@ type Ends = { start: number; end: number };
  */
 const endsFor = (
   placed: PlacedMessage,
-  activated: ReadonlySet<string>,
+  activeAt: ActiveAt,
   direction: -1 | 1,
 ): Ends => ({
-  start: placed.fromX + direction * (activated.has(placed.message.from) ? ACTIVATION_HALF_WIDTH : 0),
+  start:
+    placed.fromX +
+    direction * (activeAt(placed.message.from, placed.y) ? ACTIVATION_HALF_WIDTH : 0),
   end:
     placed.toX -
-    direction * ((activated.has(placed.message.to) ? ACTIVATION_HALF_WIDTH : 0) + MARKER_INSET),
+    direction *
+      ((activeAt(placed.message.to, placed.y) ? ACTIVATION_HALF_WIDTH : 0) + MARKER_INSET),
 });
 
 const selfPath = (x: number, y: number, activated: boolean): string => {
@@ -133,15 +173,16 @@ const pulsesFor = (
 
 const paintMessage = (
   placed: PlacedMessage,
-  activated: ReadonlySet<string>,
+  activeAt: ActiveAt,
   slotCount: number,
   palette: Palette,
 ): string => {
   const tone = toneFor(placed.message.delta);
   const direction = travelDirection(placed.message.kind, placed.fromX, placed.toX);
+  const head = headFor(placed.message.kind, tone);
 
   if (direction === 0) {
-    const path = selfPath(placed.fromX, placed.y, activated.has(placed.message.from));
+    const path = selfPath(placed.fromX, placed.y, activeAt(placed.message.from, placed.y));
     return wrap(
       "g",
       {},
@@ -155,13 +196,13 @@ const paintMessage = (
           },
           placed.label,
         ),
-        tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": markerFor(tone) }),
+        tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
         pulsesFor(placed, path, slotCount, palette),
       ]),
     );
   }
 
-  const { start, end } = endsFor(placed, activated, direction);
+  const { start, end } = endsFor(placed, activeAt, direction);
   const path = `M${coord(start)},${coord(placed.y)} L${coord(end)},${coord(placed.y)}`;
 
   return wrap(
@@ -172,7 +213,7 @@ const paintMessage = (
         { class: "msg-label", x: coord((start + end) / 2), y: coord(placed.y - 7) },
         placed.label,
       ),
-      tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": markerFor(tone) }),
+      tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
       pulsesFor(placed, path, slotCount, palette),
     ]),
   );
@@ -184,11 +225,7 @@ const paintFlow = (
   slotCount: number,
   palette: Palette,
 ): string => {
-  const activated = new Set(
-    layout.flow.participants
-      .filter((_, index) => layout.participants[index]?.activation !== undefined)
-      .map((participant) => participant.node),
-  );
+  const activeAt = activationLookup(layout);
 
   const lifelineBottom = layout.top + layout.height;
 
@@ -201,16 +238,16 @@ const paintFlow = (
         x2: coord(participant.centreX),
         y2: coord(lifelineBottom),
       }),
-      participant.activation === undefined
-        ? ""
-        : tag("rect", {
-            class: "actbar",
-            x: coord(participant.centreX - ACTIVATION_HALF_WIDTH),
-            y: coord(participant.activation.top),
-            width: ACTIVATION_HALF_WIDTH * 2,
-            height: coord(participant.activation.bottom - participant.activation.top),
-            rx: 4,
-          }),
+      ...participant.activations.map((bar) =>
+        tag("rect", {
+          class: "actbar",
+          x: coord(participant.centreX - ACTIVATION_HALF_WIDTH),
+          y: coord(bar.top),
+          width: ACTIVATION_HALF_WIDTH * 2,
+          height: coord(bar.bottom - bar.top),
+          rx: 4,
+        }),
+      ),
     ]),
   );
 
@@ -241,7 +278,7 @@ const paintFlow = (
     wrap(
       "g",
       {},
-      lines(layout.messages.map((message) => paintMessage(message, activated, slotCount, palette))),
+      lines(layout.messages.map((message) => paintMessage(message, activeAt, slotCount, palette))),
     ),
   ]);
 };
@@ -254,11 +291,7 @@ const MESSAGE_LABEL_SIZE = 11;
  * so either can reach past the columns the layout sized the canvas from.
  */
 const flowBounds = (layout: FlowLayout, columnWidth: number): Box[] => {
-  const activated = new Set(
-    layout.flow.participants
-      .filter((_, index) => layout.participants[index]?.activation !== undefined)
-      .map((participant) => participant.node),
-  );
+  const activeAt = activationLookup(layout);
 
   const columns = layout.participants.map((participant) => ({
     x: participant.centreX - columnWidth / 2,
@@ -268,7 +301,7 @@ const flowBounds = (layout: FlowLayout, columnWidth: number): Box[] => {
   }));
 
   const labels = layout.messages.map((placed) => {
-    const width = measure(placed.label, "sans", MESSAGE_LABEL_SIZE);
+    const width = measure(placed.label, "sans-bold", MESSAGE_LABEL_SIZE);
     const direction = travelDirection(placed.message.kind, placed.fromX, placed.toX);
 
     if (direction === 0)
@@ -279,7 +312,7 @@ const flowBounds = (layout: FlowLayout, columnWidth: number): Box[] => {
         height: MESSAGE_LABEL_SIZE,
       };
 
-    const { start, end } = endsFor(placed, activated, direction);
+    const { start, end } = endsFor(placed, activeAt, direction);
     return {
       x: (start + end) / 2 - width / 2,
       y: placed.y - 7 - MESSAGE_LABEL_SIZE,

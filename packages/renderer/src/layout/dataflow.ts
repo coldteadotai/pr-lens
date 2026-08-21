@@ -25,11 +25,13 @@ export const SELF_LOOP_CORNER = 7;
 /** How far below its own row a self-message loop reaches. */
 export const SELF_LOOP_EXTENT = SELF_LOOP_DROP + SELF_LOOP_CORNER * 2;
 
+export type ActivationBar = { top: number; bottom: number };
+
 export type PlacedParticipant = {
   label: string;
   centreX: number;
-  /** Whether an activation bar runs down this column, and where. */
-  activation: { top: number; bottom: number } | undefined;
+  /** Spans where this column is working on a synchronous call it received. */
+  activations: ActivationBar[];
 };
 
 export type PlacedMessage = {
@@ -78,28 +80,68 @@ const labelFor = (message: FlowMessage): string =>
     : `${message.label} ×${message.repeat}`;
 
 /**
- * A participant is drawn as active from its first involvement to its last,
- * but only when it both receives and sends: a column that only ever emits is
- * a caller, and one that only ever receives is a sink. Neither is doing work
- * the diagram can show the duration of.
+ * A synchronous call is the one kind whose sender waits, so it is the one
+ * kind that activates its receiver: the bar starts where the call arrives and
+ * runs to the return that answers it — the first later `return` back to the
+ * caller not already claimed by an earlier call. A call no return answers
+ * keeps its receiver active through the receiver's last involvement, because
+ * the diagram never shows the work finishing. Async and self messages
+ * activate nothing: neither implies anyone is waiting.
  */
-const activationFor = (
+const activationsFor = (
   node: string,
   messages: readonly PlacedMessage[],
-): { top: number; bottom: number } | undefined => {
-  const involved = messages.filter(
-    ({ message }) => message.from === node || message.to === node,
-  );
-  if (involved.length === 0) return undefined;
+): ActivationBar[] => {
+  const claimed = new Set<number>();
+  const bars: ActivationBar[] = [];
 
-  const receives = involved.some(({ message }) => message.to === node);
-  const sends = involved.some(({ message }) => message.from === node);
-  if (!receives || !sends) return undefined;
+  messages.forEach((placed, index) => {
+    if (placed.message.kind !== "sync" || placed.message.to !== node) return;
 
-  const first = involved[0];
-  const last = involved[involved.length - 1];
-  if (first === undefined || last === undefined) return undefined;
-  return { top: first.y - MESSAGE_PITCH / 3, bottom: last.y + MESSAGE_PITCH / 3 };
+    const answer = messages.findIndex(
+      (candidate, position) =>
+        position > index &&
+        !claimed.has(position) &&
+        candidate.message.kind === "return" &&
+        candidate.message.from === node &&
+        candidate.message.to === placed.message.from,
+    );
+
+    const answered = messages[answer];
+    if (answer !== -1 && answered !== undefined) {
+      claimed.add(answer);
+      bars.push({ top: placed.y, bottom: answered.y });
+      return;
+    }
+
+    const last = messages.reduce(
+      (lowest, candidate, position) =>
+        position >= index &&
+        (candidate.message.from === node || candidate.message.to === node)
+          ? Math.max(lowest, candidate.y)
+          : lowest,
+      placed.y,
+    );
+    bars.push({ top: placed.y, bottom: last + MESSAGE_PITCH / 3 });
+  });
+
+  return mergedBars(bars);
+};
+
+/**
+ * Nested or unanswered calls can hand one column overlapping spans; a single
+ * bar per busy stretch keeps the drawing readable. Bars arrive ordered by
+ * top, because message y only ever grows.
+ */
+const mergedBars = (bars: readonly ActivationBar[]): ActivationBar[] => {
+  const merged: ActivationBar[] = [];
+  for (const bar of bars) {
+    const current = merged[merged.length - 1];
+    if (current !== undefined && bar.top <= current.bottom)
+      current.bottom = Math.max(current.bottom, bar.bottom);
+    else merged.push({ ...bar });
+  }
+  return merged;
 };
 
 const columnLabel = (
@@ -162,7 +204,7 @@ export const layoutDataFlow = (
     const participants = flow.participants.map((participant, index) => ({
       label: columnLabel(participant.label, byId.get(participant.node), participant.node),
       centreX: centres[index] ?? 0,
-      activation: activationFor(participant.node, messages),
+      activations: activationsFor(participant.node, messages),
     }));
 
     const drawn = messages.reduce(

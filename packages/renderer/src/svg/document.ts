@@ -93,28 +93,57 @@ const stylesheet = (palette: Palette): string =>
     `.actbar{fill:${palette.addedFill};stroke:${palette.addedBorder}}`,
     `.msg{fill:none;stroke-width:1.4}`,
     `.msg-return{stroke-dasharray:4 3;opacity:.8}`,
-    `.msg-label{font-size:11px;fill:${palette.foreground};text-anchor:middle}`,
+    `.msg-label{font-size:11px;font-weight:600;fill:${palette.foreground};text-anchor:middle}`,
     `.msg-strong{stroke-width:2}`,
   ].join("");
 
+/**
+ * Two arrowhead forms per tone, the classic sequence-diagram pair: a filled
+ * head for a message the sender waits on, an open line-form head for one it
+ * fires and forgets. The open head anchors at its tip so the line runs all
+ * the way into the point, where a filled head covers its own line end.
+ */
 const markers = (palette: Palette): string =>
-  TONES.map((tone) =>
-    wrap(
-      "marker",
-      {
-        id: `mk-${tone}`,
-        viewBox: "0 0 10 10",
-        refX: 8,
-        refY: 5,
-        markerWidth: 6.5,
-        markerHeight: 6.5,
-        orient: "auto-start-reverse",
-      },
-      tag("path", { d: "M0,0 L10,5 L0,10 z", fill: toneColour(palette, tone) }),
-    ),
+  TONES.map(
+    (tone) =>
+      wrap(
+        "marker",
+        {
+          id: `mk-${tone}`,
+          viewBox: "0 0 10 10",
+          refX: 8,
+          refY: 5,
+          markerWidth: 6.5,
+          markerHeight: 6.5,
+          orient: "auto-start-reverse",
+        },
+        tag("path", { d: "M0,0 L10,5 L0,10 z", fill: toneColour(palette, tone) }),
+      ) +
+      wrap(
+        "marker",
+        {
+          id: `mko-${tone}`,
+          viewBox: "0 0 10 10",
+          refX: 10,
+          refY: 5,
+          markerWidth: 6.5,
+          markerHeight: 6.5,
+          orient: "auto-start-reverse",
+        },
+        tag("path", {
+          d: "M2,1 L10,5 L2,9",
+          fill: "none",
+          stroke: toneColour(palette, tone),
+          "stroke-width": 1.6,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+        }),
+      ),
   ).join("");
 
 export const markerFor = (tone: Tone): string => `url(#mk-${tone})`;
+
+export const openMarkerFor = (tone: Tone): string => `url(#mko-${tone})`;
 
 const DOT_PITCH = 18;
 
