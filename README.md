@@ -2,13 +2,79 @@
 
 Review what actually matters. PR Lens renders a pull request as beautiful, animated diagrams **inside the GitHub pull request itself** — architecture blast radius and data-flow pipelines, not another findings table.
 
-Two lenses ship: **architecture** (what this change touches, against the existing system) and **data flow** (the ordered pipeline, animated).
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/tier2-reference.architecture.dark.svg">
+  <img alt="The reference pull request in the architecture lens: three swim lanes of node cards with animated delta-coloured routes between them" src="docs/showcase/tier2-reference.architecture.light.svg">
+</picture>
+
+<sub>The reference pull request — 3 lanes · 10 nodes · 13 edges. The diagram above matches your GitHub theme right now: every render ships as a dark/light pair behind a `<picture>` tag, the same technique PR Lens uses inside the PR comment itself.</sub>
+
+Two lenses ship: **architecture** (what this change touches, against the existing system) and **data flow** (the ordered pipeline, animated). Every diagram on this page was rendered by this repo's renderer from a JSON document in this repo — this page *is* the product demo.
+
+## From one card to a monorepo
+
+The renderer answers for every size of change with the same visual grammar: lanes, node cards, delta colours, and routes you can trace with the eye alone.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/tier1-minimal.architecture.dark.svg">
+  <img alt="A single-card diagram: the smallest change PR Lens draws" src="docs/showcase/tier1-minimal.architecture.light.svg">
+</picture>
+
+<sub>The smallest honest diagram — 1 lane · 1 node · 0 edges.</sub>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/tier3-dense.architecture.dark.svg">
+  <img alt="A dense three-lane graph where every route stays traceable through corridors" src="docs/showcase/tier3-dense.architecture.light.svg">
+</picture>
+
+<sub>The dense synthetic — 3 lanes · 15 nodes · 19 edges. Crossings happen inside corridors and read as wiring, not spaghetti.</sub>
+
+<details>
+<summary><b>Tier 4 — a checkout flow</b> · 5 lanes · 21 nodes · 24 edges</summary>
+<br>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/tier4-checkout.architecture.dark.svg">
+  <img alt="A five-lane checkout system with two dozen routed edges" src="docs/showcase/tier4-checkout.architecture.light.svg">
+</picture>
+</details>
+
+<details>
+<summary><b>Tier 5 — a monorepo</b> · 6 lanes · 37 nodes · 49 edges</summary>
+<br>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/tier5-monorepo.architecture.dark.svg">
+  <img alt="A six-lane monorepo graph, the largest tier the renderer answers for" src="docs/showcase/tier5-monorepo.architecture.light.svg">
+</picture>
+</details>
+
+<sub>Collapsed tiers dogfood the same `<details>` drill-down pattern the PR comment uses.</sub>
+
+## The data-flow lens
+
+The ordered pipeline of the change, drawn in the same design system — participants are real node cards, labels are the same pills, colours are the same deltas. **The pulses are moving right now**: PR Lens diagrams are animated SVG, and the animation survives GitHub's image proxy — a hook no findings table has.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/reference.data-flow.dark.svg">
+  <img alt="The reference pull request's send pipeline as an animated sequence diagram" src="docs/showcase/reference.data-flow.light.svg">
+</picture>
+
+<sub>The reference pull request's send pipeline — 7 steps on one shared clock, pulses travelling in the order the steps happen.</sub>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/mixed-kinds.data-flow.dark.svg">
+  <img alt="A sequence diagram mixing waited-on calls, fire-and-forget messages, returns and a self message" src="docs/showcase/mixed-kinds.data-flow.light.svg">
+</picture>
+
+<sub>Every message kind at once: a filled head waits for an answer, an open head is fire-and-forget, a dashed line *is* the answer — and only waited-on work lights an activation bar.</sub>
+
+Every render above comes from a checked-in fixture — the [reference pull request](packages/schema/src/examples/postmark-refactor.ts), the [dense synthetic](packages/renderer/test/dense.ts), the [upper tiers](packages/renderer/test/fixtures), the [mixed-kinds flow](packages/renderer/test/mixed-kinds.ts) — regenerated deterministically by [`docs/showcase/render.mts`](docs/showcase/render.mts).
 
 ## Packages
 
 | Package | What it is |
 | --- | --- |
 | [`packages/schema`](packages/schema) | `@coldtea/pr-lens-schema` — the contract every other component speaks |
+| [`packages/renderer`](packages/renderer) | `@coldtea/pr-lens-renderer` — deterministic JSON graph → the animated, theme-paired SVGs on this page |
 | [`packages/cli`](packages/cli) | `@coldtea/pr-lens-cli` — read a diff with your own model key, render it, compose the comment |
 | [`packages/action`](packages/action) | the GitHub Action: analyze, publish, post one static comment |
 | [`packages/agent-skill`](packages/agent-skill) | `@coldtea/pr-lens-agent-skill` — teaches a coding agent to draw the change it just made |
