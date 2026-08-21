@@ -13,12 +13,17 @@ import type { GraphDoc } from "../../packages/schema/src/index.js";
 import { render, THEMES } from "../../packages/renderer/src/index.js";
 import { tiers } from "../../packages/renderer/test/tiers.js";
 import { mixedKindsGraph } from "../../packages/renderer/test/mixed-kinds.js";
+import { teaserGraph } from "./teaser.js";
 
 const OUT = dirname(fileURLToPath(import.meta.url));
 mkdirSync(OUT, { recursive: true });
 
 const counts = (doc: GraphDoc): string =>
   `${doc.lanes.length} lanes · ${doc.nodes.length} nodes · ${doc.edges.length} edges`;
+
+for (const theme of THEMES)
+  writeFileSync(join(OUT, `teaser.architecture.${theme}.svg`), render(teaserGraph, { lens: "architecture", theme }).svg);
+console.log(`teaser: ${counts(teaserGraph)}`);
 
 for (const { name, doc } of tiers) {
   for (const theme of THEMES)

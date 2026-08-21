@@ -2,6 +2,12 @@
 
 Review what actually matters. PR Lens renders a pull request as beautiful, animated diagrams **inside the GitHub pull request itself** — architecture blast radius and data-flow pipelines, not another findings table.
 
+<img alt="A tiny pull request in the architecture lens, dark theme: a changed route, a new service on an animated path, a removed legacy mailer" src="docs/showcase/teaser.architecture.dark.svg">
+
+<img alt="The same tiny pull request, light theme" src="docs/showcase/teaser.architecture.light.svg">
+
+<sub>A pull request at a glance — green is new, amber changed, red gone, and the pulse is the data moving along the new path.</sub>
+
 <img alt="The reference pull request in the architecture lens, dark theme: three swim lanes of node cards with animated delta-coloured routes between them" src="docs/showcase/tier2-reference.architecture.dark.svg">
 
 <img alt="The reference pull request in the architecture lens, light theme" src="docs/showcase/tier2-reference.architecture.light.svg">
@@ -60,7 +66,7 @@ The ordered pipeline of the change, drawn in the same design system — particip
 
 <sub>Every message kind at once: a filled head waits for an answer, an open head is fire-and-forget, a dashed line *is* the answer — and only waited-on work lights an activation bar.</sub>
 
-Every render above comes from a checked-in fixture — the [reference pull request](packages/schema/src/examples/postmark-refactor.ts), the [dense synthetic](packages/renderer/test/dense.ts), the [upper tiers](packages/renderer/test/fixtures), the [mixed-kinds flow](packages/renderer/test/mixed-kinds.ts) — regenerated deterministically by [`docs/showcase/render.mts`](docs/showcase/render.mts).
+Every render above comes from a checked-in fixture — the [teaser](docs/showcase/teaser.ts), the [reference pull request](packages/schema/src/examples/postmark-refactor.ts), the [dense synthetic](packages/renderer/test/dense.ts), the [upper tiers](packages/renderer/test/fixtures), the [mixed-kinds flow](packages/renderer/test/mixed-kinds.ts) — regenerated deterministically by [`docs/showcase/render.mts`](docs/showcase/render.mts).
 
 ## Packages
 
