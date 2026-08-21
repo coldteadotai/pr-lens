@@ -1,0 +1,507 @@
+{
+  "schemaVersion": "0.1.0",
+  "kind": "graph",
+  "title": "Tier 4 — checkout platform",
+  "summary": "Five lanes, cross-lane conversations, bidirectional pairs, a retired charge path.",
+  "lenses": [
+    "architecture"
+  ],
+  "provenance": {
+    "repo": {
+      "owner": "coldteadotai",
+      "name": "pr-lens",
+      "host": "github.com"
+    },
+    "base": {
+      "sha": "aaaaaaa"
+    },
+    "head": {
+      "sha": "bbbbbbb"
+    }
+  },
+  "lanes": [
+    {
+      "id": "web",
+      "label": "Web",
+      "order": 0
+    },
+    {
+      "id": "api",
+      "label": "API",
+      "order": 1
+    },
+    {
+      "id": "workers",
+      "label": "Workers",
+      "order": 2
+    },
+    {
+      "id": "data",
+      "label": "Data",
+      "order": 3
+    },
+    {
+      "id": "external",
+      "label": "External",
+      "order": 4
+    }
+  ],
+  "nodes": [
+    {
+      "id": "storefront",
+      "label": "Storefront",
+      "kind": "ui",
+      "delta": "unchanged",
+      "lane": "web",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "checkout-page",
+      "label": "Checkout page",
+      "kind": "ui",
+      "delta": "modified",
+      "lane": "web",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "account-page",
+      "label": "Account page",
+      "kind": "ui",
+      "delta": "unchanged",
+      "lane": "web",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "webhooks-console",
+      "label": "Webhooks console",
+      "kind": "ui",
+      "delta": "added",
+      "lane": "web",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "checkout-route",
+      "label": "POST /checkout",
+      "kind": "route",
+      "delta": "modified",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "payment-intent",
+      "label": "createPaymentIntent",
+      "kind": "function",
+      "delta": "added",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "refund-route",
+      "label": "POST /refunds",
+      "kind": "route",
+      "delta": "modified",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "session-mw",
+      "label": "sessionMiddleware",
+      "kind": "function",
+      "delta": "unchanged",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "legacy-charge-route",
+      "label": "POST /charge (v1)",
+      "kind": "route",
+      "delta": "removed",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "capture-worker",
+      "label": "captureWorker",
+      "kind": "job",
+      "delta": "added",
+      "lane": "workers",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "refund-worker",
+      "label": "refundWorker",
+      "kind": "job",
+      "delta": "modified",
+      "lane": "workers",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "email-worker",
+      "label": "emailWorker",
+      "kind": "job",
+      "delta": "unchanged",
+      "lane": "workers",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "retry-scheduler",
+      "label": "retryScheduler",
+      "kind": "job",
+      "delta": "added",
+      "lane": "workers",
+      "subtitle": "cron",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "legacy-capture-cron",
+      "label": "captureCron (v1)",
+      "kind": "job",
+      "delta": "removed",
+      "lane": "workers",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "orders-db",
+      "label": "orders",
+      "kind": "datastore",
+      "delta": "modified",
+      "lane": "data",
+      "subtitle": "Postgres",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "payments-ledger",
+      "label": "paymentsLedger",
+      "kind": "datastore",
+      "delta": "added",
+      "lane": "data",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "events-outbox",
+      "label": "eventsOutbox",
+      "kind": "datastore",
+      "delta": "added",
+      "lane": "data",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "sessions-cache",
+      "label": "sessions",
+      "kind": "cache",
+      "delta": "unchanged",
+      "lane": "data",
+      "subtitle": "Redis",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "stripe",
+      "label": "Stripe",
+      "kind": "external",
+      "delta": "modified",
+      "lane": "external",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "tax-svc",
+      "label": "TaxJar",
+      "kind": "external",
+      "delta": "added",
+      "lane": "external",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "mailgun",
+      "label": "Mailgun",
+      "kind": "external",
+      "delta": "unchanged",
+      "lane": "external",
+      "files": [],
+      "badges": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "storefront-to-checkout",
+      "from": "storefront",
+      "to": "checkout-page",
+      "kind": "render",
+      "delta": "unchanged",
+      "label": "begin checkout",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "checkout-to-route",
+      "from": "checkout-page",
+      "to": "checkout-route",
+      "kind": "http",
+      "delta": "modified",
+      "label": "POST /checkout",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "account-to-session",
+      "from": "account-page",
+      "to": "session-mw",
+      "kind": "http",
+      "delta": "unchanged",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "session-to-cache",
+      "from": "session-mw",
+      "to": "sessions-cache",
+      "kind": "data",
+      "delta": "unchanged",
+      "label": "session lookup",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "route-to-intent",
+      "from": "checkout-route",
+      "to": "payment-intent",
+      "kind": "call",
+      "delta": "added",
+      "label": "create intent",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "intent-to-stripe",
+      "from": "payment-intent",
+      "to": "stripe",
+      "kind": "http",
+      "delta": "added",
+      "label": "PaymentIntent API",
+      "emphasis": "hero",
+      "animated": true,
+      "files": []
+    },
+    {
+      "id": "intent-to-tax",
+      "from": "payment-intent",
+      "to": "tax-svc",
+      "kind": "http",
+      "delta": "added",
+      "label": "quote tax",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "route-to-orders",
+      "from": "checkout-route",
+      "to": "orders-db",
+      "kind": "data",
+      "delta": "modified",
+      "label": "write order",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "stripe-to-console",
+      "from": "stripe",
+      "to": "webhooks-console",
+      "kind": "event",
+      "delta": "added",
+      "label": "webhook events",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "scheduler-to-capture",
+      "from": "retry-scheduler",
+      "to": "capture-worker",
+      "kind": "queue",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "scheduler-to-refund",
+      "from": "retry-scheduler",
+      "to": "refund-worker",
+      "kind": "queue",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "capture-to-stripe",
+      "from": "capture-worker",
+      "to": "stripe",
+      "kind": "http",
+      "delta": "added",
+      "label": "capture",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "capture-to-ledger",
+      "from": "capture-worker",
+      "to": "payments-ledger",
+      "kind": "data",
+      "delta": "added",
+      "label": "post entry",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "capture-to-outbox",
+      "from": "capture-worker",
+      "to": "events-outbox",
+      "kind": "data",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "capture-to-orders",
+      "from": "capture-worker",
+      "to": "orders-db",
+      "kind": "data",
+      "delta": "added",
+      "label": "update status",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "orders-to-capture",
+      "from": "orders-db",
+      "to": "capture-worker",
+      "kind": "event",
+      "delta": "added",
+      "label": "order snapshot",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "refund-to-worker",
+      "from": "refund-route",
+      "to": "refund-worker",
+      "kind": "queue",
+      "delta": "modified",
+      "label": "enqueue refund",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "refund-to-stripe",
+      "from": "refund-worker",
+      "to": "stripe",
+      "kind": "http",
+      "delta": "modified",
+      "label": "refund API",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "refund-to-orders",
+      "from": "refund-worker",
+      "to": "orders-db",
+      "kind": "data",
+      "delta": "modified",
+      "label": "mark refunded",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "outbox-to-email",
+      "from": "events-outbox",
+      "to": "email-worker",
+      "kind": "event",
+      "delta": "added",
+      "label": "outbox poll",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "email-to-mailgun",
+      "from": "email-worker",
+      "to": "mailgun",
+      "kind": "http",
+      "delta": "unchanged",
+      "label": "send receipt",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "route-to-legacy",
+      "from": "checkout-route",
+      "to": "legacy-charge-route",
+      "kind": "call",
+      "delta": "removed",
+      "label": "direct charge (was)",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "legacy-to-cron",
+      "from": "legacy-charge-route",
+      "to": "legacy-capture-cron",
+      "kind": "queue",
+      "delta": "removed",
+      "label": "capture later (was)",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "cron-to-stripe",
+      "from": "legacy-capture-cron",
+      "to": "stripe",
+      "kind": "http",
+      "delta": "removed",
+      "label": "charge capture (was)",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    }
+  ],
+  "flows": [],
+  "views": []
+}

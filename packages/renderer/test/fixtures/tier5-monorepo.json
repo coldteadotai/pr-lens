@@ -1,0 +1,915 @@
+{
+  "schemaVersion": "0.1.0",
+  "kind": "graph",
+  "title": "Tier 5 — monorepo",
+  "summary": "Six lanes, thirty-seven nodes: a document platform monorepo under heavy change.",
+  "lenses": [
+    "architecture"
+  ],
+  "provenance": {
+    "repo": {
+      "owner": "coldteadotai",
+      "name": "pr-lens",
+      "host": "github.com"
+    },
+    "base": {
+      "sha": "aaaaaaa"
+    },
+    "head": {
+      "sha": "bbbbbbb"
+    }
+  },
+  "lanes": [
+    {
+      "id": "web",
+      "label": "apps/web",
+      "order": 0
+    },
+    {
+      "id": "api",
+      "label": "apps/api",
+      "order": 1
+    },
+    {
+      "id": "services",
+      "label": "services",
+      "order": 2
+    },
+    {
+      "id": "packages",
+      "label": "packages",
+      "order": 3
+    },
+    {
+      "id": "data",
+      "label": "data",
+      "order": 4
+    },
+    {
+      "id": "external",
+      "label": "external",
+      "order": 5
+    }
+  ],
+  "nodes": [
+    {
+      "id": "home",
+      "label": "Home",
+      "kind": "ui",
+      "delta": "unchanged",
+      "lane": "web",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "kind": "ui",
+      "delta": "modified",
+      "lane": "web",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "editor",
+      "label": "Editor",
+      "kind": "ui",
+      "delta": "added",
+      "lane": "web",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "admin",
+      "label": "Admin",
+      "kind": "ui",
+      "delta": "unchanged",
+      "lane": "web",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "onboarding",
+      "label": "Onboarding",
+      "kind": "ui",
+      "delta": "modified",
+      "lane": "web",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "gql-gateway",
+      "label": "GraphQL gateway",
+      "kind": "route",
+      "delta": "modified",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "rest-router",
+      "label": "REST router",
+      "kind": "route",
+      "delta": "unchanged",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "auth-mw",
+      "label": "authMiddleware",
+      "kind": "function",
+      "delta": "modified",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "rate-limiter",
+      "label": "rateLimiter",
+      "kind": "function",
+      "delta": "added",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "upload-route",
+      "label": "POST /uploads",
+      "kind": "route",
+      "delta": "added",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "legacy-rest-v1",
+      "label": "REST v1",
+      "kind": "route",
+      "delta": "removed",
+      "lane": "api",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "user-svc",
+      "label": "userService",
+      "kind": "service",
+      "delta": "modified",
+      "lane": "services",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "doc-svc",
+      "label": "docService",
+      "kind": "service",
+      "delta": "added",
+      "lane": "services",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "collab-svc",
+      "label": "collabService",
+      "kind": "service",
+      "delta": "added",
+      "lane": "services",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "notify-svc",
+      "label": "notifyService",
+      "kind": "service",
+      "delta": "unchanged",
+      "lane": "services",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "search-indexer",
+      "label": "searchIndexer",
+      "kind": "job",
+      "delta": "added",
+      "lane": "services",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "billing-svc",
+      "label": "billingService",
+      "kind": "service",
+      "delta": "modified",
+      "lane": "services",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "export-svc",
+      "label": "exportService",
+      "kind": "service",
+      "delta": "added",
+      "lane": "services",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "legacy-sync",
+      "label": "legacySync",
+      "kind": "job",
+      "delta": "removed",
+      "lane": "services",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "ui-kit",
+      "label": "ui-kit",
+      "kind": "package",
+      "delta": "modified",
+      "lane": "packages",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "schema-lib",
+      "label": "schema",
+      "kind": "package",
+      "delta": "added",
+      "lane": "packages",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "auth-lib",
+      "label": "auth",
+      "kind": "package",
+      "delta": "unchanged",
+      "lane": "packages",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "telemetry",
+      "label": "telemetry",
+      "kind": "package",
+      "delta": "added",
+      "lane": "packages",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "markdown-lib",
+      "label": "markdown",
+      "kind": "package",
+      "delta": "added",
+      "lane": "packages",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "api-client",
+      "label": "api-client",
+      "kind": "package",
+      "delta": "modified",
+      "lane": "packages",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "legacy-xml-lib",
+      "label": "xml-export",
+      "kind": "package",
+      "delta": "removed",
+      "lane": "packages",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "postgres",
+      "label": "Postgres",
+      "kind": "datastore",
+      "delta": "modified",
+      "lane": "data",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "redis",
+      "label": "Redis",
+      "kind": "cache",
+      "delta": "unchanged",
+      "lane": "data",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "search-cluster",
+      "label": "OpenSearch",
+      "kind": "datastore",
+      "delta": "added",
+      "lane": "data",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "blob-store",
+      "label": "Blob store",
+      "kind": "datastore",
+      "delta": "modified",
+      "lane": "data",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "warehouse",
+      "label": "Warehouse",
+      "kind": "datastore",
+      "delta": "unchanged",
+      "lane": "data",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "outbox",
+      "label": "outbox",
+      "kind": "datastore",
+      "delta": "added",
+      "lane": "data",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "stripe",
+      "label": "Stripe",
+      "kind": "external",
+      "delta": "unchanged",
+      "lane": "external",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "sendgrid",
+      "label": "SendGrid",
+      "kind": "external",
+      "delta": "unchanged",
+      "lane": "external",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "kind": "external",
+      "delta": "added",
+      "lane": "external",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "sentry",
+      "label": "Sentry",
+      "kind": "external",
+      "delta": "unchanged",
+      "lane": "external",
+      "files": [],
+      "badges": []
+    },
+    {
+      "id": "idp",
+      "label": "Identity provider",
+      "kind": "external",
+      "delta": "unchanged",
+      "lane": "external",
+      "files": [],
+      "badges": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "home-to-dashboard",
+      "from": "home",
+      "to": "dashboard",
+      "kind": "render",
+      "delta": "unchanged",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "dashboard-to-editor",
+      "from": "dashboard",
+      "to": "editor",
+      "kind": "render",
+      "delta": "added",
+      "label": "open doc",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "onboarding-to-gql",
+      "from": "onboarding",
+      "to": "gql-gateway",
+      "kind": "http",
+      "delta": "modified",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "dashboard-to-gql",
+      "from": "dashboard",
+      "to": "gql-gateway",
+      "kind": "http",
+      "delta": "modified",
+      "label": "queries",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "editor-to-upload",
+      "from": "editor",
+      "to": "upload-route",
+      "kind": "http",
+      "delta": "added",
+      "label": "attach file",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "editor-to-uikit",
+      "from": "editor",
+      "to": "ui-kit",
+      "kind": "dependency",
+      "delta": "modified",
+      "label": "components",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "admin-to-rest",
+      "from": "admin",
+      "to": "rest-router",
+      "kind": "http",
+      "delta": "unchanged",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "gql-to-auth",
+      "from": "gql-gateway",
+      "to": "auth-mw",
+      "kind": "call",
+      "delta": "modified",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "rest-to-auth",
+      "from": "rest-router",
+      "to": "auth-mw",
+      "kind": "call",
+      "delta": "unchanged",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "auth-to-limiter",
+      "from": "auth-mw",
+      "to": "rate-limiter",
+      "kind": "call",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "auth-to-authlib",
+      "from": "auth-mw",
+      "to": "auth-lib",
+      "kind": "dependency",
+      "delta": "modified",
+      "label": "verify JWT",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "authlib-to-idp",
+      "from": "auth-lib",
+      "to": "idp",
+      "kind": "http",
+      "delta": "unchanged",
+      "label": "OIDC",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "limiter-to-redis",
+      "from": "rate-limiter",
+      "to": "redis",
+      "kind": "data",
+      "delta": "added",
+      "label": "token bucket",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "gql-to-user",
+      "from": "gql-gateway",
+      "to": "user-svc",
+      "kind": "rpc",
+      "delta": "modified",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "gql-to-doc",
+      "from": "gql-gateway",
+      "to": "doc-svc",
+      "kind": "rpc",
+      "delta": "added",
+      "label": "doc ops",
+      "emphasis": "hero",
+      "animated": true,
+      "files": []
+    },
+    {
+      "id": "upload-to-blob",
+      "from": "upload-route",
+      "to": "blob-store",
+      "kind": "data",
+      "delta": "added",
+      "label": "put object",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "user-to-postgres",
+      "from": "user-svc",
+      "to": "postgres",
+      "kind": "data",
+      "delta": "modified",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "postgres-to-user",
+      "from": "postgres",
+      "to": "user-svc",
+      "kind": "event",
+      "delta": "modified",
+      "label": "CDC stream",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "doc-to-collab",
+      "from": "doc-svc",
+      "to": "collab-svc",
+      "kind": "rpc",
+      "delta": "added",
+      "label": "presence",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "doc-to-indexer",
+      "from": "doc-svc",
+      "to": "search-indexer",
+      "kind": "queue",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "doc-to-export",
+      "from": "doc-svc",
+      "to": "export-svc",
+      "kind": "queue",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "doc-to-schema",
+      "from": "doc-svc",
+      "to": "schema-lib",
+      "kind": "dependency",
+      "delta": "added",
+      "label": "doc model",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "doc-to-markdown",
+      "from": "doc-svc",
+      "to": "markdown-lib",
+      "kind": "dependency",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "doc-to-openai",
+      "from": "doc-svc",
+      "to": "openai",
+      "kind": "http",
+      "delta": "added",
+      "label": "summarize",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "collab-to-redis",
+      "from": "collab-svc",
+      "to": "redis",
+      "kind": "data",
+      "delta": "added",
+      "label": "presence state",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "redis-to-collab",
+      "from": "redis",
+      "to": "collab-svc",
+      "kind": "event",
+      "delta": "added",
+      "label": "pubsub",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "collab-to-schema",
+      "from": "collab-svc",
+      "to": "schema-lib",
+      "kind": "dependency",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "indexer-to-cluster",
+      "from": "search-indexer",
+      "to": "search-cluster",
+      "kind": "data",
+      "delta": "added",
+      "label": "index doc",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "indexer-to-markdown",
+      "from": "search-indexer",
+      "to": "markdown-lib",
+      "kind": "dependency",
+      "delta": "added",
+      "label": "strip markup",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "export-to-blob",
+      "from": "export-svc",
+      "to": "blob-store",
+      "kind": "data",
+      "delta": "added",
+      "label": "write PDF",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "export-to-markdown",
+      "from": "export-svc",
+      "to": "markdown-lib",
+      "kind": "dependency",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "user-to-notify",
+      "from": "user-svc",
+      "to": "notify-svc",
+      "kind": "queue",
+      "delta": "unchanged",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "notify-to-sendgrid",
+      "from": "notify-svc",
+      "to": "sendgrid",
+      "kind": "http",
+      "delta": "unchanged",
+      "label": "email",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "billing-to-stripe",
+      "from": "billing-svc",
+      "to": "stripe",
+      "kind": "http",
+      "delta": "modified",
+      "label": "invoices",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "billing-to-postgres",
+      "from": "billing-svc",
+      "to": "postgres",
+      "kind": "data",
+      "delta": "modified",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "billing-to-warehouse",
+      "from": "billing-svc",
+      "to": "warehouse",
+      "kind": "data",
+      "delta": "unchanged",
+      "label": "revenue facts",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "user-to-billing",
+      "from": "user-svc",
+      "to": "billing-svc",
+      "kind": "rpc",
+      "delta": "modified",
+      "label": "plan check",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "billing-to-user",
+      "from": "billing-svc",
+      "to": "user-svc",
+      "kind": "rpc",
+      "delta": "modified",
+      "label": "entitlements",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "doc-to-outbox",
+      "from": "doc-svc",
+      "to": "outbox",
+      "kind": "data",
+      "delta": "added",
+      "label": "domain events",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "outbox-to-notify",
+      "from": "outbox",
+      "to": "notify-svc",
+      "kind": "event",
+      "delta": "added",
+      "label": "outbox poll",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "uikit-to-telemetry",
+      "from": "ui-kit",
+      "to": "telemetry",
+      "kind": "dependency",
+      "delta": "added",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "telemetry-to-sentry",
+      "from": "telemetry",
+      "to": "sentry",
+      "kind": "http",
+      "delta": "added",
+      "label": "errors",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "client-to-gql",
+      "from": "api-client",
+      "to": "gql-gateway",
+      "kind": "http",
+      "delta": "modified",
+      "label": "typed calls",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "schema-to-client",
+      "from": "schema-lib",
+      "to": "api-client",
+      "kind": "dependency",
+      "delta": "added",
+      "label": "codegen",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "dashboard-to-legacy",
+      "from": "dashboard",
+      "to": "legacy-rest-v1",
+      "kind": "http",
+      "delta": "removed",
+      "label": "v1 calls (was)",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "legacyrest-to-legacysync",
+      "from": "legacy-rest-v1",
+      "to": "legacy-sync",
+      "kind": "call",
+      "delta": "removed",
+      "label": "sync (was)",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "legacysync-to-xml",
+      "from": "legacy-sync",
+      "to": "legacy-xml-lib",
+      "kind": "dependency",
+      "delta": "removed",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "legacysync-to-postgres",
+      "from": "legacy-sync",
+      "to": "postgres",
+      "kind": "data",
+      "delta": "removed",
+      "label": "bulk upsert (was)",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "doc-to-xml",
+      "from": "doc-svc",
+      "to": "legacy-xml-lib",
+      "kind": "dependency",
+      "delta": "removed",
+      "label": "xml export (was)",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    }
+  ],
+  "flows": [],
+  "views": []
+}

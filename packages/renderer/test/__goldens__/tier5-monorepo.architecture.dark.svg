@@ -1,0 +1,247 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2592 1324" width="2592" height="1324" role="img" aria-label="Tier 5 — monorepo">
+<title>Tier 5 — monorepo</title>
+<desc>Six lanes, thirty-seven nodes: a document platform monorepo under heavy change.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:rgba(110,118,129,.07)}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#9198a1}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.card-modified{stroke:#d29922;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#f85149;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#e6edf3}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:rgba(110,118,129,.18)}.glyph{fill:#9198a1}.glyph-stroke{stroke:#9198a1;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.bdg-added text{fill:#3fb950}.bdg-modified rect{fill:rgba(187,128,9,.15);stroke:rgba(210,153,34,.4)}.bdg-modified text{fill:#d29922}.bdg-removed rect{fill:rgba(248,81,73,.12);stroke:rgba(248,81,73,.4)}.bdg-removed text{fill:#f85149}.bdg-neutral rect{fill:rgba(110,118,129,.18);stroke:#3d444d}.bdg-neutral text{fill:#9198a1}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#3fb950}.edge-modified{stroke:#d29922}.edge-removed{stroke:#f85149;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#6e7681}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#e6edf3}.lpill{fill:#0d1117;stroke:#21262d;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#9198a1}.ltext-added{fill:#3fb950}.ltext-modified{fill:#d29922}.ltext-removed{fill:#f85149}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}.pcard{fill:#1c2128;stroke:#3d444d;stroke-width:1}.ptitle{font-size:12px;font-weight:600;fill:#e6edf3;text-anchor:middle}.lifeline{stroke:#30363d;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.msg{fill:none;stroke-width:1.4}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-label{font-size:11px;fill:#e6edf3;text-anchor:middle}.msg-strong{stroke-width:2}</style>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker></defs>
+<rect x="0" y="0" width="2592" height="1324" rx="12" fill="#0d1117"/>
+<rect x="0" y="0" width="2592" height="1324" rx="12" fill="url(#dots)"/>
+<g transform="translate(10,0)"><g><rect class="lanebox" x="16" y="44" width="404" height="1264" rx="12"/>
+<text class="lanelabel" x="32" y="68">APPS/WEB</text>
+<rect class="lanebox" x="440" y="44" width="404" height="1264" rx="12"/>
+<text class="lanelabel" x="456" y="68">APPS/API</text>
+<rect class="lanebox" x="864" y="44" width="404" height="1264" rx="12"/>
+<text class="lanelabel" x="880" y="68">SERVICES</text>
+<rect class="lanebox" x="1288" y="44" width="404" height="1264" rx="12"/>
+<text class="lanelabel" x="1304" y="68">PACKAGES</text>
+<rect class="lanebox" x="1712" y="44" width="404" height="1264" rx="12"/>
+<text class="lanelabel" x="1728" y="68">DATA</text>
+<rect class="lanebox" x="2136" y="44" width="404" height="1264" rx="12"/>
+<text class="lanelabel" x="2152" y="68">EXTERNAL</text></g>
+<g><path class="edge edge-neutral context" d="M32,118 L19,118 C11.82,118 6,123.82 6,131 L6,313 C6,320.18 11.82,326 19,326 L32,326" marker-end="url(#mk-neutral)"/>
+<path class="edge edge-added" d="M218,352 L218,404" marker-end="url(#mk-added)"/>
+<path class="edge edge-modified" d="M404,222 L410.33,222 C413.83,222 416.67,224.84 416.67,228.33 L416.67,298.33 C416.67,309.2 425.47,318 436.33,318 L456,318" marker-end="url(#mk-modified)"/>
+<path class="edge edge-modified" d="M404,326 L456,326" marker-end="url(#mk-modified)"/>
+<path class="edge edge-added" d="M404,422 L427,422 C439.7,422 450,411.7 450,399 L450,394 C450,378.54 462.54,366 478,366 L719,366 C729.49,366 738,374.51 738,385 L738,404" marker-end="url(#mk-added)"/>
+<path class="edge edge-modified" d="M404,438 L424.67,438 C431.29,438 436.67,443.37 436.67,450 C436.67,456.63 442.04,462 448.67,462 L1277.2,462 C1286.04,462 1293.2,454.84 1293.2,446 L1293.2,435.4 C1293.2,432.42 1295.62,430 1298.6,430 L1304,430" marker-end="url(#mk-modified)"/>
+<path class="edge edge-neutral context" d="M404,118 L407,118 C408.66,118 410,119.34 410,121 L410,191 C410,203.7 420.3,214 433,214 L456,214" marker-end="url(#mk-neutral)"/>
+<path class="edge edge-modified" d="M594,352 L594,404" marker-end="url(#mk-modified)"/>
+<path class="edge edge-neutral context" d="M456,230 L439.67,230 C430.65,230 423.33,237.31 423.33,246.33 L423.33,413.67 C423.33,422.69 430.65,430 439.67,430 L456,430" marker-end="url(#mk-neutral)"/>
+<path class="edge edge-added" d="M590,456 L590,508" marker-end="url(#mk-added)"/>
+<path class="edge edge-modified" d="M554,456 L554,460.33 C554,462.73 555.94,464.67 558.33,464.67 L867.67,464.67 C868.4,464.67 869,465.26 869,466 C869,466.74 869.6,467.33 870.33,467.33 L1234.27,467.33 C1252.68,467.33 1267.6,482.26 1267.6,500.67 L1267.6,515.8 C1267.6,525.85 1275.75,534 1285.8,534 L1304,534" marker-end="url(#mk-modified)"/>
+<path class="edge edge-neutral context" d="M1394,560 L1394,573.91 C1394,581.59 1400.23,587.82 1407.91,587.82 L1656.57,587.82 C1675.35,587.82 1690.57,603.04 1690.57,621.82 L1690.57,656 C1690.57,674.78 1705.79,690 1724.57,690 L2096,690 C2110.36,690 2122,701.64 2122,716 L2122,727 C2122,735.28 2128.72,742 2137,742 L2152,742" marker-end="url(#mk-neutral)"/>
+<path class="edge edge-added" d="M828,534 L841,534 C848.18,534 854,539.82 854,547 L854,752 C854,770.78 869.22,786 888,786 L1675.14,786 C1688.4,786 1699.14,796.74 1699.14,810 L1699.14,819.57 C1699.14,827.54 1705.6,834 1713.57,834 L1728,834" marker-end="url(#mk-added)"/>
+<path class="edge edge-modified" d="M828,338 L833.5,338 C836.54,338 839,340.46 839,343.5 L839,401.5 C839,412.82 848.18,422 859.5,422 L880,422" marker-end="url(#mk-modified)"/>
+<path class="glow" stroke="#3fb950" d="M828,314 L831,314 C832.66,314 834,315.34 834,317 L834,344 C834,360.57 847.43,374 864,374 L1147,374 C1155.28,374 1162,380.72 1162,389 L1162,404"/>
+<path class="edge edge-added hero" d="M828,314 L831,314 C832.66,314 834,315.34 834,317 L834,344 C834,360.57 847.43,374 864,374 L1147,374 C1155.28,374 1162,380.72 1162,389 L1162,404" marker-end="url(#mk-added)"/>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M828,314 L831,314 C832.66,314 834,315.34 834,317 L834,344 C834,360.57 847.43,374 864,374 L1147,374 C1155.28,374 1162,380.72 1162,389 L1162,404"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="0.7s" repeatCount="indefinite" path="M828,314 L831,314 C832.66,314 834,315.34 834,317 L834,344 C834,360.57 847.43,374 864,374 L1147,374 C1155.28,374 1162,380.72 1162,389 L1162,404"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="1.4s" repeatCount="indefinite" path="M828,314 L831,314 C832.66,314 834,315.34 834,317 L834,344 C834,360.57 847.43,374 864,374 L1147,374 C1155.28,374 1162,380.72 1162,389 L1162,404"/></circle>
+<path class="edge edge-added" d="M828,430 L836,430 C840.42,430 844,433.58 844,438 L844,532 C844,550.78 859.22,566 878,566 L1661.43,566 C1679.1,566 1693.43,580.33 1693.43,598 L1693.43,612.71 C1693.43,622.26 1701.17,630 1710.71,630 L1728,630" marker-end="url(#mk-added)"/>
+<path class="edge edge-modified" d="M978,456 L978,464.33 C978,468.94 981.73,472.67 986.33,472.67 L1232,472.67 C1250.78,472.67 1266,487.89 1266,506.67 L1266,546.55 C1266,565.32 1281.22,580.55 1300,580.55 L1700.44,580.55 C1704.46,580.55 1707.71,583.8 1707.71,587.82 C1707.71,591.83 1710.97,595.09 1714.99,595.09 L1985.55,595.09 C1990.21,595.09 1994,598.88 1994,603.55 L1994,612" marker-end="url(#mk-modified)"/>
+<path class="edge edge-modified" d="M2010,612 L2010,609 C2010,607.34 2008.66,606 2007,606 L1750.29,606 C1731.51,606 1716.29,590.78 1716.29,572 L1716.29,536 C1716.29,517.22 1701.06,502 1682.29,502 L1289.73,502 C1289,502 1288.4,501.4 1288.4,500.67 C1288.4,499.93 1287.8,499.33 1287.07,499.33 L1015.67,499.33 C1003.7,499.33 994,489.63 994,477.67 L994,456" marker-end="url(#mk-modified)"/>
+<path class="edge edge-added" d="M1162,456 L1162,465.67 C1162,471.01 1166.33,475.33 1171.67,475.33 L1236.8,475.33 C1255.58,475.33 1270.8,490.56 1270.8,509.33 L1270.8,824.6 C1270.8,829.79 1266.59,834 1261.4,834 L1252,834" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1162,456 L1162,475 C1162,485.49 1153.49,494 1143,494 L977,494 C973.13,494 970,497.13 970,501 L970,508" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1162,456 L1162,467 C1162,473.08 1166.92,478 1173,478 L1235.2,478 C1253.98,478 1269.2,493.22 1269.2,512 L1269.2,617.4 C1269.2,622.15 1265.35,626 1260.6,626 L1252,626" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1252,442 L1258.2,442 C1261.62,442 1264.4,444.78 1264.4,448.2 L1264.4,818.2 C1264.4,829.14 1273.26,838 1284.2,838 L1304,838" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1252,436 L1257.4,436 C1260.38,436 1262.8,438.42 1262.8,441.4 L1262.8,605.4 C1262.8,616.78 1272.02,626 1283.4,626 L1304,626" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1252,418 L1255,418 C1256.66,418 1258,419.34 1258,421 L1258,450.67 C1258,468.71 1272.62,483.33 1290.67,483.33 L2080.67,483.33 C2094.66,483.33 2106,494.68 2106,508.67 L2106,511 C2106,523.7 2116.3,534 2129,534 L2152,534" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1252,850 L1269.2,850 C1278.04,850 1285.2,857.16 1285.2,866 C1285.2,874.84 1292.36,882 1301.2,882 L1704,882 C1713.94,882 1722,873.94 1722,864 L1722,849 C1722,847.34 1723.34,846 1725,846 L1728,846" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1728,858 L1715,858 C1707.82,858 1702,863.82 1702,871 L1702,886 C1702,901.46 1689.46,914 1674,914 L1322.8,914 C1307.34,914 1294.8,901.46 1294.8,886 L1294.8,879.4 C1294.8,867.58 1285.22,858 1273.4,858 L1252,858" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1252,848 L1304,848" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M962,560 L962,564.82 C962,567.48 964.16,569.64 966.82,569.64 L1243.2,569.64 C1261.98,569.64 1277.2,584.86 1277.2,603.64 L1277.2,636 C1277.2,654.78 1292.42,670 1311.2,670 L1662.29,670 C1681.06,670 1696.29,685.22 1696.29,704 L1696.29,726.14 C1696.29,734.9 1703.38,742 1712.14,742 L1728,742" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M978,560 L978,566.64 C978,570.3 980.97,573.27 984.64,573.27 L1246.44,573.27 C1264.31,573.27 1278.8,587.76 1278.8,605.64 L1278.8,625.4 C1278.8,632.36 1284.44,638 1291.4,638 L1304,638" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1252,650 L1267.07,650 C1274.43,650 1280.4,655.97 1280.4,663.33 C1280.4,670.7 1286.37,676.67 1293.73,676.67 L1703.81,676.67 C1712.28,676.67 1719.14,669.8 1719.14,661.33 L1719.14,650.43 C1719.14,647.98 1721.13,646 1723.57,646 L1728,646" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1252,644 L1304,644" marker-end="url(#mk-added)"/>
+<path class="edge edge-neutral context" d="M880,438 L864.5,438 C855.94,438 849,444.94 849,453.5 L849,726.5 C849,735.06 855.94,742 864.5,742 L880,742" marker-end="url(#mk-neutral)"/>
+<path class="edge edge-neutral context" d="M1252,750 L1267.8,750 C1276.53,750 1283.6,757.07 1283.6,765.8 L1283.6,776 C1283.6,790.36 1295.24,802 1309.6,802 L2108,802 C2120.15,802 2130,811.85 2130,824 L2130,835 C2130,841.08 2134.92,846 2141,846 L2152,846" marker-end="url(#mk-neutral)"/>
+<path class="edge edge-modified" d="M1252,522 L1262.2,522 C1267.83,522 1272.4,526.57 1272.4,532.2 L1272.4,549.45 C1272.4,564.62 1284.69,576.91 1299.85,576.91 L2083.45,576.91 C2100.32,576.91 2114,590.58 2114,607.45 L2114,619 C2114,629.49 2122.51,638 2133,638 L2152,638" marker-end="url(#mk-modified)"/>
+<path class="edge edge-modified" d="M1252,534 L1263,534 C1269.08,534 1274,538.92 1274,545 L1274,559.09 C1274,572.95 1285.23,584.18 1299.09,584.18 L1706.94,584.18 C1708.94,584.18 1710.57,585.81 1710.57,587.82 C1710.57,589.83 1712.2,591.45 1714.21,591.45 L2015.73,591.45 C2021.4,591.45 2026,596.05 2026,601.73 L2026,612" marker-end="url(#mk-modified)"/>
+<path class="edge edge-neutral context" d="M1252,546 L1263.8,546 C1270.32,546 1275.6,551.28 1275.6,557.8 L1275.6,649.33 C1275.6,668.11 1290.82,683.33 1309.6,683.33 L1706.76,683.33 C1710.44,683.33 1713.43,686.32 1713.43,690 C1713.43,693.68 1716.41,696.67 1720.1,696.67 L2000.33,696.67 C2005.67,696.67 2010,700.99 2010,706.33 L2010,716" marker-end="url(#mk-neutral)"/>
+<path class="edge edge-modified" d="M946,456 L946,463 C946,466.87 949.13,470 953,470 L1135,470 C1145.49,470 1154,478.51 1154,489 L1154,508" marker-end="url(#mk-modified)"/>
+<path class="edge edge-modified" d="M1170,508 L1170,502.33 C1170,499.2 1167.46,496.67 1164.33,496.67 L982.33,496.67 C971.1,496.67 962,487.56 962,476.33 L962,456" marker-end="url(#mk-modified)"/>
+<path class="edge edge-added" d="M1252,424 L1255.8,424 C1257.9,424 1259.6,425.7 1259.6,427.8 L1259.6,455 C1259.6,472.12 1273.48,486 1290.6,486 L1662,486 C1673.05,486 1682,494.95 1682,506 C1682,517.05 1690.95,526 1702,526 L1728,526" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1728,542 L1707.86,542 C1696.73,542 1687.71,551.02 1687.71,562.14 L1687.71,669.33 C1687.71,688.11 1672.49,703.33 1653.71,703.33 L1297.33,703.33 C1288.86,703.33 1282,710.2 1282,718.67 L1282,719 C1282,727.28 1275.28,734 1267,734 L1252,734" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1538,456 L1538,508" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1676,534 L1680.43,534 C1682.87,534 1684.86,535.98 1684.86,538.43 L1684.86,566.36 C1684.86,584.24 1699.35,598.73 1717.22,598.73 L2136.18,598.73 C2137.19,598.73 2138,599.54 2138,600.55 C2138,601.55 2138.81,602.36 2139.82,602.36 L2429.18,602.36 C2431.84,602.36 2434,604.52 2434,607.18 L2434,612" marker-end="url(#mk-added)"/>
+<path class="edge edge-modified" d="M1304,950 L1300.2,950 C1298.1,950 1296.4,948.3 1296.4,946.2 L1296.4,432 C1296.4,413.22 1281.18,398 1262.4,398 L908,398 C889.22,398 874,382.78 874,364 L874,349 C874,336.3 863.7,326 851,326 L828,326" marker-end="url(#mk-modified)"/>
+<path class="edge edge-added" d="M1490,872 L1490,924" marker-end="url(#mk-added)"/>
+<path class="edge edge-removed" d="M404,334 L418,334 C424.63,334 430,339.37 430,346 C430,352.63 435.37,358 442,358 L2500,358 C2518.78,358 2534,373.22 2534,392 L2534,968 C2534,986.78 2518.78,1002 2500,1002 L881,1002 C868.85,1002 859,1011.85 859,1024 L859,1030.5 C859,1039.06 852.06,1046 843.5,1046 L828,1046" marker-end="url(#mk-removed)"/>
+<path class="edge edge-removed" d="M828,1062 L846,1062 C855.94,1062 864,1070.06 864,1080 L864,1150 C864,1154.42 867.58,1158 872,1158 L880,1158" marker-end="url(#mk-removed)"/>
+<path class="edge edge-removed" d="M1252,1166 L1269.4,1166 C1279.01,1166 1286.8,1173.79 1286.8,1183.4 L1286.8,1253.4 C1286.8,1258.15 1290.65,1262 1295.4,1262 L1304,1262" marker-end="url(#mk-removed)"/>
+<path class="edge edge-removed" d="M1252,1150 L1276,1150 C1288.15,1150 1298,1140.15 1298,1128 C1298,1115.85 1307.85,1106 1320,1106 L2532,1106 C2550.78,1106 2566,1090.78 2566,1072 L2566,744 C2566,725.22 2550.78,710 2532,710 L2180,710 C2161.22,710 2146,694.78 2146,676 L2146,661 C2146,648.3 2135.7,638 2123,638 L2100,638" marker-end="url(#mk-removed)"/>
+<path class="edge edge-removed" d="M1252,430 L1256.6,430 C1259.14,430 1261.2,432.06 1261.2,434.6 L1261.2,455.33 C1261.2,469.32 1272.54,480.67 1286.53,480.67 L2516,480.67 C2534.78,480.67 2550,495.89 2550,514.67 L2550,1176 C2550,1194.78 2534.78,1210 2516,1210 L1730.86,1210 C1716.5,1210 1704.86,1221.64 1704.86,1236 L1704.86,1247.57 C1704.86,1255.54 1698.4,1262 1690.43,1262 L1676,1262" marker-end="url(#mk-removed)"/></g>
+<g><g class="cardsh context"><rect class="card" x="32" y="92" width="180" height="52" rx="10"/>
+<text class="ntitle" x="46" y="123" font-size="11.5">Home</text></g>
+<g class="cardsh context"><rect class="card" x="224" y="92" width="180" height="52" rx="10"/>
+<text class="ntitle" x="238" y="123" font-size="11.5">Admin</text></g>
+<g class="cardsh"><rect class="card card-modified" x="32" y="196" width="372" height="52" rx="10"/>
+<rect class="chip" x="46" y="209" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="216" width="14" height="12" rx="2"/>
+<path class="glyph-stroke" d="M56.5,216 v12"/></g>
+<text class="ntitle" x="82" y="227" font-size="13">Onboarding</text>
+<g class="bdg bdg-modified"><rect x="330.38" y="188" width="66.62" height="16" rx="8"/><text x="363.69" y="199" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="32" y="300" width="372" height="52" rx="10"/>
+<rect class="chip" x="46" y="313" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="320" width="14" height="12" rx="2"/>
+<path class="glyph-stroke" d="M56.5,320 v12"/></g>
+<text class="ntitle" x="82" y="331" font-size="13">Dashboard</text>
+<g class="bdg bdg-modified"><rect x="330.38" y="292" width="66.62" height="16" rx="8"/><text x="363.69" y="303" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="32" y="404" width="372" height="52" rx="10"/>
+<rect class="chip" x="46" y="417" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="424" width="14" height="12" rx="2"/>
+<path class="glyph-stroke" d="M56.5,424 v12"/></g>
+<text class="ntitle" x="82" y="435" font-size="13">Editor</text>
+<g class="bdg bdg-added"><rect x="356.45" y="396" width="40.55" height="16" rx="8"/><text x="376.73" y="407" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh context"><rect class="card" x="456" y="196" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="209" width="26" height="26" rx="7"/><g><path class="glyph" d="M476,216 L490,222 L476,228 Z"/></g>
+<text class="ntitle" x="506" y="227" font-size="13">REST router</text></g>
+<g class="cardsh"><rect class="card card-modified" x="456" y="300" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="313" width="26" height="26" rx="7"/><g><path class="glyph" d="M476,320 L490,326 L476,332 Z"/></g>
+<text class="ntitle" x="506" y="331" font-size="13">GraphQL gateway</text>
+<g class="bdg bdg-modified"><rect x="754.38" y="292" width="66.62" height="16" rx="8"/><text x="787.69" y="303" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="456" y="404" width="180" height="52" rx="10"/>
+<text class="ntitle" x="470" y="435" font-size="11.5">authMiddleware</text>
+<g class="bdg bdg-modified"><rect x="562.38" y="396" width="66.62" height="16" rx="8"/><text x="595.69" y="407" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="648" y="404" width="180" height="52" rx="10"/>
+<text class="ntitle" x="662" y="435" font-size="11.5">POST /uploads</text>
+<g class="bdg bdg-added"><rect x="780.45" y="396" width="40.55" height="16" rx="8"/><text x="800.73" y="407" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="456" y="508" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="521" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="538.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
+<text class="ntitle" x="506" y="539" font-size="13">rateLimiter</text>
+<g class="bdg bdg-added"><rect x="780.45" y="500" width="40.55" height="16" rx="8"/><text x="800.73" y="511" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh ghost"><rect class="card" x="456" y="1028" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="1041" width="26" height="26" rx="7"/><g><path class="glyph" d="M476,1048 L490,1054 L476,1060 Z"/></g>
+<text class="ntitle strike" x="506" y="1059" font-size="13">REST v1</text>
+<g class="bdg bdg-removed"><rect x="753.88" y="1020" width="67.12" height="16" rx="8"/><text x="787.44" y="1031" text-anchor="middle">REMOVED</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="880" y="404" width="180" height="52" rx="10"/>
+<text class="ntitle" x="894" y="435" font-size="11.5">userService</text>
+<g class="bdg bdg-modified"><rect x="986.38" y="396" width="66.62" height="16" rx="8"/><text x="1019.69" y="407" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="1072" y="404" width="180" height="52" rx="10"/>
+<text class="ntitle" x="1086" y="435" font-size="11.5">docService</text>
+<g class="bdg bdg-added"><rect x="1204.45" y="396" width="40.55" height="16" rx="8"/><text x="1224.73" y="407" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="880" y="508" width="180" height="52" rx="10"/>
+<text class="ntitle" x="894" y="539" font-size="11.5">searchIndexer</text>
+<g class="bdg bdg-added"><rect x="1012.45" y="500" width="40.55" height="16" rx="8"/><text x="1032.73" y="511" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="1072" y="508" width="180" height="52" rx="10"/>
+<text class="ntitle" x="1086" y="539" font-size="11.5">billingService</text>
+<g class="bdg bdg-modified"><rect x="1178.38" y="500" width="66.62" height="16" rx="8"/><text x="1211.69" y="511" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="880" y="612" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="625" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="900.5" y="631.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="907" cy="638" r="2"/></g>
+<text class="ntitle" x="930" y="643" font-size="13">exportService</text>
+<g class="bdg bdg-added"><rect x="1204.45" y="604" width="40.55" height="16" rx="8"/><text x="1224.73" y="615" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh context"><rect class="card" x="880" y="716" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="729" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="900.5" y="735.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="907" cy="742" r="2"/></g>
+<text class="ntitle" x="930" y="747" font-size="13">notifyService</text></g>
+<g class="cardsh"><rect class="card card-added" x="880" y="820" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="833" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="900.5" y="839.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="907" cy="846" r="2"/></g>
+<text class="ntitle" x="930" y="851" font-size="13">collabService</text>
+<g class="bdg bdg-added"><rect x="1204.45" y="812" width="40.55" height="16" rx="8"/><text x="1224.73" y="823" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh ghost"><rect class="card" x="880" y="1132" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="1145" width="26" height="26" rx="7"/><g><circle class="glyph-stroke" cx="907" cy="1158" r="6.5"/>
+<path class="glyph-stroke" d="M907,1154.5 V1158 H910"/></g>
+<text class="ntitle strike" x="930" y="1163" font-size="13">legacySync</text>
+<g class="bdg bdg-removed"><rect x="1177.88" y="1124" width="67.12" height="16" rx="8"/><text x="1211.44" y="1135" text-anchor="middle">REMOVED</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="1304" y="404" width="372" height="52" rx="10"/>
+<rect class="chip" x="1318" y="417" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M1331,423 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
+<path class="glyph-stroke" d="M1324.5,426.5 l6.5,3.5 l6.5,-3.5"/>
+<path class="glyph-stroke" d="M1331,430 v7"/></g>
+<text class="ntitle" x="1354" y="435" font-size="13">ui-kit</text>
+<g class="bdg bdg-modified"><rect x="1602.38" y="396" width="66.62" height="16" rx="8"/><text x="1635.69" y="407" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh context"><rect class="card" x="1304" y="508" width="180" height="52" rx="10"/>
+<text class="ntitle" x="1318" y="539" font-size="11.5">auth</text></g>
+<g class="cardsh"><rect class="card card-added" x="1496" y="508" width="180" height="52" rx="10"/>
+<text class="ntitle" x="1510" y="539" font-size="11.5">telemetry</text>
+<g class="bdg bdg-added"><rect x="1628.45" y="500" width="40.55" height="16" rx="8"/><text x="1648.73" y="511" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="1304" y="612" width="372" height="52" rx="10"/>
+<rect class="chip" x="1318" y="625" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M1331,631 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
+<path class="glyph-stroke" d="M1324.5,634.5 l6.5,3.5 l6.5,-3.5"/>
+<path class="glyph-stroke" d="M1331,638 v7"/></g>
+<text class="ntitle" x="1354" y="643" font-size="13">markdown</text>
+<g class="bdg bdg-added"><rect x="1628.45" y="604" width="40.55" height="16" rx="8"/><text x="1648.73" y="615" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="1304" y="820" width="372" height="52" rx="10"/>
+<rect class="chip" x="1318" y="833" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M1331,839 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
+<path class="glyph-stroke" d="M1324.5,842.5 l6.5,3.5 l6.5,-3.5"/>
+<path class="glyph-stroke" d="M1331,846 v7"/></g>
+<text class="ntitle" x="1354" y="851" font-size="13">schema</text>
+<g class="bdg bdg-added"><rect x="1628.45" y="812" width="40.55" height="16" rx="8"/><text x="1648.73" y="823" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="1304" y="924" width="372" height="52" rx="10"/>
+<rect class="chip" x="1318" y="937" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M1331,943 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
+<path class="glyph-stroke" d="M1324.5,946.5 l6.5,3.5 l6.5,-3.5"/>
+<path class="glyph-stroke" d="M1331,950 v7"/></g>
+<text class="ntitle" x="1354" y="955" font-size="13">api-client</text>
+<g class="bdg bdg-modified"><rect x="1602.38" y="916" width="66.62" height="16" rx="8"/><text x="1635.69" y="927" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh ghost"><rect class="card" x="1304" y="1236" width="372" height="52" rx="10"/>
+<rect class="chip" x="1318" y="1249" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M1331,1255 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
+<path class="glyph-stroke" d="M1324.5,1258.5 l6.5,3.5 l6.5,-3.5"/>
+<path class="glyph-stroke" d="M1331,1262 v7"/></g>
+<text class="ntitle strike" x="1354" y="1267" font-size="13">xml-export</text>
+<g class="bdg bdg-removed"><rect x="1601.88" y="1228" width="67.12" height="16" rx="8"/><text x="1635.44" y="1239" text-anchor="middle">REMOVED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="1728" y="508" width="372" height="52" rx="10"/>
+<rect class="chip" x="1742" y="521" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="1755" cy="529.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M1748.5,529.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="1778" y="539" font-size="13">outbox</text>
+<g class="bdg bdg-added"><rect x="2052.45" y="500" width="40.55" height="16" rx="8"/><text x="2072.73" y="511" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="1728" y="612" width="180" height="52" rx="10"/>
+<text class="ntitle" x="1742" y="643" font-size="11.5">Blob store</text>
+<g class="bdg bdg-modified"><rect x="1834.38" y="604" width="66.62" height="16" rx="8"/><text x="1867.69" y="615" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="1920" y="612" width="180" height="52" rx="10"/>
+<text class="ntitle" x="1934" y="643" font-size="11.5">Postgres</text>
+<g class="bdg bdg-modified"><rect x="2026.38" y="604" width="66.62" height="16" rx="8"/><text x="2059.69" y="615" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="1728" y="716" width="180" height="52" rx="10"/>
+<text class="ntitle" x="1742" y="747" font-size="11.5">OpenSearch</text>
+<g class="bdg bdg-added"><rect x="1860.45" y="708" width="40.55" height="16" rx="8"/><text x="1880.73" y="719" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh context"><rect class="card" x="1920" y="716" width="180" height="52" rx="10"/>
+<text class="ntitle" x="1934" y="747" font-size="11.5">Warehouse</text></g>
+<g class="cardsh context"><rect class="card" x="1728" y="820" width="372" height="52" rx="10"/>
+<rect class="chip" x="1742" y="833" width="26" height="26" rx="7"/><g><path class="glyph" d="M1756,839 L1749,847 H1754 L1754,853 L1761,845 H1756 Z"/></g>
+<text class="ntitle" x="1778" y="851" font-size="13">Redis</text></g>
+<g class="cardsh"><rect class="card card-added" x="2152" y="508" width="372" height="52" rx="10"/>
+<rect class="chip" x="2166" y="521" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="2171" y="528" width="16" height="12" rx="2"/>
+<path class="glyph-stroke" d="M2171,530 l8,6 8,-6"/></g>
+<text class="ntitle" x="2202" y="539" font-size="13">OpenAI</text>
+<g class="bdg bdg-added"><rect x="2476.45" y="500" width="40.55" height="16" rx="8"/><text x="2496.73" y="511" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh context"><rect class="card" x="2152" y="612" width="180" height="52" rx="10"/>
+<text class="ntitle" x="2166" y="643" font-size="11.5">Stripe</text></g>
+<g class="cardsh context"><rect class="card" x="2344" y="612" width="180" height="52" rx="10"/>
+<text class="ntitle" x="2358" y="643" font-size="11.5">Sentry</text></g>
+<g class="cardsh context"><rect class="card" x="2152" y="716" width="372" height="52" rx="10"/>
+<rect class="chip" x="2166" y="729" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="2171" y="736" width="16" height="12" rx="2"/>
+<path class="glyph-stroke" d="M2171,738 l8,6 8,-6"/></g>
+<text class="ntitle" x="2202" y="747" font-size="13">Identity provider</text></g>
+<g class="cardsh context"><rect class="card" x="2152" y="820" width="372" height="52" rx="10"/>
+<rect class="chip" x="2166" y="833" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="2171" y="840" width="16" height="12" rx="2"/>
+<path class="glyph-stroke" d="M2171,842 l8,6 8,-6"/></g>
+<text class="ntitle" x="2202" y="851" font-size="13">SendGrid</text></g></g>
+<g><g><rect class="lpill" x="189.29" y="370.5" width="57.43" height="15" rx="7.5"/><text class="ltext ltext-added" x="218" y="381.5" text-anchor="middle">open doc</text></g>
+<g><rect class="lpill" x="405.49" y="318.5" width="49.02" height="15" rx="7.5"/><text class="ltext ltext-modified" x="430" y="329.5" text-anchor="middle">queries</text></g>
+<g><rect class="lpill" x="568.95" y="358.5" width="59.1" height="15" rx="7.5"/><text class="ltext ltext-added" x="598.5" y="369.5" text-anchor="middle">attach file</text></g>
+<g><rect class="lpill" x="827.51" y="454.5" width="70.85" height="15" rx="7.5"/><text class="ltext ltext-modified" x="862.93" y="465.5" text-anchor="middle">components</text></g>
+<g><rect class="lpill" x="1020.53" y="459.83" width="63.55" height="15" rx="7.5"/><text class="ltext ltext-modified" x="1052.3" y="470.83" text-anchor="middle">verify JWT</text></g>
+<g><rect class="lpill" x="1889.7" y="682.5" width="41.18" height="15" rx="7.5"/><text class="ltext" x="1910.29" y="693.5" text-anchor="middle">OIDC</text></g>
+<g><rect class="lpill" x="1245.02" y="778.5" width="73.1" height="15" rx="7.5"/><text class="ltext ltext-added" x="1281.57" y="789.5" text-anchor="middle">token bucket</text></g>
+<g><rect class="lpill" x="979.87" y="366.5" width="51.27" height="15" rx="7.5"/><text class="ltext ltext-added" x="1005.5" y="377.5" text-anchor="middle">doc ops</text></g>
+<g><rect class="lpill" x="1239.88" y="558.5" width="59.66" height="15" rx="7.5"/><text class="ltext ltext-added" x="1269.71" y="569.5" text-anchor="middle">put object</text></g>
+<g><rect class="lpill" x="1450.31" y="494.5" width="71.39" height="15" rx="7.5"/><text class="ltext ltext-modified" x="1486.01" y="505.5" text-anchor="middle">CDC stream</text></g>
+<g><rect class="lpill" x="1242.09" y="659.47" width="57.42" height="15" rx="7.5"/><text class="ltext ltext-added" x="1270.8" y="670.47" text-anchor="middle">presence</text></g>
+<g><rect class="lpill" x="1233.18" y="625.7" width="62.45" height="15" rx="7.5"/><text class="ltext ltext-added" x="1264.4" y="636.7" text-anchor="middle">doc model</text></g>
+<g><rect class="lpill" x="1653.05" y="475.83" width="65.23" height="15" rx="7.5"/><text class="ltext ltext-added" x="1685.67" y="486.83" text-anchor="middle">summarize</text></g>
+<g><rect class="lpill" x="1461.57" y="874.5" width="82.05" height="15" rx="7.5"/><text class="ltext ltext-added" x="1502.6" y="885.5" text-anchor="middle">presence state</text></g>
+<g><rect class="lpill" x="1473.89" y="906.5" width="49.03" height="15" rx="7.5"/><text class="ltext ltext-added" x="1498.4" y="917.5" text-anchor="middle">pubsub</text></g>
+<g><rect class="lpill" x="1457.19" y="662.5" width="59.1" height="15" rx="7.5"/><text class="ltext ltext-added" x="1486.74" y="673.5" text-anchor="middle">index doc</text></g>
+<g><rect class="lpill" x="1079.84" y="565.77" width="71.4" height="15" rx="7.5"/><text class="ltext ltext-added" x="1115.54" y="576.77" text-anchor="middle">strip markup</text></g>
+<g><rect class="lpill" x="1468.67" y="669.17" width="60.2" height="15" rx="7.5"/><text class="ltext ltext-added" x="1498.77" y="680.17" text-anchor="middle">write PDF</text></g>
+<g><rect class="lpill" x="1688.77" y="794.5" width="40.06" height="15" rx="7.5"/><text class="ltext" x="1708.8" y="805.5" text-anchor="middle">email</text></g>
+<g><rect class="lpill" x="1665.47" y="569.41" width="52.37" height="15" rx="7.5"/><text class="ltext ltext-modified" x="1691.65" y="580.41" text-anchor="middle">invoices</text></g>
+<g><rect class="lpill" x="1469.96" y="675.83" width="76.45" height="15" rx="7.5"/><text class="ltext" x="1508.18" y="686.83" text-anchor="middle">revenue facts</text></g>
+<g><rect class="lpill" x="1011.94" y="462.5" width="64.13" height="15" rx="7.5"/><text class="ltext ltext-modified" x="1044" y="473.5" text-anchor="middle">plan check</text></g>
+<g><rect class="lpill" x="1038.19" y="489.17" width="70.29" height="15" rx="7.5"/><text class="ltext ltext-modified" x="1073.33" y="500.17" text-anchor="middle">entitlements</text></g>
+<g><rect class="lpill" x="1435.56" y="478.5" width="81.49" height="15" rx="7.5"/><text class="ltext ltext-added" x="1476.3" y="489.5" text-anchor="middle">domain events</text></g>
+<g><rect class="lpill" x="1443.17" y="695.83" width="64.7" height="15" rx="7.5"/><text class="ltext ltext-added" x="1475.52" y="706.83" text-anchor="middle">outbox poll</text></g>
+<g><rect class="lpill" x="1905.56" y="591.23" width="42.29" height="15" rx="7.5"/><text class="ltext ltext-added" x="1926.7" y="602.23" text-anchor="middle">errors</text></g>
+<g><rect class="lpill" x="1264.62" y="681.6" width="63.57" height="15" rx="7.5"/><text class="ltext ltext-modified" x="1296.4" y="692.6" text-anchor="middle">typed calls</text></g>
+<g><rect class="lpill" x="1462.69" y="890.5" width="54.63" height="15" rx="7.5"/><text class="ltext ltext-added" x="1490" y="901.5" text-anchor="middle">codegen</text></g>
+<g><rect class="lpill" x="1432.51" y="350.5" width="76.98" height="15" rx="7.5"/><text class="ltext ltext-removed" x="1471" y="361.5" text-anchor="middle">v1 calls (was)</text></g>
+<g><rect class="lpill" x="831.95" y="1107.5" width="64.11" height="15" rx="7.5"/><text class="ltext ltext-removed" x="864" y="1118.5" text-anchor="middle">sync (was)</text></g>
+<g><rect class="lpill" x="1879.67" y="1098.5" width="92.66" height="15" rx="7.5"/><text class="ltext ltext-removed" x="1926" y="1109.5" text-anchor="middle">bulk upsert (was)</text></g>
+<g><rect class="lpill" x="1856.34" y="473.17" width="89.85" height="15" rx="7.5"/><text class="ltext ltext-removed" x="1901.27" y="484.17" text-anchor="middle">xml export (was)</text></g></g></g>
+</svg>
