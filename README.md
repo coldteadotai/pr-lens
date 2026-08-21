@@ -1,6 +1,6 @@
 # PR Lens
 
-Review what actually matters. PR Lens renders a pull request as beautiful, animated diagrams **inside the GitHub pull request itself** — architecture blast radius and data-flow pipelines, not another findings table.
+Review what actually matters. PR Lens draws a pull request as animated diagrams **inside the pull request itself** — architecture blast radius and data-flow pipelines, not another findings table.
 
 <img alt="A PR Lens bot comment in a pull request: stats chips, an architecture diagram of a tiny change, view-option checkboxes and the PR Lens footer" src="docs/showcase/teaser.comment.dark.svg">
 
@@ -11,6 +11,106 @@ Review what actually matters. PR Lens renders a pull request as beautiful, anima
 <sub>The reference pull request's complete comment — both lenses, real composer text. Every render ships as a dark/light pair; the live comment serves the pair behind a `<picture>` tag so each reader automatically sees the one matching their GitHub theme.</sub>
 
 Two lenses ship: **architecture** (what this change touches, against the existing system) and **data flow** (the ordered pipeline, animated). Every diagram on this page was rendered by this repo's renderer from a JSON document in this repo — this page *is* the product demo.
+
+## Ways to use it
+
+Five ways in, one contract underneath. Every mode produces the same diagrams from the same document; pick the one that matches where you review.
+
+### 1. In your pull requests — the GitHub App
+
+Install the PR Lens GitHub App on your repository and open a pull request. That is the whole setup: every pull request gets the comment — the framed mockups at the top of this page are what lands — and each push updates it in place. This is the hosted mode, and the only one where the view-option checkboxes are live: tick one and the comment re-renders within seconds from the stored graph, no re-analysis, no key of yours involved.
+
+### 2. As a workflow — the GitHub Action
+
+The same comment from your own CI, drawn with your own model key. Add the key as a repository secret named `GEMINI_API_KEY`, then commit this as `.github/workflows/pr-lens.yml`:
+
+```yaml
+name: PR Lens
+
+on:
+  pull_request:
+
+permissions:
+  contents: write        # to publish the rendered SVGs
+  pull-requests: write   # to post the comment
+
+concurrency:             # one run per pull request; a push supersedes the last
+  group: pr-lens-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  lens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the diff is between two commits, so both must be here
+      - uses: coldteadotai/pr-lens/packages/action@v0
+        with:
+          api-key: ${{ secrets.GEMINI_API_KEY }}
+```
+
+The key reaches the CLI through the environment, never a command line, and the diff goes to the provider you name and nowhere else. The comment here is deliberately static — an Action cannot hold state between runs, so the checkboxes live in the App. Providers, lenses, branding and the rest of the inputs are in [`packages/action`](packages/action).
+
+### 3. From the CLI
+
+Everything the other modes do, one step at a time, on your machine. The key is read from the environment, never from a flag:
+
+```bash
+export GEMINI_API_KEY=…    # or OPENAI_API_KEY with --provider openai
+
+# Diff in, graph document out — measured against the merge base, not the branch tip.
+npx @coldtea/pr-lens-cli analyze --base origin/main -o pr-lens/graph.json
+
+# The document as light and dark SVGs, plus the manifest a comment is built from.
+npx @coldtea/pr-lens-cli render pr-lens/graph.json -o pr-lens/
+
+# The pull request comment as markdown, on stdout. Posting is your business.
+npx @coldtea/pr-lens-cli comment --graph pr-lens/drawn.graph.json --manifest pr-lens/manifest.json \
+  --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
+
+# Any PR Lens document, checked against the contract — every problem, not just the first.
+npx @coldtea/pr-lens-cli validate pr-lens/graph.json .github/pr-lens.yml
+
+# After the merge: the pull-request document as a stored map of the system, worth committing.
+npx @coldtea/pr-lens-cli export pr-lens/graph.json -o .github/pr-lens.map.json
+```
+
+Ollama, DeepSeek, OpenRouter and anything else speaking `/chat/completions` are reached with `--provider openai-compatible --base-url <url>`. The full command reference, the correction file, and the failure codes a script can branch on are in [`packages/cli`](packages/cli).
+
+### 4. Via your coding agent
+
+Your agent is usually the model. Rather than spending a provider key to describe a diff it already understands, it writes the graph document itself and lets the validator hold it to the contract.
+
+```bash
+npm install --save-dev @coldtea/pr-lens-agent-skill
+
+# Claude Code
+mkdir -p .claude/skills/pr-lens
+cp -R node_modules/@coldtea/pr-lens-agent-skill/{SKILL.md,references} .claude/skills/pr-lens/
+
+# Cursor
+mkdir -p .cursor/rules
+cp node_modules/@coldtea/pr-lens-agent-skill/SKILL.md .cursor/rules/pr-lens.mdc
+```
+
+Then say, literally:
+
+> Diagram the change you just made with PR Lens and attach it to the pull request.
+
+The agent reads the diff, writes the document, runs `npx @coldtea/pr-lens-cli validate` until the contract is satisfied, renders, and attaches the `<picture>` pair. When someone says the diagram names things wrongly, the same skill teaches it to fix `.github/pr-lens.yml` instead of editing generated output. Details in [`packages/agent-skill`](packages/agent-skill).
+
+### 5. In your terminal
+
+Nothing about the diagrams needs a pull request. Render locally and look at the change before anyone else does:
+
+```bash
+npx @coldtea/pr-lens-cli analyze --base origin/main
+npx @coldtea/pr-lens-cli render pr-lens/graph.json
+open pr-lens/*-dark-*.svg    # macOS; the SVGs are self-contained, any browser reads them
+```
+
+This is also the shape of reviewing an agent's work: while you read the diff, the agent that wrote it renders it. With the skill installed, "render this change with PR Lens and open the SVGs" gets you the diagram beside the diff — the same picture its pull request will carry, minutes earlier.
 
 ## From one card to a monorepo
 

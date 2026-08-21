@@ -286,8 +286,8 @@ export const layoutArchitecture = (
 };
 
 /**
- * The lane's own name over its band. Lanes no longer widen to fit their
- * headers — that would put content back in charge of where the next lane
+ * The lane's own name over its band. Lanes never widen to fit their
+ * headers — that would put content in charge of where the next lane
  * starts — so a header longer than the band gives up its tail instead.
  */
 export const laneHeaderText = (lane: Lane): string => {
