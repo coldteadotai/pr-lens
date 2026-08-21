@@ -35,15 +35,22 @@ const graph = (over: Partial<GraphDoc>): GraphDoc =>
   parseGraphDoc({ ...JSON.parse(JSON.stringify(minimalGraph)), ...over });
 
 /**
- * Every path coordinate the document writes, as numbers. Enough to check that
- * nothing was drawn outside the canvas, which would simply be clipped away.
+ * Every routed-edge coordinate the document writes, as numbers, with the
+ * canvas shift added back. Enough to check that no route was drawn outside
+ * the canvas, which would simply be clipped away. Only paths classed as
+ * edges count: card glyphs use relative commands, and naive number-pairing
+ * would read an `l8,-6` as an absolute point far off the canvas.
  */
 const drawnPoints = (svg: string): { x: number; y: number }[] => {
+  const shift = svg.match(/transform="translate\((-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\)"/);
+  const dx = Number(shift?.[1] ?? 0);
+  const dy = Number(shift?.[2] ?? 0);
+
   const points: { x: number; y: number }[] = [];
-  for (const path of svg.matchAll(/ d="([^"]+)"/g)) {
+  for (const path of svg.matchAll(/<path class="(?:glow|edge|msg)[^"]*"[^>]*? d="([^"]+)"/g)) {
     const numbers = (path[1] ?? "").match(/-?\d+(?:\.\d+)?/g) ?? [];
     for (let index = 0; index + 1 < numbers.length; index += 2)
-      points.push({ x: Number(numbers[index]), y: Number(numbers[index + 1]) });
+      points.push({ x: Number(numbers[index]) + dx, y: Number(numbers[index + 1]) + dy });
   }
   return points;
 };
@@ -337,7 +344,7 @@ describe("columns", () => {
 });
 
 describe("ordering does not depend on the machine's locale", () => {
-  it("sorts groups by code unit, so capitals come first", () => {
+  it("never compares group names, only their equality: document order decides", () => {
     const doc = graph({
       lanes: [{ id: "one", label: "One" }],
       nodes: [
@@ -350,7 +357,8 @@ describe("ordering does not depend on the machine's locale", () => {
       { lanes: doc.lanes, nodes: doc.nodes, edges: doc.edges, flows: doc.flows as Flow[] },
       doc.layout,
     );
-    expect(placed.nodes.map(({ node: placedNode }) => placedNode.id)).toEqual(["upper", "lower"]);
+    expect(placed.nodes.map(({ node: placedNode }) => placedNode.id)).toEqual(["lower", "upper"]);
+    expect(placed.nodes.map(({ row }) => row)).toEqual([0, 1]);
   });
 });
 

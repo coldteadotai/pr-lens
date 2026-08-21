@@ -82,11 +82,13 @@ describe("a small change to the graph is a small change to the picture", () => {
     for (const node of untouched) expect(after.get(node.id)).toBe(before.get(node.id));
   });
 
-  it("moves the card the new one now sits above by exactly one row", () => {
+  it("seats the unconnected newcomer in its lane's empty top row and moves nothing", () => {
     const before = layoutOf(postmarkRefactorGraph).nodes.find(({ node }) => node.id === "postmark");
     const after = layoutOf(enlarged).nodes.find(({ node }) => node.id === "postmark");
-    expect(before?.row).toBe(0);
-    expect(after?.row).toBe(1);
+    const added = layoutOf(enlarged).nodes.find(({ node }) => node.id === "postmark-webhooks");
+    expect(before?.row).toBe(5);
+    expect(after?.row).toBe(5);
+    expect(added?.row).toBe(0);
   });
 });
 

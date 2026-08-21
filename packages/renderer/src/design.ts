@@ -62,8 +62,32 @@ export const PILL_HEIGHT = 15;
 export const PILL_PADDING_X = 8;
 export const PILL_TEXT_SIZE = 9.5;
 
-export const EDGE_SLACK_MIN = 24;
-export const EDGE_SLACK_RATIO = 0.35;
+/**
+ * Routes travel in the gaps of the grid: vertical corridors beside lanes and
+ * horizontal bands between rows. Both gaps are physically 52px across — lane
+ * padding + lane gap + lane padding one way, ROW_GAP the other — and a track
+ * keeps this clearance from the cards on either side, leaving 40px of room.
+ */
+export const TRACK_CLEARANCE = 6;
+/**
+ * Neighbouring tracks in one gap sit this far apart at most; when a gap
+ * carries more traffic than the room allows, the pitch shrinks to fit. An
+ * added route therefore nudges its gap-mates proportionately — an accepted
+ * trade, and one that never moves a card.
+ */
+export const TRACK_PITCH_MAX = 16;
+
+/** Step between neighbouring arrow ports along one card face. */
+export const PORT_PITCH = 16;
+/** Ports keep clear of the card's rounded corners. */
+export const PORT_INSET = 14;
+
+/**
+ * A turn's bend radius comes from the shorter of its two legs, capped here.
+ * Deriving it from the longer leg balloons a route with one short leg and one
+ * long one — the shape every corridor run has — clear out of its corridor.
+ */
+export const BEND_RADIUS_MAX = 34;
 
 /** One turn of the architecture pulse, and of the staggered hero triplet. */
 export const PULSE_DURATION = 1.6;

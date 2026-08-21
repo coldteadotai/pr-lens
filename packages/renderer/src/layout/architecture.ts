@@ -1,4 +1,4 @@
-import type { Delta, GraphEdge, GraphNode, Lane, LayoutHints } from "@coldtea/pr-lens-schema";
+import type { Delta, GraphNode, Lane, LayoutHints } from "@coldtea/pr-lens-schema";
 import { assertNever } from "@coldtea/pr-lens-schema";
 import {
   BADGE_GAP,
@@ -33,13 +33,7 @@ import {
 import type { Box } from "../geometry.js";
 import type { ScopedGraph } from "../scope.js";
 import { measure, type Face } from "../text.js";
-import { rankNodes } from "./rank.js";
-
-/**
- * Ordering by code unit, not by `localeCompare`: the renderer must produce the
- * same bytes on every machine, and collation depends on the host's locale data.
- */
-const compareCodeUnits = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+import { seatNodes, type SeatedRow } from "./seating.js";
 
 export const deltaBadgeText = (delta: Delta): string | undefined => {
   switch (delta) {
@@ -124,11 +118,25 @@ export const badgeRow = (placed: PlacedNode): { badges: string[]; box: Box } | u
   };
 };
 
+/**
+ * The gaps of the grid, for the router: the vertical corridors beside each
+ * lane's cards and the horizontal extents of every row. Corridor `i` runs to
+ * the left of lane `i`; the extra corridor after the last lane is where
+ * retired pathways are exiled to.
+ */
+export type LayoutGrid = {
+  rows: { top: number; height: number }[];
+  corridors: { left: number; right: number }[];
+  /** First row of the dead band; absent when nothing was removed. */
+  deadFromRow: number | undefined;
+};
+
 export type ArchitectureLayout = {
   width: number;
   height: number;
   lanes: PlacedLane[];
   nodes: PlacedNode[];
+  grid: LayoutGrid;
 };
 
 const cardHeight = (node: GraphNode): number =>
@@ -172,116 +180,42 @@ const orderLanes = (lanes: readonly Lane[], hints: LayoutHints | undefined): Lan
   return [...ordered, ...rest];
 };
 
-/**
- * A grid row of a lane holds one card across the lane's full width, or two
- * side by side. There is no third shape: three cards abreast stop being
- * readable at the widths a pull-request comment gets.
- */
-type Row =
-  | { kind: "single"; rank: number; node: GraphNode }
-  | { kind: "pair"; rank: number; first: GraphNode; second: GraphNode };
-
-const rowNodes = (row: Row): GraphNode[] => {
-  switch (row.kind) {
-    case "single":
-      return [row.node];
-    case "pair":
-      return [row.first, row.second];
-    default:
-      return assertNever(row, "Unhandled row shape");
-  }
-};
-
-
-/**
- * A lane's nodes as rows of at most two.
- *
- * Two cards share a row only when they belong at the same depth and in the
- * same sub-group, so a pair always reads as "these happen alongside each
- * other" rather than as two things that merely fitted. Rows sit at their
- * rank's row of the grid unless an earlier row of the same lane already
- * claimed it, in which case they fall to the next free one — a lane never
- * overlaps itself, whatever the ranks say.
- *
- * What was removed settles at the foot of its lane rather than in the middle
- * of the live path, so a reviewer reads what the code does now first and what
- * it used to do second.
- *
- * Depth is counted within the lane, not across the diagram: what matters is
- * which of a lane's own cards come before which, so a lane that only enters
- * the story late still starts at the top of its column, and a rank no card in
- * the lane occupies leaves no empty row behind. Without that, one unconnected
- * new node could drop every card in its lane by several rows at once.
- */
-const rowsForLane = (
-  nodes: readonly GraphNode[],
-  ranks: ReadonlyMap<string, number>,
-  order: ReadonlyMap<string, number>,
-): { row: Row; grid: number }[] => {
-  const sorted = [...nodes].sort((a, b) => {
-    const ghost = Number(a.delta === "removed") - Number(b.delta === "removed");
-    if (ghost !== 0) return ghost;
-    const rank = (ranks.get(a.id) ?? 0) - (ranks.get(b.id) ?? 0);
-    if (rank !== 0) return rank;
-    const group = compareCodeUnits(a.group ?? "", b.group ?? "");
-    if (group !== 0) return group;
-    return (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
-  });
-
-  const used = [...new Set(sorted.map((node) => ranks.get(node.id) ?? 0))].sort((a, b) => a - b);
-  const depth = new Map(used.map((rank, index) => [rank, index]));
-
-  const rows: { row: Row; grid: number }[] = [];
-  let previousGrid = -1;
-
-  for (const node of sorted) {
-    const rank = depth.get(ranks.get(node.id) ?? 0) ?? 0;
-    const open = rows[rows.length - 1];
-
-    if (
-      open !== undefined &&
-      open.row.kind === "single" &&
-      open.row.rank === rank &&
-      (open.row.node.group ?? "") === (node.group ?? "") &&
-      (open.row.node.delta === "removed") === (node.delta === "removed")
-    ) {
-      open.row = { kind: "pair", rank, first: open.row.node, second: node };
-      continue;
-    }
-
-    previousGrid = Math.max(previousGrid + 1, rank);
-    rows.push({ row: { kind: "single", rank, node }, grid: previousGrid });
-  }
-
-  return rows;
+const rowWidths = (contentWidth: number, row: SeatedRow): number[] => {
+  const [first, second] = row.nodes;
+  return first !== undefined && second !== undefined
+    ? splitPair(contentWidth, first, second)
+    : [contentWidth];
 };
 
 export const layoutArchitecture = (
   graph: ScopedGraph,
   hints: LayoutHints | undefined,
 ): ArchitectureLayout => {
-  const ranks = rankNodes(graph.nodes, graph.edges, hints?.rank ?? {});
-  const order = new Map(graph.nodes.map((node, index) => [node.id, index]));
+  const ordered = orderLanes(graph.lanes, hints);
+  const seating = seatNodes(ordered, graph.nodes, graph.edges, hints?.rank ?? {});
 
-  const lanes = orderLanes(graph.lanes, hints).flatMap((lane) => {
-    const members = graph.nodes.filter((node) => node.lane === lane.id);
-    return members.length === 0 ? [] : [{ lane, rows: rowsForLane(members, ranks, order) }];
+  const lanes = ordered.flatMap((lane) => {
+    const rows = seating.rowsByLane.get(lane.id);
+    return rows === undefined ? [] : [{ lane, rows }];
   });
 
   const laneBoxWidth = LANE_CONTENT_WIDTH + LANE_PADDING_X * 2;
 
   const gridHeights = new Map<number, number>();
   for (const { rows } of lanes)
-    for (const { row, grid } of rows) {
-      const height = Math.max(...rowNodes(row).map(cardHeight));
+    for (const { grid, nodes } of rows) {
+      const height = Math.max(...nodes.map(cardHeight));
       gridHeights.set(grid, Math.max(gridHeights.get(grid) ?? 0, height));
     }
 
-  const gridTops = new Map<number, number>();
+  // Every row of the shared grid is occupied by whichever card created it, so
+  // walking 0..rowCount visits exactly the keys collected above.
+  const gridRows: { top: number; height: number }[] = [];
   let cursor = CONTENT_TOP;
-  for (const grid of [...gridHeights.keys()].sort((a, b) => a - b)) {
-    gridTops.set(grid, cursor);
-    cursor += (gridHeights.get(grid) ?? 0) + ROW_GAP;
+  for (let grid = 0; grid < seating.rowCount; grid += 1) {
+    const height = gridHeights.get(grid) ?? 0;
+    gridRows.push({ top: cursor, height });
+    cursor += height + ROW_GAP;
   }
   const contentBottom = cursor - ROW_GAP;
 
@@ -299,20 +233,19 @@ export const layoutArchitecture = (
       box: { x: laneX, y: LANE_TOP, width: laneBoxWidth, height: laneBottom - LANE_TOP },
     });
 
-    for (const { row, grid } of rows) {
-      const top = gridTops.get(grid) ?? CONTENT_TOP;
-      const widths =
-        row.kind === "single" ? [contentWidth] : splitPair(contentWidth, row.first, row.second);
+    for (const row of rows) {
+      const top = gridRows[row.grid]?.top ?? CONTENT_TOP;
+      const widths = rowWidths(contentWidth, row);
 
       let x = contentX;
-      rowNodes(row).forEach((node, index) => {
+      row.nodes.forEach((node, index) => {
         const width = widths[index] ?? contentWidth;
         placedNodes.push({
           node,
           box: { x, y: top, width, height: cardHeight(node) },
           showIcon: width >= ICON_MIN_CARD_WIDTH,
           titleSize: width >= ICON_MIN_CARD_WIDTH ? TITLE_SIZE : TITLE_SIZE_SMALL,
-          row: grid,
+          row: row.grid,
           laneIndex,
         });
         x += width + CARD_GAP_X;
@@ -322,6 +255,17 @@ export const layoutArchitecture = (
     laneX += laneBoxWidth + LANE_GAP;
   });
 
+  const gutter = LANE_PADDING_X * 2 + LANE_GAP;
+  const corridors = placedLanes.map(({ box }) => ({
+    left: box.x + LANE_PADDING_X - gutter,
+    right: box.x + LANE_PADDING_X,
+  }));
+  const lastContentRight =
+    (placedLanes[placedLanes.length - 1]?.box.x ?? DIAGRAM_MARGIN) +
+    LANE_PADDING_X +
+    LANE_CONTENT_WIDTH;
+  corridors.push({ left: lastContentRight, right: lastContentRight + gutter });
+
   return {
     // Whole numbers: the canvas is reported to the comment composer as pixels,
     // and half a pixel of diagram is not a thing a reviewer can be shown.
@@ -329,6 +273,7 @@ export const layoutArchitecture = (
     height: Math.ceil(laneBottom + DIAGRAM_MARGIN),
     lanes: placedLanes,
     nodes: placedNodes,
+    grid: { rows: gridRows, corridors, deadFromRow: seating.deadFromRow },
   };
 };
 

@@ -33,7 +33,7 @@ import {
   layoutArchitecture,
   type PlacedNode,
 } from "../layout/architecture.js";
-import { curveBounds, labelBoxOn, routeEdges, type RoutedEdge } from "../layout/edges.js";
+import { curveBounds, routeEdges, type RoutedEdge } from "../layout/edges.js";
 import type { ScopedGraph } from "../scope.js";
 import { measure, truncate } from "../text.js";
 import type { Palette } from "../theme.js";
@@ -180,20 +180,19 @@ const pulses = (edge: GraphEdge, path: string, palette: Palette): string => {
 };
 
 /**
- * Paints one edge and reports the room its label took, so the next edge can
- * route its own label around it. Labels are placed in edge order, which is the
- * document's order, so two runs of the same document place them identically.
+ * Paints one edge and the pill pinned to it. Every edge carries at most one
+ * label, and the router already chose its place — the middle of the route's
+ * longest straight run — so a reader traces a line to its own words.
  *
- * The line and the label come back separately because they belong to different
- * layers: a line passes behind a card, and a pill — which is opaque precisely
- * so that it can be read wherever it lands — passes in front of one.
+ * The line and the label come back separately because they belong to
+ * different layers: a line passes behind a card, and a pill — which is opaque
+ * precisely so that it can be read wherever it lands — passes in front of one.
  */
 const paintEdge = (
   routed: RoutedEdge,
   palette: Palette,
-  obstacles: readonly Box[],
 ): { markup: string; pill: string; label: Box | undefined } => {
-  const { edge, path, curve } = routed;
+  const { edge, path, curve, labelAnchor } = routed;
   const tone = toneFor(edge.delta);
   const hero = edge.emphasis === "hero";
 
@@ -207,16 +206,12 @@ const paintEdge = (
     : "";
 
   const label =
-    edge.label === undefined
+    edge.label === undefined || labelAnchor === undefined
       ? undefined
-      : labelBoxOn(
-          curve,
-          {
-            width: measure(edge.label, "sans-bold", PILL_TEXT_SIZE) + PILL_PADDING_X * 2,
-            height: PILL_HEIGHT,
-          },
-          obstacles,
-        );
+      : centred(labelAnchor, {
+          width: measure(edge.label, "sans-bold", PILL_TEXT_SIZE) + PILL_PADDING_X * 2,
+          height: PILL_HEIGHT,
+        });
 
   return {
     markup: lines([
@@ -231,6 +226,13 @@ const paintEdge = (
     label,
   };
 };
+
+const centred = (anchor: { x: number; y: number }, size: { width: number; height: number }): Box => ({
+  x: anchor.x - size.width / 2,
+  y: anchor.y - size.height / 2,
+  width: size.width,
+  height: size.height,
+});
 
 const paintLabelPill = (text: string, box: Box, tone: Tone): string =>
   wrap(
@@ -263,19 +265,19 @@ export const paintArchitecture = (
   palette: Palette,
 ): ArchitecturePainting => {
   const layout = layoutArchitecture(graph, hints);
-  const routed = routeEdges(graph.edges, layout.nodes, layout.lanes);
+  const routed = routeEdges(graph.edges, layout);
 
-  const obstacles: Box[] = layout.nodes.flatMap((node) => {
+  const drawn: Box[] = layout.nodes.flatMap((node) => {
     const row = badgeRow(node);
     return row === undefined ? [node.box] : [node.box, row.box];
   });
   const edgeMarkup: string[] = [];
   const pillMarkup: string[] = [];
   for (const edge of routed) {
-    const { markup, pill, label } = paintEdge(edge, palette, obstacles);
+    const { markup, pill, label } = paintEdge(edge, palette);
     edgeMarkup.push(markup);
     pillMarkup.push(pill);
-    if (label !== undefined) obstacles.push(label);
+    if (label !== undefined) drawn.push(label);
   }
 
   const lanes = layout.lanes.map(({ lane, box }) =>
@@ -299,7 +301,7 @@ export const paintArchitecture = (
     layout,
     union([
       ...layout.lanes.map(({ box }) => box),
-      ...obstacles,
+      ...drawn,
       ...routed.map(({ curve }) => curveBounds(curve)),
     ]),
     DIAGRAM_MARGIN,
