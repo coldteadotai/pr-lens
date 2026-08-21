@@ -297,6 +297,40 @@ export const frameAsComment = (input: FrameInput): string => {
   }
   gap(8);
 
+  // The growth blocks of a public-repo comment: the share ask, then the
+  // Share and Tips details rows, collapsed like the Drill down above.
+  gap(26);
+  parts.push(
+    paintRuns(
+      left,
+      y,
+      [
+        {
+          text: "PR Lens is free for open source — if these lenses helped, a shout-out helps us grow.",
+          face: "sans",
+          size: 13,
+          fill: palette.foreground,
+        },
+      ],
+      palette,
+    ),
+  );
+  for (const drawer of ["❤️ Share", "🪧 Tips"]) {
+    gap(26);
+    parts.push(
+      paintRuns(
+        left,
+        y,
+        [
+          { text: "▸ ", face: "sans", size: 13, fill: palette.muted },
+          { text: drawer, face: "sans-bold", size: 14, fill: palette.foreground },
+        ],
+        palette,
+      ),
+    );
+  }
+  gap(10);
+
   // --- then the footer, exactly the composer's FOOTER string.
   gap(18);
   parts.push(

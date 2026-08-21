@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1048 852.01" width="1048" height="852.01" role="img" aria-label="PR Lens comment preview — Add a welcome email on signup">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1048 940.01" width="1048" height="940.01" role="img" aria-label="PR Lens comment preview — Add a welcome email on signup">
 <title>PR Lens comment preview — Add a welcome email on signup</title>
-<rect x="0" y="0" width="1048" height="852.01" fill="#0d1117"/>
+<rect x="0" y="0" width="1048" height="940.01" fill="#0d1117"/>
 <defs><linearGradient id="frame-avatar" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6e40c9"/><stop offset="1" stop-color="#388bfd"/></linearGradient></defs>
 <rect x="16" y="16" width="40" height="40" rx="8" fill="url(#frame-avatar)"/>
 <text x="36" y="42" fill="#ffffff" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:18px;font-weight:700">◈</text>
-<rect x="72" y="16" width="960" height="820.01" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+<rect x="72" y="16" width="960" height="908.01" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
 <path d="M72,24 a8,8 0 0 1 8,-8 h944 a8,8 0 0 1 8,8 v28 h-960 Z" fill="#1c2128"/>
 <line x1="72" y1="52" x2="1032" y2="52" stroke="#30363d" stroke-width="1"/>
 <text x="88" y="39" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">pr-lens</text>
@@ -92,8 +92,13 @@
 <text x="110" y="746.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Expand every detail</text>
 <rect x="88" y="758.01" width="14" height="14" rx="3" fill="none" stroke="#30363d" stroke-width="1.2"/>
 <text x="110" y="770.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Show unchanged neighbours</text>
-<line x1="88" y1="796.01" x2="1016" y2="796.01" stroke="#30363d" stroke-width="1"/>
-<text x="88" y="820.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">◈ Rendered by PR Lens · from the team behind </text>
-<text x="357.99" y="820.01" fill="#4493f8" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">Coldtea</text>
-<rect x="72" y="16" width="960" height="820.01" rx="8" fill="none" stroke="#30363d" stroke-width="1"/>
+<text x="88" y="804.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">PR Lens is free for open source — if these lenses helped, a shout-out helps us grow.</text>
+<text x="88" y="830.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
+<text x="99.41" y="830.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">❤️ Share</text>
+<text x="88" y="856.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
+<text x="99.41" y="856.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">🪧 Tips</text>
+<line x1="88" y1="884.01" x2="1016" y2="884.01" stroke="#30363d" stroke-width="1"/>
+<text x="88" y="908.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">◈ Rendered by PR Lens · from the team behind </text>
+<text x="357.99" y="908.01" fill="#4493f8" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">Coldtea</text>
+<rect x="72" y="16" width="960" height="908.01" rx="8" fill="none" stroke="#30363d" stroke-width="1"/>
 </svg>
