@@ -28,6 +28,7 @@ type FramePalette = {
   link: string;
   codeBg: string;
   check: string;
+  tipAccent: string;
 };
 
 const FRAME_DARK: FramePalette = {
@@ -41,6 +42,7 @@ const FRAME_DARK: FramePalette = {
   link: "#4493f8",
   codeBg: "rgba(110,118,129,.18)",
   check: "#1f6feb",
+  tipAccent: "#3fb950",
 };
 
 const FRAME_LIGHT: FramePalette = {
@@ -54,6 +56,7 @@ const FRAME_LIGHT: FramePalette = {
   link: "#0969da",
   codeBg: "rgba(175,184,193,.2)",
   check: "#1f6feb",
+  tipAccent: "#1a7f37",
 };
 
 const framePalette = (theme: Theme): FramePalette =>
@@ -166,6 +169,31 @@ const paintRuns = (x: number, baseline: number, runs: readonly Run[], palette: F
 
 const runWidth = (runs: readonly Run[]): number =>
   runs.reduce((total, run) => total + measure(run.text, run.face, run.size) + (run.chip === true ? 12 : 0), 0);
+
+/** The composer's tipCallout sentence, verbatim. */
+const TIP_SENTENCE =
+  'You can run PR Lens locally too. Tell your coding agent: ' +
+  '"Diagram the change you just made with PR Lens and attach it to the pull request."';
+
+/** GitHub's octicon-light-bulb, 16×16, as its renderer emits it for a [!TIP] title. */
+const LIGHT_BULB_PATH =
+  "M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z";
+
+const wrapPlainText = (text: string, maxWidth: number, size: number): string[] => {
+  const wrapped: string[] = [];
+  let current = "";
+  for (const word of text.split(" ")) {
+    const candidate = current === "" ? word : `${current} ${word}`;
+    if (current !== "" && measure(candidate, "sans", size) > maxWidth) {
+      wrapped.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current !== "") wrapped.push(current);
+  return wrapped;
+};
 
 const CHECKBOXES: readonly { label: string; checked: boolean }[] = [
   { label: "Architecture lens", checked: true },
@@ -315,20 +343,57 @@ export const frameAsComment = (input: FrameInput): string => {
       palette,
     ),
   );
-  for (const drawer of ["❤️ Share", "🪧 Tips"]) {
-    gap(26);
+  const drawerRow = (label: string): string =>
+    paintRuns(
+      left,
+      y,
+      [
+        { text: "▸ ", face: "sans", size: 13, fill: palette.muted },
+        { text: label, face: "sans-bold", size: 14, fill: palette.foreground },
+      ],
+      palette,
+    );
+
+  gap(26);
+  parts.push(drawerRow("❤️ Share"));
+
+  // Between the drawers, the visible tip callout, as GitHub draws a markdown
+  // alert: accent bar down the left, the lightbulb-and-Tip title, then the
+  // composer's sentence.
+  {
+    gap(26 + 8);
+    const textX = left + 3 + 16;
+    const calloutTop = y - 21;
     parts.push(
-      paintRuns(
-        left,
-        y,
-        [
-          { text: "▸ ", face: "sans", size: 13, fill: palette.muted },
-          { text: drawer, face: "sans-bold", size: 14, fill: palette.foreground },
-        ],
-        palette,
+      wrap(
+        "g",
+        { transform: `translate(${round2(textX)}, ${round2(y - 12.5)})`, fill: palette.tipAccent },
+        tag("path", { d: LIGHT_BULB_PATH }),
       ),
     );
+    parts.push(
+      paintRuns(textX + 24, y, [{ text: "Tip", face: "sans-bold", size: 13, fill: palette.tipAccent }], palette),
+    );
+    let first = true;
+    for (const line of wrapPlainText(TIP_SENTENCE, left + CONTENT_WIDTH - textX - 16, 13)) {
+      gap(first ? 24 : 21);
+      first = false;
+      parts.push(paintRuns(textX, y, [{ text: line, face: "sans", size: 13, fill: palette.foreground }], palette));
+    }
+    gap(8);
+    parts.push(
+      tag("rect", {
+        x: left,
+        y: round2(calloutTop),
+        width: 3,
+        height: round2(y - calloutTop),
+        fill: palette.tipAccent,
+      }),
+    );
   }
+
+  gap(26);
+  parts.push(drawerRow("🪧 Tips"));
   gap(10);
 
   // --- then the footer, exactly the composer's FOOTER string.
