@@ -15,9 +15,6 @@ import {
   LANE_HEADER_BASELINE,
   LANE_PADDING_X,
   LANE_RADIUS,
-  PILL_HEIGHT,
-  PILL_PADDING_X,
-  PILL_TEXT_SIZE,
   PULSE_DURATION,
   SUBTITLE_SIZE,
 } from "../design.js";
@@ -30,12 +27,13 @@ import {
   cardBadges,
   deltaBadgeText,
   laneHeaderText,
-  layoutArchitecture,
   type PlacedNode,
 } from "../layout/architecture.js";
-import { curveBounds, routeEdges, type RoutedEdge } from "../layout/edges.js";
+import { relieveCongestion } from "../layout/congestion.js";
+import { curveBounds, type RoutedEdge } from "../layout/edges.js";
+import { placeLabelPills } from "../layout/labels.js";
 import type { ScopedGraph } from "../scope.js";
-import { measure, truncate } from "../text.js";
+import { truncate } from "../text.js";
 import type { Palette } from "../theme.js";
 import { markerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
 import { glyphGroup } from "./icons.js";
@@ -180,9 +178,10 @@ const pulses = (edge: GraphEdge, path: string, palette: Palette): string => {
 };
 
 /**
- * Paints one edge and the pill pinned to it. Every edge carries at most one
- * label, and the router already chose its place — the middle of the route's
- * longest straight run — so a reader traces a line to its own words.
+ * Paints one edge and the pill settled onto it. Every edge carries at most
+ * one label, and the layout already chose its place — on the route's longest
+ * straight run, nudged clear of every other pill — so a reader traces a line
+ * to its own words.
  *
  * The line and the label come back separately because they belong to
  * different layers: a line passes behind a card, and a pill — which is opaque
@@ -191,8 +190,9 @@ const pulses = (edge: GraphEdge, path: string, palette: Palette): string => {
 const paintEdge = (
   routed: RoutedEdge,
   palette: Palette,
-): { markup: string; pill: string; label: Box | undefined } => {
-  const { edge, path, curve, labelAnchor } = routed;
+  label: Box | undefined,
+): { markup: string; pill: string } => {
+  const { edge, path } = routed;
   const tone = toneFor(edge.delta);
   const hero = edge.emphasis === "hero";
 
@@ -205,14 +205,6 @@ const paintEdge = (
     ? tag("path", { class: "glow", stroke: toneColour(palette, tone), d: path })
     : "";
 
-  const label =
-    edge.label === undefined || labelAnchor === undefined
-      ? undefined
-      : centred(labelAnchor, {
-          width: measure(edge.label, "sans-bold", PILL_TEXT_SIZE) + PILL_PADDING_X * 2,
-          height: PILL_HEIGHT,
-        });
-
   return {
     markup: lines([
       glow,
@@ -223,16 +215,8 @@ const paintEdge = (
       label === undefined || edge.label === undefined
         ? ""
         : paintLabelPill(edge.label, label, tone),
-    label,
   };
 };
-
-const centred = (anchor: { x: number; y: number }, size: { width: number; height: number }): Box => ({
-  x: anchor.x - size.width / 2,
-  y: anchor.y - size.height / 2,
-  width: size.width,
-  height: size.height,
-});
 
 const paintLabelPill = (text: string, box: Box, tone: Tone): string =>
   wrap(
@@ -264,8 +248,8 @@ export const paintArchitecture = (
   hints: LayoutHints | undefined,
   palette: Palette,
 ): ArchitecturePainting => {
-  const layout = layoutArchitecture(graph, hints);
-  const routed = routeEdges(graph.edges, layout);
+  const { layout, routed } = relieveCongestion(graph, hints);
+  const pills = placeLabelPills(routed);
 
   const drawn: Box[] = layout.nodes.flatMap((node) => {
     const row = badgeRow(node);
@@ -274,7 +258,8 @@ export const paintArchitecture = (
   const edgeMarkup: string[] = [];
   const pillMarkup: string[] = [];
   for (const edge of routed) {
-    const { markup, pill, label } = paintEdge(edge, palette);
+    const label = pills.get(edge.edge.id);
+    const { markup, pill } = paintEdge(edge, palette, label);
     edgeMarkup.push(markup);
     pillMarkup.push(pill);
     if (label !== undefined) drawn.push(label);

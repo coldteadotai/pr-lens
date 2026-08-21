@@ -118,8 +118,22 @@ export const badgeRow = (placed: PlacedNode): { badges: string[]; box: Box } | u
 export type LayoutGrid = {
   rows: { top: number; height: number }[];
   corridors: { left: number; right: number }[];
+  /** Where lane content ends — the floor of the last band under the last row. */
+  laneBottom: number;
   /** First row of the dead band; absent when nothing was removed. */
   deadFromRow: number | undefined;
+};
+
+/**
+ * Extra room granted to individual gaps, keyed by corridor or band index —
+ * how the layout widens where traffic would otherwise compress track pitch
+ * through the floor. Expanding a corridor moves every lane after it sideways
+ * by the same amount; expanding a band moves every row after it down. Cards
+ * travel with their lane and row — nothing re-seats, nothing reorders.
+ */
+export type GapExpansions = {
+  corridors: ReadonlyMap<number, number>;
+  bands: ReadonlyMap<number, number>;
 };
 
 export type ArchitectureLayout = {
@@ -175,7 +189,11 @@ const rowWidths = (contentWidth: number, row: SeatedRow): number[] => {
 export const layoutArchitecture = (
   graph: ScopedGraph,
   hints: LayoutHints | undefined,
+  expansions?: GapExpansions,
 ): ArchitectureLayout => {
+  const corridorExtra = (index: number): number => expansions?.corridors.get(index) ?? 0;
+  const bandExtra = (index: number): number => expansions?.bands.get(index) ?? 0;
+
   const ordered = orderLanes(graph.lanes, hints);
   const seating = seatNodes(ordered, graph.nodes, graph.edges, hints?.rank ?? {});
 
@@ -198,18 +216,20 @@ export const layoutArchitecture = (
   const gridRows: { top: number; height: number }[] = [];
   let cursor = CONTENT_TOP;
   for (let grid = 0; grid < seating.rowCount; grid += 1) {
+    if (grid > 0) cursor += bandExtra(grid);
     const height = gridHeights.get(grid) ?? 0;
     gridRows.push({ top: cursor, height });
     cursor += height + ROW_GAP;
   }
   const contentBottom = cursor - ROW_GAP;
 
-  const laneBottom = contentBottom + LANE_BOTTOM_PADDING;
+  const laneBottom = contentBottom + LANE_BOTTOM_PADDING + bandExtra(seating.rowCount);
   const placedLanes: PlacedLane[] = [];
   const placedNodes: PlacedNode[] = [];
   let laneX = DIAGRAM_MARGIN;
 
   lanes.forEach(({ lane, rows }, laneIndex) => {
+    laneX += corridorExtra(laneIndex);
     const contentX = laneX + LANE_PADDING_X;
     const contentWidth = LANE_CONTENT_WIDTH;
 
@@ -241,15 +261,18 @@ export const layoutArchitecture = (
   });
 
   const gutter = LANE_PADDING_X * 2 + LANE_GAP;
-  const corridors = placedLanes.map(({ box }) => ({
-    left: box.x + LANE_PADDING_X - gutter,
+  const corridors = placedLanes.map(({ box }, index) => ({
+    left: box.x + LANE_PADDING_X - gutter - corridorExtra(index),
     right: box.x + LANE_PADDING_X,
   }));
   const lastContentRight =
     (placedLanes[placedLanes.length - 1]?.box.x ?? DIAGRAM_MARGIN) +
     LANE_PADDING_X +
     LANE_CONTENT_WIDTH;
-  corridors.push({ left: lastContentRight, right: lastContentRight + gutter });
+  corridors.push({
+    left: lastContentRight,
+    right: lastContentRight + gutter + corridorExtra(placedLanes.length),
+  });
 
   return {
     // Whole numbers: the canvas is reported to the comment composer as pixels,
@@ -258,7 +281,7 @@ export const layoutArchitecture = (
     height: Math.ceil(laneBottom + DIAGRAM_MARGIN),
     lanes: placedLanes,
     nodes: placedNodes,
-    grid: { rows: gridRows, corridors, deadFromRow: seating.deadFromRow },
+    grid: { rows: gridRows, corridors, laneBottom, deadFromRow: seating.deadFromRow },
   };
 };
 

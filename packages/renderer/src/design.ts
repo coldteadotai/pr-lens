@@ -59,6 +59,8 @@ export const BADGE_RISE = 8;
 export const PILL_HEIGHT = 15;
 export const PILL_PADDING_X = 8;
 export const PILL_TEXT_SIZE = 9.5;
+/** Two label pills never sit closer than this, in either direction. */
+export const PILL_CLEARANCE = 2;
 
 /**
  * Routes travel in the gaps of the grid: vertical corridors beside lanes and
@@ -74,6 +76,14 @@ export const TRACK_CLEARANCE = 6;
  * trade, and one that never moves a card.
  */
 export const TRACK_PITCH_MAX = 16;
+/**
+ * And never closer than this: below it, parallel runs stop reading as
+ * separate lines. A gap asked to carry more traffic than the floor allows
+ * does not compress further — it widens instead, corridors pushing the lanes
+ * beside them apart and row gaps pushing the rows, in proportion to the
+ * traffic and to nothing else.
+ */
+export const TRACK_PITCH_MIN = 10;
 
 /** Step between neighbouring arrow ports along one card face. */
 export const PORT_PITCH = 16;

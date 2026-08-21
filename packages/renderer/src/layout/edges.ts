@@ -2,7 +2,6 @@ import type { GraphEdge } from "@coldtea/pr-lens-schema";
 import { assertNever } from "@coldtea/pr-lens-schema";
 import {
   BEND_RADIUS_MAX,
-  LANE_BOTTOM_PADDING,
   PORT_INSET,
   PORT_PITCH,
   TRACK_CLEARANCE,
@@ -452,7 +451,7 @@ const bandSpan = (grid: LayoutGrid, index: number): ChannelSpan => {
   const above = grid.rows[index - 1];
   const below = grid.rows[index];
   const top = above === undefined ? 0 : above.top + above.height;
-  const bottom = below === undefined ? top + LANE_BOTTOM_PADDING : below.top;
+  const bottom = below === undefined ? grid.laneBottom : below.top;
   return { centre: (top + bottom) / 2, room: bottom - top - TRACK_CLEARANCE * 2 };
 };
 
@@ -604,14 +603,49 @@ const labelAnchorOf = (curve: Curve): Point => {
 export const routeEdges = (
   edges: readonly GraphEdge[],
   layout: ArchitectureLayout,
-): RoutedEdge[] => {
+): RoutedEdge[] => finalPass(edges, layout).routed;
+
+export type ChannelTraffic = {
+  corridors: ReadonlyMap<number, number>;
+  bands: ReadonlyMap<number, number>;
+};
+
+/**
+ * How many runs each gap of this layout would carry, counted from the same
+ * routing that would be drawn — braid guard included. This is what decides
+ * whether a gap is wide enough for its traffic before anything is drawn
+ * into it.
+ */
+export const channelTraffic = (
+  edges: readonly GraphEdge[],
+  layout: ArchitectureLayout,
+): ChannelTraffic => {
+  const corridors = new Map<number, number>();
+  const bands = new Map<number, number>();
+  for (const route of finalPass(edges, layout).plans)
+    for (const channel of route.channels)
+      switch (channel.kind) {
+        case "corridor":
+          corridors.set(channel.index, (corridors.get(channel.index) ?? 0) + 1);
+          break;
+        case "band":
+          bands.set(channel.index, (bands.get(channel.index) ?? 0) + 1);
+          break;
+        default:
+          assertNever(channel, "Unhandled channel");
+      }
+  return { corridors, bands };
+};
+
+const finalPass = (edges: readonly GraphEdge[], layout: ArchitectureLayout): Pass => {
   const first = routePass(edges, layout, new Set());
   const braiding = braidingTrunks(first.branches);
-  return braiding.size === 0 ? first.routed : routePass(edges, layout, braiding).routed;
+  return braiding.size === 0 ? first : routePass(edges, layout, braiding);
 };
 
 type Pass = {
   routed: RoutedEdge[];
+  plans: Route[];
   /** Per trunk group, each member's waypoints minus the shared head segment. */
   branches: Map<string, Point[][]>;
 };
@@ -706,7 +740,7 @@ const routePass = (
     };
   });
 
-  return { routed, branches };
+  return { routed, plans: routes, branches };
 };
 
 type Port = { along: number };
