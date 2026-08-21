@@ -93,6 +93,7 @@
 <rect x="88" y="758.01" width="14" height="14" rx="3" fill="none" stroke="#30363d" stroke-width="1.2"/>
 <text x="110" y="770.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Show unchanged neighbours</text>
 <line x1="88" y1="796.01" x2="1016" y2="796.01" stroke="#30363d" stroke-width="1"/>
-<text x="88" y="820.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">◈ Rendered by PR Lens · from the team behind Coldtea</text>
+<text x="88" y="820.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">◈ Rendered by PR Lens · from the team behind </text>
+<text x="357.99" y="820.01" fill="#4493f8" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">Coldtea</text>
 <rect x="72" y="16" width="960" height="820.01" rx="8" fill="none" stroke="#30363d" stroke-width="1"/>
 </svg>

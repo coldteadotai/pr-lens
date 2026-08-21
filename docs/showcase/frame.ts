@@ -25,6 +25,7 @@ type FramePalette = {
   foreground: string;
   muted: string;
   purple: string;
+  link: string;
   codeBg: string;
   check: string;
 };
@@ -37,6 +38,7 @@ const FRAME_DARK: FramePalette = {
   foreground: "#e6edf3",
   muted: "#9198a1",
   purple: "#ab7df8",
+  link: "#4493f8",
   codeBg: "rgba(110,118,129,.18)",
   check: "#1f6feb",
 };
@@ -49,6 +51,7 @@ const FRAME_LIGHT: FramePalette = {
   foreground: "#1f2328",
   muted: "#59636e",
   purple: "#8250df",
+  link: "#0969da",
   codeBg: "rgba(175,184,193,.2)",
   check: "#1f6feb",
 };
@@ -304,7 +307,10 @@ export const frameAsComment = (input: FrameInput): string => {
     paintRuns(
       left,
       y,
-      [{ text: "◈ Rendered by PR Lens · from the team behind Coldtea", face: "sans", size: 12.5, fill: palette.muted }],
+      [
+        { text: "◈ Rendered by PR Lens · from the team behind ", face: "sans", size: 12.5, fill: palette.muted },
+        { text: "Coldtea", face: "sans", size: 12.5, fill: palette.link },
+      ],
       palette,
     ),
   );
