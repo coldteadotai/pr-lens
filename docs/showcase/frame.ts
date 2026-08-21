@@ -102,12 +102,25 @@ const statsChips = (doc: GraphDoc): string[] => {
     if (node.delta === "removed") removed += 1;
   }
   return [
-    `+${added} new`,
-    `~${modified} changed`,
-    `-${removed} removed`,
+    `🟢 +${added} new`,
+    `🟠 ~${modified} changed`,
+    `🔴 -${removed} removed`,
     `${doc.flows.length} flows`,
     `${files.size} files`,
   ];
+};
+
+/**
+ * The width table prices every mono code point the same, but an emoji paints
+ * nearly twice that; the delta dots would overflow their chips without the
+ * difference being paid here.
+ */
+const EMOJI_EXTRA_EM = 0.55;
+
+const emojiSlack = (text: string, size: number): number => {
+  let astral = 0;
+  for (const character of text) if ((character.codePointAt(0) ?? 0) > 0xffff) astral += 1;
+  return astral * size * EMOJI_EXTRA_EM;
 };
 
 /**
@@ -134,7 +147,7 @@ const paintRuns = (x: number, baseline: number, runs: readonly Run[], palette: F
   const parts: string[] = [];
   let cursor = x;
   for (const run of runs) {
-    const width = measure(run.text, run.face, run.size);
+    const width = measure(run.text, run.face, run.size) + emojiSlack(run.text, run.size);
     const family = run.face === "mono" ? MONO_STACK : SANS_STACK;
     const weight = run.face === "sans-bold" ? 600 : 400;
     if (run.chip === true) {
@@ -168,7 +181,11 @@ const paintRuns = (x: number, baseline: number, runs: readonly Run[], palette: F
 };
 
 const runWidth = (runs: readonly Run[]): number =>
-  runs.reduce((total, run) => total + measure(run.text, run.face, run.size) + (run.chip === true ? 12 : 0), 0);
+  runs.reduce(
+    (total, run) =>
+      total + measure(run.text, run.face, run.size) + emojiSlack(run.text, run.size) + (run.chip === true ? 12 : 0),
+    0,
+  );
 
 /** The composer's tipCallout sentence, verbatim. */
 const TIP_SENTENCE =
