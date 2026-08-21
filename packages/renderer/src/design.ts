@@ -40,7 +40,7 @@ export const CARD_PADDING_X = 14;
 export const ICON_CHIP_SIZE = 26;
 export const ICON_CHIP_GAP = 10;
 export const ICON_CHIP_RADIUS = 7;
-/** Below this the icon chip costs more room than the recognition it buys. */
+/** Below this a card's title steps down a size to keep its room. */
 export const ICON_MIN_CARD_WIDTH = 200;
 
 export const TITLE_SIZE = 13;

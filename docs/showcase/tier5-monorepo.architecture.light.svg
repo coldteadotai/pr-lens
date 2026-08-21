@@ -71,9 +71,13 @@
 <path class="edge edge-removed" d="M1312,1360 L1546,1360 C1558.15,1360 1568,1350.15 1568,1338 C1568,1325.85 1577.85,1316 1590,1316 L2912,1316 C2930.78,1316 2946,1300.78 2946,1282 L2946,954 C2946,935.22 2930.78,920 2912,920 L2560,920 C2541.22,920 2526,904.78 2526,886 L2526,856 C2526,840.54 2513.46,828 2498,828 L2470,828" marker-end="url(#mk-removed)"/>
 <path class="edge edge-removed" d="M1312,440 L1325,440 C1332.18,440 1338,445.82 1338,453 L1338,508 C1338,526.78 1353.22,542 1372,542 L2896,542 C2914.78,542 2930,557.22 2930,576 L2930,1386 C2930,1404.78 2914.78,1420 2896,1420 L2058,1420 C2043.64,1420 2032,1431.64 2032,1446 C2032,1460.36 2020.36,1472 2006,1472 L1946,1472" marker-end="url(#mk-removed)"/></g>
 <g><g class="cardsh context"><rect class="card" x="32" y="92" width="180" height="52" rx="10"/>
-<text class="ntitle" x="46" y="123" font-size="11.5">Home</text></g>
+<rect class="chip" x="46" y="105" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="112" width="14" height="12" rx="2"/>
+<path class="glyph-stroke" d="M56.5,112 v12"/></g>
+<text class="ntitle" x="82" y="123" font-size="11.5">Home</text></g>
 <g class="cardsh context"><rect class="card" x="224" y="92" width="180" height="52" rx="10"/>
-<text class="ntitle" x="238" y="123" font-size="11.5">Admin</text></g>
+<rect class="chip" x="238" y="105" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="244" y="112" width="14" height="12" rx="2"/>
+<path class="glyph-stroke" d="M248.5,112 v12"/></g>
+<text class="ntitle" x="274" y="123" font-size="11.5">Admin</text></g>
 <g class="cardsh"><rect class="card card-modified" x="32" y="196" width="372" height="52" rx="10"/>
 <rect class="chip" x="46" y="209" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="216" width="14" height="12" rx="2"/>
 <path class="glyph-stroke" d="M56.5,216 v12"/></g>
@@ -97,10 +101,12 @@
 <text class="ntitle" x="526" y="331" font-size="13">GraphQL gateway</text>
 <g class="bdg bdg-modified"><rect x="774.38" y="292" width="66.62" height="16" rx="8"/><text x="807.69" y="303" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-modified" x="476" y="414" width="180" height="52" rx="10"/>
-<text class="ntitle" x="490" y="445" font-size="11.5">authMiddleware</text>
+<rect class="chip" x="490" y="427" width="26" height="26" rx="7"/><g><text class="glyph" x="503" y="444.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
+<text class="ntitle" x="526" y="445" font-size="11.5">authMiddleware</text>
 <g class="bdg bdg-modified"><rect x="582.38" y="406" width="66.62" height="16" rx="8"/><text x="615.69" y="417" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="668" y="414" width="180" height="52" rx="10"/>
-<text class="ntitle" x="682" y="445" font-size="11.5">POST /uploads</text>
+<rect class="chip" x="682" y="427" width="26" height="26" rx="7"/><g><path class="glyph" d="M688,434 L702,440 L688,446 Z"/></g>
+<text class="ntitle" x="718" y="445" font-size="11.5">POST /uploads</text>
 <g class="bdg bdg-added"><rect x="800.45" y="406" width="40.55" height="16" rx="8"/><text x="820.73" y="417" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="476" y="628" width="372" height="52" rx="10"/>
 <rect class="chip" x="490" y="641" width="26" height="26" rx="7"/><g><text class="glyph" x="503" y="658.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
@@ -111,16 +117,24 @@
 <text class="ntitle strike" x="526" y="1269" font-size="13">REST v1</text>
 <g class="bdg bdg-removed"><rect x="773.88" y="1230" width="67.12" height="16" rx="8"/><text x="807.44" y="1241" text-anchor="middle">REMOVED</text></g></g>
 <g class="cardsh"><rect class="card card-modified" x="940" y="414" width="180" height="52" rx="10"/>
-<text class="ntitle" x="954" y="445" font-size="11.5">userService</text>
+<rect class="chip" x="954" y="427" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="960.5" y="433.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="967" cy="440" r="2"/></g>
+<text class="ntitle" x="990" y="445" font-size="11.5">userService</text>
 <g class="bdg bdg-modified"><rect x="1046.38" y="406" width="66.62" height="16" rx="8"/><text x="1079.69" y="417" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="1132" y="414" width="180" height="52" rx="10"/>
-<text class="ntitle" x="1146" y="445" font-size="11.5">docService</text>
+<rect class="chip" x="1146" y="427" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="1152.5" y="433.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="1159" cy="440" r="2"/></g>
+<text class="ntitle" x="1182" y="445" font-size="11.5">docService</text>
 <g class="bdg bdg-added"><rect x="1264.45" y="406" width="40.55" height="16" rx="8"/><text x="1284.73" y="417" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="940" y="628" width="180" height="52" rx="10"/>
-<text class="ntitle" x="954" y="659" font-size="11.5">searchIndexer</text>
+<rect class="chip" x="954" y="641" width="26" height="26" rx="7"/><g><circle class="glyph-stroke" cx="967" cy="654" r="6.5"/>
+<path class="glyph-stroke" d="M967,650.5 V654 H970"/></g>
+<text class="ntitle" x="990" y="659" font-size="11.5">searchIndexer</text>
 <g class="bdg bdg-added"><rect x="1072.45" y="620" width="40.55" height="16" rx="8"/><text x="1092.73" y="631" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-modified" x="1132" y="628" width="180" height="52" rx="10"/>
-<text class="ntitle" x="1146" y="659" font-size="11.5">billingService</text>
+<rect class="chip" x="1146" y="641" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="1152.5" y="647.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="1159" cy="654" r="2"/></g>
+<text class="ntitle" x="1182" y="659" font-size="11.5">billingService</text>
 <g class="bdg bdg-modified"><rect x="1238.38" y="620" width="66.62" height="16" rx="8"/><text x="1271.69" y="631" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="940" y="802" width="372" height="52" rx="10"/>
 <rect class="chip" x="954" y="815" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="960.5" y="821.5" width="13" height="13" rx="3"/>
@@ -148,9 +162,15 @@
 <text class="ntitle" x="1624" y="445" font-size="13">ui-kit</text>
 <g class="bdg bdg-modified"><rect x="1872.38" y="406" width="66.62" height="16" rx="8"/><text x="1905.69" y="417" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh context"><rect class="card" x="1574" y="628" width="180" height="52" rx="10"/>
-<text class="ntitle" x="1588" y="659" font-size="11.5">auth</text></g>
+<rect class="chip" x="1588" y="641" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M1601,647 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
+<path class="glyph-stroke" d="M1594.5,650.5 l6.5,3.5 l6.5,-3.5"/>
+<path class="glyph-stroke" d="M1601,654 v7"/></g>
+<text class="ntitle" x="1624" y="659" font-size="11.5">auth</text></g>
 <g class="cardsh"><rect class="card card-added" x="1766" y="628" width="180" height="52" rx="10"/>
-<text class="ntitle" x="1780" y="659" font-size="11.5">telemetry</text>
+<rect class="chip" x="1780" y="641" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M1793,647 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
+<path class="glyph-stroke" d="M1786.5,650.5 l6.5,3.5 l6.5,-3.5"/>
+<path class="glyph-stroke" d="M1793,654 v7"/></g>
+<text class="ntitle" x="1816" y="659" font-size="11.5">telemetry</text>
 <g class="bdg bdg-added"><rect x="1898.45" y="620" width="40.55" height="16" rx="8"/><text x="1918.73" y="631" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="1574" y="802" width="372" height="52" rx="10"/>
 <rect class="chip" x="1588" y="815" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M1601,821 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
@@ -182,16 +202,24 @@
 <text class="ntitle" x="2148" y="659" font-size="13">outbox</text>
 <g class="bdg bdg-added"><rect x="2422.45" y="620" width="40.55" height="16" rx="8"/><text x="2442.73" y="631" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-modified" x="2098" y="802" width="180" height="52" rx="10"/>
-<text class="ntitle" x="2112" y="833" font-size="11.5">Blob store</text>
+<rect class="chip" x="2112" y="815" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="2125" cy="823.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M2118.5,823.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="2148" y="833" font-size="11.5">Blob store</text>
 <g class="bdg bdg-modified"><rect x="2204.38" y="794" width="66.62" height="16" rx="8"/><text x="2237.69" y="805" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-modified" x="2290" y="802" width="180" height="52" rx="10"/>
-<text class="ntitle" x="2304" y="833" font-size="11.5">Postgres</text>
+<rect class="chip" x="2304" y="815" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="2317" cy="823.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M2310.5,823.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="2340" y="833" font-size="11.5">Postgres</text>
 <g class="bdg bdg-modified"><rect x="2396.38" y="794" width="66.62" height="16" rx="8"/><text x="2429.69" y="805" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="2098" y="926" width="180" height="52" rx="10"/>
-<text class="ntitle" x="2112" y="957" font-size="11.5">OpenSearch</text>
+<rect class="chip" x="2112" y="939" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="2125" cy="947.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M2118.5,947.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="2148" y="957" font-size="11.5">OpenSearch</text>
 <g class="bdg bdg-added"><rect x="2230.45" y="918" width="40.55" height="16" rx="8"/><text x="2250.73" y="929" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh context"><rect class="card" x="2290" y="926" width="180" height="52" rx="10"/>
-<text class="ntitle" x="2304" y="957" font-size="11.5">Warehouse</text></g>
+<rect class="chip" x="2304" y="939" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="2317" cy="947.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M2310.5,947.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="2340" y="957" font-size="11.5">Warehouse</text></g>
 <g class="cardsh context"><rect class="card" x="2098" y="1030" width="372" height="52" rx="10"/>
 <rect class="chip" x="2112" y="1043" width="26" height="26" rx="7"/><g><path class="glyph" d="M2126,1049 L2119,1057 H2124 L2124,1063 L2131,1055 H2126 Z"/></g>
 <text class="ntitle" x="2148" y="1061" font-size="13">Redis</text></g>
@@ -201,9 +229,13 @@
 <text class="ntitle" x="2582" y="659" font-size="13">OpenAI</text>
 <g class="bdg bdg-added"><rect x="2856.45" y="620" width="40.55" height="16" rx="8"/><text x="2876.73" y="631" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh context"><rect class="card" x="2532" y="802" width="180" height="52" rx="10"/>
-<text class="ntitle" x="2546" y="833" font-size="11.5">Stripe</text></g>
+<rect class="chip" x="2546" y="815" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="2551" y="822" width="16" height="12" rx="2"/>
+<path class="glyph-stroke" d="M2551,824 l8,6 8,-6"/></g>
+<text class="ntitle" x="2582" y="833" font-size="11.5">Stripe</text></g>
 <g class="cardsh context"><rect class="card" x="2724" y="802" width="180" height="52" rx="10"/>
-<text class="ntitle" x="2738" y="833" font-size="11.5">Sentry</text></g>
+<rect class="chip" x="2738" y="815" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="2743" y="822" width="16" height="12" rx="2"/>
+<path class="glyph-stroke" d="M2743,824 l8,6 8,-6"/></g>
+<text class="ntitle" x="2774" y="833" font-size="11.5">Sentry</text></g>
 <g class="cardsh context"><rect class="card" x="2532" y="926" width="372" height="52" rx="10"/>
 <rect class="chip" x="2546" y="939" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="2551" y="946" width="16" height="12" rx="2"/>
 <path class="glyph-stroke" d="M2551,948 l8,6 8,-6"/></g>

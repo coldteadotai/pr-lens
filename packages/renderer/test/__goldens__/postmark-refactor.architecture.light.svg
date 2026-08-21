@@ -52,12 +52,16 @@
 <g class="bdg bdg-neutral"><rect x="738.4" y="416" width="36.05" height="16" rx="8"/><text x="756.43" y="427" text-anchor="middle">new</text></g>
 <g class="bdg bdg-added"><rect x="780.45" y="416" width="40.55" height="16" rx="8"/><text x="800.72" y="427" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="456" y="538" width="180" height="62" rx="10"/>
-<text class="ntitle" x="470" y="565" font-size="11.5">broadcast-lib</text>
-<text class="nsub" x="470" y="583">packages/broadcast-lib</text>
+<rect class="chip" x="470" y="556" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M483,562 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
+<path class="glyph-stroke" d="M476.5,565.5 l6.5,3.5 l6.5,-3.5"/>
+<path class="glyph-stroke" d="M483,569 v7"/></g>
+<text class="ntitle" x="506" y="565" font-size="11.5">broadcast-lib</text>
+<text class="nsub" x="506" y="583">packages/broadcast-…</text>
 <g class="bdg bdg-neutral"><rect x="505.75" y="530" width="76.7" height="16" rx="8"/><text x="544.1" y="541" text-anchor="middle">new package</text></g>
 <g class="bdg bdg-added"><rect x="588.45" y="530" width="40.55" height="16" rx="8"/><text x="608.73" y="541" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="648" y="538" width="180" height="52" rx="10"/>
-<text class="ntitle" x="662" y="569" font-size="11.5">buildBulkPayload</text>
+<rect class="chip" x="662" y="551" width="26" height="26" rx="7"/><g><text class="glyph" x="675" y="568.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
+<text class="ntitle" x="698" y="569" font-size="11.5">buildBulkPayload</text>
 <g class="bdg bdg-added"><rect x="780.45" y="530" width="40.55" height="16" rx="8"/><text x="800.73" y="541" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="456" y="652" width="372" height="52" rx="10"/>
 <rect class="chip" x="470" y="665" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="682.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>

@@ -248,7 +248,9 @@ export const layoutArchitecture = (
         placedNodes.push({
           node,
           box: { x, y: top, width, height: cardHeight(node) },
-          showIcon: width >= ICON_MIN_CARD_WIDTH,
+          // Every kind draws something, on every card: the chip is reserved
+          // space and the title truncates, so recognition wins at any width.
+          showIcon: true,
           titleSize: width >= ICON_MIN_CARD_WIDTH ? TITLE_SIZE : TITLE_SIZE_SMALL,
           row: row.grid,
           laneIndex,

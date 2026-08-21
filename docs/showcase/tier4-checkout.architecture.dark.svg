@@ -44,9 +44,13 @@
 <path class="edge edge-removed" d="M828,988 L880,988 C898.78,988 914,1003.22 914,1022 L914,1081 C914,1082.66 915.34,1084 917,1084 L920,1084" marker-end="url(#mk-removed)"/>
 <path class="edge edge-removed" d="M1292,1084 L1382,1084 C1396.36,1084 1408,1072.36 1408,1058 C1408,1043.64 1419.64,1032 1434,1032 L2220,1032 C2238.78,1032 2254,1016.78 2254,998 L2254,685 C2254,675.61 2246.39,668 2237,668 L2220,668" marker-end="url(#mk-removed)"/></g>
 <g><g class="cardsh context"><rect class="card" x="32" y="92" width="180" height="52" rx="10"/>
-<text class="ntitle" x="46" y="123" font-size="11.5">Storefront</text></g>
+<rect class="chip" x="46" y="105" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="112" width="14" height="12" rx="2"/>
+<path class="glyph-stroke" d="M56.5,112 v12"/></g>
+<text class="ntitle" x="82" y="123" font-size="11.5">Storefront</text></g>
 <g class="cardsh context"><rect class="card" x="224" y="92" width="180" height="52" rx="10"/>
-<text class="ntitle" x="238" y="123" font-size="11.5">Account page</text></g>
+<rect class="chip" x="238" y="105" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="244" y="112" width="14" height="12" rx="2"/>
+<path class="glyph-stroke" d="M248.5,112 v12"/></g>
+<text class="ntitle" x="274" y="123" font-size="11.5">Account page</text></g>
 <g class="cardsh"><rect class="card card-modified" x="32" y="206" width="372" height="52" rx="10"/>
 <rect class="chip" x="46" y="219" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="226" width="14" height="12" rx="2"/>
 <path class="glyph-stroke" d="M56.5,226 v12"/></g>
@@ -112,10 +116,14 @@
 <text class="nsub" x="1464" y="469">Postgres</text>
 <g class="bdg bdg-modified"><rect x="1712.38" y="416" width="66.62" height="16" rx="8"/><text x="1745.69" y="427" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="1414" y="642" width="180" height="52" rx="10"/>
-<text class="ntitle" x="1428" y="673" font-size="11.5">paymentsLedger</text>
+<rect class="chip" x="1428" y="655" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="1441" cy="663.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M1434.5,663.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="1464" y="673" font-size="11.5">paymentsLedger</text>
 <g class="bdg bdg-added"><rect x="1546.45" y="634" width="40.55" height="16" rx="8"/><text x="1566.73" y="645" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="1606" y="642" width="180" height="52" rx="10"/>
-<text class="ntitle" x="1620" y="673" font-size="11.5">eventsOutbox</text>
+<rect class="chip" x="1620" y="655" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="1633" cy="663.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M1626.5,663.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="1656" y="673" font-size="11.5">eventsOutbox</text>
 <g class="bdg bdg-added"><rect x="1738.45" y="634" width="40.55" height="16" rx="8"/><text x="1758.73" y="645" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="1848" y="538" width="372" height="52" rx="10"/>
 <rect class="chip" x="1862" y="551" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="1867" y="558" width="16" height="12" rx="2"/>
