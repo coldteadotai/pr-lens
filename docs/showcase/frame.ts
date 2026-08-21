@@ -24,7 +24,6 @@ type FramePalette = {
   border: string;
   foreground: string;
   muted: string;
-  link: string;
   purple: string;
   codeBg: string;
   check: string;
@@ -37,7 +36,6 @@ const FRAME_DARK: FramePalette = {
   border: "#30363d",
   foreground: "#e6edf3",
   muted: "#9198a1",
-  link: "#4493f8",
   purple: "#ab7df8",
   codeBg: "rgba(110,118,129,.18)",
   check: "#1f6feb",
@@ -50,7 +48,6 @@ const FRAME_LIGHT: FramePalette = {
   border: "#d1d9e0",
   foreground: "#1f2328",
   muted: "#59636e",
-  link: "#0969da",
   purple: "#8250df",
   codeBg: "rgba(175,184,193,.2)",
   check: "#1f6feb",
@@ -296,11 +293,6 @@ export const frameAsComment = (input: FrameInput): string => {
     );
   }
   gap(8);
-
-  gap(22);
-  parts.push(
-    paintRuns(left, y, [{ text: "Open as Coldtea task", face: "sans", size: 13, fill: palette.link }], palette),
-  );
 
   // --- then the footer, exactly the composer's FOOTER string.
   gap(18);
