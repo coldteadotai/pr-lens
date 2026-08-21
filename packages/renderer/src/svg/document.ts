@@ -87,14 +87,11 @@ const stylesheet = (palette: Palette): string =>
     `.ltext-modified{fill:${palette.modified}}`,
     `.ltext-removed{fill:${palette.removed}}`,
     `.cardsh{filter:drop-shadow(0 1px 2px ${palette.shadow})}`,
-    `.pcard{fill:${palette.card};stroke:${palette.cardBorder};stroke-width:1}`,
-    `.ptitle{font-size:12px;font-weight:600;fill:${palette.foreground};text-anchor:middle}`,
     `.lifeline{stroke:${palette.lifeline};stroke-width:1;stroke-dasharray:3 4}`,
     `.actbar{fill:${palette.addedFill};stroke:${palette.addedBorder}}`,
-    `.msg{fill:none;stroke-width:1.4}`,
+    `.msg{fill:none;stroke-width:1.5}`,
     `.msg-return{stroke-dasharray:4 3;opacity:.8}`,
-    `.msg-label{font-size:11px;font-weight:600;fill:${palette.foreground};text-anchor:middle}`,
-    `.msg-strong{stroke-width:2}`,
+    `.msg-strong{stroke-width:2.25}`,
   ].join("");
 
 /**

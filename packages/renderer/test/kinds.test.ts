@@ -71,6 +71,25 @@ describe("mixed message kinds", () => {
   });
 });
 
+describe("the sequence wears the product's design system", () => {
+  const { svg } = render(mixedKindsGraph, { lens: "data-flow", theme: "dark" });
+
+  it("heads each column with a node card, kind chip included", () => {
+    expect(svg.match(/class="chip"/g)).toHaveLength(3);
+    expect(svg.match(/class="card card-modified"/g)).toHaveLength(2);
+    expect(svg).toContain('class="cardsh context"');
+  });
+
+  it("sets each message label in a pill, exactly once", () => {
+    expect(svg.match(/class="lpill"/g)).toHaveLength(8);
+    expect(svg.match(/append audit event/g)).toHaveLength(1);
+  });
+
+  it("grounds each column in a band of the lane language", () => {
+    expect(svg.match(/class="lanebox"/g)).toHaveLength(3);
+  });
+});
+
 describe("activation bars", () => {
   it("activates a sync receiver from the call to its answering return", () => {
     expect(activationsOf("worker")).toEqual([{ top: yOf("place-order"), bottom: yOf("confirm") }]);

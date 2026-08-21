@@ -90,7 +90,7 @@ const cardOutlineClass = (node: GraphNode): string => {
   }
 };
 
-const paintCard = (placed: PlacedNode): string => {
+export const paintCard = (placed: PlacedNode): string => {
   const { node, box, showIcon, titleSize } = placed;
   const textX = box.x + CARD_PADDING_X + (showIcon ? ICON_CHIP_SIZE + ICON_CHIP_GAP : 0);
   const textWidth = box.x + box.width - CARD_PADDING_X - textX;
@@ -218,7 +218,7 @@ const paintEdge = (
   };
 };
 
-const paintLabelPill = (text: string, box: Box, tone: Tone): string =>
+export const paintLabelPill = (text: string, box: Box, tone: Tone): string =>
   wrap(
     "g",
     {},

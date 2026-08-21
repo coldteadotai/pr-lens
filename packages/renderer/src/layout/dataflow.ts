@@ -1,11 +1,22 @@
-import type { Flow, FlowMessage, GraphNode } from "@coldtea/pr-lens-schema";
-import { DIAGRAM_MARGIN } from "../design.js";
+import type { Flow, FlowMessage, FlowParticipant, GraphNode } from "@coldtea/pr-lens-schema";
+import {
+  CARD_HEIGHT,
+  CARD_HEIGHT_WITH_SUBTITLE,
+  CARD_PADDING_X,
+  DIAGRAM_MARGIN,
+  ICON_CHIP_GAP,
+  ICON_CHIP_SIZE,
+  SUBTITLE_SIZE,
+  TITLE_SIZE,
+} from "../design.js";
+import type { Box } from "../geometry.js";
 import { measure } from "../text.js";
 
 export const PARTICIPANT_TOP = 18;
-export const PARTICIPANT_HEIGHT = 34;
-export const LIFELINE_TOP = 54;
-export const FIRST_MESSAGE_Y = 95;
+/** The lifeline hangs just clear of the card that heads its column. */
+export const LIFELINE_GAP = 2;
+/** Where the first message sits below the top of the lifelines. */
+export const FIRST_MESSAGE_DROP = 41;
 export const MESSAGE_PITCH = 38;
 export const SELF_MESSAGE_PITCH = 54;
 export const FLOW_BOTTOM_PADDING = 24;
@@ -13,7 +24,13 @@ export const FLOW_GAP = 40;
 
 export const COLUMN_MIN_WIDTH = 150;
 export const COLUMN_GAP = 80;
-export const COLUMN_PADDING_X = 16;
+
+/**
+ * How far a column's band reaches beyond its cards, echoing the padding a
+ * lane keeps around the cards it holds.
+ */
+export const FLOW_BAND_PAD_X = 12;
+export const FLOW_BAND_PAD_Y = 12;
 
 /** Half the width of an activation bar, and how far it holds arrows off the lifeline. */
 export const ACTIVATION_HALF_WIDTH = 6;
@@ -28,8 +45,11 @@ export const SELF_LOOP_EXTENT = SELF_LOOP_DROP + SELF_LOOP_CORNER * 2;
 export type ActivationBar = { top: number; bottom: number };
 
 export type PlacedParticipant = {
-  label: string;
+  /** The node this column stands for, its label swapped for the column's. */
+  node: GraphNode;
   centreX: number;
+  /** The node card heading the column, in the full card design system. */
+  card: Box;
   /** Spans where this column is working on a synchronous call it received. */
   activations: ActivationBar[];
 };
@@ -49,6 +69,8 @@ export type FlowLayout = {
   flow: Flow;
   top: number;
   height: number;
+  /** Where the lifelines start — under the tallest card in the header row. */
+  lifelineTop: number;
   participants: PlacedParticipant[];
   messages: PlacedMessage[];
 };
@@ -144,11 +166,41 @@ const mergedBars = (bars: readonly ActivationBar[]): ActivationBar[] => {
   return merged;
 };
 
-const columnLabel = (
-  participantLabel: string | undefined,
-  node: GraphNode | undefined,
-  fallback: string,
-): string => participantLabel ?? node?.label ?? fallback;
+/**
+ * The node a column stands for, as the card will show it: the column's own
+ * shorter label wins over the node's, and a participant the graph no longer
+ * carries still needs a card, so a placeholder node stands in for one.
+ */
+const participantNode = (
+  participant: FlowParticipant,
+  byId: ReadonlyMap<string, GraphNode>,
+): GraphNode => {
+  const node = byId.get(participant.node);
+  if (node === undefined)
+    return {
+      id: participant.node,
+      label: participant.label ?? participant.node,
+      kind: "other",
+      delta: "unchanged",
+      lane: "",
+      files: [],
+      badges: [],
+    };
+  return participant.label === undefined ? node : { ...node, label: participant.label };
+};
+
+const cardHeight = (node: GraphNode): number =>
+  node.subtitle === undefined ? CARD_HEIGHT : CARD_HEIGHT_WITH_SUBTITLE;
+
+/** The width a column's card asks for: chip, title, and mono subtitle. */
+const cardContentWidth = (node: GraphNode): number =>
+  CARD_PADDING_X * 2 +
+  ICON_CHIP_SIZE +
+  ICON_CHIP_GAP +
+  Math.max(
+    measure(node.label, "sans-bold", TITLE_SIZE),
+    node.subtitle === undefined ? 0 : measure(node.subtitle, "mono", SUBTITLE_SIZE),
+  );
 
 export const layoutDataFlow = (
   flows: readonly Flow[],
@@ -157,13 +209,14 @@ export const layoutDataFlow = (
 ): DataFlowLayout => {
   const byId = new Map(nodes.map((node) => [node.id, node]));
 
-  const columnWidth = Math.max(
-    COLUMN_MIN_WIDTH,
-    ...flows.flatMap((flow) =>
-      flow.participants.map(
-        (participant) =>
-          measure(columnLabel(participant.label, byId.get(participant.node), participant.node), "sans-bold", 12) +
-          COLUMN_PADDING_X * 2,
+  // A whole pixel: adding measured widths leaves floating-point dust, and a
+  // card handed back exactly the width its title measured would round into
+  // truncating that title.
+  const columnWidth = Math.ceil(
+    Math.max(
+      COLUMN_MIN_WIDTH,
+      ...flows.flatMap((flow) =>
+        flow.participants.map((participant) => cardContentWidth(participantNode(participant, byId))),
       ),
     ),
   );
@@ -177,6 +230,7 @@ export const layoutDataFlow = (
   let width = 0;
 
   const placed = flows.map((flow) => {
+    const columnNodes = flow.participants.map((participant) => participantNode(participant, byId));
     const centres = flow.participants.map(
       (_, index) => DIAGRAM_MARGIN + columnWidth / 2 + index * (columnWidth + COLUMN_GAP),
     );
@@ -184,7 +238,10 @@ export const layoutDataFlow = (
       flow.participants.map((participant, index) => [participant.node, centres[index] ?? 0]),
     );
 
-    let messageY = cursorY + FIRST_MESSAGE_Y;
+    const lifelineTop =
+      cursorY + PARTICIPANT_TOP + Math.max(...columnNodes.map(cardHeight)) + LIFELINE_GAP;
+
+    let messageY = lifelineTop + FIRST_MESSAGE_DROP;
     const messages: PlacedMessage[] = flow.messages.map((message) => {
       const y = messageY;
       messageY += messagePitch(message);
@@ -201,16 +258,25 @@ export const layoutDataFlow = (
       };
     });
 
-    const participants = flow.participants.map((participant, index) => ({
-      label: columnLabel(participant.label, byId.get(participant.node), participant.node),
-      centreX: centres[index] ?? 0,
-      activations: activationsFor(participant.node, messages),
-    }));
+    const participants = columnNodes.map((node, index) => {
+      const centreX = centres[index] ?? 0;
+      return {
+        node,
+        centreX,
+        card: {
+          x: centreX - columnWidth / 2,
+          y: cursorY + PARTICIPANT_TOP,
+          width: columnWidth,
+          height: cardHeight(node),
+        },
+        activations: activationsFor(node.id, messages),
+      };
+    });
 
     const drawn = messages.reduce(
       (lowest, placedMessage) =>
         Math.max(lowest, placedMessage.y + (placedMessage.message.kind === "self" ? SELF_LOOP_EXTENT : 0)),
-      cursorY + FIRST_MESSAGE_Y,
+      lifelineTop + FIRST_MESSAGE_DROP,
     );
     const bottom = drawn + FLOW_BOTTOM_PADDING;
     const height = bottom - cursorY;
@@ -221,7 +287,7 @@ export const layoutDataFlow = (
       (centres[centres.length - 1] ?? 0) + columnWidth / 2 + DIAGRAM_MARGIN,
     );
 
-    return { flow, top, height, participants, messages };
+    return { flow, top, height, lifelineTop, participants, messages };
   });
 
   return {

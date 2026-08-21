@@ -8,6 +8,11 @@ import {
   FLOW_PULSE_MAX_TRAVEL,
   FLOW_PULSE_RAMP,
   FLOW_PULSE_TRAVEL,
+  LANE_RADIUS,
+  PILL_HEIGHT,
+  PILL_PADDING_X,
+  PILL_TEXT_SIZE,
+  TITLE_SIZE,
 } from "../design.js";
 import { canvasFor, union } from "../bounds.js";
 import type { Box } from "../geometry.js";
@@ -15,20 +20,22 @@ import { measure } from "../text.js";
 import { coord } from "../geometry.js";
 import {
   ACTIVATION_HALF_WIDTH,
+  FLOW_BAND_PAD_X,
+  FLOW_BAND_PAD_Y,
   layoutDataFlow,
-  LIFELINE_TOP,
   MARKER_INSET,
-  PARTICIPANT_HEIGHT,
   PARTICIPANT_TOP,
   SELF_LOOP_CORNER,
   SELF_LOOP_DROP,
+  SELF_LOOP_EXTENT,
   SELF_LOOP_REACH,
   type FlowLayout,
   type PlacedMessage,
 } from "../layout/dataflow.js";
 import type { Palette } from "../theme.js";
+import { paintCard, paintLabelPill } from "./architecture.js";
 import { markerFor, openMarkerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
-import { lines, tag, textNode, wrap } from "./primitives.js";
+import { lines, tag, wrap } from "./primitives.js";
 
 /** A ratio inside the animation cycle, written to a fixed number of places. */
 const ratio = (value: number): string => String(Math.round(value * 10000) / 10000);
@@ -82,10 +89,7 @@ type ActiveAt = (node: string, y: number) => boolean;
 
 const activationLookup = (layout: FlowLayout): ActiveAt => {
   const byNode = new Map(
-    layout.flow.participants.map((participant, index) => [
-      participant.node,
-      layout.participants[index]?.activations ?? [],
-    ]),
+    layout.participants.map((participant) => [participant.node.id, participant.activations]),
   );
   return (node, y) =>
     (byNode.get(node) ?? []).some((bar) => bar.top <= y && y <= bar.bottom);
@@ -122,6 +126,36 @@ const selfPath = (x: number, y: number, activated: boolean): string => {
     `h-${coord(SELF_LOOP_REACH - MARKER_INSET)}`
   );
 };
+
+/** How far a self message's pill stands off the loop it names. */
+const SELF_PILL_GAP = 8;
+
+const pillWidth = (label: string): number =>
+  measure(label, "sans-bold", PILL_TEXT_SIZE) + PILL_PADDING_X * 2;
+
+/** The pill of a straight message, settled onto the middle of its arrow. */
+const pillBox = (placed: PlacedMessage, ends: Ends): Box => {
+  const width = pillWidth(placed.label);
+  return {
+    x: (ends.start + ends.end) / 2 - width / 2,
+    y: placed.y - PILL_HEIGHT / 2,
+    width,
+    height: PILL_HEIGHT,
+  };
+};
+
+/** A self message's pill, beside the loop and centred on its height. */
+const selfPillBox = (placed: PlacedMessage, activated: boolean): Box => ({
+  x:
+    placed.fromX +
+    (activated ? ACTIVATION_HALF_WIDTH : 0) +
+    SELF_LOOP_REACH +
+    SELF_LOOP_CORNER +
+    SELF_PILL_GAP,
+  y: placed.y + SELF_LOOP_EXTENT / 2 - PILL_HEIGHT / 2,
+  width: pillWidth(placed.label),
+  height: PILL_HEIGHT,
+});
 
 /**
  * Pulses for one message, placed in the message's own beats of the shared
@@ -171,52 +205,59 @@ const pulsesFor = (
   );
 };
 
+/**
+ * Paints one message and the pill that names it. Like an architecture edge
+ * and its label, the two come back separately because they belong to
+ * different layers: the pill is opaque precisely so it can be read wherever
+ * it lands, so it passes in front of everything the arrows drew.
+ */
 const paintMessage = (
   placed: PlacedMessage,
   activeAt: ActiveAt,
   slotCount: number,
   palette: Palette,
-): string => {
+): { line: string; pill: string } => {
   const tone = toneFor(placed.message.delta);
   const direction = travelDirection(placed.message.kind, placed.fromX, placed.toX);
   const head = headFor(placed.message.kind, tone);
 
   if (direction === 0) {
-    const path = selfPath(placed.fromX, placed.y, activeAt(placed.message.from, placed.y));
-    return wrap(
-      "g",
-      {},
-      lines([
-        textNode(
-          {
-            class: "msg-label",
-            x: coord(placed.fromX + ACTIVATION_HALF_WIDTH + 12),
-            y: coord(placed.y - 8),
-            "text-anchor": "start",
-          },
-          placed.label,
-        ),
+    const activated = activeAt(placed.message.from, placed.y);
+    const path = selfPath(placed.fromX, placed.y, activated);
+    return {
+      line: lines([
         tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
         pulsesFor(placed, path, slotCount, palette),
       ]),
-    );
+      pill: paintLabelPill(placed.label, selfPillBox(placed, activated), tone),
+    };
   }
 
-  const { start, end } = endsFor(placed, activeAt, direction);
-  const path = `M${coord(start)},${coord(placed.y)} L${coord(end)},${coord(placed.y)}`;
+  const ends = endsFor(placed, activeAt, direction);
+  const path = `M${coord(ends.start)},${coord(placed.y)} L${coord(ends.end)},${coord(placed.y)}`;
 
-  return wrap(
-    "g",
-    {},
-    lines([
-      textNode(
-        { class: "msg-label", x: coord((start + end) / 2), y: coord(placed.y - 7) },
-        placed.label,
-      ),
+  return {
+    line: lines([
       tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
       pulsesFor(placed, path, slotCount, palette),
     ]),
-  );
+    pill: paintLabelPill(placed.label, pillBox(placed, ends), tone),
+  };
+};
+
+/**
+ * The ground under one column: a band in the lane language, holding the
+ * card, its lifeline and its activation bars with the same breathing room a
+ * lane keeps around its cards.
+ */
+const bandBox = (centreX: number, columnWidth: number, layout: FlowLayout): Box => {
+  const top = layout.top + PARTICIPANT_TOP - FLOW_BAND_PAD_Y;
+  return {
+    x: centreX - columnWidth / 2 - FLOW_BAND_PAD_X,
+    y: top,
+    width: columnWidth + FLOW_BAND_PAD_X * 2,
+    height: layout.top + layout.height + FLOW_BAND_PAD_Y - top,
+  };
 };
 
 const paintFlow = (
@@ -229,12 +270,24 @@ const paintFlow = (
 
   const lifelineBottom = layout.top + layout.height;
 
+  const bands = layout.participants.map((participant) => {
+    const box = bandBox(participant.centreX, columnWidth, layout);
+    return tag("rect", {
+      class: "lanebox",
+      x: coord(box.x),
+      y: coord(box.y),
+      width: coord(box.width),
+      height: coord(box.height),
+      rx: LANE_RADIUS,
+    });
+  });
+
   const columns = layout.participants.map((participant) =>
     lines([
       tag("line", {
         class: "lifeline",
         x1: coord(participant.centreX),
-        y1: coord(layout.top + LIFELINE_TOP),
+        y1: coord(layout.lifelineTop),
         x2: coord(participant.centreX),
         y2: coord(lifelineBottom),
       }),
@@ -251,74 +304,52 @@ const paintFlow = (
     ]),
   );
 
-  const cards = layout.participants.map((participant) =>
-    lines([
-      tag("rect", {
-        class: "pcard",
-        x: coord(participant.centreX - columnWidth / 2),
-        y: coord(layout.top + PARTICIPANT_TOP),
-        width: coord(columnWidth),
-        height: PARTICIPANT_HEIGHT,
-        rx: 8,
-      }),
-      textNode(
-        {
-          class: "ptitle",
-          x: coord(participant.centreX),
-          y: coord(layout.top + PARTICIPANT_TOP + 21),
-        },
-        participant.label,
-      ),
-    ]),
+  const cards = layout.participants.map((participant, index) =>
+    paintCard({
+      node: participant.node,
+      box: participant.card,
+      showIcon: true,
+      titleSize: TITLE_SIZE,
+      row: 0,
+      laneIndex: index,
+    }),
   );
 
+  const lineMarkup: string[] = [];
+  const pillMarkup: string[] = [];
+  for (const message of layout.messages) {
+    const { line, pill } = paintMessage(message, activeAt, slotCount, palette);
+    lineMarkup.push(line);
+    pillMarkup.push(pill);
+  }
+
   return lines([
+    wrap("g", {}, lines(bands)),
     wrap("g", {}, lines(columns)),
-    wrap("g", { class: "cardsh" }, lines(cards)),
-    wrap(
-      "g",
-      {},
-      lines(layout.messages.map((message) => paintMessage(message, activeAt, slotCount, palette))),
-    ),
+    wrap("g", {}, lines(cards)),
+    wrap("g", {}, lines(lineMarkup)),
+    wrap("g", {}, lines(pillMarkup)),
   ]);
 };
 
-const MESSAGE_LABEL_SIZE = 11;
-
 /**
- * The room a flow's own drawing takes, labels included. A message label is
- * centred on its arrow and a self-message label runs off to the right of one,
- * so either can reach past the columns the layout sized the canvas from.
+ * The room a flow's own drawing takes. The bands already hold the cards and
+ * columns, but a pill is centred on its arrow and a self message's sits off
+ * to the right of one, so either can reach past what the layout sized the
+ * canvas from.
  */
 const flowBounds = (layout: FlowLayout, columnWidth: number): Box[] => {
   const activeAt = activationLookup(layout);
 
-  const columns = layout.participants.map((participant) => ({
-    x: participant.centreX - columnWidth / 2,
-    y: layout.top + PARTICIPANT_TOP,
-    width: columnWidth,
-    height: layout.top + layout.height - (layout.top + PARTICIPANT_TOP),
-  }));
+  const bands = layout.participants.map((participant) =>
+    bandBox(participant.centreX, columnWidth, layout),
+  );
 
-  const labels = layout.messages.map((placed) => {
-    const width = measure(placed.label, "sans-bold", MESSAGE_LABEL_SIZE);
+  const pills = layout.messages.map((placed) => {
     const direction = travelDirection(placed.message.kind, placed.fromX, placed.toX);
 
-    if (direction === 0)
-      return {
-        x: placed.fromX + ACTIVATION_HALF_WIDTH + 12,
-        y: placed.y - 8 - MESSAGE_LABEL_SIZE,
-        width,
-        height: MESSAGE_LABEL_SIZE,
-      };
-
-    const { start, end } = endsFor(placed, activeAt, direction);
-    return {
-      x: (start + end) / 2 - width / 2,
-      y: placed.y - 7 - MESSAGE_LABEL_SIZE,
-      width,
-      height: MESSAGE_LABEL_SIZE,
-    };
+    if (direction === 0) return selfPillBox(placed, activeAt(placed.message.from, placed.y));
+    return pillBox(placed, endsFor(placed, activeAt, direction));
   });
 
   const loops = layout.messages
@@ -330,7 +361,7 @@ const flowBounds = (layout: FlowLayout, columnWidth: number): Box[] => {
       height: SELF_LOOP_DROP + SELF_LOOP_CORNER * 2,
     }));
 
-  return [...columns, ...labels, ...loops];
+  return [...bands, ...pills, ...loops];
 };
 
 export type DataFlowPainting = { width: number; height: number; body: string };
