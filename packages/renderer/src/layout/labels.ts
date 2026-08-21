@@ -26,28 +26,30 @@ type Run = {
 
 const EPSILON = 0.01;
 
-/** The straight runs of a route, longest first, earlier segments breaking ties. */
-const runsOf = (curve: Curve): Run[] => {
-  const runs: { run: Run; length: number; index: number }[] = [];
+/**
+ * The longest straight run of a route — the run the router pins the label to,
+ * and the only one collision handling may slide it along. Earlier segments
+ * win a tie, matching how the anchor itself is chosen.
+ */
+const longestRun = (curve: Curve): Run | undefined => {
+  let best: { run: Run; length: number } | undefined;
   let start = curve.from;
-  curve.segments.forEach((segment, index) => {
+  for (const segment of curve.segments) {
     const end = segment.to;
     if (segment.kind === "line") {
       const horizontal = Math.abs(end.y - start.y) < EPSILON;
       const [lo, hi] = horizontal
         ? [Math.min(start.x, end.x), Math.max(start.x, end.x)]
         : [Math.min(start.y, end.y), Math.max(start.y, end.y)];
-      runs.push({
-        run: { axis: horizontal ? "x" : "y", cross: horizontal ? start.y : start.x, lo, hi },
-        length: hi - lo,
-        index,
-      });
+      if (best === undefined || hi - lo > best.length)
+        best = {
+          run: { axis: horizontal ? "x" : "y", cross: horizontal ? start.y : start.x, lo, hi },
+          length: hi - lo,
+        };
     }
     start = end;
-  });
-  return runs
-    .sort((a, b) => b.length - a.length || a.index - b.index)
-    .map(({ run }) => run);
+  }
+  return best?.run;
 };
 
 const centred = (centre: Point, size: Size): Box => ({
@@ -152,13 +154,18 @@ const settle = (
   size: Size,
   settled: readonly Box[],
 ): Box => {
-  const runs = runsOf(curve);
-  for (const reach of [0, PILL_HEIGHT])
-    for (const run of runs) {
+  const run = longestRun(curve);
+  if (run !== undefined)
+    for (const reach of [0, PILL_HEIGHT]) {
       const along = slideAlong(run, size, settled, reach);
       if (along !== undefined) return centred(centreOn(run, along), size);
     }
-  return stepAside(anchor, runs[0]?.axis ?? "x", size, settled);
+
+  // A route that only bends — a self-loop — has no run to slide along; its
+  // anchor still stands wherever it is clear.
+  const atAnchor = centred(anchor, size);
+  if (!settled.some((other) => collides(atAnchor, other))) return atAnchor;
+  return stepAside(anchor, run?.axis ?? "x", size, settled);
 };
 
 /**

@@ -1,4 +1,5 @@
-import type { GraphDoc } from "@coldtea/pr-lens-schema";
+import type { GraphDoc, GraphEdge } from "@coldtea/pr-lens-schema";
+import { parseGraphDoc } from "@coldtea/pr-lens-schema";
 import { describe, expect, it } from "vitest";
 import { PILL_HEIGHT, TRACK_CLEARANCE, TRACK_PITCH_MAX, TRACK_PITCH_MIN } from "../src/design.js";
 import type { Point } from "../src/geometry.js";
@@ -96,6 +97,75 @@ describe("every pill stays with its own line", () => {
         );
       }
     });
+});
+
+describe("label settling", () => {
+  it("leaves a clear self-loop label exactly on its anchor", () => {
+    const doc = parseGraphDoc({
+      schemaVersion: "0.1.0",
+      kind: "graph",
+      title: "Self-loop label",
+      lenses: ["architecture"],
+      provenance: {
+        repo: { owner: "coldteadotai", name: "pr-lens" },
+        base: { sha: "1111111" },
+        head: { sha: "2222222" },
+      },
+      lanes: [{ id: "one", label: "One" }],
+      nodes: [{ id: "a", label: "a", kind: "function", delta: "unchanged", lane: "one" }],
+      edges: [{ id: "a-to-a", from: "a", to: "a", kind: "call", delta: "unchanged", label: "retry" }],
+    });
+
+    const { routed } = relieveCongestion(scoped(doc), doc.layout);
+    const loop = routed.find(({ edge }) => edge.id === "a-to-a");
+    const box = placeLabelPills(routed).get("a-to-a");
+    expect(loop?.labelAnchor).toBeDefined();
+    expect(box).toBeDefined();
+    if (loop?.labelAnchor === undefined || box === undefined) return;
+    expect(box.x + box.width / 2).toBe(loop.labelAnchor.x);
+    expect(box.y + box.height / 2).toBe(loop.labelAnchor.y);
+  });
+
+  it("keeps a colliding label on its own longest run instead of hopping to a shorter one", () => {
+    const edge = (id: string): GraphEdge => ({
+      id,
+      from: "a",
+      to: "b",
+      kind: "call",
+      delta: "unchanged",
+      emphasis: "normal",
+      animated: false,
+      files: [],
+      label: "aa",
+    });
+    // Two identical L-shaped routes: a 100px horizontal anchor run, then a
+    // 40px vertical tail a migrating pill would find room on.
+    const curve = {
+      from: { x: 0, y: 0 },
+      segments: [
+        { kind: "line" as const, to: { x: 100, y: 0 } },
+        { kind: "line" as const, to: { x: 100, y: 40 } },
+      ],
+    };
+    const routes = ["first", "second"].map((id) => ({
+      edge: edge(id),
+      path: "",
+      curve,
+      labelAnchor: { x: 50, y: 0 },
+    }));
+
+    const pills = placeLabelPills(routes);
+    const first = pills.get("first");
+    const second = pills.get("second");
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    if (first === undefined || second === undefined) return;
+    expect(first.x + first.width / 2).toBe(50);
+    expect(first.y + first.height / 2).toBe(0);
+    // Nudged along the horizontal run, not resettled on the vertical tail.
+    expect(second.y + second.height / 2).toBe(0);
+    expect(second.x + second.width / 2).not.toBe(50);
+  });
 });
 
 describe("no track pitch below the floor", () => {
