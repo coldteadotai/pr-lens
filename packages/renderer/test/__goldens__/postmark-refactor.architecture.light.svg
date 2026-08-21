@@ -87,5 +87,5 @@
 <g><rect class="lpill" x="1012.98" y="838.5" width="130.04" height="15" rx="7.5"/><text class="ltext ltext-removed" x="1078" y="849.5" text-anchor="middle">POST /email · 1 msg/call</text></g>
 <g><rect class="lpill" x="793.11" y="677" width="121.78" height="15" rx="7.5"/><text class="ltext ltext-added" x="854" y="688" text-anchor="middle">GET suppression dump</text></g>
 <g><rect class="lpill" x="805.22" y="552.5" width="77.56" height="15" rx="7.5"/><text class="ltext ltext-added" x="844" y="563.5" text-anchor="middle">500 msgs/call</text></g>
-<g><rect class="lpill" x="615.15" y="390.5" width="69.71" height="15" rx="7.5"/><text class="ltext ltext-added" x="650" y="401.5" text-anchor="middle">write results</text></g></g>
+<g><rect class="lpill" x="615.15" y="373.5" width="69.71" height="15" rx="7.5"/><text class="ltext ltext-added" x="650" y="384.5" text-anchor="middle">write results</text></g></g>
 </svg>
