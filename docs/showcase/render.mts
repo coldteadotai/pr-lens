@@ -13,6 +13,7 @@ import type { GraphDoc } from "../../packages/schema/src/index.js";
 import { render, THEMES } from "../../packages/renderer/src/index.js";
 import { tiers } from "../../packages/renderer/test/tiers.js";
 import { mixedKindsGraph } from "../../packages/renderer/test/mixed-kinds.js";
+import { frameAsComment, type FrameSection } from "./frame.js";
 import { teaserGraph } from "./teaser.js";
 
 const OUT = dirname(fileURLToPath(import.meta.url));
@@ -46,3 +47,45 @@ for (const theme of THEMES) {
 }
 console.log(`reference flow: ${reference.doc.flows[0]?.messages.length ?? 0} messages`);
 console.log(`mixed kinds: ${mixedKindsGraph.flows[0]?.messages.length ?? 0} messages`);
+
+// The framed comment mockups: the same renders, seated in the comment card
+// the app posts. Captions repeat the composer's own lines.
+const architectureSection = (doc: GraphDoc, theme: (typeof THEMES)[number]): FrameSection => ({
+  title: "Architecture",
+  diagram: render(doc, { lens: "architecture", theme }),
+  caption: [
+    {
+      text: `${doc.nodes.filter((node) => node.delta !== "unchanged").length} components touched across ${doc.lanes.length} lanes.`,
+    },
+  ],
+});
+
+for (const theme of THEMES) {
+  writeFileSync(
+    join(OUT, `teaser.comment.${theme}.svg`),
+    frameAsComment({
+      doc: teaserGraph,
+      theme,
+      sections: [
+        architectureSection(teaserGraph, theme),
+        { title: "Data flow", caption: [{ text: "No data-flow sequence changed in this PR." }] },
+      ],
+    }),
+  );
+  writeFileSync(
+    join(OUT, `reference.comment.${theme}.svg`),
+    frameAsComment({
+      doc: reference.doc,
+      theme,
+      sections: [
+        architectureSection(reference.doc, theme),
+        {
+          title: "Data flow",
+          diagram: render(reference.doc, { lens: "data-flow", theme }),
+          caption: reference.doc.flows.map((flow) => ({ text: flow.title, code: true })),
+        },
+      ],
+    }),
+  );
+}
+console.log("framed: teaser.comment + reference.comment, both themes");

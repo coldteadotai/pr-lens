@@ -2,17 +2,17 @@
 
 Review what actually matters. PR Lens renders a pull request as beautiful, animated diagrams **inside the GitHub pull request itself** — architecture blast radius and data-flow pipelines, not another findings table.
 
-<img alt="A tiny pull request in the architecture lens, dark theme: a changed route, a new service on an animated path, a removed legacy mailer" src="docs/showcase/teaser.architecture.dark.svg">
+<img alt="A PR Lens bot comment in a pull request, dark theme: stats chips, an architecture diagram of a tiny change, view-option checkboxes and the PR Lens footer" src="docs/showcase/teaser.comment.dark.svg">
 
-<img alt="The same tiny pull request, light theme" src="docs/showcase/teaser.architecture.light.svg">
+<img alt="The same PR Lens comment, light theme" src="docs/showcase/teaser.comment.light.svg">
 
-<sub>A pull request at a glance — green is new, amber changed, red gone, and the pulse is the data moving along the new path.</sub>
+<sub>This is what lands in your pull request — a bot comment, drawn here card and all. Green is new, amber changed, red gone, and the pulse is the data moving along the new path.</sub>
 
-<img alt="The reference pull request in the architecture lens, dark theme: three swim lanes of node cards with animated delta-coloured routes between them" src="docs/showcase/tier2-reference.architecture.dark.svg">
+<img alt="The full PR Lens comment for the reference pull request, dark theme: both lenses expanded, drill-down row, view options and footer" src="docs/showcase/reference.comment.dark.svg">
 
-<img alt="The reference pull request in the architecture lens, light theme" src="docs/showcase/tier2-reference.architecture.light.svg">
+<img alt="The full PR Lens comment for the reference pull request, light theme" src="docs/showcase/reference.comment.light.svg">
 
-<sub>The reference pull request — 3 lanes · 10 nodes · 13 edges, in both themes: dark above, light below. Every render ships as a dark/light pair; inside the PR comment, PR Lens serves the pair behind a `<picture>` tag so each reader automatically sees the one matching their GitHub theme.</sub>
+<sub>The reference pull request's complete comment — both lenses, real composer text, in both themes: dark above, light below. Every render ships as a dark/light pair; the live comment serves the pair behind a `<picture>` tag so each reader automatically sees the one matching their GitHub theme.</sub>
 
 Two lenses ship: **architecture** (what this change touches, against the existing system) and **data flow** (the ordered pipeline, animated). Every diagram on this page was rendered by this repo's renderer from a JSON document in this repo — this page *is* the product demo.
 
@@ -66,7 +66,7 @@ The ordered pipeline of the change, drawn in the same design system — particip
 
 <sub>Every message kind at once: a filled head waits for an answer, an open head is fire-and-forget, a dashed line *is* the answer — and only waited-on work lights an activation bar.</sub>
 
-Every render above comes from a checked-in fixture — the [teaser](docs/showcase/teaser.ts), the [reference pull request](packages/schema/src/examples/postmark-refactor.ts), the [dense synthetic](packages/renderer/test/dense.ts), the [upper tiers](packages/renderer/test/fixtures), the [mixed-kinds flow](packages/renderer/test/mixed-kinds.ts) — regenerated deterministically by [`docs/showcase/render.mts`](docs/showcase/render.mts).
+Every render above comes from a checked-in fixture — the [teaser](docs/showcase/teaser.ts), the [reference pull request](packages/schema/src/examples/postmark-refactor.ts), the [dense synthetic](packages/renderer/test/dense.ts), the [upper tiers](packages/renderer/test/fixtures), the [mixed-kinds flow](packages/renderer/test/mixed-kinds.ts) — regenerated deterministically by [`docs/showcase/render.mts`](docs/showcase/render.mts), and the comment mockups up top are framed by [`docs/showcase/frame.ts`](docs/showcase/frame.ts) around the same renders, with the composer's real text.
 
 ## Packages
 

@@ -30,6 +30,7 @@ export const teaserGraph: GraphDoc = parseGraphDoc({
       kind: "route",
       delta: "modified",
       lane: "api",
+      files: [{ path: "app/api/signup/route.ts" }],
     },
     {
       id: "welcome-service",
@@ -38,6 +39,7 @@ export const teaserGraph: GraphDoc = parseGraphDoc({
       delta: "added",
       lane: "services",
       subtitle: "queue worker",
+      files: [{ path: "services/welcome/worker.ts" }],
     },
     {
       id: "legacy-mailer",
@@ -45,6 +47,7 @@ export const teaserGraph: GraphDoc = parseGraphDoc({
       kind: "service",
       delta: "removed",
       lane: "services",
+      files: [{ path: "services/legacy-mailer.ts" }],
     },
     {
       id: "user-store",

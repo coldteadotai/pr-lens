@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1048 1590.76" width="1048" height="1590.76" role="img" aria-label="PR Lens comment preview — Batch broadcast sending through Postmark">
+<title>PR Lens comment preview — Batch broadcast sending through Postmark</title>
+<rect x="0" y="0" width="1048" height="1590.76" fill="#0d1117"/>
+<defs><linearGradient id="frame-avatar" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6e40c9"/><stop offset="1" stop-color="#388bfd"/></linearGradient></defs>
+<rect x="16" y="16" width="40" height="40" rx="8" fill="url(#frame-avatar)"/>
+<text x="36" y="42" fill="#ffffff" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:18px;font-weight:700">◈</text>
+<rect x="72" y="16" width="960" height="1558.76" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+<path d="M72,24 a8,8 0 0 1 8,-8 h944 a8,8 0 0 1 8,8 v28 h-960 Z" fill="#1c2128"/>
+<line x1="72" y1="52" x2="1032" y2="52" stroke="#30363d" stroke-width="1"/>
+<text x="88" y="39" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">pr-lens</text>
+<text x="130.11" y="39" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">  </text>
+<text x="137.34" y="39" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">bot commented 13 minutes ago</text>
+<rect x="329.43" y="25" width="30.51" height="18" rx="9" fill="none" stroke="#30363d" stroke-width="1"/>
+<text x="344.69" y="38" fill="#9198a1" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:11px">Bot</text>
+<rect x="365.94" y="25" width="33.57" height="18" rx="9" fill="none" stroke="#ab7df8" stroke-width="1"/>
+<text x="382.73" y="38" fill="#ab7df8" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:11px">App</text>
+<text x="991.2" y="39" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">···</text>
+<text x="88" y="92" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:18px;font-weight:600">◈ PR Lens</text>
+<rect x="88" y="112.5" width="55.2" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
+<text x="94" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">+4 new</text>
+<text x="143.2" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400"> · </text>
+<rect x="157.07" y="112.5" width="84" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
+<text x="163.07" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">~3 changed</text>
+<text x="241.07" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400"> · </text>
+<rect x="254.94" y="112.5" width="84" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
+<text x="260.94" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">-2 removed</text>
+<text x="338.94" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400"> · </text>
+<rect x="352.81" y="112.5" width="62.4" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
+<text x="358.81" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">1 flows</text>
+<text x="415.21" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400"> · </text>
+<rect x="429.08" y="112.5" width="62.4" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
+<text x="435.08" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">9 files</text>
+<text x="491.48" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400"> · </text>
+<text x="505.35" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400">commit </text>
+<rect x="547.35" y="112.5" width="62.4" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
+<text x="553.35" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">b71e0d4</text>
+<text x="88" y="162" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">Architecture</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1302 968" x="88" y="174" width="928" height="689.94" role="img" aria-label="Batch broadcast sending through Postmark">
+<title>Batch broadcast sending through Postmark</title>
+<desc>Broadcast delivery moves from one Postmark request per recipient to batched requests of 500, with suppression filtering pulled in front of the send and the payload builder extracted into a shared library.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:rgba(110,118,129,.07)}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#9198a1}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.card-modified{stroke:#d29922;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#f85149;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#e6edf3}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:rgba(110,118,129,.18)}.glyph{fill:#9198a1}.glyph-stroke{stroke:#9198a1;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.bdg-added text{fill:#3fb950}.bdg-modified rect{fill:rgba(187,128,9,.15);stroke:rgba(210,153,34,.4)}.bdg-modified text{fill:#d29922}.bdg-removed rect{fill:rgba(248,81,73,.12);stroke:rgba(248,81,73,.4)}.bdg-removed text{fill:#f85149}.bdg-neutral rect{fill:rgba(110,118,129,.18);stroke:#3d444d}.bdg-neutral text{fill:#9198a1}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#3fb950}.edge-modified{stroke:#d29922}.edge-removed{stroke:#f85149;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#6e7681}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#e6edf3}.lpill{fill:#0d1117;stroke:#21262d;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#9198a1}.ltext-added{fill:#3fb950}.ltext-modified{fill:#d29922}.ltext-removed{fill:#f85149}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}.lifeline{stroke:#30363d;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.msg{fill:none;stroke-width:1.5}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-strong{stroke-width:2.25}</style>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mko-added" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#3fb950" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mko-modified" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#d29922" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mko-removed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#f85149" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker><marker id="mko-neutral" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#6e7681" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1302" height="968" rx="12" fill="#0d1117"/>
+<rect x="0" y="0" width="1302" height="968" rx="12" fill="url(#dots)"/>
+<g><rect class="lanebox" x="16" y="44" width="404" height="908" rx="12"/>
+<text class="lanelabel" x="32" y="68">NEXT.JS · VERCEL</text>
+<rect class="lanebox" x="440" y="44" width="404" height="908" rx="12"/>
+<text class="lanelabel" x="456" y="68">CLOUD FUNCTIONS · FIREBASE</text>
+<rect class="lanebox" x="864" y="44" width="404" height="908" rx="12"/>
+<text class="lanelabel" x="880" y="68">EXTERNAL · POSTMARK</text></g>
+<g><path class="edge edge-neutral context" d="M218,154 L218,206" marker-end="url(#mk-neutral)"/>
+<path class="edge edge-modified" d="M404,224 L409,224 C411.76,224 414,226.24 414,229 L414,320 C414,331.6 423.4,341 435,341 L456,341" marker-end="url(#mk-modified)"/>
+<path class="edge edge-added" d="M404,240 L417,240 C424.18,240 430,245.82 430,253 L430,556 C430,563.18 435.82,569 443,569 L456,569" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M634,372 L634,424" marker-end="url(#mk-added)"/>
+<path class="edge edge-removed" d="M828,341 L831,341 C832.66,341 834,342.34 834,344 L834,361.5 C834,372.82 843.18,382 854.5,382 L1236,382 C1254.78,382 1270,397.22 1270,416 L1270,706 C1270,724.78 1254.78,740 1236,740 L882.5,740 C866.76,740 854,752.76 854,768.5 L854,784 C854,791.18 848.18,797 841,797 L828,797" marker-end="url(#mk-removed)"/>
+<path class="edge edge-removed" d="M642,828 L642,880" marker-end="url(#mk-removed)"/>
+<path class="edge edge-removed" d="M828,906 L851,906 C863.7,906 874,895.7 874,883 L874,876 C874,859.43 887.43,846 904,846 L1252,846 C1270.78,846 1286,830.78 1286,812 L1286,700 C1286,690.61 1278.39,683 1269,683 L1252,683" marker-end="url(#mk-removed)"/>
+<path class="edge edge-added" d="M642,486 L642,491 C642,493.76 644.24,496 647,496 L717,496 C728.6,496 738,505.4 738,517 L738,538" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M642,486 L642,499 C642,506.18 636.18,512 629,512 L480,512 C461.22,512 446,527.22 446,546 L446,673 C446,675.76 448.24,678 451,678 L456,678" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M642,486 L642,507 C642,518.6 632.6,528 621,528 L551,528 C548.24,528 546,530.24 546,533 L546,538" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M828,684.5 L880,684.5" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M828,684.5 L880,684.5"/></circle>
+<path class="glow" stroke="#3fb950" d="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/>
+<path class="edge edge-added hero" d="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675" marker-end="url(#mk-added)"/>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="0.7s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="1.4s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
+<path class="edge edge-added" d="M650,424 L650,372" marker-end="url(#mk-added)"/></g>
+<g><g class="cardsh context"><rect class="card" x="32" y="92" width="372" height="62" rx="10"/>
+<rect class="chip" x="46" y="110" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="117" width="14" height="12" rx="2"/>
+<path class="glyph-stroke" d="M56.5,117 v12"/></g>
+<text class="ntitle" x="82" y="119" font-size="13">Broadcast composer</text>
+<text class="nsub" x="82" y="137">app/broadcasts/new</text></g>
+<g class="cardsh"><rect class="card card-modified" x="32" y="206" width="372" height="52" rx="10"/>
+<rect class="chip" x="46" y="219" width="26" height="26" rx="7"/><g><path class="glyph" d="M52,226 L66,232 L52,238 Z"/></g>
+<text class="ntitle" x="82" y="237" font-size="13">POST /api/broadcasts/queue</text>
+<g class="bdg bdg-neutral"><rect x="265.98" y="198" width="58.4" height="16" rx="8"/><text x="295.18" y="209" text-anchor="middle">+38 / -12</text></g>
+<g class="bdg bdg-modified"><rect x="330.38" y="198" width="66.62" height="16" rx="8"/><text x="363.69" y="209" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="456" y="310" width="372" height="62" rx="10"/>
+<rect class="chip" x="470" y="328" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="483" cy="336.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M476.5,336.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="506" y="337" font-size="13">broadcastQueue</text>
+<text class="nsub" x="506" y="355">Firestore collection</text>
+<g class="bdg bdg-modified"><rect x="754.38" y="302" width="66.62" height="16" rx="8"/><text x="787.69" y="313" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="456" y="424" width="372" height="62" rx="10"/>
+<rect class="chip" x="470" y="442" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="459.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
+<text class="ntitle" x="506" y="451" font-size="13">sendBroadcastBulk</text>
+<text class="nsub" x="506" y="469">onWrite trigger</text>
+<g class="bdg bdg-neutral"><rect x="738.4" y="416" width="36.05" height="16" rx="8"/><text x="756.43" y="427" text-anchor="middle">new</text></g>
+<g class="bdg bdg-added"><rect x="780.45" y="416" width="40.55" height="16" rx="8"/><text x="800.72" y="427" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="456" y="538" width="180" height="62" rx="10"/>
+<text class="ntitle" x="470" y="565" font-size="11.5">broadcast-lib</text>
+<text class="nsub" x="470" y="583">packages/broadcast-lib</text>
+<g class="bdg bdg-neutral"><rect x="505.75" y="530" width="76.7" height="16" rx="8"/><text x="544.1" y="541" text-anchor="middle">new package</text></g>
+<g class="bdg bdg-added"><rect x="588.45" y="530" width="40.55" height="16" rx="8"/><text x="608.73" y="541" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="648" y="538" width="180" height="52" rx="10"/>
+<text class="ntitle" x="662" y="569" font-size="11.5">buildBulkPayload</text>
+<g class="bdg bdg-added"><rect x="780.45" y="530" width="40.55" height="16" rx="8"/><text x="800.73" y="541" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="456" y="652" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="665" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="682.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
+<text class="ntitle" x="506" y="683" font-size="13">getSuppressedEmails</text>
+<g class="bdg bdg-added"><rect x="780.45" y="644" width="40.55" height="16" rx="8"/><text x="800.73" y="655" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh ghost"><rect class="card" x="456" y="766" width="372" height="62" rx="10"/>
+<rect class="chip" x="470" y="784" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="801.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
+<text class="ntitle strike" x="506" y="793" font-size="13">processBroadcast</text>
+<text class="nsub" x="506" y="811">onWrite trigger</text>
+<g class="bdg bdg-removed"><rect x="753.88" y="758" width="67.12" height="16" rx="8"/><text x="787.44" y="769" text-anchor="middle">REMOVED</text></g></g>
+<g class="cardsh ghost"><rect class="card" x="456" y="880" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="893" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="910.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
+<text class="ntitle strike" x="506" y="911" font-size="13">sendSingleEmail</text>
+<g class="bdg bdg-removed"><rect x="753.88" y="872" width="67.12" height="16" rx="8"/><text x="787.44" y="883" text-anchor="middle">REMOVED</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="880" y="652" width="372" height="62" rx="10"/>
+<rect class="chip" x="894" y="670" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="899" y="677" width="16" height="12" rx="2"/>
+<path class="glyph-stroke" d="M899,679 l8,6 8,-6"/></g>
+<text class="ntitle" x="930" y="679" font-size="13">Postmark</text>
+<text class="nsub" x="930" y="697">Email API</text>
+<g class="bdg bdg-modified"><rect x="1178.38" y="644" width="66.62" height="16" rx="8"/><text x="1211.69" y="655" text-anchor="middle">CHANGED</text></g></g></g>
+<g><g><rect class="lpill" x="175.58" y="172.5" width="84.85" height="15" rx="7.5"/><text class="ltext" x="218" y="183.5" text-anchor="middle">send broadcast</text></g>
+<g><rect class="lpill" x="378.29" y="267" width="71.43" height="15" rx="7.5"/><text class="ltext ltext-modified" x="414" y="278" text-anchor="middle">enqueue job</text></g>
+<g><rect class="lpill" x="399.33" y="397" width="61.34" height="15" rx="7.5"/><text class="ltext ltext-added" x="430" y="408" text-anchor="middle">batch size</text></g>
+<g><rect class="lpill" x="608.66" y="390.5" width="50.69" height="15" rx="7.5"/><text class="ltext ltext-added" x="634" y="401.5" text-anchor="middle">onWrite</text></g>
+<g><rect class="lpill" x="1019.91" y="374.5" width="50.69" height="15" rx="7.5"/><text class="ltext ltext-removed" x="1045.25" y="385.5" text-anchor="middle">onWrite</text></g>
+<g><rect class="lpill" x="606.29" y="846.5" width="71.41" height="15" rx="7.5"/><text class="ltext ltext-removed" x="642" y="857.5" text-anchor="middle">per recipient</text></g>
+<g><rect class="lpill" x="1012.98" y="838.5" width="130.04" height="15" rx="7.5"/><text class="ltext ltext-removed" x="1078" y="849.5" text-anchor="middle">POST /email · 1 msg/call</text></g>
+<g><rect class="lpill" x="793.11" y="677" width="121.78" height="15" rx="7.5"/><text class="ltext ltext-added" x="854" y="688" text-anchor="middle">GET suppression dump</text></g>
+<g><rect class="lpill" x="805.22" y="552.5" width="77.56" height="15" rx="7.5"/><text class="ltext ltext-added" x="844" y="563.5" text-anchor="middle">500 msgs/call</text></g>
+<g><rect class="lpill" x="615.15" y="373.5" width="69.71" height="15" rx="7.5"/><text class="ltext ltext-added" x="650" y="384.5" text-anchor="middle">write results</text></g></g>
+</svg>
+<text x="88" y="883.94" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400;font-style:italic">9 components touched across 3 lanes.</text>
+<text x="88" y="913.94" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">Data flow</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1028 413" x="88" y="925.94" width="928" height="372.82" role="img" aria-label="Batch broadcast sending through Postmark">
+<title>Batch broadcast sending through Postmark</title>
+<desc>Broadcast delivery moves from one Postmark request per recipient to batched requests of 500, with suppression filtering pulled in front of the send and the payload builder extracted into a shared library.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:rgba(110,118,129,.07)}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#9198a1}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.card-modified{stroke:#d29922;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#f85149;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#e6edf3}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:rgba(110,118,129,.18)}.glyph{fill:#9198a1}.glyph-stroke{stroke:#9198a1;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.bdg-added text{fill:#3fb950}.bdg-modified rect{fill:rgba(187,128,9,.15);stroke:rgba(210,153,34,.4)}.bdg-modified text{fill:#d29922}.bdg-removed rect{fill:rgba(248,81,73,.12);stroke:rgba(248,81,73,.4)}.bdg-removed text{fill:#f85149}.bdg-neutral rect{fill:rgba(110,118,129,.18);stroke:#3d444d}.bdg-neutral text{fill:#9198a1}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#3fb950}.edge-modified{stroke:#d29922}.edge-removed{stroke:#f85149;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#6e7681}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#e6edf3}.lpill{fill:#0d1117;stroke:#21262d;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#9198a1}.ltext-added{fill:#3fb950}.ltext-modified{fill:#d29922}.ltext-removed{fill:#f85149}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}.lifeline{stroke:#30363d;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.msg{fill:none;stroke-width:1.5}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-strong{stroke-width:2.25}</style>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mko-added" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#3fb950" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mko-modified" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#d29922" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mko-removed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#f85149" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker><marker id="mko-neutral" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#6e7681" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1028" height="413" rx="12" fill="#0d1117"/>
+<rect x="0" y="0" width="1028" height="413" rx="12" fill="url(#dots)"/>
+<g transform="translate(12,10)"><g><rect class="lanebox" x="4" y="6" width="207" height="381" rx="12"/>
+<rect class="lanebox" x="267" y="6" width="207" height="381" rx="12"/>
+<rect class="lanebox" x="530" y="6" width="207" height="381" rx="12"/>
+<rect class="lanebox" x="793" y="6" width="207" height="381" rx="12"/></g>
+<g><line class="lifeline" x1="107.5" y1="82" x2="107.5" y2="375"/>
+<line class="lifeline" x1="370.5" y1="82" x2="370.5" y2="375"/>
+<line class="lifeline" x1="633.5" y1="82" x2="633.5" y2="375"/>
+<line class="lifeline" x1="896.5" y1="82" x2="896.5" y2="375"/>
+<rect class="actbar" x="890.5" y="199" width="12" height="38" rx="4"/>
+<rect class="actbar" x="890.5" y="275" width="12" height="38" rx="4"/></g>
+<g><g class="cardsh"><rect class="card card-modified" x="16" y="18" width="183" height="52" rx="10"/>
+<rect class="chip" x="30" y="31" width="26" height="26" rx="7"/><g><path class="glyph" d="M36,38 L50,44 L36,50 Z"/></g>
+<text class="ntitle" x="66" y="49" font-size="13">queue route</text>
+<g class="bdg bdg-neutral"><rect x="60.98" y="10" width="58.4" height="16" rx="8"/><text x="90.18" y="21" text-anchor="middle">+38 / -12</text></g>
+<g class="bdg bdg-modified"><rect x="125.38" y="10" width="66.62" height="16" rx="8"/><text x="158.69" y="21" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="279" y="18" width="183" height="62" rx="10"/>
+<rect class="chip" x="293" y="36" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="306" cy="44.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M299.5,44.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="329" y="45" font-size="13">Firestore</text>
+<text class="nsub" x="329" y="63">Firestore collection</text>
+<g class="bdg bdg-modified"><rect x="388.38" y="10" width="66.62" height="16" rx="8"/><text x="421.69" y="21" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="542" y="18" width="183" height="62" rx="10"/>
+<rect class="chip" x="556" y="36" width="26" height="26" rx="7"/><g><text class="glyph" x="569" y="53.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
+<text class="ntitle" x="592" y="45" font-size="13">sendBroadcastBulk</text>
+<text class="nsub" x="592" y="63">onWrite trigger</text>
+<g class="bdg bdg-neutral"><rect x="635.4" y="10" width="36.05" height="16" rx="8"/><text x="653.42" y="21" text-anchor="middle">new</text></g>
+<g class="bdg bdg-added"><rect x="677.45" y="10" width="40.55" height="16" rx="8"/><text x="697.72" y="21" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="805" y="18" width="183" height="62" rx="10"/>
+<rect class="chip" x="819" y="36" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="824" y="43" width="16" height="12" rx="2"/>
+<path class="glyph-stroke" d="M824,45 l8,6 8,-6"/></g>
+<text class="ntitle" x="855" y="45" font-size="13">Postmark</text>
+<text class="nsub" x="855" y="63">Email API</text>
+<g class="bdg bdg-modified"><rect x="914.38" y="10" width="66.62" height="16" rx="8"/><text x="947.69" y="21" text-anchor="middle">CHANGED</text></g></g></g>
+<g><path class="msg edge-modified" d="M107.5,123 L365.5,123" marker-end="url(#mko-modified)"/>
+<circle r="2.8" fill="#d29922" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.02;0.0889;1" calcMode="linear" path="M107.5,123 L365.5,123"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.02;0.0267;0.0889;0.0956;1"/></circle>
+<path class="msg edge-added msg-strong" d="M370.5,161 L628.5,161" marker-end="url(#mko-added)"/>
+<circle r="2.8" fill="#3fb950" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.1311;0.2;1" calcMode="linear" path="M370.5,161 L628.5,161"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.1311;0.1378;0.2;0.2067;1"/></circle>
+<path class="msg edge-added msg-strong" d="M633.5,199 L885.5,199" marker-end="url(#mk-added)"/>
+<circle r="2.8" fill="#3fb950" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.2422;0.3111;1" calcMode="linear" path="M633.5,199 L885.5,199"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.2422;0.2489;0.3111;0.3178;1"/></circle>
+<path class="msg edge-added msg-return msg-strong" d="M890.5,237 L638.5,237" marker-end="url(#mk-added)"/>
+<circle r="2.8" fill="#3fb950" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.3533;0.4222;1" calcMode="linear" path="M890.5,237 L638.5,237"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.3533;0.36;0.4222;0.4289;1"/></circle>
+<path class="msg edge-added msg-strong" d="M633.5,275 L885.5,275" marker-end="url(#mk-added)"/>
+<circle r="2.8" fill="#3fb950" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.4644;0.5333;1" calcMode="linear" path="M633.5,275 L885.5,275"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.4644;0.4711;0.5333;0.54;1"/></circle>
+<circle r="2.8" fill="#3fb950" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.5756;0.6444;1" calcMode="linear" path="M633.5,275 L885.5,275"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.5756;0.5822;0.6444;0.6511;1"/></circle>
+<circle r="2.8" fill="#3fb950" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.6867;0.7556;1" calcMode="linear" path="M633.5,275 L885.5,275"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.6867;0.6933;0.7556;0.7622;1"/></circle>
+<path class="msg edge-added msg-return msg-strong" d="M890.5,313 L638.5,313" marker-end="url(#mk-added)"/>
+<circle r="2.8" fill="#3fb950" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.7978;0.8667;1" calcMode="linear" path="M890.5,313 L638.5,313"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.7978;0.8044;0.8667;0.8733;1"/></circle>
+<path class="msg edge-added msg-strong" d="M633.5,351 L375.5,351" marker-end="url(#mko-added)"/>
+<circle r="2.8" fill="#3fb950" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.9089;0.9778;1" calcMode="linear" path="M633.5,351 L375.5,351"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.9089;0.9156;0.9778;0.9844;1"/></circle></g>
+<g><g><rect class="lpill" x="177.28" y="115.5" width="118.44" height="15" rx="7.5"/><text class="ltext ltext-modified" x="236.5" y="126.5" text-anchor="middle">enqueue broadcast job</text></g>
+<g><rect class="lpill" x="458.49" y="153.5" width="82.03" height="15" rx="7.5"/><text class="ltext ltext-added" x="499.5" y="164.5" text-anchor="middle">onWrite trigger</text></g>
+<g><rect class="lpill" x="698.61" y="191.5" width="121.78" height="15" rx="7.5"/><text class="ltext ltext-added" x="759.5" y="202.5" text-anchor="middle">GET suppression dump</text></g>
+<g><rect class="lpill" x="705.85" y="229.5" width="117.3" height="15" rx="7.5"/><text class="ltext ltext-added" x="764.5" y="240.5" text-anchor="middle">suppressed addresses</text></g>
+<g><rect class="lpill" x="674.38" y="267.5" width="170.24" height="15" rx="7.5"/><text class="ltext ltext-added" x="759.5" y="278.5" text-anchor="middle">POST /email/batch · 500 msgs ×4</text></g>
+<g><rect class="lpill" x="710.9" y="305.5" width="107.21" height="15" rx="7.5"/><text class="ltext ltext-added" x="764.5" y="316.5" text-anchor="middle">per-message results</text></g>
+<g><rect class="lpill" x="469.65" y="343.5" width="69.71" height="15" rx="7.5"/><text class="ltext ltext-added" x="504.5" y="354.5" text-anchor="middle">write results</text></g></g></g>
+</svg>
+<rect x="88" y="1304.26" width="160.2" height="19" rx="6" fill="rgba(110,118,129,.18)"/>
+<text x="94" y="1318.76" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:13px;font-weight:400">Sending a broadcast</text>
+<text x="88" y="1348.76" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
+<text x="99.41" y="1348.76" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">Drill down</text>
+<text x="88" y="1382.76" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">View</text>
+<rect x="88" y="1402.76" width="14" height="14" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1.2"/><path d="M91.2,1409.96 l2.7,2.7 l5,-5.4" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="110" y="1414.76" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Architecture lens</text>
+<rect x="88" y="1426.76" width="14" height="14" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1.2"/><path d="M91.2,1433.96 l2.7,2.7 l5,-5.4" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="110" y="1438.76" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Data flow lens</text>
+<rect x="88" y="1450.76" width="14" height="14" rx="3" fill="none" stroke="#30363d" stroke-width="1.2"/>
+<text x="110" y="1462.76" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Expand every detail</text>
+<rect x="88" y="1474.76" width="14" height="14" rx="3" fill="none" stroke="#30363d" stroke-width="1.2"/>
+<text x="110" y="1486.76" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Show unchanged neighbours</text>
+<text x="88" y="1516.76" fill="#4493f8" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Open as Coldtea task</text>
+<line x1="88" y1="1534.76" x2="1016" y2="1534.76" stroke="#30363d" stroke-width="1"/>
+<text x="88" y="1558.76" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">◈ Rendered by PR Lens · from the team behind Coldtea</text>
+<rect x="72" y="16" width="960" height="1558.76" rx="8" fill="none" stroke="#30363d" stroke-width="1"/>
+</svg>
