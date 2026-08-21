@@ -36,8 +36,6 @@ export const CARD_GAP_X = 12;
 export const CARD_HEIGHT = 52;
 export const CARD_HEIGHT_WITH_SUBTITLE = 62;
 export const CARD_PADDING_X = 14;
-export const CARD_MIN_WIDTH = 132;
-export const CARD_MAX_WIDTH = 300;
 
 export const ICON_CHIP_SIZE = 26;
 export const ICON_CHIP_GAP = 10;

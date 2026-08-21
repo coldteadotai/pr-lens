@@ -92,6 +92,18 @@ describe("a small change to the graph is a small change to the picture", () => {
   });
 });
 
+describe("a rename moves nothing", () => {
+  it("even for a card sharing its row with a partner", () => {
+    const renamed = parseGraphDoc({
+      ...JSON.parse(JSON.stringify(postmarkRefactorGraph)),
+      nodes: JSON.parse(JSON.stringify(postmarkRefactorGraph.nodes)).map((entry: GraphNode) =>
+        entry.id === "broadcast-lib" ? { ...entry, label: "B".repeat(120) } : entry,
+      ),
+    });
+    expect(boxes(renamed)).toEqual(boxes(postmarkRefactorGraph));
+  });
+});
+
 describe("ranking", () => {
   const nodes = (ids: readonly string[]): GraphNode[] =>
     ids.map((id) => ({

@@ -10,13 +10,9 @@ import {
   CARD_GAP_X,
   CARD_HEIGHT,
   CARD_HEIGHT_WITH_SUBTITLE,
-  CARD_MAX_WIDTH,
-  CARD_MIN_WIDTH,
   CARD_PADDING_X,
   CONTENT_TOP,
   DIAGRAM_MARGIN,
-  ICON_CHIP_GAP,
-  ICON_CHIP_SIZE,
   ICON_MIN_CARD_WIDTH,
   LANE_BOTTOM_PADDING,
   LANE_GAP,
@@ -26,7 +22,6 @@ import {
   LANE_PADDING_X,
   LANE_TOP,
   ROW_GAP,
-  SUBTITLE_SIZE,
   TITLE_SIZE,
   TITLE_SIZE_SMALL,
 } from "../design.js";
@@ -66,10 +61,6 @@ export const cardBadges = (node: GraphNode): string[] => {
   const delta = deltaBadgeText(node.delta);
   return delta === undefined ? [...node.badges] : [...node.badges, delta];
 };
-
-const badgeRowWidth = (badges: readonly string[]): number =>
-  badges.reduce((total, badge) => total + badgeWidth(badge), 0) +
-  Math.max(0, badges.length - 1) * BADGE_GAP;
 
 export type PlacedNode = {
   node: GraphNode;
@@ -142,16 +133,6 @@ export type ArchitectureLayout = {
 const cardHeight = (node: GraphNode): number =>
   node.subtitle === undefined ? CARD_HEIGHT : CARD_HEIGHT_WITH_SUBTITLE;
 
-/** How wide a card wants to be before the lane tells it what it gets. */
-const naturalWidth = (node: GraphNode): number => {
-  const title = measure(node.label, "sans-bold", TITLE_SIZE);
-  const subtitle = node.subtitle === undefined ? 0 : measure(node.subtitle, "mono", SUBTITLE_SIZE);
-  const text = Math.max(title, subtitle);
-  const withIcon = text + ICON_CHIP_SIZE + ICON_CHIP_GAP + CARD_PADDING_X * 2;
-  const badges = badgeRowWidth(cardBadges(node)) + CARD_PADDING_X * 2;
-  return Math.min(CARD_MAX_WIDTH, Math.max(CARD_MIN_WIDTH, withIcon, badges));
-};
-
 /**
  * Lane order: the document's explicit list first, for the lanes it names,
  * then whatever is left by declared order and finally by the order they were
@@ -180,11 +161,15 @@ const orderLanes = (lanes: readonly Lane[], hints: LayoutHints | undefined): Lan
   return [...ordered, ...rest];
 };
 
+/**
+ * A pair divides its row into equal halves. Splitting in proportion to what
+ * each card's text asked for would mean a rename moves its neighbour — and a
+ * rename moving anything is exactly what the seating guarantee rules out.
+ */
 const rowWidths = (contentWidth: number, row: SeatedRow): number[] => {
-  const [first, second] = row.nodes;
-  return first !== undefined && second !== undefined
-    ? splitPair(contentWidth, first, second)
-    : [contentWidth];
+  if (row.nodes.length < 2) return [contentWidth];
+  const half = Math.round((contentWidth - CARD_GAP_X) / 2);
+  return [half, contentWidth - CARD_GAP_X - half];
 };
 
 export const layoutArchitecture = (
@@ -275,18 +260,6 @@ export const layoutArchitecture = (
     nodes: placedNodes,
     grid: { rows: gridRows, corridors, deadFromRow: seating.deadFromRow },
   };
-};
-
-/** Two cards divide the lane in proportion to what each of them asked for. */
-const splitPair = (
-  contentWidth: number,
-  first: GraphNode,
-  second: GraphNode,
-): [number, number] => {
-  const available = contentWidth - CARD_GAP_X;
-  const wanted = naturalWidth(first);
-  const share = Math.round((available * wanted) / (wanted + naturalWidth(second)));
-  return [share, available - share];
 };
 
 /**

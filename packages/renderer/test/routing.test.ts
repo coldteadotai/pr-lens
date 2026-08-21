@@ -1,3 +1,4 @@
+import { parseGraphDoc } from "@coldtea/pr-lens-schema";
 import { postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
 import { render, THEMES } from "../src/index.js";
@@ -74,6 +75,103 @@ describe("the dead band and its exile corridor", () => {
     expect(left).toBeGreaterThanOrEqual(laneLeft);
     expect(right).toBeLessThanOrEqual(laneLeft + 372);
   });
+});
+
+describe("exile around a living endpoint's pair partner", () => {
+  /**
+   * The living endpoint is the left half of a pair, so its right face — the
+   * face every exile normally attaches to — has the partner sitting against
+   * it. The routes must go over the card's top or bottom instead of drawing
+   * a line through the partner.
+   */
+  const doc = parseGraphDoc({
+    schemaVersion: "0.1.0",
+    kind: "graph",
+    title: "Pair exile",
+    lenses: ["architecture"],
+    provenance: {
+      repo: { owner: "coldteadotai", name: "pr-lens" },
+      base: { sha: "1111111" },
+      head: { sha: "2222222" },
+    },
+    lanes: [{ id: "one", label: "One" }],
+    nodes: [
+      { id: "a", label: "a", kind: "function", delta: "unchanged", lane: "one", group: "g" },
+      { id: "b", label: "b", kind: "function", delta: "unchanged", lane: "one", group: "g" },
+      { id: "d", label: "d", kind: "function", delta: "removed", lane: "one" },
+    ],
+    edges: [
+      { id: "dead-to-living", from: "d", to: "a", kind: "call", delta: "removed" },
+      { id: "living-to-dead", from: "a", to: "d", kind: "call", delta: "removed" },
+    ],
+  });
+
+  const layout = layoutOf(doc);
+  const routed = routeEdges(doc.edges, layout);
+  const partner = layout.nodes.find(({ node }) => node.id === "b")?.box;
+  const contentRight = Math.max(...layout.nodes.map(({ box }) => box.x + box.width));
+
+  /** Chords of the path: every command endpoint, treated as straight legs. */
+  const chords = (path: string): [number, number, number, number][] => {
+    const legs: [number, number, number, number][] = [];
+    let x = 0;
+    let y = 0;
+    for (const command of path.matchAll(/([MLC])((?: ?[-\d.]+,[-\d.]+)+)/g)) {
+      const pairs = [...(command[2] ?? "").matchAll(/([-\d.]+),([-\d.]+)/g)];
+      const end = pairs[pairs.length - 1];
+      if (end === undefined) continue;
+      const [nx, ny] = [Number(end[1]), Number(end[2])];
+      if (command[1] !== "M") legs.push([x, y, nx, ny]);
+      x = nx;
+      y = ny;
+    }
+    return legs;
+  };
+
+  const hitsBox = (
+    leg: [number, number, number, number],
+    box: { x: number; y: number; width: number; height: number },
+  ): boolean => {
+    // Liang-Barsky against the box shrunk by a pixel, so touching an edge
+    // does not count as passing through the card.
+    const [x1, y1, x2, y2] = leg;
+    let t0 = 0;
+    let t1 = 1;
+    const checks: [number, number][] = [
+      [-(x2 - x1), x1 - (box.x + 1)],
+      [x2 - x1, box.x + box.width - 1 - x1],
+      [-(y2 - y1), y1 - (box.y + 1)],
+      [y2 - y1, box.y + box.height - 1 - y1],
+    ];
+    for (const [p, q] of checks) {
+      if (p === 0) {
+        if (q < 0) return false;
+        continue;
+      }
+      const t = q / p;
+      if (p < 0) t0 = Math.max(t0, t);
+      else t1 = Math.min(t1, t);
+      if (t0 > t1) return false;
+    }
+    return true;
+  };
+
+  for (const id of ["dead-to-living", "living-to-dead"]) {
+    it(`keeps ${id} clear of the partner card`, () => {
+      const route = routed.find(({ edge }) => edge.id === id);
+      expect(route).toBeDefined();
+      expect(partner).toBeDefined();
+      if (route === undefined || partner === undefined) return;
+      for (const leg of chords(route.path))
+        expect(hitsBox(leg, partner), `${leg.join(",")} crosses the partner`).toBe(false);
+    });
+
+    it(`still sends ${id} through the exile corridor`, () => {
+      const route = routed.find(({ edge }) => edge.id === id);
+      const xs = [...(route?.path ?? "").matchAll(/([-\d.]+),[-\d.]+/g)].map((m) => Number(m[1]));
+      expect(Math.max(...xs)).toBeGreaterThan(contentRight);
+    });
+  }
 });
 
 describe("labels", () => {

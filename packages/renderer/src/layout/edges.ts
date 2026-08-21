@@ -321,29 +321,45 @@ const planCrossLane = (
 /**
  * Out past the last lane, along the exile corridor, and back in — the shape
  * of every retired connection that still touches something alive. Both ends
- * attach to the right face: a route that leaves the graph and returns has no
- * business arriving at whichever face happened to be nearest.
+ * attach to the right face — a route that leaves the graph and returns has
+ * no business arriving at whichever face happened to be nearest — except
+ * when a pair partner sits against that face: threading the partner would
+ * break the one promise this plan exists to keep, so such an end goes over
+ * its card's top or bottom into the band instead.
  */
 const planExile = (
   from: PlacedNode,
   to: PlacedNode,
   grid: LayoutGrid,
   laneCount: number,
+  blocked: ReadonlyMap<string, Blocked>,
 ): Pick<Route, "fromSide" | "toSide" | "channels"> => {
   const headingDown = to.row >= from.row;
   const channels: Channel[] = [];
 
-  if (from.laneIndex < laneCount - 1) {
+  let fromSide: Side = "right";
+  if (blocked.get(from.node.id)?.right ?? false) {
+    const band = bandToward(from.row, headingDown, grid);
+    fromSide = band <= from.row ? "top" : "bottom";
+    channels.push({ kind: "band", index: band });
+  } else if (from.laneIndex < laneCount - 1) {
     channels.push({ kind: "corridor", index: from.laneIndex + 1 });
     channels.push({ kind: "band", index: bandToward(from.row, headingDown, grid) });
   }
+
   channels.push({ kind: "corridor", index: laneCount });
-  if (to.laneIndex < laneCount - 1) {
+
+  let toSide: Side = "right";
+  if (blocked.get(to.node.id)?.right ?? false) {
+    const band = bandApproaching(to.row, headingDown, grid);
+    toSide = band <= to.row ? "top" : "bottom";
+    channels.push({ kind: "band", index: band });
+  } else if (to.laneIndex < laneCount - 1) {
     channels.push({ kind: "band", index: bandApproaching(to.row, headingDown, grid) });
     channels.push({ kind: "corridor", index: to.laneIndex + 1 });
   }
 
-  return { fromSide: "right", toSide: "right", channels };
+  return { fromSide, toSide, channels };
 };
 
 /**
@@ -362,6 +378,7 @@ const trunkKey = (edge: GraphEdge, from: PlacedNode, to: PlacedNode): string | u
   return direction === 0 ? undefined : `${edge.from} ${edge.delta} ${direction}`;
 };
 
+/** A trunk only gathers same-lane siblings, so a member's target is always in its own lane. */
 const planTrunkMember = (
   from: PlacedNode,
   to: PlacedNode,
@@ -372,20 +389,12 @@ const planTrunkMember = (
   const headingDown = to.row > from.row;
   const home: Channel = { kind: "band", index: bandToward(from.row, headingDown, grid) };
   const fromSide: Side = headingDown ? "bottom" : "top";
-  const dLane = to.laneIndex - from.laneIndex;
 
-  if (dLane === 0 && Math.abs(to.row - from.row) === 1)
+  if (Math.abs(to.row - from.row) === 1)
     return { fromSide, toSide: headingDown ? "top" : "bottom", channels: [home] };
 
-  if (dLane === 0) {
-    const tail = planLaneSkip(from, to, lanes, grid, blocked);
-    return { fromSide, toSide: tail.toSide, channels: [home, ...tail.channels] };
-  }
-
-  const tail = planCrossLane(from, to, grid, blocked, dLane, to.row - from.row);
-  const tailChannels =
-    tail.channels[0]?.kind === "band" ? tail.channels.slice(1) : tail.channels;
-  return { fromSide, toSide: tail.toSide, channels: [home, ...tailChannels] };
+  const tail = planLaneSkip(from, to, lanes, grid, blocked);
+  return { fromSide, toSide: tail.toSide, channels: [home, ...tail.channels] };
 };
 
 const sideAxis = (side: Side): "x" | "y" => {
@@ -638,7 +647,14 @@ const routePass = (
     .filter(({ edge }) => !loops.has(edge.id))
     .map(({ edge, order, from, to }) => {
       if (isExiled(edge, from, to))
-        return { edge, order, from, to, trunk: undefined, ...planExile(from, to, grid, laneCount) };
+        return {
+          edge,
+          order,
+          from,
+          to,
+          trunk: undefined,
+          ...planExile(from, to, grid, laneCount, blocked),
+        };
 
       const key = isDead(from) ? undefined : trunkKey(edge, from, to);
       const trunk = key !== undefined && (trunkCounts.get(key) ?? 0) >= 2 ? key : undefined;
@@ -776,11 +792,19 @@ const approachToward = (route: Route, grid: LayoutGrid): number => {
   return axis === "x" ? source.x : source.y;
 };
 
-const OPPOSED: Readonly<Record<Side, Side>> = {
-  top: "bottom",
-  bottom: "top",
-  left: "right",
-  right: "left",
+const opposedSide = (side: Side): Side => {
+  switch (side) {
+    case "top":
+      return "bottom";
+    case "bottom":
+      return "top";
+    case "left":
+      return "right";
+    case "right":
+      return "left";
+    default:
+      return assertNever(side, "Unhandled side");
+  }
 };
 
 /**
@@ -795,7 +819,7 @@ const OPPOSED: Readonly<Record<Side, Side>> = {
 const snapNeighbours = (routes: readonly Route[], ports: Map<string, Port>): void => {
   for (const route of routes) {
     if (route.trunk !== undefined) continue;
-    if (OPPOSED[route.fromSide] !== route.toSide) continue;
+    if (opposedSide(route.fromSide) !== route.toSide) continue;
     if (route.channels.length > 1) continue;
 
     const fromSpan = faceSpan(route.from.box, route.fromSide);

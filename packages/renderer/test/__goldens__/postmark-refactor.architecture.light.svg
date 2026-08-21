@@ -18,9 +18,9 @@
 <path class="edge edge-removed" d="M828,341 L831,341 C832.66,341 834,342.34 834,344 L834,361.5 C834,372.82 843.18,382 854.5,382 L1236,382 C1254.78,382 1270,397.22 1270,416 L1270,706 C1270,724.78 1254.78,740 1236,740 L882.5,740 C866.76,740 854,752.76 854,768.5 L854,784 C854,791.18 848.18,797 841,797 L828,797" marker-end="url(#mk-removed)"/>
 <path class="edge edge-removed" d="M642,828 L642,880" marker-end="url(#mk-removed)"/>
 <path class="edge edge-removed" d="M828,906 L851,906 C863.7,906 874,895.7 874,883 L874,876 C874,859.43 887.43,846 904,846 L1252,846 C1270.78,846 1286,830.78 1286,812 L1286,700 C1286,690.61 1278.39,683 1269,683 L1252,683" marker-end="url(#mk-removed)"/>
-<path class="edge edge-added" d="M642,486 L642,491 C642,493.76 644.24,496 647,496 L722,496 C733.6,496 743,505.4 743,517 L743,538" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M642,486 L642,491 C642,493.76 644.24,496 647,496 L717,496 C728.6,496 738,505.4 738,517 L738,538" marker-end="url(#mk-added)"/>
 <path class="edge edge-added" d="M642,486 L642,499 C642,506.18 636.18,512 629,512 L480,512 C461.22,512 446,527.22 446,546 L446,673 C446,675.76 448.24,678 451,678 L456,678" marker-end="url(#mk-added)"/>
-<path class="edge edge-added" d="M642,486 L642,507 C642,518.6 632.6,528 621,528 L556,528 C553.24,528 551,530.24 551,533 L551,538" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M642,486 L642,507 C642,518.6 632.6,528 621,528 L551,528 C548.24,528 546,530.24 546,533 L546,538" marker-end="url(#mk-added)"/>
 <path class="edge edge-added" d="M828,684.5 L880,684.5" marker-end="url(#mk-added)"/>
 <circle r="2.6" fill="#1a7f37"><animateMotion dur="1.6s" repeatCount="indefinite" path="M828,684.5 L880,684.5"/></circle>
 <path class="glow" stroke="#1a7f37" d="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/>
@@ -51,13 +51,13 @@
 <text class="nsub" x="506" y="469">onWrite trigger</text>
 <g class="bdg bdg-neutral"><rect x="738.4" y="416" width="36.05" height="16" rx="8"/><text x="756.43" y="427" text-anchor="middle">new</text></g>
 <g class="bdg bdg-added"><rect x="780.45" y="416" width="40.55" height="16" rx="8"/><text x="800.72" y="427" text-anchor="middle">NEW</text></g></g>
-<g class="cardsh"><rect class="card card-added" x="456" y="538" width="190" height="62" rx="10"/>
+<g class="cardsh"><rect class="card card-added" x="456" y="538" width="180" height="62" rx="10"/>
 <text class="ntitle" x="470" y="565" font-size="11.5">broadcast-lib</text>
 <text class="nsub" x="470" y="583">packages/broadcast-lib</text>
-<g class="bdg bdg-neutral"><rect x="515.75" y="530" width="76.7" height="16" rx="8"/><text x="554.1" y="541" text-anchor="middle">new package</text></g>
-<g class="bdg bdg-added"><rect x="598.45" y="530" width="40.55" height="16" rx="8"/><text x="618.73" y="541" text-anchor="middle">NEW</text></g></g>
-<g class="cardsh"><rect class="card card-added" x="658" y="538" width="170" height="52" rx="10"/>
-<text class="ntitle" x="672" y="569" font-size="11.5">buildBulkPayload</text>
+<g class="bdg bdg-neutral"><rect x="505.75" y="530" width="76.7" height="16" rx="8"/><text x="544.1" y="541" text-anchor="middle">new package</text></g>
+<g class="bdg bdg-added"><rect x="588.45" y="530" width="40.55" height="16" rx="8"/><text x="608.73" y="541" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="648" y="538" width="180" height="52" rx="10"/>
+<text class="ntitle" x="662" y="569" font-size="11.5">buildBulkPayload</text>
 <g class="bdg bdg-added"><rect x="780.45" y="530" width="40.55" height="16" rx="8"/><text x="800.73" y="541" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="456" y="652" width="372" height="52" rx="10"/>
 <rect class="chip" x="470" y="665" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="682.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
