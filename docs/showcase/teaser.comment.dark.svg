@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1048 999.01" width="1048" height="999.01" role="img" aria-label="PR Lens comment preview — Add a welcome email on signup">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1048 1026.01" width="1048" height="1026.01" role="img" aria-label="PR Lens comment preview — Add a welcome email on signup">
 <title>PR Lens comment preview — Add a welcome email on signup</title>
-<rect x="0" y="0" width="1048" height="999.01" fill="#0d1117"/>
+<rect x="0" y="0" width="1048" height="1026.01" fill="#0d1117"/>
 <defs><linearGradient id="frame-avatar" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6e40c9"/><stop offset="1" stop-color="#388bfd"/></linearGradient></defs>
 <rect x="16" y="16" width="40" height="40" rx="8" fill="url(#frame-avatar)"/>
 <text x="36" y="42" fill="#ffffff" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:18px;font-weight:700">◈</text>
-<rect x="72" y="16" width="960" height="967.01" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+<rect x="72" y="16" width="960" height="994.01" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
 <path d="M72,24 a8,8 0 0 1 8,-8 h944 a8,8 0 0 1 8,8 v28 h-960 Z" fill="#1c2128"/>
 <line x1="72" y1="52" x2="1032" y2="52" stroke="#30363d" stroke-width="1"/>
 <text x="88" y="39" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">pr-lens</text>
@@ -92,16 +92,18 @@
 <text x="110" y="746.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Expand every detail</text>
 <rect x="88" y="758.01" width="14" height="14" rx="3" fill="none" stroke="#30363d" stroke-width="1.2"/>
 <text x="110" y="770.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Show unchanged neighbours</text>
-<text x="88" y="804.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
-<text x="99.41" y="804.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">❤️ Share</text>
-<g transform="translate(107, 825.51)" fill="#3fb950"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/></g>
-<text x="131" y="838.01" fill="#3fb950" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">Tip</text>
-<text x="107" y="862.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">You can run PR Lens locally too. Tell your coding agent: &quot;Diagram the change you just made with PR Lens and attach it to the pull request.&quot;</text>
-<rect x="88" y="817.01" width="3" height="53" fill="#3fb950"/>
-<text x="88" y="896.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
-<text x="99.41" y="896.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">🪧 Tips</text>
-<line x1="88" y1="924.01" x2="1016" y2="924.01" stroke="#30363d" stroke-width="1"/>
-<text x="88" y="948.01" fill="#9198a1" xml:space="preserve" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">Thanks for using <tspan fill="#4493f8">PR Lens</tspan>! It's free for open source, and your support helps us grow —</text>
-<text x="88" y="967.01" fill="#9198a1" xml:space="preserve" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">if it helped you see this PR, consider giving it a shout-out. Built by <tspan fill="#4493f8">Coldtea</tspan>.</text>
-<rect x="72" y="16" width="960" height="967.01" rx="8" fill="none" stroke="#30363d" stroke-width="1"/>
+<text x="88" y="804.01" fill="#e6edf3" xml:space="preserve" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Thanks for using <tspan fill="#4493f8">PR Lens</tspan>! It's free for open source, and your support helps us grow —</text>
+<text x="88" y="824.01" fill="#e6edf3" xml:space="preserve" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">if it helped you see this PR, consider giving it a shout-out. Built by <tspan fill="#4493f8">Coldtea</tspan>.</text>
+<text x="88" y="850.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
+<text x="99.41" y="850.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">❤️ Share</text>
+<g transform="translate(107, 871.51)" fill="#3fb950"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/></g>
+<text x="131" y="884.01" fill="#3fb950" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">Tip</text>
+<text x="107" y="908.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">You can run PR Lens locally too. Tell your coding agent: &quot;Diagram the change you just made with PR Lens and attach it to the pull request.&quot;</text>
+<rect x="88" y="863.01" width="3" height="53" fill="#3fb950"/>
+<text x="88" y="942.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
+<text x="99.41" y="942.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">🪧 Tips</text>
+<line x1="88" y1="970.01" x2="1016" y2="970.01" stroke="#30363d" stroke-width="1"/>
+<text x="88" y="994.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">◈ Rendered by PR Lens · from the team behind </text>
+<text x="357.99" y="994.01" fill="#4493f8" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">Coldtea</text>
+<rect x="72" y="16" width="960" height="994.01" rx="8" fill="none" stroke="#30363d" stroke-width="1"/>
 </svg>

@@ -213,11 +213,10 @@ const wrapPlainText = (text: string, maxWidth: number, size: number): string[] =
 };
 
 /**
- * The composer's thanks footer, verbatim, its two links coloured — broken
- * across two lines so it clears the card with room to spare, the way GitHub
- * wraps it in a real comment.
+ * The composer's thanks ask, verbatim, its two links coloured — split where
+ * GitHub wraps it, so each line clears the card with room to spare.
  */
-const THANKS_LINES: readonly (readonly { text: string; link?: true }[])[] = [
+const THANKS_ASK_LINES: readonly (readonly { text: string; link?: true }[])[] = [
   [
     { text: "Thanks for using " },
     { text: "PR Lens", link: true },
@@ -234,10 +233,10 @@ const THANKS_LINES: readonly (readonly { text: string; link?: true }[])[] = [
  * One text node per line, its links as tspans, rather than the usual
  * run-by-run painting: paintRuns advances its cursor from the metrics table,
  * whose per-glyph error is invisible inside a padded box but compounds across
- * a sentence this long — far enough to collide the closing words with the
- * Coldtea link. Letting the renderer flow the tspans cannot drift.
+ * a sentence this long — far enough to run the closing words into the Coldtea
+ * link. Letting the renderer flow the tspans cannot drift.
  */
-const thanksLine = (
+const thanksAskLine = (
   x: number,
   baseline: number,
   segments: readonly { text: string; link?: true }[],
@@ -248,9 +247,9 @@ const thanksLine = (
     {
       x: round2(x),
       y: round2(baseline),
-      fill: palette.muted,
+      fill: palette.foreground,
       "xml:space": "preserve",
-      style: `font-family:${SANS_STACK};font-size:12.5px;font-weight:400`,
+      style: `font-family:${SANS_STACK};font-size:13px;font-weight:400`,
     },
     segments
       .map((segment) =>
@@ -391,8 +390,14 @@ export const frameAsComment = (input: FrameInput): string => {
   }
   gap(8);
 
-  // The growth blocks of a public-repo comment: the Share and Tips details
-  // rows, collapsed like the Drill down above.
+  // The growth blocks of a public-repo comment: the thanks ask, then the
+  // Share and Tips details rows, collapsed like the Drill down above.
+  let firstThanksLine = true;
+  for (const segments of THANKS_ASK_LINES) {
+    gap(firstThanksLine ? 26 : 20);
+    firstThanksLine = false;
+    parts.push(thanksAskLine(left, y, segments, palette));
+  }
   const drawerRow = (label: string): string =>
     paintRuns(
       left,
@@ -446,17 +451,23 @@ export const frameAsComment = (input: FrameInput): string => {
   parts.push(drawerRow("🪧 Tips"));
   gap(10);
 
-  // --- then the footer, exactly the composer's thanks line.
+  // --- then the footer, exactly the composer's FOOTER string.
   gap(18);
   parts.push(
     tag("line", { x1: left, y1: y, x2: CARD_X + CARD_WIDTH - PAD, y2: y, stroke: palette.border, "stroke-width": 1 }),
   );
-  let firstThanksLine = true;
-  for (const segments of THANKS_LINES) {
-    gap(firstThanksLine ? 24 : 19);
-    firstThanksLine = false;
-    parts.push(thanksLine(left, y, segments, palette));
-  }
+  gap(24);
+  parts.push(
+    paintRuns(
+      left,
+      y,
+      [
+        { text: "◈ Rendered by PR Lens · from the team behind ", face: "sans", size: 12.5, fill: palette.muted },
+        { text: "Coldtea", face: "sans", size: 12.5, fill: palette.link },
+      ],
+      palette,
+    ),
+  );
   gap(PAD);
 
   const cardHeight = y - MARGIN;
