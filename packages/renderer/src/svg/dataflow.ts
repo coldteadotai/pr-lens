@@ -153,9 +153,14 @@ const selfPillBox = (placed: PlacedMessage, activated: boolean): Box => ({
 
 /**
  * Pulses for one message: the architecture lens's travelling dot, riding a
- * step further behind the drawing's clock for every step above it. The
- * arrows never stop moving, and the wave still crosses them in the order the
- * steps happen.
+ * step further behind the drawing's clock for every step above it, so the eye
+ * is pulled down the page.
+ *
+ * The stagger is a nudge, not the chronology. A fixed share of a turn comes
+ * back around — a long enough flow, or a repeated step riding the longer
+ * train, will put two arrows back in phase — and it does not need to hold,
+ * because a sequence states its order in the vertical geometry. That is what
+ * lets these arrows keep moving instead of waiting their turn in the dark.
  */
 const pulsesFor = (placed: PlacedMessage, path: string, palette: Palette): string =>
   placed.message.animated

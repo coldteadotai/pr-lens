@@ -64,6 +64,33 @@ describe("mixed message kinds", () => {
     expect(async).not.toContain('marker-end="url(#mk-added)"');
   });
 
+  it("draws no pulse for a step the document leaves unanimated", () => {
+    const doc = parseGraphDoc({
+      ...JSON.parse(JSON.stringify(mixedKindsGraph)),
+      flows: [
+        {
+          id: "one-quiet",
+          title: "One quiet step",
+          participants: [{ node: "api" }, { node: "store" }],
+          messages: [
+            { id: "loud", from: "api", to: "store", label: "loud", delta: "added" },
+            {
+              id: "quiet",
+              from: "api",
+              to: "store",
+              label: "quiet",
+              delta: "added",
+              animated: false,
+            },
+          ],
+        },
+      ],
+    });
+
+    const { svg } = render(doc, { lens: "data-flow", theme: "dark" });
+    expect(svg.match(/<animateMotion/g)).toHaveLength(1);
+  });
+
   it("keeps a return dashed", () => {
     const { svg } = render(mixedKindsGraph, { lens: "data-flow", theme: "dark" });
     expect(svg).toContain('class="msg edge-modified msg-return"');

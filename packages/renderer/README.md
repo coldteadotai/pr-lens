@@ -25,7 +25,7 @@ const { assets, manifest } = renderAll(doc, { config });
 
 `architecture` draws lanes of cards with the change written into them: a coloured outline and a badge per delta, removed elements ghosted and struck through, edges tinted by their own delta, one hero edge with a glow, and a travelling pulse on anything the document marked `animated`.
 
-`data-flow` draws a flow as a sequence: participant columns, lifelines, activation bars, return arrows, self-messages, and the architecture lens's travelling pulse on every step, each one riding a stagger behind the step above it so the wave crosses the arrows in the order the steps happen.
+`data-flow` draws a flow as a sequence: participant columns, lifelines, activation bars, return arrows, self-messages, and the architecture lens's travelling pulse on every step the document marks `animated`. Neighbouring arrows sit a fixed share of a turn apart, which pulls the eye down the page; the chronology itself is the vertical order, as it is in any sequence diagram, so the arrows are free to keep moving.
 
 ## Rendering for a GitHub comment
 

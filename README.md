@@ -144,7 +144,7 @@ The ordered pipeline of the change, drawn in the same design system — particip
 
 <img alt="The reference pull request's send pipeline as an animated sequence diagram" src="docs/showcase/reference.data-flow.dark.svg">
 
-<sub>The reference pull request's send pipeline — 7 steps, every arrow carrying a pulse, each riding a stagger behind the step above it so the wave runs down the page in the order the steps happen.</sub>
+<sub>The reference pull request's send pipeline — 7 steps, every arrow carrying a pulse, each staggered behind the arrow above it so the eye is pulled down the page. The order is the vertical order, the way a sequence diagram always reads it.</sub>
 
 <img alt="A sequence diagram mixing waited-on calls, fire-and-forget messages, returns and a self message" src="docs/showcase/mixed-kinds.data-flow.dark.svg">
 

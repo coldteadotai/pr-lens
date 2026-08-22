@@ -221,7 +221,7 @@ describe("nothing is drawn outside the canvas", () => {
   });
 });
 
-describe("a long flow still animates in order", () => {
+describe("a long flow keeps every arrow moving", () => {
   const messages = Array.from({ length: 64 }, (_, index) => ({
     id: `step-${index}`,
     from: index % 2 === 0 ? "queue-route" : "postmark",
