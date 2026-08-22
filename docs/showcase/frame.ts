@@ -212,6 +212,55 @@ const wrapPlainText = (text: string, maxWidth: number, size: number): string[] =
   return wrapped;
 };
 
+/**
+ * The composer's thanks footer, verbatim, its two links coloured — broken
+ * across two lines so it clears the card with room to spare, the way GitHub
+ * wraps it in a real comment.
+ */
+const THANKS_LINES: readonly (readonly { text: string; link?: true }[])[] = [
+  [
+    { text: "Thanks for using " },
+    { text: "PR Lens", link: true },
+    { text: "! It's free for open source, and your support helps us grow —" },
+  ],
+  [
+    { text: "if it helped you see this PR, consider giving it a shout-out. Built by " },
+    { text: "Coldtea", link: true },
+    { text: "." },
+  ],
+];
+
+/**
+ * One text node per line, its links as tspans, rather than the usual
+ * run-by-run painting: paintRuns advances its cursor from the metrics table,
+ * whose per-glyph error is invisible inside a padded box but compounds across
+ * a sentence this long — far enough to collide the closing words with the
+ * Coldtea link. Letting the renderer flow the tspans cannot drift.
+ */
+const thanksLine = (
+  x: number,
+  baseline: number,
+  segments: readonly { text: string; link?: true }[],
+  palette: FramePalette,
+): string =>
+  wrap(
+    "text",
+    {
+      x: round2(x),
+      y: round2(baseline),
+      fill: palette.muted,
+      "xml:space": "preserve",
+      style: `font-family:${SANS_STACK};font-size:12.5px;font-weight:400`,
+    },
+    segments
+      .map((segment) =>
+        segment.link === true
+          ? wrap("tspan", { fill: palette.link }, escapeXml(segment.text))
+          : escapeXml(segment.text),
+      )
+      .join(""),
+  );
+
 const CHECKBOXES: readonly { label: string; checked: boolean }[] = [
   { label: "Architecture lens", checked: true },
   { label: "Data flow lens", checked: true },
@@ -342,24 +391,8 @@ export const frameAsComment = (input: FrameInput): string => {
   }
   gap(8);
 
-  // The growth blocks of a public-repo comment: the share ask, then the
-  // Share and Tips details rows, collapsed like the Drill down above.
-  gap(26);
-  parts.push(
-    paintRuns(
-      left,
-      y,
-      [
-        {
-          text: "PR Lens is free for open source — if these lenses helped, a shout-out helps us grow.",
-          face: "sans",
-          size: 13,
-          fill: palette.foreground,
-        },
-      ],
-      palette,
-    ),
-  );
+  // The growth blocks of a public-repo comment: the Share and Tips details
+  // rows, collapsed like the Drill down above.
   const drawerRow = (label: string): string =>
     paintRuns(
       left,
@@ -413,23 +446,17 @@ export const frameAsComment = (input: FrameInput): string => {
   parts.push(drawerRow("🪧 Tips"));
   gap(10);
 
-  // --- then the footer, exactly the composer's FOOTER string.
+  // --- then the footer, exactly the composer's thanks line.
   gap(18);
   parts.push(
     tag("line", { x1: left, y1: y, x2: CARD_X + CARD_WIDTH - PAD, y2: y, stroke: palette.border, "stroke-width": 1 }),
   );
-  gap(24);
-  parts.push(
-    paintRuns(
-      left,
-      y,
-      [
-        { text: "◈ Rendered by PR Lens · from the team behind ", face: "sans", size: 12.5, fill: palette.muted },
-        { text: "Coldtea", face: "sans", size: 12.5, fill: palette.link },
-      ],
-      palette,
-    ),
-  );
+  let firstThanksLine = true;
+  for (const segments of THANKS_LINES) {
+    gap(firstThanksLine ? 24 : 19);
+    firstThanksLine = false;
+    parts.push(thanksLine(left, y, segments, palette));
+  }
   gap(PAD);
 
   const cardHeight = y - MARGIN;
