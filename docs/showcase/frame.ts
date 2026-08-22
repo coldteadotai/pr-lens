@@ -213,35 +213,20 @@ const wrapPlainText = (text: string, maxWidth: number, size: number): string[] =
 };
 
 /**
- * The composer's thanks ask, verbatim, its two links coloured — split where
- * GitHub wraps it, so each line clears the card with room to spare.
+ * The composer's thanks ask, verbatim, its one link coloured.
+ *
+ * Drawn as a text node with a coloured tspan rather than through paintRuns,
+ * which advances its cursor from the metrics table: that per-glyph error is
+ * invisible inside a padded box but shows at a run boundary, closing the space
+ * before the link. Letting the renderer flow the tspan cannot drift.
  */
-const THANKS_ASK_LINES: readonly (readonly { text: string; link?: true }[])[] = [
-  [
-    { text: "Thanks for using " },
-    { text: "PR Lens", link: true },
-    { text: "! It's free for open source, and your support helps us grow —" },
-  ],
-  [
-    { text: "if it helped you see this PR, consider giving it a shout-out. Built by " },
-    { text: "Coldtea", link: true },
-    { text: "." },
-  ],
+const THANKS_ASK: readonly { text: string; link?: true }[] = [
+  { text: "Thanks for using " },
+  { text: "PR Lens", link: true },
+  { text: ". It's free for open source and grows by word of mouth — if these lenses helped you read this PR, pass it on." },
 ];
 
-/**
- * One text node per line, its links as tspans, rather than the usual
- * run-by-run painting: paintRuns advances its cursor from the metrics table,
- * whose per-glyph error is invisible inside a padded box but compounds across
- * a sentence this long — far enough to run the closing words into the Coldtea
- * link. Letting the renderer flow the tspans cannot drift.
- */
-const thanksAskLine = (
-  x: number,
-  baseline: number,
-  segments: readonly { text: string; link?: true }[],
-  palette: FramePalette,
-): string =>
+const thanksAsk = (x: number, baseline: number, palette: FramePalette): string =>
   wrap(
     "text",
     {
@@ -251,13 +236,11 @@ const thanksAskLine = (
       "xml:space": "preserve",
       style: `font-family:${SANS_STACK};font-size:13px;font-weight:400`,
     },
-    segments
-      .map((segment) =>
-        segment.link === true
-          ? wrap("tspan", { fill: palette.link }, escapeXml(segment.text))
-          : escapeXml(segment.text),
-      )
-      .join(""),
+    THANKS_ASK.map((segment) =>
+      segment.link === true
+        ? wrap("tspan", { fill: palette.link }, escapeXml(segment.text))
+        : escapeXml(segment.text),
+    ).join(""),
   );
 
 const CHECKBOXES: readonly { label: string; checked: boolean }[] = [
@@ -392,12 +375,8 @@ export const frameAsComment = (input: FrameInput): string => {
 
   // The growth blocks of a public-repo comment: the thanks ask, then the
   // Share and Tips details rows, collapsed like the Drill down above.
-  let firstThanksLine = true;
-  for (const segments of THANKS_ASK_LINES) {
-    gap(firstThanksLine ? 26 : 20);
-    firstThanksLine = false;
-    parts.push(thanksAskLine(left, y, segments, palette));
-  }
+  gap(26);
+  parts.push(thanksAsk(left, y, palette));
   const drawerRow = (label: string): string =>
     paintRuns(
       left,
