@@ -61,8 +61,10 @@ export type PlacedMessage = {
   y: number;
   fromX: number;
   toX: number;
-  /** How many pulses ride this message per cycle, and where they sit in it. */
-  slot: { start: number; count: number };
+  /** Place in the drawing's step order, which sets how far this arrow's pulse rides behind. */
+  step: number;
+  /** How many pulses ride this arrow at once. */
+  pulses: number;
 };
 
 export type FlowLayout = {
@@ -81,17 +83,15 @@ export type DataFlowLayout = {
   /** One width for every column of every flow, so stacked flows line up. */
   columnWidth: number;
   flows: FlowLayout[];
-  /** Length of the shared cycle every pulse in the drawing runs on. */
-  slotCount: number;
 };
 
 const messagePitch = (message: FlowMessage): number =>
   message.kind === "self" ? SELF_MESSAGE_PITCH : MESSAGE_PITCH;
 
 /**
- * A message occupies one beat of the cycle, except a repeated one, which
- * occupies a beat per pulse it draws — that is what makes four batched calls
- * read as four calls rather than as one that takes four times as long.
+ * How many pulses ride one arrow at once. A repeated step draws one per
+ * repeat, spread evenly along its own line — that is what makes four batched
+ * calls read as four calls rather than as one that takes four times as long.
  */
 export const pulseCount = (message: FlowMessage, cap: number): number =>
   Math.min(message.repeat ?? 1, cap);
@@ -221,12 +221,8 @@ export const layoutDataFlow = (
     ),
   );
 
-  let slotCount = 0;
-  for (const flow of flows)
-    for (const message of flow.messages) slotCount += pulseCount(message, pulseCap);
-
   let cursorY = 0;
-  let slotCursor = 0;
+  let step = 0;
   let width = 0;
 
   const placed = flows.map((flow) => {
@@ -245,17 +241,17 @@ export const layoutDataFlow = (
     const messages: PlacedMessage[] = flow.messages.map((message) => {
       const y = messageY;
       messageY += messagePitch(message);
-      const count = pulseCount(message, pulseCap);
-      const slot = { start: slotCursor, count };
-      slotCursor += count;
-      return {
+      const placedMessage = {
         message,
         label: labelFor(message),
         y,
         fromX: centreOf.get(message.from) ?? 0,
         toX: centreOf.get(message.to) ?? 0,
-        slot,
+        step,
+        pulses: pulseCount(message, pulseCap),
       };
+      step += 1;
+      return placedMessage;
     });
 
     const participants = columnNodes.map((node, index) => {
@@ -296,6 +292,5 @@ export const layoutDataFlow = (
     height: Math.ceil(cursorY - FLOW_GAP + DIAGRAM_MARGIN),
     columnWidth,
     flows: placed,
-    slotCount,
   };
 };

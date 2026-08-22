@@ -63,8 +63,8 @@
 <path class="glow" stroke="#1a7f37" d="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/>
 <path class="edge edge-added hero" d="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675" marker-end="url(#mk-added)"/>
 <circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
-<circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" begin="0.7s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
-<circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" begin="1.4s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
+<circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" begin="-1.4s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
+<circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" begin="-0.7s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
 <path class="edge edge-added" d="M650,424 L650,372" marker-end="url(#mk-added)"/></g>
 <g><g class="cardsh context"><rect class="card" x="32" y="92" width="372" height="62" rx="10"/>
 <rect class="chip" x="46" y="110" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="117" width="14" height="12" rx="2"/>
@@ -173,21 +173,21 @@
 <text class="nsub" x="855" y="63">Email API</text>
 <g class="bdg bdg-modified"><rect x="914.38" y="10" width="66.62" height="16" rx="8"/><text x="947.69" y="21" text-anchor="middle">CHANGED</text></g></g></g>
 <g><path class="msg edge-modified" d="M107.5,123 L365.5,123" marker-end="url(#mko-modified)"/>
-<circle r="2.8" fill="#9a6700" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.02;0.0889;1" calcMode="linear" path="M107.5,123 L365.5,123"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.02;0.0267;0.0889;0.0956;1"/></circle>
+<circle r="2.6" fill="#9a6700"><animateMotion dur="1.6s" repeatCount="indefinite" path="M107.5,123 L365.5,123"/></circle>
 <path class="msg edge-added msg-strong" d="M370.5,161 L628.5,161" marker-end="url(#mko-added)"/>
-<circle r="2.8" fill="#1a7f37" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.1311;0.2;1" calcMode="linear" path="M370.5,161 L628.5,161"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.1311;0.1378;0.2;0.2067;1"/></circle>
+<circle r="2.6" fill="#1a7f37"><animateMotion dur="1.6s" begin="-1.36s" repeatCount="indefinite" path="M370.5,161 L628.5,161"/></circle>
 <path class="msg edge-added msg-strong" d="M633.5,199 L885.5,199" marker-end="url(#mk-added)"/>
-<circle r="2.8" fill="#1a7f37" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.2422;0.3111;1" calcMode="linear" path="M633.5,199 L885.5,199"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.2422;0.2489;0.3111;0.3178;1"/></circle>
+<circle r="2.6" fill="#1a7f37"><animateMotion dur="1.6s" begin="-1.12s" repeatCount="indefinite" path="M633.5,199 L885.5,199"/></circle>
 <path class="msg edge-added msg-return msg-strong" d="M890.5,237 L638.5,237" marker-end="url(#mk-added)"/>
-<circle r="2.8" fill="#1a7f37" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.3533;0.4222;1" calcMode="linear" path="M890.5,237 L638.5,237"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.3533;0.36;0.4222;0.4289;1"/></circle>
+<circle r="2.6" fill="#1a7f37"><animateMotion dur="1.6s" begin="-0.88s" repeatCount="indefinite" path="M890.5,237 L638.5,237"/></circle>
 <path class="msg edge-added msg-strong" d="M633.5,275 L885.5,275" marker-end="url(#mk-added)"/>
-<circle r="2.8" fill="#1a7f37" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.4644;0.5333;1" calcMode="linear" path="M633.5,275 L885.5,275"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.4644;0.4711;0.5333;0.54;1"/></circle>
-<circle r="2.8" fill="#1a7f37" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.5756;0.6444;1" calcMode="linear" path="M633.5,275 L885.5,275"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.5756;0.5822;0.6444;0.6511;1"/></circle>
-<circle r="2.8" fill="#1a7f37" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.6867;0.7556;1" calcMode="linear" path="M633.5,275 L885.5,275"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.6867;0.6933;0.7556;0.7622;1"/></circle>
+<circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" begin="-1.14s" repeatCount="indefinite" path="M633.5,275 L885.5,275"/></circle>
+<circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" begin="-0.44s" repeatCount="indefinite" path="M633.5,275 L885.5,275"/></circle>
+<circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" begin="-1.84s" repeatCount="indefinite" path="M633.5,275 L885.5,275"/></circle>
 <path class="msg edge-added msg-return msg-strong" d="M890.5,313 L638.5,313" marker-end="url(#mk-added)"/>
-<circle r="2.8" fill="#1a7f37" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.7978;0.8667;1" calcMode="linear" path="M890.5,313 L638.5,313"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.7978;0.8044;0.8667;0.8733;1"/></circle>
+<circle r="2.6" fill="#1a7f37"><animateMotion dur="1.6s" begin="-0.4s" repeatCount="indefinite" path="M890.5,313 L638.5,313"/></circle>
 <path class="msg edge-added msg-strong" d="M633.5,351 L375.5,351" marker-end="url(#mko-added)"/>
-<circle r="2.8" fill="#1a7f37" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.9089;0.9778;1" calcMode="linear" path="M633.5,351 L375.5,351"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.9089;0.9156;0.9778;0.9844;1"/></circle></g>
+<circle r="2.6" fill="#1a7f37"><animateMotion dur="1.6s" begin="-0.16s" repeatCount="indefinite" path="M633.5,351 L375.5,351"/></circle></g>
 <g><g><rect class="lpill" x="177.28" y="115.5" width="118.44" height="15" rx="7.5"/><text class="ltext ltext-modified" x="236.5" y="126.5" text-anchor="middle">enqueue broadcast job</text></g>
 <g><rect class="lpill" x="458.49" y="153.5" width="82.03" height="15" rx="7.5"/><text class="ltext ltext-added" x="499.5" y="164.5" text-anchor="middle">onWrite trigger</text></g>
 <g><rect class="lpill" x="698.61" y="191.5" width="121.78" height="15" rx="7.5"/><text class="ltext ltext-added" x="759.5" y="202.5" text-anchor="middle">GET suppression dump</text></g>

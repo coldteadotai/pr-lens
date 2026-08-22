@@ -8,14 +8,12 @@ import {
   CARD_PADDING_X,
   CARD_RADIUS,
   HERO_PULSE_COUNT,
-  HERO_PULSE_DURATION,
   ICON_CHIP_GAP,
   ICON_CHIP_RADIUS,
   ICON_CHIP_SIZE,
   LANE_HEADER_BASELINE,
   LANE_PADDING_X,
   LANE_RADIUS,
-  PULSE_DURATION,
   SUBTITLE_SIZE,
 } from "../design.js";
 import { canvasFor, union } from "../bounds.js";
@@ -38,6 +36,7 @@ import type { Palette } from "../theme.js";
 import { markerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
 import { glyphGroup } from "./icons.js";
 import { lines, tag, textNode, wrap } from "./primitives.js";
+import { travellingPulses } from "./pulse.js";
 
 const badgeTone = (node: GraphNode, text: string): Tone =>
   text === deltaBadgeText(node.delta) ? toneFor(node.delta) : "neutral";
@@ -154,28 +153,15 @@ export const paintCard = (placed: PlacedNode): string => {
   );
 };
 
-const pulses = (edge: GraphEdge, path: string, palette: Palette): string => {
-  if (!edge.animated) return "";
-  const tone = toneFor(edge.delta);
-  const hero = edge.emphasis === "hero";
-  const count = hero ? HERO_PULSE_COUNT : 1;
-  const duration = hero ? HERO_PULSE_DURATION : PULSE_DURATION;
-
-  return lines(
-    Array.from({ length: count }, (_, index) =>
-      wrap(
-        "circle",
-        { r: hero ? 3 : 2.6, fill: toneColour(palette, tone) },
-        tag("animateMotion", {
-          dur: `${coord(duration)}s`,
-          begin: index === 0 ? undefined : `${coord((duration / count) * index)}s`,
-          repeatCount: "indefinite",
-          path,
-        }),
-      ),
-    ),
-  );
-};
+const pulses = (edge: GraphEdge, path: string, palette: Palette): string =>
+  edge.animated
+    ? travellingPulses({
+        path,
+        colour: toneColour(palette, toneFor(edge.delta)),
+        count: edge.emphasis === "hero" ? HERO_PULSE_COUNT : 1,
+        lag: 0,
+      })
+    : "";
 
 /**
  * Paints one edge and the pill settled onto it. Every edge carries at most

@@ -97,29 +97,21 @@ export const PORT_INSET = 14;
  */
 export const BEND_RADIUS_MAX = 34;
 
-/** One turn of the architecture pulse, and of the staggered hero triplet. */
+/** One turn of the travelling pulse, and of the staggered train. */
 export const PULSE_DURATION = 1.6;
 export const HERO_PULSE_DURATION = 2.1;
 export const HERO_PULSE_COUNT = 3;
 
-/** One turn of the data-flow sequence, long enough to read every step. */
-export const FLOW_CYCLE_DURATION = 8;
-
 /**
- * A pulse's timings are shares of its own slot, not of the whole cycle: a flow
- * may carry sixty-four steps, and a fixed share of the cycle would run several
- * of the last ones together and tell a reviewer the wrong order. Together they
- * come to less than one slot, which is what keeps every start strictly after
- * the one before it without a clamp.
+ * How far one step's pulse rides behind the step before it, so a sequence
+ * reads as a wave running down the page rather than as every arrow firing at
+ * once.
+ *
+ * A share of the pulse's own turn, not of the flow's length: a sequence
+ * already says its order top to bottom, so the stagger only has to pull the
+ * eye downward, and a fixed share makes that sweep look the same whether a
+ * flow carries four steps or sixty-four.
  */
-export const FLOW_PULSE_LEAD = 0.18;
-export const FLOW_PULSE_TRAVEL = 0.62;
-export const FLOW_PULSE_RAMP = 0.06;
-/**
- * However few the steps, a pulse crossing the screen for most of the cycle
- * reads as drifting rather than as travelling, so the share has a ceiling in
- * absolute cycle time as well.
- */
-export const FLOW_PULSE_MAX_TRAVEL = 0.08;
+export const FLOW_PULSE_STAGGER = PULSE_DURATION * 0.15;
 /** More repeats than this and the arrows stop reading as separate calls. */
 export const FLOW_MAX_PULSES_PER_MESSAGE = 3;

@@ -26,8 +26,8 @@
 <path class="glow" stroke="#3fb950" d="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/>
 <path class="edge edge-added hero" d="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675" marker-end="url(#mk-added)"/>
 <circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
-<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="0.7s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
-<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="1.4s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-1.4s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-0.7s" repeatCount="indefinite" path="M828,455 L836,455 C840.42,455 844,458.58 844,463 L844,657 C844,666.94 852.06,675 862,675 L880,675"/></circle>
 <path class="edge edge-added" d="M650,424 L650,372" marker-end="url(#mk-added)"/></g>
 <g><g class="cardsh context"><rect class="card" x="32" y="92" width="372" height="62" rx="10"/>
 <rect class="chip" x="46" y="110" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="117" width="14" height="12" rx="2"/>

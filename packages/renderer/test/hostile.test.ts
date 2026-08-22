@@ -7,6 +7,7 @@ import {
 } from "@coldtea/pr-lens-schema";
 import { minimalGraph, postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
+import { FLOW_PULSE_STAGGER, PULSE_DURATION } from "../src/design.js";
 import { render, renderAll, renderAssetFileName, renderAssetId } from "../src/index.js";
 import { layoutArchitecture } from "../src/layout/architecture.js";
 
@@ -243,23 +244,36 @@ describe("a long flow still animates in order", () => {
   });
 
   const { svg } = render(doc, { lens: "data-flow", theme: "dark" });
-  const starts = [...svg.matchAll(/keyPoints="0;0;1;1" keyTimes="0;([\d.]+);/g)].map((found) =>
-    Number(found[1]),
+  const motions = [...svg.matchAll(/<animateMotion dur="([\d.]+)s"(?: begin="(-?[\d.]+)s")?/g)].map(
+    (found) => ({ duration: Number(found[1]), begin: Number(found[2] ?? 0) }),
   );
 
-  it("gives every step its own moment", () => {
-    expect(starts).toHaveLength(64);
-    for (let index = 1; index < starts.length; index += 1)
-      expect(starts[index] ?? 0).toBeGreaterThan(starts[index - 1] ?? 0);
+  /** How far into its own turn a step's pulse already is when the drawing loads. */
+  const phase = (index: number): number => {
+    const motion = motions[index];
+    if (motion === undefined) throw new Error(`no pulse for step ${index}`);
+    return (motion.duration + motion.begin) % motion.duration;
+  };
+
+  it("gives every step a pulse of its own", () => {
+    expect(motions).toHaveLength(64);
   });
 
-  it("keeps every key time inside the cycle, in order", () => {
-    for (const found of svg.matchAll(/keyTimes="([^"]+)"/g)) {
-      const times = (found[1] ?? "").split(";").map(Number);
-      expect(times[0]).toBe(0);
-      expect(times[times.length - 1]).toBe(1);
-      for (let index = 1; index < times.length; index += 1)
-        expect(times[index] ?? 0).toBeGreaterThanOrEqual(times[index - 1] ?? 0);
+  it("rides each step one stagger behind the step above it", () => {
+    for (let index = 1; index < motions.length; index += 1)
+      expect((phase(index) - phase(index - 1) + PULSE_DURATION) % PULSE_DURATION).toBeCloseTo(
+        FLOW_PULSE_STAGGER,
+        1,
+      );
+  });
+
+  it("starts every pulse already under way", () => {
+    // An animation has no effect before it begins, so a dot held back by a
+    // positive delay would sit at the canvas origin, in the corner, until its
+    // turn came. Sixty-four of them would be a blot on every load.
+    for (const motion of motions) {
+      expect(motion.begin).toBeLessThanOrEqual(0);
+      expect(motion.begin).toBeGreaterThan(-motion.duration);
     }
   });
 });

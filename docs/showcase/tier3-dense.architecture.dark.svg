@@ -23,8 +23,8 @@
 <path class="glow" stroke="#3fb950" d="M456,222 L443,222 C435.82,222 430,227.82 430,235 L430,739 C430,746.18 435.82,752 443,752 L456,752"/>
 <path class="edge edge-added hero" d="M456,222 L443,222 C435.82,222 430,227.82 430,235 L430,739 C430,746.18 435.82,752 443,752 L456,752" marker-end="url(#mk-added)"/>
 <circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M456,222 L443,222 C435.82,222 430,227.82 430,235 L430,739 C430,746.18 435.82,752 443,752 L456,752"/></circle>
-<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="0.7s" repeatCount="indefinite" path="M456,222 L443,222 C435.82,222 430,227.82 430,235 L430,739 C430,746.18 435.82,752 443,752 L456,752"/></circle>
-<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="1.4s" repeatCount="indefinite" path="M456,222 L443,222 C435.82,222 430,227.82 430,235 L430,739 C430,746.18 435.82,752 443,752 L456,752"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-1.4s" repeatCount="indefinite" path="M456,222 L443,222 C435.82,222 430,227.82 430,235 L430,739 C430,746.18 435.82,752 443,752 L456,752"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-0.7s" repeatCount="indefinite" path="M456,222 L443,222 C435.82,222 430,227.82 430,235 L430,739 C430,746.18 435.82,752 443,752 L456,752"/></circle>
 <path class="edge edge-modified" d="M828,326 L841,326 C848.18,326 854,331.82 854,339 L854,635 C854,642.18 848.18,648 841,648 L828,648" marker-end="url(#mk-modified)"/>
 <path class="edge edge-added" d="M642,456 L642,473 C642,482.39 634.39,490 625,490 L474,490 C455.22,490 440,505.22 440,524 L440,861 C440,865.42 443.58,869 448,869 L456,869" marker-end="url(#mk-added)"/>
 <path class="edge edge-modified" d="M456,853 L453,853 C451.34,853 450,851.66 450,850 L450,237 C450,235.34 451.34,234 453,234 L456,234" marker-end="url(#mk-modified)"/>
