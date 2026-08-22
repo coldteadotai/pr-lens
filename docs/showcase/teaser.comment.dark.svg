@@ -102,7 +102,6 @@
 <text x="88" y="922.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
 <text x="99.41" y="922.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">🪧 Tips</text>
 <line x1="88" y1="950.01" x2="1016" y2="950.01" stroke="#30363d" stroke-width="1"/>
-<text x="88" y="974.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">◈ Rendered by PR Lens · from the team behind </text>
-<text x="357.99" y="974.01" fill="#4493f8" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">Coldtea</text>
+<text x="88" y="974.01" fill="#9198a1" xml:space="preserve" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">◈ Rendered by PR Lens · from the team behind <tspan fill="#4493f8">Coldtea</tspan></text>
 <rect x="72" y="16" width="960" height="974.01" rx="8" fill="none" stroke="#30363d" stroke-width="1"/>
 </svg>

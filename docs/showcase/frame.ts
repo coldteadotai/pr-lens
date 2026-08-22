@@ -212,36 +212,53 @@ const wrapPlainText = (text: string, maxWidth: number, size: number): string[] =
   return wrapped;
 };
 
-/**
- * The composer's thanks ask, verbatim, its one link coloured.
- *
- * Drawn as a text node with a coloured tspan rather than through paintRuns,
- * which advances its cursor from the metrics table: that per-glyph error is
- * invisible inside a padded box but shows at a run boundary, closing the space
- * before the link. Letting the renderer flow the tspan cannot drift.
- */
-const THANKS_ASK: readonly { text: string; link?: true }[] = [
-  { text: "Thanks for using " },
-  { text: "PR Lens", link: true },
-  { text: ". It's free for open source and grows by word of mouth — if these lenses helped you read this PR, pass it on." },
-];
+type InlineSegment = { text: string; link?: true };
 
-const thanksAsk = (x: number, baseline: number, palette: FramePalette): string =>
+/**
+ * A line of comment text whose links are coloured tspans inside one text node,
+ * rather than the run-by-run painting the rest of the card uses. paintRuns
+ * advances its cursor from the metrics table, which is sized for Helvetica
+ * while a browser paints the stack's real face: the per-glyph error is
+ * invisible inside a padded box, but at a run boundary it eats the space
+ * before the link. Letting the renderer flow the tspans cannot drift.
+ */
+const inlineText = (
+  x: number,
+  baseline: number,
+  segments: readonly InlineSegment[],
+  style: { size: number; fill: string },
+  palette: FramePalette,
+): string =>
   wrap(
     "text",
     {
       x: round2(x),
       y: round2(baseline),
-      fill: palette.foreground,
+      fill: style.fill,
       "xml:space": "preserve",
-      style: `font-family:${SANS_STACK};font-size:13px;font-weight:400`,
+      style: `font-family:${SANS_STACK};font-size:${style.size}px;font-weight:400`,
     },
-    THANKS_ASK.map((segment) =>
-      segment.link === true
-        ? wrap("tspan", { fill: palette.link }, escapeXml(segment.text))
-        : escapeXml(segment.text),
-    ).join(""),
+    segments
+      .map((segment) =>
+        segment.link === true
+          ? wrap("tspan", { fill: palette.link }, escapeXml(segment.text))
+          : escapeXml(segment.text),
+      )
+      .join(""),
   );
+
+/** The composer's thanks ask, verbatim. */
+const THANKS_ASK: readonly InlineSegment[] = [
+  { text: "Thanks for using " },
+  { text: "PR Lens", link: true },
+  { text: ". It's free for open source and grows by word of mouth — if these lenses helped you read this PR, pass it on." },
+];
+
+/** The composer's FOOTER string, verbatim. */
+const FOOTER_LINE: readonly InlineSegment[] = [
+  { text: "◈ Rendered by PR Lens · from the team behind " },
+  { text: "Coldtea", link: true },
+];
 
 const CHECKBOXES: readonly { label: string; checked: boolean }[] = [
   { label: "Architecture lens", checked: true },
@@ -376,7 +393,7 @@ export const frameAsComment = (input: FrameInput): string => {
   // The growth blocks of a public-repo comment: the thanks ask, then the
   // Share and Tips details rows, collapsed like the Drill down above.
   gap(26);
-  parts.push(thanksAsk(left, y, palette));
+  parts.push(inlineText(left, y, THANKS_ASK, { size: 13, fill: palette.foreground }, palette));
   const drawerRow = (label: string): string =>
     paintRuns(
       left,
@@ -436,17 +453,7 @@ export const frameAsComment = (input: FrameInput): string => {
     tag("line", { x1: left, y1: y, x2: CARD_X + CARD_WIDTH - PAD, y2: y, stroke: palette.border, "stroke-width": 1 }),
   );
   gap(24);
-  parts.push(
-    paintRuns(
-      left,
-      y,
-      [
-        { text: "◈ Rendered by PR Lens · from the team behind ", face: "sans", size: 12.5, fill: palette.muted },
-        { text: "Coldtea", face: "sans", size: 12.5, fill: palette.link },
-      ],
-      palette,
-    ),
-  );
+  parts.push(inlineText(left, y, FOOTER_LINE, { size: 12.5, fill: palette.muted }, palette));
   gap(PAD);
 
   const cardHeight = y - MARGIN;
