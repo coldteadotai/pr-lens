@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { expect, test } from "vitest";
 import { run as runCli } from "../src/cli.js";
@@ -109,12 +109,50 @@ test.each([
   expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
 });
 
-test("leaves a repository that deliberately un-ignores the previews alone", async () => {
+/**
+ * A negation is anchored the way any other pattern is, so which workspace it
+ * speaks for depends on how it was written and on where the CLI is running.
+ */
+test.each([
+  ["unanchored, at the root", `!${WORKSPACE_DIR}/\n`, ""],
+  ["unanchored, from a subdirectory", `!${WORKSPACE_DIR}/\n`, "sub"],
+  ["anchored, at the root", `!/${WORKSPACE_DIR}/\n`, ""],
+  ["anchored at the subdirectory it names", `!sub/${WORKSPACE_DIR}/\n`, "sub"],
+])("leaves a deliberate un-ignore alone when it is %s", async (_, entry, within) => {
   const directory = await repository();
-  await writeFile(join(directory, ".gitignore"), `!${WORKSPACE_DIR}/\n`);
+  await writeFile(join(directory, ".gitignore"), entry);
+  const workspace = join(directory, within, WORKSPACE_DIR);
+  await mkdir(dirname(workspace), { recursive: true });
 
-  expect(await ignoreWorkspace(join(directory, WORKSPACE_DIR))).toBeUndefined();
-  expect(await gitignore(directory)).toBe(`!${WORKSPACE_DIR}/\n`);
+  expect(await ignoreWorkspace(workspace)).toBeUndefined();
+  expect(await gitignore(directory)).toBe(entry);
+});
+
+/**
+ * `!/.pr-lens/` at the root un-ignores the root's previews and says nothing
+ * about a workspace under a subdirectory. Reading it as a blanket choice left
+ * every nested preview file visible.
+ */
+test("ignores a nested workspace an anchored un-ignore does not speak for", async () => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), `!/${WORKSPACE_DIR}/\n`);
+  const nested = join(directory, "sub");
+  await mkdir(nested, { recursive: true });
+
+  expect(await ignoreWorkspace(join(nested, WORKSPACE_DIR))).toMatch(/\.gitignore$/);
+  expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
+});
+
+test("narrows its entry rather than overruling an un-ignore meant for elsewhere", async () => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), `!/${WORKSPACE_DIR}/\n`);
+  const nested = join(directory, "sub");
+  await mkdir(nested, { recursive: true });
+
+  await ignoreWorkspace(join(nested, WORKSPACE_DIR));
+
+  expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
+  expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(false);
 });
 
 test("adds itself once, however many times it runs", async () => {
