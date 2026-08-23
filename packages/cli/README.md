@@ -10,7 +10,7 @@ npx @coldtea/pr-lens-cli analyze --base origin/main
 
 ## Bring your own key
 
-The key is read from the environment, never from a flag: a flag lands in shell history and in the log of whatever CI runs it. The diff goes to the provider you name and nowhere else — there is no PR Lens service in this path.
+The key is read from the environment, never from a flag: a flag lands in shell history and in the log of whatever CI runs it. The diff goes to the provider you name and nowhere else: there is no PR Lens service in this path.
 
 ```bash
 export GEMINI_API_KEY=…
@@ -49,7 +49,7 @@ The base is the merge base of the two refs, not the tip of the base branch: a di
 
 The commit shas, the repository, the pull request number and the line counts are filled in from the repository itself, and anything the model writes there is discarded. A fact the model is free to restate is a fact that eventually disagrees with itself.
 
-The answer is parsed against the contract. If it fails, the validation errors — paths and all — go back to the model once, and only once: a model that cannot fix a named path in one round does not fix it in three. `--dry-run` reports what would be sent and sends nothing.
+The answer is parsed against the contract. If it fails, the validation errors, paths and all, go back to the model once, and only once: a model that cannot fix a named path in one round does not fix it in three. `--dry-run` reports what would be sent and sends nothing.
 
 ### `render`
 
@@ -57,7 +57,7 @@ The answer is parsed against the contract. If it fails, the validation errors �
 pr-lens render pr-lens/graph.json -o pr-lens/
 ```
 
-Draws the document as self-contained light and dark SVGs — one pair per drill-down section per lens, or one pair per lens when the document has no sections — and writes two files beside them: `manifest.json`, which says what was drawn and under which file name, and `drawn.graph.json`, the document those pictures actually show.
+Draws the document as self-contained light and dark SVGs (one pair per drill-down section per lens, or one pair per lens when the document has no sections), and writes two files beside them: `manifest.json`, which says what was drawn and under which file name, and `drawn.graph.json`, the document those pictures actually show.
 
 Both matter to what comes next. The manifest is where `comment` gets its file names, so neither command re-derives the other's. And `drawn.graph.json` exists because this is where corrections are applied: excluding a node can empty out a whole drill-down section, and the renderer then draws no picture for it. A comment composed from the document that went *in* would announce a section that came out of nothing.
 
@@ -70,7 +70,7 @@ pr-lens comment --graph pr-lens/drawn.graph.json --manifest pr-lens/manifest.jso
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 ```
 
-Composes the markdown — the `<picture>` pairs that read in both GitHub themes, the headline chips, the nested `<details>` tree — and prints it. Each diagram links to itself: a comment column is about 830 pixels wide and a system with several lanes is several times that, so it arrives scaled to fit and one click gives a reader the size the labels were drawn at. The two files have to belong to each other: the manifest records the hash of the document it came from, and a mismatched pair is refused rather than composed into a comment describing diagrams nobody drew. It posts nothing; posting is the caller's business, and `--print-marker` gives that caller the hidden marker that identifies an existing comment to update.
+Composes the markdown (the `<picture>` pairs that read in both GitHub themes, the headline chips, the nested `<details>` tree) and prints it. Each diagram links to itself: a comment column is about 830 pixels wide and a system with several lanes is several times that, so it arrives scaled to fit and one click gives a reader the size the labels were drawn at. The two files have to belong to each other: the manifest records the hash of the document it came from, and a mismatched pair is refused rather than composed into a comment describing diagrams nobody drew. It posts nothing; posting is the caller's business, and `--print-marker` gives that caller the hidden marker that identifies an existing comment to update.
 
 ### `validate`
 
@@ -86,13 +86,13 @@ Parses graph documents, patch documents, render manifests and configs, JSON or Y
 pr-lens export pr-lens/graph.json -o .github/pr-lens.map.json
 ```
 
-Turns a pull-request document into the map of the system once that pull request has merged: elements the change deletes are dropped — with the edges and flow steps that hung from them — the rest stops being annotated, and the result is stamped with the single commit it reflects.
+Turns a pull-request document into the map of the system once that pull request has merged: elements the change deletes are dropped, along with the edges and flow steps that hung from them; the rest stops being annotated, and the result is stamped with the single commit it reflects.
 
 The map is a snapshot, not a source of truth. Nothing reads it back into the pipeline: a committed map that overrode inference would be hand-maintained rot with merge conflicts attached. Commit it so a repository has something to read, to diff, and to hand an agent.
 
 ## Corrections
 
-A repository's `.github/pr-lens.yml` is picked up automatically by `render` and applied at draw time — renames, exclusions, lane pins, groupings. It is an overlay: inference never writes back into it, so a correction keeps holding as the code moves and the model renames things between runs, and the document on disk stays the record of what was inferred.
+A repository's `.github/pr-lens.yml` is picked up automatically by `render` and applied at draw time: renames, exclusions, lane pins, groupings. It is an overlay: inference never writes back into it, so a correction keeps holding as the code moves and the model renames things between runs, and the document on disk stays the record of what was inferred.
 
 ```yaml
 schemaVersion: 0.1.0
@@ -104,9 +104,9 @@ map:
     - "**/*.test.ts"
 ```
 
-A lane pin may name a lane the document never declared; the band is created and takes the id for its label. And `render` reports any correction that changed nothing about what it drew — a config that has drifted, usually because the file a selector named has moved, otherwise fails silently and forever.
+A lane pin may name a lane the document never declared; the band is created and takes the id for its label. And `render` reports any correction that changed nothing about what it drew. A config that has drifted, usually because the file a selector named has moved, otherwise fails silently and forever.
 
-`--config` points elsewhere and `--no-config` ignores it, on both `render` and `analyze` — `analyze` reads only `lenses` from it, since which lenses to fill is a question for extraction and the rest is a question for drawing.
+`--config` points elsewhere and `--no-config` ignores it, on both `render` and `analyze`. `analyze` reads only `lenses` from it, since which lenses to fill is a question for extraction and the rest is a question for drawing.
 
 ## Failures
 
@@ -114,4 +114,4 @@ Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE
 
 ---
 
-Part of [PR Lens](https://prlens.dev) — review what actually matters.
+Part of [PR Lens](https://prlens.dev). Review what actually matters.

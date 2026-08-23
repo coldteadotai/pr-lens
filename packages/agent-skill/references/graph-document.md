@@ -2,7 +2,7 @@
 
 The authoritative shape is `node_modules/@coldtea/pr-lens-schema/json-schema/graph-doc.schema.json`. This page is what that schema cannot tell you: which parts matter, and where documents actually go wrong.
 
-Every schema here is **strict** — an unknown key is a rejection, not a warning. A field with a default may be left out.
+Every schema here is **strict**: an unknown key is a rejection, not a warning. A field with a default may be left out.
 
 ## The document
 
@@ -25,7 +25,7 @@ Every schema here is **strict** — an unknown key is a rejection, not a warning
 
 `lenses` declares what the document carries enough detail to draw: `architecture`, `data-flow`, or both. A document carrying flows must declare `data-flow`.
 
-`provenance` is where the document came from: the repository, the base and head commit shas (lowercase hex, 7–40 characters), optionally the pull request and the generator. When you produce a document through the CLI these are filled in from the repository — do not invent them.
+`provenance` is where the document came from: the repository, the base and head commit shas (lowercase hex, 7-40 characters), optionally the pull request and the generator. When you produce a document through the CLI these are filled in from the repository, so do not invent them.
 
 ## Ids
 
@@ -45,7 +45,7 @@ Every node, edge, flow and flow step declares one: `added`, `modified`, `removed
 { "id": "functions", "label": "Cloud Functions", "subtitle": "Node 20", "order": 1 }
 ```
 
-`order` (0–64) places lanes left to right; ties fall back to array order. Give a lane a `delta` only when the lane itself is new or gone.
+`order` (0-64) places lanes left to right; ties fall back to array order. Give a lane a `delta` only when the lane itself is new or gone.
 
 ## Nodes
 
@@ -68,7 +68,7 @@ Every node, edge, flow and flow step declares one: `added`, `modified`, `removed
 
 `kind` is one of `service app module function route job queue datastore cache external ui config test package other`. It drives the card's icon and shape and nothing else; when in doubt, `other` still renders.
 
-`group` clusters nodes inside a lane — a package, a folder that means something. `files` (up to 64) become diff permalinks. `badges` (up to 6) are extra chips; the delta badge is drawn for you, so do not restate it.
+`group` clusters nodes inside a lane: a package, a folder that means something. `files` (up to 64) become diff permalinks. `badges` (up to 6) are extra chips; the delta badge is drawn for you, so do not restate it.
 
 ## Edges
 
@@ -87,7 +87,7 @@ Up to 512.
 }
 ```
 
-`kind` is one of `call http rpc event queue data dependency render other`. `emphasis` is `normal` (default), `hero` or `muted`. More than one or two heroes and the emphasis stops meaning anything. `from` and `to` must be node ids you declared — this is the single most common failure.
+`kind` is one of `call http rpc event queue data dependency render other`. `emphasis` is `normal` (default), `hero` or `muted`. More than one or two heroes and the emphasis stops meaning anything. `from` and `to` must be node ids you declared. This is the single most common failure.
 
 ## Flows
 
@@ -108,7 +108,7 @@ Up to 16, for the data-flow lens.
 ```
 
 - 2 to 12 participants, ordered by array position; each names a node id.
-- 1 to 64 messages. **Step order is array order** — there is no step number field, so a document cannot disagree with its own animation.
+- 1 to 64 messages. **Step order is array order**: there is no step number field, so a document cannot disagree with its own animation.
 - `kind` is `sync`, `async`, `return` or `self`. `self` requires `from === to`, and no other kind may have them equal.
 - Both endpoints must be participants of that flow, not merely nodes of the document.
 - `repeat` says a step happens more than once per run, e.g. 4 batched requests.
@@ -145,7 +145,7 @@ The drill-down tree in the comment: up to 32 at the root, nesting up to 32 child
 { "direction": "right", "laneOrder": ["api", "functions", "external"], "rank": { "send-broadcast-bulk": 2 } }
 ```
 
-Hints, not instructions — the renderer owns final placement so a diagram stays deterministic and a stale hint cannot break it. Absolute coordinates are not expressible. Omitting `layout` entirely is normal.
+Hints, not instructions: the renderer owns final placement, so a diagram stays deterministic and a stale hint cannot break it. Absolute coordinates are not expressible. Omitting `layout` entirely is normal.
 
 ## File references
 
@@ -157,7 +157,7 @@ Repository-relative POSIX paths: no leading `/`, no drive letter, no backslash, 
 
 ## Length limits
 
-Labels 120 characters, summaries 2000, chip values 32. They are display fields — a label that needs 120 characters is a label the diagram cannot draw.
+Labels 120 characters, summaries 2000, chip values 32. They are display fields: a label that needs 120 characters is a label the diagram cannot draw.
 
 ## Then validate
 
