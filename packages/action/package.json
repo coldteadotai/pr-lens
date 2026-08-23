@@ -9,6 +9,14 @@
     "url": "git+https://github.com/coldteadotai/pr-lens.git",
     "directory": "packages/action"
   },
+  "keywords": [
+    "pr-lens",
+    "code-review",
+    "architecture-diagram",
+    "data-flow",
+    "github-action",
+    "pull-request"
+  ],
   "type": "module",
   "files": [
     "action.yml",

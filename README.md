@@ -7,7 +7,7 @@
 
 # PR Lens
 
-Reduce the cognitive load on AI-generated. PR Lens draws a pull request as animated diagrams **inside the pull request itself**: architecture blast radius and data-flow pipelines, not another findings table.
+Reduce the cognitive load on AI-generated PRs. PR Lens draws a pull request as animated diagrams **inside the pull request itself**: architecture blast radius and data-flow pipelines, not another findings table.
 
 <img alt="A PR Lens bot comment in a pull request: stats chips, an architecture diagram of a tiny change, view-option checkboxes and the PR Lens footer" src="docs/showcase/teaser.comment.dark.svg">
 
