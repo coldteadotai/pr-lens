@@ -155,6 +155,48 @@ test("narrows its entry rather than overruling an un-ignore meant for elsewhere"
   expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(false);
 });
 
+/**
+ * The narrowed entry carries a real directory name into a place where git reads
+ * patterns. Every one of these names means something else as a pattern, and the
+ * previews stay visible under an entry that looks right.
+ */
+test.each([
+  ["a character class", "sub[1]"],
+  ["a comment", "#sub"],
+  ["a negation", "!sub"],
+  ["a wildcard", "sub*x"],
+])("writes a nested directory that would read as %s as a literal path", async (_, name) => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), `!/${WORKSPACE_DIR}/\n`);
+  const nested = join(directory, name);
+  await mkdir(nested, { recursive: true });
+
+  await ignoreWorkspace(join(nested, WORKSPACE_DIR));
+
+  expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
+});
+
+test("a wildcard in the entry is not left free to catch a neighbour", async () => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), `!/${WORKSPACE_DIR}/\n`);
+  await mkdir(join(directory, "sub*x"), { recursive: true });
+  await mkdir(join(directory, "subOTHERx"), { recursive: true });
+
+  await ignoreWorkspace(join(directory, "sub*x", WORKSPACE_DIR));
+
+  expect(await ignoresPreviews(directory, join(directory, "sub*x", WORKSPACE_DIR))).toBe(true);
+  expect(await ignoresPreviews(directory, join(directory, "subOTHERx", WORKSPACE_DIR))).toBe(false);
+});
+
+test("reads an un-ignore whose path was escaped the way it writes one", async () => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), `!sub\\[1\\]/${WORKSPACE_DIR}/\n`);
+  const nested = join(directory, "sub[1]");
+  await mkdir(nested, { recursive: true });
+
+  expect(await ignoreWorkspace(join(nested, WORKSPACE_DIR))).toBeUndefined();
+});
+
 test("adds itself once, however many times it runs", async () => {
   const directory = await repository();
   const workspace = join(directory, WORKSPACE_DIR);
@@ -190,6 +232,18 @@ test("render leaves its previews in the workspace, ignored and explained", async
 test("a run inside a subdirectory ignores the previews it actually wrote", async () => {
   const directory = await repository();
   const nested = join(directory, "sub");
+  await mkdir(nested, { recursive: true });
+
+  await renderIn(nested);
+
+  expect(await readFile(join(nested, WORKSPACE_DIR, "manifest.json"), "utf8")).toContain("assets");
+  expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
+});
+
+test("a render from a subdirectory whose name is a git wildcard is still ignored", async () => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), `!/${WORKSPACE_DIR}/\n`);
+  const nested = join(directory, "sub[1]");
   await mkdir(nested, { recursive: true });
 
   await renderIn(nested);

@@ -17,8 +17,24 @@ export const WORKSPACE_DIR = ".pr-lens";
 
 const README_NAME = "README.md";
 
-const ignoreEntry = (pattern: string): string =>
-  `# PR Lens writes its previews here. They are rebuilt on demand.\n${pattern}/\n`;
+/**
+ * A path written into a .gitignore is read as a pattern, not as a name. A
+ * directory called `sub[1]` spells a character class that matches neither
+ * bracket; one beginning with `#` turns the line into a comment and one
+ * beginning with `!` turns it into another negation. Each leaves the previews
+ * visible under an entry that looks like it was written correctly.
+ *
+ * Trailing spaces want no escape here. git strips them from the end of a
+ * pattern, and every pattern this writes ends in a slash.
+ */
+const asPattern = (path: string): string =>
+  path.replace(/[\\*?[\]]/g, (character) => `\\${character}`).replace(/^([#!])/, "\\$1");
+
+/** The name a pattern stands for, with the escapes git reads taken back off. */
+const asLiteral = (pattern: string): string => pattern.replace(/\\(.)/g, "$1");
+
+const ignoreEntry = (path: string): string =>
+  `# PR Lens writes its previews here. They are rebuilt on demand.\n${asPattern(path)}/\n`;
 
 /** Where a directory sits in its repository: the root, and its path below it. */
 type Location = { root: string; prefix: string };
@@ -81,7 +97,7 @@ const negations = (gitignore: string): Negation[] =>
     const pattern = line.trimEnd();
     if (!pattern.startsWith("!")) return [];
 
-    const body = pattern.slice(1).replace(/\/+$/, "");
+    const body = asLiteral(pattern.slice(1)).replace(/\/+$/, "");
     if (!body.includes("/")) return body === WORKSPACE_DIR ? [{ kind: "anywhere" }] : [];
 
     const workspace = body.replace(/^\//, "");
