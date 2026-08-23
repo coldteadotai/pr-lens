@@ -7,7 +7,6 @@ import {
 } from "@coldtea/pr-lens-schema";
 import { minimalGraph, postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
-import { FLOW_PULSE_STAGGER, PULSE_DURATION } from "../src/design.js";
 import { render, renderAll, renderAssetFileName, renderAssetId } from "../src/index.js";
 import { layoutArchitecture } from "../src/layout/architecture.js";
 
@@ -221,7 +220,7 @@ describe("nothing is drawn outside the canvas", () => {
   });
 });
 
-describe("a long flow keeps every arrow moving", () => {
+describe("a long flow animates one step at a time, in order", () => {
   const messages = Array.from({ length: 64 }, (_, index) => ({
     id: `step-${index}`,
     from: index % 2 === 0 ? "queue-route" : "postmark",
@@ -244,36 +243,51 @@ describe("a long flow keeps every arrow moving", () => {
   });
 
   const { svg } = render(doc, { lens: "data-flow", theme: "dark" });
-  const motions = [...svg.matchAll(/<animateMotion dur="([\d.]+)s"(?: begin="(-?[\d.]+)s")?/g)].map(
-    (found) => ({ duration: Number(found[1]), begin: Number(found[2] ?? 0) }),
+  const slots = [...svg.matchAll(/keyPoints="0;0;1;1" keyTimes="0;([\d.]+);([\d.]+);1"/g)].map(
+    (found) => ({ start: Number(found[1]), finish: Number(found[2]) }),
   );
 
-  /** How far into its own turn a step's pulse already is when the drawing loads. */
-  const phase = (index: number): number => {
-    const motion = motions[index];
-    if (motion === undefined) throw new Error(`no pulse for step ${index}`);
-    return (motion.duration + motion.begin) % motion.duration;
-  };
-
-  it("gives every step a pulse of its own", () => {
-    expect(motions).toHaveLength(64);
+  it("gives every step its own moment", () => {
+    expect(slots).toHaveLength(64);
+    for (let index = 1; index < slots.length; index += 1)
+      expect(slots[index]?.start ?? 0).toBeGreaterThan(slots[index - 1]?.start ?? 0);
   });
 
-  it("rides each step one stagger behind the step above it", () => {
-    for (let index = 1; index < motions.length; index += 1)
-      expect((phase(index) - phase(index - 1) + PULSE_DURATION) % PULSE_DURATION).toBeCloseTo(
-        FLOW_PULSE_STAGGER,
-        1,
-      );
+  it("hands straight from one step to the next, with no dark gap between", () => {
+    // The whole difference between a relay and a blink: a slot is spent
+    // entirely on its crossing, so the drawing always has a dot in flight.
+    expect(slots[0]?.start).toBe(0);
+    expect(slots[slots.length - 1]?.finish).toBe(1);
+    for (let index = 1; index < slots.length; index += 1)
+      expect(slots[index]?.start ?? 0).toBeCloseTo(slots[index - 1]?.finish ?? 0, 3);
   });
 
-  it("starts every pulse already under way", () => {
-    // An animation has no effect before it begins, so a dot held back by a
-    // positive delay would sit at the canvas origin, in the corner, until its
-    // turn came. Sixty-four of them would be a blot on every load.
-    for (const motion of motions) {
-      expect(motion.begin).toBeLessThanOrEqual(0);
-      expect(motion.begin).toBeGreaterThan(-motion.duration);
+  it("shows each dot for exactly its own crossing and no longer", () => {
+    // The motion alone does not prove this: outside its slot a pulse is
+    // parked at one end of its path, and only the opacity envelope keeps a
+    // static dot off every arrow in the drawing.
+    const circles = [...svg.matchAll(/<circle[^>]*>([\s\S]*?)<\/circle>/g)].map(
+      (found) => found[1] ?? "",
+    );
+    expect(circles).toHaveLength(64);
+
+    for (const circle of circles) {
+      const motion = circle.match(/keyPoints="0;0;1;1" keyTimes="0;([\d.]+);([\d.]+);1"/);
+      const fade = circle.match(/values="0;0;1;1;0;0" keyTimes="0;([\d.]+);[\d.]+;[\d.]+;([\d.]+);1"/);
+      expect(motion).not.toBeNull();
+      expect(fade).not.toBeNull();
+      expect(Number(fade?.[1])).toBeCloseTo(Number(motion?.[1]), 4);
+      expect(Number(fade?.[2])).toBeCloseTo(Number(motion?.[2]), 4);
+    }
+  });
+
+  it("keeps every key time inside the cycle, in order", () => {
+    for (const found of svg.matchAll(/keyTimes="([^"]+)"/g)) {
+      const times = (found[1] ?? "").split(";").map(Number);
+      expect(times[0]).toBe(0);
+      expect(times[times.length - 1]).toBe(1);
+      for (let index = 1; index < times.length; index += 1)
+        expect(times[index] ?? 0).toBeGreaterThanOrEqual(times[index - 1] ?? 0);
     }
   });
 });

@@ -2,8 +2,10 @@ import type { Flow, FlowMessage, GraphNode, MessageKind } from "@coldtea/pr-lens
 import { assertNever } from "@coldtea/pr-lens-schema";
 import {
   DIAGRAM_MARGIN,
+  FLOW_CYCLE_MAX,
   FLOW_MAX_PULSES_PER_MESSAGE,
-  FLOW_PULSE_STAGGER,
+  FLOW_PULSE_RAMP,
+  FLOW_STEP_TRAVEL,
   LANE_RADIUS,
   PILL_HEIGHT,
   PILL_PADDING_X,
@@ -32,7 +34,18 @@ import type { Palette } from "../theme.js";
 import { paintCard, paintLabelPill } from "./architecture.js";
 import { markerFor, openMarkerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
 import { lines, tag, wrap } from "./primitives.js";
-import { travellingPulses } from "./pulse.js";
+import { PULSE_RADIUS, TRAIN_RADIUS } from "./pulse.js";
+
+/** A ratio inside the animation cycle, written to a fixed number of places. */
+const ratio = (value: number): string => String(Math.round(value * 10000) / 10000);
+
+/**
+ * How long the whole sequence takes. Every step would rather have a full
+ * crossing to itself; a flow long enough to overrun the ceiling shares it
+ * instead, and its steps go by faster.
+ */
+const cycleFor = (slotCount: number): number =>
+  Math.min(FLOW_CYCLE_MAX, slotCount * FLOW_STEP_TRAVEL);
 
 /** Whether a message crosses to another column, and which way. */
 const travelDirection = (kind: MessageKind, fromX: number, toX: number): -1 | 0 | 1 => {
@@ -152,25 +165,59 @@ const selfPillBox = (placed: PlacedMessage, activated: boolean): Box => ({
 });
 
 /**
- * Pulses for one message: the architecture lens's travelling dot, riding a
- * step further behind the drawing's clock for every step above it, so the eye
- * is pulled down the page.
+ * Pulses for one message: the architecture lens's dot, on a sequence's own
+ * clock. Every pulse in the drawing shares one cycle and owns a slot of it
+ * outright, so the steps light in the order they happen, one at a time.
  *
- * The stagger is a nudge, not the chronology. A fixed share of a turn comes
- * back around — a long enough flow, or a repeated step riding the longer
- * train, will put two arrows back in phase — and it does not need to hold,
- * because a sequence states its order in the vertical geometry. That is what
- * lets these arrows keep moving instead of waiting their turn in the dark.
+ * A slot is spent entirely on the crossing — the dot enters as the previous
+ * one lands and leaves as the next departs. Nothing waits in the dark for its
+ * turn, which is the whole difference between a sequence that reads as a
+ * relay and one that reads as a still picture with an occasional blink.
  */
-const pulsesFor = (placed: PlacedMessage, path: string, palette: Palette): string =>
-  placed.message.animated
-    ? travellingPulses({
-        path,
-        colour: toneColour(palette, toneFor(placed.message.delta)),
-        count: placed.pulses,
-        lag: placed.step * FLOW_PULSE_STAGGER,
-      })
-    : "";
+const pulsesFor = (
+  placed: PlacedMessage,
+  path: string,
+  slotCount: number,
+  palette: Palette,
+): string => {
+  if (slotCount === 0) return "";
+  const colour = toneColour(palette, toneFor(placed.message.delta));
+  // A repeated step keeps the heavier mark it has always carried; only when
+  // its crossings happen changed here, not what they look like.
+  const radius = placed.slot.count > 1 ? TRAIN_RADIUS : PULSE_RADIUS;
+  const width = 1 / slotCount;
+  const ramp = width * FLOW_PULSE_RAMP;
+  const duration = `${coord(cycleFor(slotCount))}s`;
+
+  return lines(
+    Array.from({ length: placed.slot.count }, (_, index) => {
+      const start = (placed.slot.start + index) * width;
+      const finish = start + width;
+
+      return wrap(
+        "circle",
+        { r: radius, fill: colour, opacity: 0 },
+        tag("animateMotion", {
+          dur: duration,
+          repeatCount: "indefinite",
+          keyPoints: "0;0;1;1",
+          keyTimes: `0;${ratio(start)};${ratio(finish)};1`,
+          calcMode: "linear",
+          path,
+        }) +
+          tag("animate", {
+            attributeName: "opacity",
+            dur: duration,
+            repeatCount: "indefinite",
+            values: "0;0;1;1;0;0",
+            keyTimes:
+              `0;${ratio(start)};${ratio(start + ramp)};` +
+              `${ratio(finish - ramp)};${ratio(finish)};1`,
+          }),
+      );
+    }),
+  );
+};
 
 /**
  * Paints one message and the pill that names it. Like an architecture edge
@@ -181,6 +228,7 @@ const pulsesFor = (placed: PlacedMessage, path: string, palette: Palette): strin
 const paintMessage = (
   placed: PlacedMessage,
   activeAt: ActiveAt,
+  slotCount: number,
   palette: Palette,
 ): { line: string; pill: string } => {
   const tone = toneFor(placed.message.delta);
@@ -193,7 +241,7 @@ const paintMessage = (
     return {
       line: lines([
         tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
-        pulsesFor(placed, path, palette),
+        pulsesFor(placed, path, slotCount, palette),
       ]),
       pill: paintLabelPill(placed.label, selfPillBox(placed, activated), tone),
     };
@@ -205,7 +253,7 @@ const paintMessage = (
   return {
     line: lines([
       tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
-      pulsesFor(placed, path, palette),
+      pulsesFor(placed, path, slotCount, palette),
     ]),
     pill: paintLabelPill(placed.label, pillBox(placed, ends), tone),
   };
@@ -226,7 +274,12 @@ const bandBox = (centreX: number, columnWidth: number, layout: FlowLayout): Box 
   };
 };
 
-const paintFlow = (layout: FlowLayout, columnWidth: number, palette: Palette): string => {
+const paintFlow = (
+  layout: FlowLayout,
+  columnWidth: number,
+  slotCount: number,
+  palette: Palette,
+): string => {
   const activeAt = activationLookup(layout);
 
   const lifelineBottom = layout.top + layout.height;
@@ -279,7 +332,7 @@ const paintFlow = (layout: FlowLayout, columnWidth: number, palette: Palette): s
   const lineMarkup: string[] = [];
   const pillMarkup: string[] = [];
   for (const message of layout.messages) {
-    const { line, pill } = paintMessage(message, activeAt, palette);
+    const { line, pill } = paintMessage(message, activeAt, slotCount, palette);
     lineMarkup.push(line);
     pillMarkup.push(pill);
   }
@@ -345,7 +398,11 @@ export const paintDataFlow = (
     height: canvas.height,
     body: shifted(
       canvas,
-      lines(layout.flows.map((flow) => paintFlow(flow, layout.columnWidth, palette))),
+      lines(
+        layout.flows.map((flow) =>
+          paintFlow(flow, layout.columnWidth, layout.slotCount, palette),
+        ),
+      ),
     ),
   };
 };

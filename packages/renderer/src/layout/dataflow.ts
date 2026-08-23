@@ -61,10 +61,8 @@ export type PlacedMessage = {
   y: number;
   fromX: number;
   toX: number;
-  /** Place in the drawing's step order, which sets how far this arrow's pulse rides behind. */
-  step: number;
-  /** How many pulses ride this arrow at once. */
-  pulses: number;
+  /** Which beats of the drawing's cycle belong to this message, and how many. */
+  slot: { start: number; count: number };
 };
 
 export type FlowLayout = {
@@ -83,18 +81,26 @@ export type DataFlowLayout = {
   /** One width for every column of every flow, so stacked flows line up. */
   columnWidth: number;
   flows: FlowLayout[];
+  /** Beats in the shared cycle: one per pulse the drawing draws. */
+  slotCount: number;
 };
 
 const messagePitch = (message: FlowMessage): number =>
   message.kind === "self" ? SELF_MESSAGE_PITCH : MESSAGE_PITCH;
 
 /**
- * How many pulses ride one arrow at once. A repeated step draws one per
- * repeat, spread evenly along its own line — that is what makes four batched
- * calls read as four calls rather than as one that takes four times as long.
+ * How many turns a message takes in the cycle: one per repeat, up to the cap,
+ * so a repeated step crosses its own arrow several times running rather than
+ * once.
+ *
+ * A step the document leaves unanimated takes none. Reserving a turn for one
+ * that draws nothing would put a hole in the relay — the drawing would go
+ * dark for the length of it, which is the very thing sharing a cycle is meant
+ * to avoid. This is the one place that count is decided, so the schedule and
+ * the painting cannot disagree about it.
  */
 export const pulseCount = (message: FlowMessage, cap: number): number =>
-  Math.min(message.repeat ?? 1, cap);
+  message.animated ? Math.min(message.repeat ?? 1, cap) : 0;
 
 const labelFor = (message: FlowMessage): string =>
   message.repeat === undefined || message.repeat === 1
@@ -221,8 +227,12 @@ export const layoutDataFlow = (
     ),
   );
 
+  let slotCount = 0;
+  for (const flow of flows)
+    for (const message of flow.messages) slotCount += pulseCount(message, pulseCap);
+
   let cursorY = 0;
-  let step = 0;
+  let slotCursor = 0;
   let width = 0;
 
   const placed = flows.map((flow) => {
@@ -241,17 +251,17 @@ export const layoutDataFlow = (
     const messages: PlacedMessage[] = flow.messages.map((message) => {
       const y = messageY;
       messageY += messagePitch(message);
-      const placedMessage = {
+      const count = pulseCount(message, pulseCap);
+      const slot = { start: slotCursor, count };
+      slotCursor += count;
+      return {
         message,
         label: labelFor(message),
         y,
         fromX: centreOf.get(message.from) ?? 0,
         toX: centreOf.get(message.to) ?? 0,
-        step,
-        pulses: pulseCount(message, pulseCap),
+        slot,
       };
-      step += 1;
-      return placedMessage;
     });
 
     const participants = columnNodes.map((node, index) => {
@@ -292,5 +302,6 @@ export const layoutDataFlow = (
     height: Math.ceil(cursorY - FLOW_GAP + DIAGRAM_MARGIN),
     columnWidth,
     flows: placed,
+    slotCount,
   };
 };

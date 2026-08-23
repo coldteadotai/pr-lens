@@ -14,6 +14,10 @@ import { lines, tag, wrap } from "./primitives.js";
  * animation has no effect before it begins, so the dot waiting for its turn
  * would sit at the canvas origin, in the corner, in full view.
  */
+/** The dot itself, so both lenses draw the same mark whatever clock moves it. */
+export const PULSE_RADIUS = 2.6;
+export const TRAIN_RADIUS = 3;
+
 export const travellingPulses = (pulse: {
   path: string;
   colour: string;
@@ -31,7 +35,7 @@ export const travellingPulses = (pulse: {
       const behind = (lag + (duration / count) * index) % duration;
       return wrap(
         "circle",
-        { r: train ? 3 : 2.6, fill: colour },
+        { r: train ? TRAIN_RADIUS : PULSE_RADIUS, fill: colour },
         tag("animateMotion", {
           dur: `${coord(duration)}s`,
           begin: behind === 0 ? undefined : `${coord(behind - duration)}s`,

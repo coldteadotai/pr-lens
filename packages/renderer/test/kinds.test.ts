@@ -89,6 +89,10 @@ describe("mixed message kinds", () => {
 
     const { svg } = render(doc, { lens: "data-flow", theme: "dark" });
     expect(svg.match(/<animateMotion/g)).toHaveLength(1);
+    // And it reserves no turn either: the one pulse that is drawn owns the
+    // whole cycle, rather than crossing for half of it and leaving the
+    // drawing dark for the half a silent step had booked.
+    expect(svg).toContain('keyTimes="0;0;1;1"');
   });
 
   it("keeps a return dashed", () => {

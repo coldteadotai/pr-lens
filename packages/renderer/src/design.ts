@@ -103,15 +103,22 @@ export const HERO_PULSE_DURATION = 2.1;
 export const HERO_PULSE_COUNT = 3;
 
 /**
- * How far one step's pulse rides behind the step before it, so a sequence
- * reads as a wave running down the page rather than as every arrow firing at
- * once.
+ * A sequence animates one step at a time, in order, because that is the one
+ * thing a sequence has to say. Each pulse owns a slot of the cycle outright
+ * and crosses its arrow for the whole of it, so the drawing always has
+ * exactly one dot in flight — the next arrow lights as the last dot lands.
  *
- * A share of the pulse's own turn, not of the flow's length: a sequence
- * already says its order top to bottom, so the stagger only has to pull the
- * eye downward, and a fixed share makes that sweep look the same whether a
- * flow carries four steps or sixty-four.
+ * This is how long one crossing takes when the flow is short enough to
+ * afford it: brisk enough to read as travelling, slow enough to follow.
  */
-export const FLOW_PULSE_STAGGER = PULSE_DURATION * 0.15;
+export const FLOW_STEP_TRAVEL = 1.4;
+/**
+ * A whole sequence should play through in one sitting. Past this the steps
+ * share the ceiling instead, which speeds up a long flow rather than asking
+ * a reader to wait a minute for its last arrow.
+ */
+export const FLOW_CYCLE_MAX = 16;
+/** How much of its own slot a pulse spends fading in, and again fading out. */
+export const FLOW_PULSE_RAMP = 0.08;
 /** More repeats than this and the arrows stop reading as separate calls. */
 export const FLOW_MAX_PULSES_PER_MESSAGE = 3;

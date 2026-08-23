@@ -27,21 +27,21 @@
 <path class="glyph-stroke" d="M496.5,39.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
 <text class="ntitle" x="526" y="49" font-size="13">order store</text></g></g>
 <g><path class="msg edge-modified" d="M91,113 L310,113" marker-end="url(#mk-modified)"/>
-<circle r="2.6" fill="#d29922"><animateMotion dur="1.6s" repeatCount="indefinite" path="M91,113 L310,113"/></circle>
+<circle r="2.6" fill="#d29922" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0;0.125;1" calcMode="linear" path="M91,113 L310,113"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0;0.01;0.115;0.125;1"/></circle>
 <path class="msg edge-added msg-strong" d="M327,151 L546,151" marker-end="url(#mko-added)"/>
-<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" begin="-1.36s" repeatCount="indefinite" path="M327,151 L546,151"/></circle>
+<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.125;0.25;1" calcMode="linear" path="M327,151 L546,151"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.125;0.135;0.24;0.25;1"/></circle>
 <path class="msg edge-neutral" d="M327,189 h52 a7,7 0 0 1 7,7 v6 a7,7 0 0 1 -7,7 h-47" marker-end="url(#mk-neutral)"/>
-<circle r="2.6" fill="#6e7681"><animateMotion dur="1.6s" begin="-1.12s" repeatCount="indefinite" path="M327,189 h52 a7,7 0 0 1 7,7 v6 a7,7 0 0 1 -7,7 h-47"/></circle>
+<circle r="2.6" fill="#6e7681" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.25;0.375;1" calcMode="linear" path="M327,189 h52 a7,7 0 0 1 7,7 v6 a7,7 0 0 1 -7,7 h-47"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.25;0.26;0.365;0.375;1"/></circle>
 <path class="msg edge-modified msg-return" d="M315,243 L96,243" marker-end="url(#mk-modified)"/>
-<circle r="2.6" fill="#d29922"><animateMotion dur="1.6s" begin="-0.88s" repeatCount="indefinite" path="M315,243 L96,243"/></circle>
+<circle r="2.6" fill="#d29922" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.375;0.5;1" calcMode="linear" path="M315,243 L96,243"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.375;0.385;0.49;0.5;1"/></circle>
 <path class="msg edge-added msg-strong" d="M91,281 L540,281" marker-end="url(#mk-added)"/>
-<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" begin="-0.64s" repeatCount="indefinite" path="M91,281 L540,281"/></circle>
+<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.5;0.625;1" calcMode="linear" path="M91,281 L540,281"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.5;0.51;0.615;0.625;1"/></circle>
 <path class="msg edge-added msg-return msg-strong" d="M545,319 L96,319" marker-end="url(#mk-added)"/>
-<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" begin="-0.4s" repeatCount="indefinite" path="M545,319 L96,319"/></circle>
+<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.625;0.75;1" calcMode="linear" path="M545,319 L96,319"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.625;0.635;0.74;0.75;1"/></circle>
 <path class="msg edge-added msg-strong" d="M91,357 L316,357" marker-end="url(#mko-added)"/>
-<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" begin="-0.16s" repeatCount="indefinite" path="M91,357 L316,357"/></circle>
+<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.75;0.875;1" calcMode="linear" path="M91,357 L316,357"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.75;0.76;0.865;0.875;1"/></circle>
 <path class="msg edge-neutral" d="M91,395 L540,395" marker-end="url(#mk-neutral)"/>
-<circle r="2.6" fill="#6e7681"><animateMotion dur="1.6s" begin="-1.52s" repeatCount="indefinite" path="M91,395 L540,395"/></circle></g>
+<circle r="2.6" fill="#6e7681" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.875;1;1" calcMode="linear" path="M91,395 L540,395"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.875;0.885;0.99;1;1"/></circle></g>
 <g><g><rect class="lpill" x="167.32" y="105.5" width="66.37" height="15" rx="7.5"/><text class="ltext ltext-modified" x="200.5" y="116.5" text-anchor="middle">place order</text></g>
 <g><rect class="lpill" x="385.67" y="143.5" width="101.66" height="15" rx="7.5"/><text class="ltext ltext-added" x="436.5" y="154.5" text-anchor="middle">append audit event</text></g>
 <g><rect class="lpill" x="394" y="191.5" width="70.29" height="15" rx="7.5"/><text class="ltext" x="429.15" y="202.5" text-anchor="middle">validate cart</text></g>
