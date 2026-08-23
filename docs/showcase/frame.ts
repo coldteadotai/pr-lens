@@ -251,7 +251,7 @@ const inlineText = (
 const THANKS_ASK: readonly InlineSegment[] = [
   { text: "Thanks for using " },
   { text: "PR Lens", link: true },
-  { text: ". It's free for open source and grows by word of mouth. If these lenses helped you read this PR, pass it on." },
+  { text: ". It's free for open source and grows by word of mouth. If these lenses helped you read this PR, please consider sharing 🙏" },
 ];
 
 /** The composer's FOOTER string, verbatim. */
