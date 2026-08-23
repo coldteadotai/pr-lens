@@ -13,10 +13,6 @@ Reduce the cognitive load on AI-generated PRs. PR Lens draws a pull request as a
 
 <sub>This is what lands in your pull request: a bot comment, drawn here card and all. Green is new, amber changed, red gone, and the pulse is the data moving along the new path.</sub>
 
-<img alt="The full PR Lens comment for the reference pull request: both lenses expanded, drill-down row, view options and footer" src="docs/showcase/reference.comment.dark.svg">
-
-<sub>The reference pull request's complete comment: both lenses, real composer text. Every render ships as a dark/light pair; the live comment serves the pair behind a `<picture>` tag so each reader automatically sees the one matching their GitHub theme.</sub>
-
 Two lenses ship: **architecture** (what this change touches, against the existing system) and **data flow** (the ordered pipeline, animated). Every diagram on this page was rendered by this repo's renderer from a JSON document in this repo. This page _is_ the product demo.
 
 ## Ways to use it
