@@ -23,9 +23,35 @@ Reduce the cognitive load on AI-generated PRs. PR Lens draws a pull request as a
 
 Two lenses ship: **architecture** (what this change touches, against the existing system) and **data flow** (the ordered pipeline, animated). Every diagram on this page was rendered by this repo's renderer from a JSON document in this repo. This page _is_ the product demo.
 
+## Start here
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/cta-strip.dark.svg">
+    <img alt="Three steps: paste the prompt into your coding agent, it sets up the skill and the GitHub App, every pull request gets the diagram" src="docs/brand/cta-strip.light.svg" width="960">
+  </picture>
+</p>
+
+> [!TIP]
+> **Paste this into your coding agent.** It installs the skill, walks you through the GitHub App, and proves the setup by diagramming the last change in your repository.
+
+```text
+Set up PR Lens (prlens.dev) for me: it draws each pull request as animated architecture and data-flow diagrams, inside the pull request itself.
+
+1. Install the agent skill: `npx skills add coldteadotai/pr-lens`.
+
+2. Walk me through installing the GitHub App at https://github.com/apps/coldtea-pr-lens on every repository where I review pull requests. It posts one sticky comment per pull request and updates it on every push, with no model key of mine involved.
+
+3. If I'd rather run it from CI with my own key, offer the Action instead: `.github/workflows/pr-lens.yml` using `coldteadotai/pr-lens/packages/action@v0` with a `GEMINI_API_KEY` repository secret.
+
+4. Then prove it: diagram the most recent change in this repository and show me the rendered SVGs.
+```
+
+No coding agent to hand? [**Install the PR Lens GitHub App**](https://github.com/apps/coldtea-pr-lens) on its own, that gets every pull request the comment, with no key of yours involved.
+
 ## Ways to use it
 
-Five ways in, one contract underneath. Every mode produces the same diagrams from the same document; pick the one that matches where you review.
+Five ways in, the prompt above sets up the first two. Every mode produces the same diagrams from the same document; pick the one that matches where you review.
 
 <details>
 <summary><b>1. In your pull requests: the GitHub App</b> · hosted · live checkboxes · no key of yours</summary>
@@ -42,15 +68,7 @@ Install the [PR Lens GitHub App](https://github.com/apps/coldtea-pr-lens) on you
 Your agent is usually the model. Rather than spending a provider key to describe a diff it already understands, it writes the graph document itself and lets the validator hold it to the contract.
 
 ```bash
-npm install --save-dev @coldtea/pr-lens-agent-skill
-
-# Claude Code
-mkdir -p .claude/skills/pr-lens
-cp -R node_modules/@coldtea/pr-lens-agent-skill/{SKILL.md,references} .claude/skills/pr-lens/
-
-# Cursor
-mkdir -p .cursor/rules
-cp node_modules/@coldtea/pr-lens-agent-skill/SKILL.md .cursor/rules/pr-lens.mdc
+npx skills add coldteadotai/pr-lens
 ```
 
 Then say, literally:
