@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -8,12 +8,12 @@ import { run as runCli } from "../src/cli.js";
 import type { Terminal } from "../src/terminal.js";
 import { ignoreWorkspace, WORKSPACE_DIR } from "../src/workspace.js";
 
+const run = promisify(execFile);
+
 const GOLDEN = new URL("../../schema/examples/postmark-refactor.graph.json", import.meta.url)
   .pathname;
 
-const run = promisify(execFile);
-
-/** A repository with nothing in it, which is all the entry needs to be found. */
+/** A repository with nothing in it, which is all an ignore rule needs to be read. */
 const repository = async (): Promise<string> => {
   const directory = await mkdtemp(join(tmpdir(), "pr-lens-workspace-"));
   await run("git", ["init", "--quiet"], { cwd: directory });
@@ -23,58 +23,106 @@ const repository = async (): Promise<string> => {
 const gitignore = (directory: string): Promise<string> =>
   readFile(join(directory, ".gitignore"), "utf8");
 
+/**
+ * Whether git ignores the previews written at `workspace` — the only question
+ * that matters, and one only git can answer. A pattern that reads correctly
+ * still leaves files visible when it is anchored to the wrong directory or
+ * carries leading whitespace, so the tests ask about the real output path
+ * rather than about the text of the entry.
+ */
+const ignoresPreviews = async (repo: string, workspace: string): Promise<boolean> =>
+  run("git", ["check-ignore", "-q", "--", join(workspace, "manifest.json")], { cwd: repo }).then(
+    () => true,
+    () => false,
+  );
+
+const terminalCollecting = (lines: string[]): Terminal => ({
+  out: (line) => lines.push(line),
+  err: (line) => lines.push(line),
+});
+
+/** Runs the CLI with `cwd` as the working directory, as a user would. */
+const renderIn = async (cwd: string, ...args: string[]): Promise<string[]> => {
+  const lines: string[] = [];
+  const previous = process.cwd();
+  process.chdir(cwd);
+  try {
+    expect(await runCli(["render", GOLDEN, ...args], terminalCollecting(lines), {})).toBe(0);
+  } finally {
+    process.chdir(previous);
+  }
+  return lines;
+};
+
 test("writes a .gitignore when the repository has none", async () => {
   const directory = await repository();
 
-  expect(await ignoreWorkspace(directory)).toMatch(/\.gitignore$/);
-  expect(await gitignore(directory)).toContain(`${WORKSPACE_DIR}/\n`);
+  expect(await ignoreWorkspace(join(directory, WORKSPACE_DIR))).toMatch(/\.gitignore$/);
+  expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(true);
 });
 
 test("adds itself to a .gitignore that is already there, keeping what it holds", async () => {
   const directory = await repository();
   await writeFile(join(directory, ".gitignore"), "node_modules\ndist\n");
 
-  await ignoreWorkspace(directory);
+  await ignoreWorkspace(join(directory, WORKSPACE_DIR));
 
-  const contents = await gitignore(directory);
-  expect(contents.startsWith("node_modules\ndist\n")).toBe(true);
-  expect(contents).toContain(`${WORKSPACE_DIR}/\n`);
+  expect((await gitignore(directory)).startsWith("node_modules\ndist\n")).toBe(true);
+  expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(true);
 });
 
-test("leaves a file whose last line has no newline readable", async () => {
+test("does not run the entry onto a last line that had no newline", async () => {
   const directory = await repository();
   await writeFile(join(directory, ".gitignore"), "dist");
 
-  await ignoreWorkspace(directory);
+  await ignoreWorkspace(join(directory, WORKSPACE_DIR));
 
-  expect(await gitignore(directory)).toContain(`dist\n`);
-  expect(await gitignore(directory)).not.toContain(`dist#`);
+  expect(await gitignore(directory)).toContain("dist\n");
+  expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(true);
 });
 
-test.each([`${WORKSPACE_DIR}/`, WORKSPACE_DIR, `/${WORKSPACE_DIR}`, `  ${WORKSPACE_DIR}/  `])(
-  "says nothing when %s is already listed",
-  async (entry) => {
-    const directory = await repository();
-    await writeFile(join(directory, ".gitignore"), `dist\n${entry}\n`);
+test("says nothing when an entry already covers the previews", async () => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), `dist\n${WORKSPACE_DIR}/\n`);
 
-    expect(await ignoreWorkspace(directory)).toBeUndefined();
-    expect(await gitignore(directory)).toBe(`dist\n${entry}\n`);
-  },
-);
+  expect(await ignoreWorkspace(join(directory, WORKSPACE_DIR))).toBeUndefined();
+  expect(await gitignore(directory)).toBe(`dist\n${WORKSPACE_DIR}/\n`);
+});
 
-test("leaves a repository that deliberately un-ignores it alone", async () => {
+/**
+ * The two spellings that read as "already ignored" and are not. `/.pr-lens/`
+ * is anchored to the root, so it says nothing about a run inside a
+ * subdirectory; leading whitespace is part of a pattern, so that entry matches
+ * nothing anywhere. Both must still end with the previews ignored.
+ */
+test.each([
+  ["anchored to the root", `/${WORKSPACE_DIR}/\n`],
+  ["prefixed with whitespace", `  ${WORKSPACE_DIR}/\n`],
+])("covers previews under a subdirectory when the entry is %s", async (_, entry) => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), entry);
+  const nested = join(directory, "sub");
+  await mkdir(nested, { recursive: true });
+
+  await ignoreWorkspace(join(nested, WORKSPACE_DIR));
+
+  expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
+});
+
+test("leaves a repository that deliberately un-ignores the previews alone", async () => {
   const directory = await repository();
   await writeFile(join(directory, ".gitignore"), `!${WORKSPACE_DIR}/\n`);
 
-  expect(await ignoreWorkspace(directory)).toBeUndefined();
+  expect(await ignoreWorkspace(join(directory, WORKSPACE_DIR))).toBeUndefined();
   expect(await gitignore(directory)).toBe(`!${WORKSPACE_DIR}/\n`);
 });
 
 test("adds itself once, however many times it runs", async () => {
   const directory = await repository();
+  const workspace = join(directory, WORKSPACE_DIR);
 
-  await ignoreWorkspace(directory);
-  await ignoreWorkspace(directory);
+  await ignoreWorkspace(workspace);
+  await ignoreWorkspace(workspace);
 
   const listed = (await gitignore(directory)).split("\n").filter((line) => line.trim() !== "");
   expect(listed.filter((line) => line === `${WORKSPACE_DIR}/`)).toHaveLength(1);
@@ -83,42 +131,39 @@ test("adds itself once, however many times it runs", async () => {
 test("writes nothing outside a repository", async () => {
   const directory = await mkdtemp(join(tmpdir(), "pr-lens-loose-"));
 
-  expect(await ignoreWorkspace(directory)).toBeUndefined();
+  expect(await ignoreWorkspace(join(directory, WORKSPACE_DIR))).toBeUndefined();
 });
 
 test("render leaves its previews in the workspace, ignored and explained", async () => {
   const directory = await repository();
-  const lines: string[] = [];
-  const terminal: Terminal = { out: (line) => lines.push(line), err: (line) => lines.push(line) };
 
-  const previous = process.cwd();
-  process.chdir(directory);
-  try {
-    expect(await runCli(["render", GOLDEN], terminal, {})).toBe(0);
-  } finally {
-    process.chdir(previous);
-  }
+  const lines = await renderIn(directory);
 
   expect(lines.join("\n")).toContain(join(WORKSPACE_DIR, "manifest.json"));
-  expect(await readFile(join(directory, WORKSPACE_DIR, "manifest.json"), "utf8")).toContain("assets");
+  expect(await readFile(join(directory, WORKSPACE_DIR, "manifest.json"), "utf8")).toContain(
+    "assets",
+  );
   expect(await readFile(join(directory, WORKSPACE_DIR, "README.md"), "utf8")).toContain(
     "None of it belongs in a commit",
   );
-  expect(await gitignore(directory)).toContain(`${WORKSPACE_DIR}/\n`);
+  expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(true);
+});
+
+test("a run inside a subdirectory ignores the previews it actually wrote", async () => {
+  const directory = await repository();
+  const nested = join(directory, "sub");
+  await mkdir(nested, { recursive: true });
+
+  await renderIn(nested);
+
+  expect(await readFile(join(nested, WORKSPACE_DIR, "manifest.json"), "utf8")).toContain("assets");
+  expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
 });
 
 test("--out somewhere else leaves the repository's .gitignore alone", async () => {
   const directory = await repository();
-  const lines: string[] = [];
-  const terminal: Terminal = { out: (line) => lines.push(line), err: (line) => lines.push(line) };
 
-  const previous = process.cwd();
-  process.chdir(directory);
-  try {
-    expect(await runCli(["render", GOLDEN, "--out", "diagrams"], terminal, {})).toBe(0);
-  } finally {
-    process.chdir(previous);
-  }
+  await renderIn(directory, "--out", "diagrams");
 
   await expect(gitignore(directory)).rejects.toThrow();
   await expect(readFile(join(directory, "diagrams", "manifest.json"), "utf8")).resolves.toContain(
