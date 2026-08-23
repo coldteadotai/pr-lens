@@ -2,7 +2,7 @@
 
 Posts the architecture and data flow of a pull request as diagrams in its comments, drawn with your own model key.
 
-MIT © Ohans Emmanuel.
+MIT © Coldtea AI.
 
 ```yaml
 name: PR Lens

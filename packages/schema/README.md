@@ -2,7 +2,7 @@
 
 The PR Lens contract. Extraction produces these documents, the renderer consumes them, and every other surface (CLI, GitHub Action, agent skill, hosted app) passes them around. If a document validates here, it is safe to render.
 
-MIT © Ohans Emmanuel.
+MIT © Coldtea AI.
 
 ```bash
 pnpm add @coldtea/pr-lens-schema

@@ -2,7 +2,7 @@
 
 PR Lens on the command line. It reads a diff with your own model key, checks the result against the contract, and hands you the pull request comment.
 
-MIT © Ohans Emmanuel.
+MIT © Coldtea AI.
 
 ```bash
 npx @coldtea/pr-lens-cli analyze --base origin/main

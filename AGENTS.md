@@ -4,7 +4,6 @@ Hard rules for anyone (human or agent) working in this repo. Read fully before w
 
 ## Hard requirements
 
-- **Commit authorship**: every commit is authored solely as `ohansemmanuel`. Never append `Co-Authored-By: Claude …` or any AI/agent attribution trailer. Git author/committer fields = Ohans only.
 - **No secrets in this repo, ever.** This repo needs no credentials. Do not read `~/Documents/dev/pr-lens-secrets/`.
 - **Verify before claiming done**: tests green, `pnpm build` + typecheck clean, and visual output verified in a real browser when the change affects rendered SVGs.
 
@@ -93,7 +92,10 @@ Quality software is built on types the compiler can enforce. These are non-negot
 - **Closed sets use an exhaustive `switch` + `assertNever`.** For discriminated unions / enums, `switch` on the discriminant and end with `default: return assertNever(value)` so adding a variant fails to compile until every consumer handles it. Never use if/else-if chains for mutually-exclusive variants. When behavior depends on several related status checks, derive one closed decision/status type and switch over that — don't scatter conditionals through a method. Define `assertNever` once in the schema package's utils and import it everywhere:
 
   ```ts
-  export const assertNever = (value: never, message = "Unhandled variant"): never => {
+  export const assertNever = (
+    value: never,
+    message = "Unhandled variant",
+  ): never => {
     throw new Error(`${message}: ${JSON.stringify(value)}`);
   };
   ```
@@ -107,6 +109,6 @@ Quality software is built on types the compiler can enforce. These are non-negot
 
 # Repo specifics
 
-- pnpm monorepo: `packages/schema` (the contract — everything else consumes it), `packages/renderer` (pure function, no I/O), `packages/cli`, `packages/action`, `packages/agent-skill`. MIT © Ohans Emmanuel.
+- pnpm monorepo: `packages/schema` (the contract — everything else consumes it), `packages/renderer` (pure function, no I/O), `packages/cli`, `packages/action`, `packages/agent-skill`. MIT © Coldtea AI.
 - The renderer must be deterministic: same graph in → byte-identical SVG out. Treat any nondeterminism (object iteration order, Date, random) as a bug.
 - Rendered SVGs must remain GitHub-safe: SMIL/CSS animation only, no scripts, no external resources, self-contained.

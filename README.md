@@ -1,6 +1,11 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark.dark.svg">
+  <img alt="" src="docs/brand/mark.light.svg" width="76">
+</picture>
+
 # PR Lens
 
-Review what actually matters. PR Lens draws a pull request as animated diagrams **inside the pull request itself**: architecture blast radius and data-flow pipelines, not another findings table.
+Reduce the cognitive load on AI-generated. PR Lens draws a pull request as animated diagrams **inside the pull request itself**: architecture blast radius and data-flow pipelines, not another findings table.
 
 <img alt="A PR Lens bot comment in a pull request: stats chips, an architecture diagram of a tiny change, view-option checkboxes and the PR Lens footer" src="docs/showcase/teaser.comment.dark.svg">
 
@@ -10,17 +15,49 @@ Review what actually matters. PR Lens draws a pull request as animated diagrams 
 
 <sub>The reference pull request's complete comment: both lenses, real composer text. Every render ships as a dark/light pair; the live comment serves the pair behind a `<picture>` tag so each reader automatically sees the one matching their GitHub theme.</sub>
 
-Two lenses ship: **architecture** (what this change touches, against the existing system) and **data flow** (the ordered pipeline, animated). Every diagram on this page was rendered by this repo's renderer from a JSON document in this repo. This page *is* the product demo.
+Two lenses ship: **architecture** (what this change touches, against the existing system) and **data flow** (the ordered pipeline, animated). Every diagram on this page was rendered by this repo's renderer from a JSON document in this repo. This page _is_ the product demo.
 
 ## Ways to use it
 
 Five ways in, one contract underneath. Every mode produces the same diagrams from the same document; pick the one that matches where you review.
 
-### 1. In your pull requests: the GitHub App
+<details>
+<summary><b>1. In your pull requests: the GitHub App</b> · hosted · live checkboxes · no key of yours</summary>
+<br>
 
-Install the PR Lens GitHub App on your repository and open a pull request. That is the whole setup: every pull request gets the comment (the framed mockups at the top of this page are what lands), and each push updates it in place. This is the hosted mode, and the only one where the view-option checkboxes are live: tick one and the comment re-renders within seconds from the stored graph, no re-analysis, no key of yours involved.
+Install the [PR Lens GitHub App](https://github.com/apps/coldtea-pr-lens) on your repository and open a pull request. That is the whole setup: every pull request gets the comment (the framed mockups at the top of this page are what lands), and each push updates it in place. This is the hosted mode, and the only one where the view-option checkboxes are live: tick one and the comment re-renders within seconds from the stored graph, no re-analysis, no key of yours involved.
 
-### 2. As a workflow: the GitHub Action
+</details>
+
+<details>
+<summary><b>2. Via your coding agent</b> · it writes the document itself · no second model bill</summary>
+<br>
+
+Your agent is usually the model. Rather than spending a provider key to describe a diff it already understands, it writes the graph document itself and lets the validator hold it to the contract.
+
+```bash
+npm install --save-dev @coldtea/pr-lens-agent-skill
+
+# Claude Code
+mkdir -p .claude/skills/pr-lens
+cp -R node_modules/@coldtea/pr-lens-agent-skill/{SKILL.md,references} .claude/skills/pr-lens/
+
+# Cursor
+mkdir -p .cursor/rules
+cp node_modules/@coldtea/pr-lens-agent-skill/SKILL.md .cursor/rules/pr-lens.mdc
+```
+
+Then say, literally:
+
+> Diagram the change you just made with PR Lens and attach it to the pull request.
+
+The agent reads the diff, writes the document, runs `npx @coldtea/pr-lens-cli validate` until the contract is satisfied, renders, and attaches the `<picture>` pair. When someone says the diagram names things wrongly, the same skill teaches it to fix `.github/pr-lens.yml` instead of editing generated output. Details in [`packages/agent-skill`](packages/agent-skill).
+
+</details>
+
+<details>
+<summary><b>3. As a workflow: the GitHub Action</b> · your CI · your key · one static comment</summary>
+<br>
 
 The same comment from your own CI, drawn with your own model key. Add the key as a repository secret named `GEMINI_API_KEY`, then commit this as `.github/workflows/pr-lens.yml`:
 
@@ -31,10 +68,10 @@ on:
   pull_request:
 
 permissions:
-  contents: write        # to publish the rendered SVGs
-  pull-requests: write   # to post the comment
+  contents: write # to publish the rendered SVGs
+  pull-requests: write # to post the comment
 
-concurrency:             # one run per pull request; a push supersedes the last
+concurrency: # one run per pull request; a push supersedes the last
   group: pr-lens-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
@@ -44,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # the diff is between two commits, so both must be here
+          fetch-depth: 0 # the diff is between two commits, so both must be here
       - uses: coldteadotai/pr-lens/packages/action@v0
         with:
           api-key: ${{ secrets.GEMINI_API_KEY }}
@@ -52,7 +89,11 @@ jobs:
 
 The key reaches the CLI through the environment, never a command line, and the diff goes to the provider you name and nowhere else. The comment here is deliberately static. An Action cannot hold state between runs, so the checkboxes live in the App. Providers, lenses, branding and the rest of the inputs are in [`packages/action`](packages/action).
 
-### 3. From the CLI
+</details>
+
+<details>
+<summary><b>4. From the CLI</b> · every step on your machine, one at a time</summary>
+<br>
 
 Everything the other modes do, one step at a time, on your machine. The key is read from the environment, never from a flag:
 
@@ -78,29 +119,11 @@ npx @coldtea/pr-lens-cli export pr-lens/graph.json -o .github/pr-lens.map.json
 
 Ollama, DeepSeek, OpenRouter and anything else speaking `/chat/completions` are reached with `--provider openai-compatible --base-url <url>`. The full command reference, the correction file, and the failure codes a script can branch on are in [`packages/cli`](packages/cli).
 
-### 4. Via your coding agent
+</details>
 
-Your agent is usually the model. Rather than spending a provider key to describe a diff it already understands, it writes the graph document itself and lets the validator hold it to the contract.
-
-```bash
-npm install --save-dev @coldtea/pr-lens-agent-skill
-
-# Claude Code
-mkdir -p .claude/skills/pr-lens
-cp -R node_modules/@coldtea/pr-lens-agent-skill/{SKILL.md,references} .claude/skills/pr-lens/
-
-# Cursor
-mkdir -p .cursor/rules
-cp node_modules/@coldtea/pr-lens-agent-skill/SKILL.md .cursor/rules/pr-lens.mdc
-```
-
-Then say, literally:
-
-> Diagram the change you just made with PR Lens and attach it to the pull request.
-
-The agent reads the diff, writes the document, runs `npx @coldtea/pr-lens-cli validate` until the contract is satisfied, renders, and attaches the `<picture>` pair. When someone says the diagram names things wrongly, the same skill teaches it to fix `.github/pr-lens.yml` instead of editing generated output. Details in [`packages/agent-skill`](packages/agent-skill).
-
-### 5. In your terminal
+<details>
+<summary><b>5. In your terminal</b> · the diagram before the pull request exists</summary>
+<br>
 
 Nothing about the diagrams needs a pull request. Render locally and look at the change before anyone else does:
 
@@ -111,6 +134,8 @@ open pr-lens/*-dark-*.svg    # macOS; the SVGs are self-contained, any browser r
 ```
 
 This is also the shape of reviewing an agent's work: while you read the diff, the agent that wrote it renders it. With the skill installed, "render this change with PR Lens and open the SVGs" gets you the diagram beside the diff, the same picture its pull request will carry, minutes earlier.
+
+</details>
 
 ## From one card to a monorepo
 
@@ -148,19 +173,19 @@ The ordered pipeline of the change, drawn in the same design system: participant
 
 <img alt="A sequence diagram mixing waited-on calls, fire-and-forget messages, returns and a self message" src="docs/showcase/mixed-kinds.data-flow.dark.svg">
 
-<sub>Every message kind at once: a filled head waits for an answer, an open head is fire-and-forget, a dashed line *is* the answer, and only waited-on work lights an activation bar.</sub>
+<sub>Every message kind at once: a filled head waits for an answer, an open head is fire-and-forget, a dashed line _is_ the answer, and only waited-on work lights an activation bar.</sub>
 
 Every render above comes from a checked-in fixture, regenerated deterministically by [`docs/showcase/render.mts`](docs/showcase/render.mts): the [teaser](docs/showcase/teaser.ts), the [reference pull request](packages/schema/src/examples/postmark-refactor.ts), the [dense synthetic](packages/renderer/test/dense.ts), the [upper tiers](packages/renderer/test/fixtures), the [mixed-kinds flow](packages/renderer/test/mixed-kinds.ts). The comment mockups up top are framed by [`docs/showcase/frame.ts`](docs/showcase/frame.ts) around the same renders, with the composer's real text.
 
 ## Packages
 
-| Package | What it is |
-| --- | --- |
-| [`packages/schema`](packages/schema) | `@coldtea/pr-lens-schema`: the contract every other component speaks |
-| [`packages/renderer`](packages/renderer) | `@coldtea/pr-lens-renderer`: deterministic JSON graph → the animated, theme-paired SVGs on this page |
-| [`packages/cli`](packages/cli) | `@coldtea/pr-lens-cli`: read a diff with your own model key, render it, compose the comment |
-| [`packages/action`](packages/action) | the GitHub Action: analyze, publish, post one static comment |
-| [`packages/agent-skill`](packages/agent-skill) | `@coldtea/pr-lens-agent-skill`: teaches a coding agent to draw the change it just made |
+| Package                                        | What it is                                                                                           |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [`packages/schema`](packages/schema)           | `@coldtea/pr-lens-schema`: the contract every other component speaks                                 |
+| [`packages/renderer`](packages/renderer)       | `@coldtea/pr-lens-renderer`: deterministic JSON graph → the animated, theme-paired SVGs on this page |
+| [`packages/cli`](packages/cli)                 | `@coldtea/pr-lens-cli`: read a diff with your own model key, render it, compose the comment          |
+| [`packages/action`](packages/action)           | the GitHub Action: analyze, publish, post one static comment                                         |
+| [`packages/agent-skill`](packages/agent-skill) | `@coldtea/pr-lens-agent-skill`: teaches a coding agent to draw the change it just made               |
 
 ## Working in this repo
 
@@ -177,4 +202,4 @@ The product's visual guarantees, written as plain-English end-to-end tests for f
 
 ## License
 
-MIT © Ohans Emmanuel.
+MIT © Coldtea AI.

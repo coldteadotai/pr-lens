@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 60 400 400" role="img" aria-label="PR Lens">
+  <!--
+    The brand mark, from the same master the app's avatar and touch icon are cut
+    from: a magnifier held over one changed node, its connector still running to
+    the neighbour it calls. The card is the one part that means something, so it
+    is the one part that keeps its colour in both themes.
+
+    The viewBox is cropped to the glyph rather than the master's 512 square: a
+    README seats this by width, and the master's margin would shrink the mark
+    inside its own box.
+
+    The light half of the pair. The ink is baked rather than left to a media
+    query, because GitHub swaps the two by the reader's *GitHub* theme through
+    <picture>, which a query inside the file cannot see.
+  -->
+  <circle cx="216" cy="216" r="132" fill="none" stroke="#1f2328" stroke-width="24" />
+  <path d="M312 312 L426 426" stroke="#1f2328" stroke-width="44" stroke-linecap="round" />
+  <path d="M152 262 L262 178" stroke="#6e7681" stroke-width="12" />
+  <circle cx="152" cy="262" r="22" fill="#1f2328" />
+  <rect x="222" y="134" width="88" height="88" rx="24" fill="#3fb950" />
+</svg>

@@ -3,7 +3,7 @@
   "version": "0.1.1",
   "description": "The PR Lens renderer: a schema-valid graph document in, a self-contained animated SVG out.",
   "license": "MIT",
-  "author": "Ohans Emmanuel",
+  "author": "Coldtea AI",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/coldteadotai/pr-lens.git",

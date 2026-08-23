@@ -2,7 +2,7 @@
 
 The PR Lens skill for coding agents. It teaches an agent to draw the change it just made: author a graph document from the diff, validate it against the contract, render it, attach it to the pull request, and to fix a repository's map by writing corrections rather than editing generated output.
 
-MIT © Ohans Emmanuel.
+MIT © Coldtea AI.
 
 ## Install it
 

@@ -4,7 +4,7 @@
   "private": true,
   "description": "Review what actually matters — PR diffs as animated, interactive diagrams inside the GitHub pull request.",
   "license": "MIT",
-  "author": "Ohans Emmanuel",
+  "author": "Coldtea AI",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/coldteadotai/pr-lens.git"

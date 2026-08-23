@@ -3,7 +3,7 @@
   "version": "0.1.1",
   "description": "The PR Lens GitHub Action: analyze a pull request with your own model key, publish the diagrams, post one static comment.",
   "license": "MIT",
-  "author": "Ohans Emmanuel",
+  "author": "Coldtea AI",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/coldteadotai/pr-lens.git",
