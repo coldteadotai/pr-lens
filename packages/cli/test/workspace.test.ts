@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { promisify } from "node:util";
 import { expect, test } from "vitest";
 import { run as runCli } from "../src/cli.js";
@@ -36,6 +36,16 @@ const ignoresPreviews = async (repo: string, workspace: string): Promise<boolean
     () => false,
   );
 
+/**
+ * The workspace as the CLI leaves it by the time the rule is written: on disk,
+ * because git can only recognise a directory it can see.
+ */
+const workspaceIn = async (...parts: readonly string[]): Promise<string> => {
+  const workspace = join(...parts, WORKSPACE_DIR);
+  await mkdir(workspace, { recursive: true });
+  return workspace;
+};
+
 const terminalCollecting = (lines: string[]): Terminal => ({
   out: (line) => lines.push(line),
   err: (line) => lines.push(line),
@@ -57,7 +67,7 @@ const renderIn = async (cwd: string, ...args: string[]): Promise<string[]> => {
 test("writes a .gitignore when the repository has none", async () => {
   const directory = await repository();
 
-  expect(await ignoreWorkspace(join(directory, WORKSPACE_DIR))).toMatch(/\.gitignore$/);
+  expect(await ignoreWorkspace(await workspaceIn(directory))).toMatch(/\.gitignore$/);
   expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(true);
 });
 
@@ -65,7 +75,7 @@ test("adds itself to a .gitignore that is already there, keeping what it holds",
   const directory = await repository();
   await writeFile(join(directory, ".gitignore"), "node_modules\ndist\n");
 
-  await ignoreWorkspace(join(directory, WORKSPACE_DIR));
+  await ignoreWorkspace(await workspaceIn(directory));
 
   expect((await gitignore(directory)).startsWith("node_modules\ndist\n")).toBe(true);
   expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(true);
@@ -75,7 +85,7 @@ test("does not run the entry onto a last line that had no newline", async () => 
   const directory = await repository();
   await writeFile(join(directory, ".gitignore"), "dist");
 
-  await ignoreWorkspace(join(directory, WORKSPACE_DIR));
+  await ignoreWorkspace(await workspaceIn(directory));
 
   expect(await gitignore(directory)).toContain("dist\n");
   expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(true);
@@ -85,7 +95,7 @@ test("says nothing when an entry already covers the previews", async () => {
   const directory = await repository();
   await writeFile(join(directory, ".gitignore"), `dist\n${WORKSPACE_DIR}/\n`);
 
-  expect(await ignoreWorkspace(join(directory, WORKSPACE_DIR))).toBeUndefined();
+  expect(await ignoreWorkspace(await workspaceIn(directory))).toBeUndefined();
   expect(await gitignore(directory)).toBe(`dist\n${WORKSPACE_DIR}/\n`);
 });
 
@@ -104,7 +114,7 @@ test.each([
   const nested = join(directory, "sub");
   await mkdir(nested, { recursive: true });
 
-  await ignoreWorkspace(join(nested, WORKSPACE_DIR));
+  await ignoreWorkspace(await workspaceIn(nested));
 
   expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
 });
@@ -121,10 +131,7 @@ test.each([
 ])("leaves a deliberate un-ignore alone when it is %s", async (_, entry, within) => {
   const directory = await repository();
   await writeFile(join(directory, ".gitignore"), entry);
-  const workspace = join(directory, within, WORKSPACE_DIR);
-  await mkdir(dirname(workspace), { recursive: true });
-
-  expect(await ignoreWorkspace(workspace)).toBeUndefined();
+  expect(await ignoreWorkspace(await workspaceIn(directory, within))).toBeUndefined();
   expect(await gitignore(directory)).toBe(entry);
 });
 
@@ -139,7 +146,7 @@ test("ignores a nested workspace an anchored un-ignore does not speak for", asyn
   const nested = join(directory, "sub");
   await mkdir(nested, { recursive: true });
 
-  expect(await ignoreWorkspace(join(nested, WORKSPACE_DIR))).toMatch(/\.gitignore$/);
+  expect(await ignoreWorkspace(await workspaceIn(nested))).toMatch(/\.gitignore$/);
   expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
 });
 
@@ -149,7 +156,7 @@ test("narrows its entry rather than overruling an un-ignore meant for elsewhere"
   const nested = join(directory, "sub");
   await mkdir(nested, { recursive: true });
 
-  await ignoreWorkspace(join(nested, WORKSPACE_DIR));
+  await ignoreWorkspace(await workspaceIn(nested));
 
   expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
   expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(false);
@@ -171,7 +178,7 @@ test.each([
   const nested = join(directory, name);
   await mkdir(nested, { recursive: true });
 
-  await ignoreWorkspace(join(nested, WORKSPACE_DIR));
+  await ignoreWorkspace(await workspaceIn(nested));
 
   expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
 });
@@ -182,7 +189,7 @@ test("a wildcard in the entry is not left free to catch a neighbour", async () =
   await mkdir(join(directory, "sub*x"), { recursive: true });
   await mkdir(join(directory, "subOTHERx"), { recursive: true });
 
-  await ignoreWorkspace(join(directory, "sub*x", WORKSPACE_DIR));
+  await ignoreWorkspace(await workspaceIn(directory, "sub*x"));
 
   expect(await ignoresPreviews(directory, join(directory, "sub*x", WORKSPACE_DIR))).toBe(true);
   expect(await ignoresPreviews(directory, join(directory, "subOTHERx", WORKSPACE_DIR))).toBe(false);
@@ -194,12 +201,12 @@ test("reads an un-ignore whose path was escaped the way it writes one", async ()
   const nested = join(directory, "sub[1]");
   await mkdir(nested, { recursive: true });
 
-  expect(await ignoreWorkspace(join(nested, WORKSPACE_DIR))).toBeUndefined();
+  expect(await ignoreWorkspace(await workspaceIn(nested))).toBeUndefined();
 });
 
 test("adds itself once, however many times it runs", async () => {
   const directory = await repository();
-  const workspace = join(directory, WORKSPACE_DIR);
+  const workspace = await workspaceIn(directory);
 
   await ignoreWorkspace(workspace);
   await ignoreWorkspace(workspace);
@@ -211,7 +218,7 @@ test("adds itself once, however many times it runs", async () => {
 test("writes nothing outside a repository", async () => {
   const directory = await mkdtemp(join(tmpdir(), "pr-lens-loose-"));
 
-  expect(await ignoreWorkspace(join(directory, WORKSPACE_DIR))).toBeUndefined();
+  expect(await ignoreWorkspace(await workspaceIn(directory))).toBeUndefined();
 });
 
 test("render leaves its previews in the workspace, ignored and explained", async () => {
@@ -244,6 +251,44 @@ test("a render from a subdirectory whose name is a git wildcard is still ignored
   const directory = await repository();
   await writeFile(join(directory, ".gitignore"), `!/${WORKSPACE_DIR}/\n`);
   const nested = join(directory, "sub[1]");
+  await mkdir(nested, { recursive: true });
+
+  await renderIn(nested);
+
+  expect(await readFile(join(nested, WORKSPACE_DIR, "manifest.json"), "utf8")).toContain("assets");
+  expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
+});
+
+/**
+ * A rule covering one file inside the workspace answers for that file. The
+ * README is the obvious casualty, since the CLI writes one — and a repository
+ * ignoring README.md everywhere left every SVG and both documents visible.
+ */
+test.each([
+  ["everywhere", "README.md\n"],
+  ["inside the workspace", `${WORKSPACE_DIR}/README.md\n`],
+])("ignores the previews though a rule already covers the README %s", async (_, entry) => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), entry);
+
+  await renderIn(directory);
+
+  expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(true);
+  for (const name of ["drawn.graph.json", "manifest.json"])
+    expect(
+      await run("git", ["check-ignore", "-q", "--", join(WORKSPACE_DIR, name)], { cwd: directory })
+        .then(() => true, () => false),
+    ).toBe(true);
+});
+
+/**
+ * `rev-parse` reports a path, not a token to be tidied. A subdirectory may
+ * begin with a space, and trimming it writes a rule for a directory nobody has.
+ */
+test("a render from a subdirectory whose name begins with a space is still ignored", async () => {
+  const directory = await repository();
+  await writeFile(join(directory, ".gitignore"), `!/${WORKSPACE_DIR}/\n`);
+  const nested = join(directory, " sub");
   await mkdir(nested, { recursive: true });
 
   await renderIn(nested);

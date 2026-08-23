@@ -43,13 +43,17 @@ type Location = { root: string; prefix: string };
  * Asked of git rather than computed from the two paths, because on macOS the
  * root comes back through /private and the working directory usually does not,
  * and subtracting one from the other then yields a climb out of the repository.
+ *
+ * Only the record terminator comes off each line. A directory may legitimately
+ * begin or end with a space, and trimming one writes a rule for a directory
+ * nobody has.
  */
 const locate = async (from: string): Promise<Location> => {
   const [root = "", prefix = ""] = (
     await git(from, ["rev-parse", "--show-toplevel", "--show-prefix"])
   )
     .split("\n")
-    .map((line) => line.trim());
+    .map((line) => line.replace(/\r$/, ""));
 
   return { root, prefix };
 };
@@ -62,12 +66,17 @@ const locate = async (from: string): Promise<Location> => {
  * Reading the entry back and deciding it means what we would have meant is how
  * a run leaves the previews visible while reporting them handled.
  *
- * The question is asked about a file inside the workspace, not the directory:
- * a pattern ending in a slash matches directories only, and git cannot tell
- * that a path which does not exist yet would have been one.
+ * The question is about the directory, and nothing standing in for it. A rule
+ * covering one file inside — `README.md` is a common one to carry — answers
+ * for that file and for nothing beside it, and taking it as settled leaves
+ * every SVG and both documents in the working tree.
+ *
+ * The directory has to exist to be recognised as one, since a pattern ending
+ * in a slash matches directories only. It does: the caller writes into it
+ * first, for this reason.
  */
 const alreadyIgnored = (root: string, workspace: string): Promise<boolean> =>
-  git(root, ["check-ignore", "-q", "--", join(workspace, README_NAME)]).then(
+  git(root, ["check-ignore", "-q", "--", workspace]).then(
     () => true,
     () => false,
   );
@@ -117,7 +126,8 @@ const spares = (negation: Negation, workspace: string): boolean => {
 
 /**
  * Adds the workspace to the repository's .gitignore, and says so. Answers with
- * the file it wrote, or nothing when there was nothing to do.
+ * the file it wrote, or nothing when there was nothing to do. Call it once the
+ * workspace directory exists, so git can see that it is one.
  *
  * Nothing is written when git already ignores the previews, or when the
  * repository un-ignores this workspace on purpose: a user who chose to track
@@ -171,6 +181,8 @@ export const prepareWorkspace = async (out: string, terminal: Terminal): Promise
   const directory = resolve(out);
   if (directory !== resolve(WORKSPACE_DIR)) return;
 
+  // The README first, which is what puts the directory on disk: git is asked
+  // whether a directory is ignored, and one that is not there cannot be.
   await writeTextFile(join(directory, README_NAME), README);
 
   const ignored = await ignoreWorkspace(directory);
