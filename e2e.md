@@ -24,9 +24,10 @@ These are the visual guarantees this product makes. They are written here as Eng
 15. **Delta colors never lie.** Added is green, changed is amber, removed is red, dashed and ghosted. Each color holds uniformly along its stroke, never mixed, on every tier.
 16. **Any flow is traceable.** On the dense and stress fixtures, pick any single edge and follow it end-to-end with the eye alone: it never merges into a neighbor or disappears under anything. (Zoom-level detail: renderer specs 1-3.)
 17. **Labels are readable, owned, and complete.** Every labelled edge shows exactly one pill; no pill hides another; each pill visibly belongs to one line. (Renderer specs 1-2.)
+18. **A name is only cut when the card is genuinely full.** Put a long node label on a card that shares its row: the whole name reads, set a step smaller if it must be, rather than losing its tail with card still empty beside it. A name is cut only once the smallest size it may be set at still overruns.
 
 ## Stability and self-containment
 
-18. **Determinism is absolute.** Render the same graph twice: identical bytes. Rename a node: nothing else moves. Add one node: no card jumps, only small, proportionate shifts.
-19. **Congestion handling never moves the uncongested.** The minimal fixture is pixel-identical across renderer changes; on the reference graph, cards never move and only crowded pills may shift, along their own lines. (Renderer spec 4.)
-20. **The SVG stands alone.** No scripts, no external fonts or fetches, nothing clipped at the canvas edge, and the whole diagram, animation included, works when loaded through a plain `<img>` tag. (Renderer specs 5-6.)
+19. **Determinism is absolute.** Render the same graph twice: identical bytes. Rename a node: nothing else moves. Add one node: no card jumps, only small, proportionate shifts.
+20. **Congestion handling never moves the uncongested.** The minimal fixture is pixel-identical across renderer changes; on the reference graph, cards never move and only crowded pills may shift, along their own lines. (Renderer spec 4.)
+21. **The SVG stands alone.** No scripts, no external fonts or fetches, nothing clipped at the canvas edge, and the whole diagram, animation included, works when loaded through a plain `<img>` tag. (Renderer specs 5-6.)

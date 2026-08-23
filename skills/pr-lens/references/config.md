@@ -21,10 +21,10 @@ map:
       group: broadcast-lib
 ```
 
-Every field except `schemaVersion` is optional, and the file itself is optional. The JSON Schema for editor autocomplete ships with the contract:
+Every field except `schemaVersion` is optional, and the file itself is optional. For editor autocomplete, point at the published JSON Schema — no install needed:
 
 ```jsonc
-{ "$ref": "node_modules/@coldtea/pr-lens-schema/json-schema/config.schema.json" }
+{ "$ref": "https://unpkg.com/@coldtea/pr-lens-schema/json-schema/config.schema.json" }
 ```
 
 ## Selectors

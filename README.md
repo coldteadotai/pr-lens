@@ -42,7 +42,7 @@ Set up PR Lens (prlens.dev) for me: it draws each pull request as animated archi
 
 2. Walk me through installing the GitHub App at https://github.com/apps/coldtea-pr-lens on every repository where I review pull requests. It posts one sticky comment per pull request and updates it on every push, with no model key of mine involved.
 
-3. If I'd rather run it from CI with my own key, offer the Action instead: `.github/workflows/pr-lens.yml` using `coldteadotai/pr-lens/packages/action@v0` with a `GEMINI_API_KEY` repository secret.
+3. If I'd rather run it from CI with a model key of mine, offer the Action instead: `.github/workflows/pr-lens.yml` using `coldteadotai/pr-lens/packages/action@v0`, with the key as a repository secret. It takes Gemini by default, OpenAI, or any endpoint speaking `/chat/completions`.
 
 4. Then prove it: diagram the most recent change in this repository and show me the rendered SVGs.
 ```
@@ -83,7 +83,7 @@ The agent reads the diff, writes the document, runs `npx @coldtea/pr-lens-cli va
 <summary><b>3. As a workflow: the GitHub Action</b> · your CI · your key · one static comment</summary>
 <br>
 
-The same comment from your own CI, drawn with your own model key. Add the key as a repository secret named `GEMINI_API_KEY`, then commit this as `.github/workflows/pr-lens.yml`:
+The same comment from your own CI, drawn with your own model key. Add that key as a repository secret — `GEMINI_API_KEY` below, because `provider` defaults to Gemini — then commit this as `.github/workflows/pr-lens.yml`:
 
 ```yaml
 name: PR Lens
@@ -111,7 +111,7 @@ jobs:
           api-key: ${{ secrets.GEMINI_API_KEY }}
 ```
 
-The key reaches the CLI through the environment, never a command line, and the diff goes to the provider you name and nowhere else. The comment here is deliberately static. An Action cannot hold state between runs, so the checkboxes live in the App. Providers, lenses, branding and the rest of the inputs are in [`packages/action`](packages/action).
+Nothing here is tied to one model. `provider` takes `gemini` (the default), `openai`, or `openai-compatible` with a `base-url` and `model`, so the same workflow runs against OpenRouter, DeepSeek or a server of your own. The key reaches the CLI through the environment, never a command line, and the diff goes to the provider you name and nowhere else. The comment here is deliberately static. An Action cannot hold state between runs, so the checkboxes live in the App. Providers, lenses, branding and the rest of the inputs are in [`packages/action`](packages/action).
 
 </details>
 
@@ -119,27 +119,29 @@ The key reaches the CLI through the environment, never a command line, and the d
 <summary><b>4. From the CLI</b> · every step on your machine, one at a time</summary>
 <br>
 
-Everything the other modes do, one step at a time, on your machine. The key is read from the environment, never from a flag:
+Everything the other modes do, one step at a time, on your machine. Only `analyze` talks to a model, and its key is read from the environment, never from a flag:
 
 ```bash
-export GEMINI_API_KEY=…    # or OPENAI_API_KEY with --provider openai
+export GEMINI_API_KEY=…    # the default provider; OPENAI_API_KEY with --provider openai
 
 # Diff in, graph document out — measured against the merge base, not the branch tip.
-npx @coldtea/pr-lens-cli analyze --base origin/main -o pr-lens/graph.json
+npx @coldtea/pr-lens-cli analyze --base origin/main
 
 # The document as light and dark SVGs, plus the manifest a comment is built from.
-npx @coldtea/pr-lens-cli render pr-lens/graph.json -o pr-lens/
+npx @coldtea/pr-lens-cli render .pr-lens/graph.json
 
 # The pull request comment as markdown, on stdout. Posting is your business.
-npx @coldtea/pr-lens-cli comment --graph pr-lens/drawn.graph.json --manifest pr-lens/manifest.json \
+npx @coldtea/pr-lens-cli comment --graph .pr-lens/drawn.graph.json --manifest .pr-lens/manifest.json \
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 
 # Any PR Lens document, checked against the contract — every problem, not just the first.
-npx @coldtea/pr-lens-cli validate pr-lens/graph.json .github/pr-lens.yml
+npx @coldtea/pr-lens-cli validate .pr-lens/graph.json .github/pr-lens.yml
 
 # After the merge: the pull-request document as a stored map of the system, worth committing.
-npx @coldtea/pr-lens-cli export pr-lens/graph.json -o .github/pr-lens.map.json
+npx @coldtea/pr-lens-cli export .pr-lens/graph.json -o .github/pr-lens.map.json
 ```
+
+Everything lands in `.pr-lens/`, which the CLI adds to your `.gitignore` the first time it writes there. Treat it as scratch: the files are rebuilt from the diff on demand, and the only one worth committing is the map `export` writes. `--out` puts them somewhere else if you would rather.
 
 Ollama, DeepSeek, OpenRouter and anything else speaking `/chat/completions` are reached with `--provider openai-compatible --base-url <url>`. The full command reference, the correction file, and the failure codes a script can branch on are in [`packages/cli`](packages/cli).
 
@@ -153,8 +155,8 @@ Nothing about the diagrams needs a pull request. Render locally and look at the 
 
 ```bash
 npx @coldtea/pr-lens-cli analyze --base origin/main
-npx @coldtea/pr-lens-cli render pr-lens/graph.json
-open pr-lens/*-dark-*.svg    # macOS; the SVGs are self-contained, any browser reads them
+npx @coldtea/pr-lens-cli render .pr-lens/graph.json
+open .pr-lens/*-dark-*.svg    # macOS; the SVGs are self-contained, any browser reads them
 ```
 
 This is also the shape of reviewing an agent's work: while you read the diff, the agent that wrote it renders it. With the skill installed, "render this change with PR Lens and open the SVGs" gets you the diagram beside the diff, the same picture its pull request will carry, minutes earlier.

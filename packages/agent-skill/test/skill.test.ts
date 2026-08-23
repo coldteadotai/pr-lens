@@ -6,10 +6,11 @@ import {
   MessageKind,
   NodeKind,
   parseConfig,
+  parseGraphDoc,
   SCHEMA_VERSION,
 } from "@coldtea/pr-lens-schema";
 import { applyCorrections } from "@coldtea/pr-lens-renderer";
-import { minimalGraph } from "@coldtea/pr-lens-schema/examples";
+import { minimalGraph, postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { access, readFile } from "node:fs/promises";
 import { expect, test } from "vitest";
 import { parse } from "yaml";
@@ -34,14 +35,33 @@ test("the skill declares a name and the situations it is for", () => {
   expect(declared).toHaveProperty("description");
 });
 
-test("the reference pages the skill sends an agent to exist", async () => {
-  const referenced = [...skill.matchAll(/references\/[a-z-]+\.md/g)].map((match) => match[0]);
+test("every reference the skill sends an agent to ships beside it", async () => {
+  const referenced = [...skill.matchAll(/references\/[\w.-]+/g)].map((match) => match[0]);
 
   expect(referenced.length).toBeGreaterThan(0);
   for (const path of new Set(referenced)) {
     await expect(access(new URL(`../${path}`, import.meta.url))).resolves.toBeUndefined();
   }
-})
+});
+
+/**
+ * `npx skills add` copies the skill folder and nothing else, so a page that
+ * sends its reader into node_modules sends them somewhere that install never
+ * creates. The packages may be named — an agent that happens to have them is
+ * welcome to read them — but never as a path to open.
+ */
+test("the skill names no file outside the folder a user installs", () => {
+  for (const page of [skill, graphGuide, configGuide]) {
+    expect(page).not.toContain("node_modules/");
+  }
+});
+
+test("the worked example the skill ships is the contract's own, and it validates", async () => {
+  const shipped: unknown = JSON.parse(await read("references/example.graph.json"));
+
+  expect(() => parseGraphDoc(shipped)).not.toThrow();
+  expect(shipped).toEqual(postmarkRefactorGraph);
+});
 
 test("every config the pages teach is a config the contract accepts", () => {
   const configs = [...fenced(skill, "yaml"), ...fenced(configGuide, "yaml")].filter((block) =>

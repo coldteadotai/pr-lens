@@ -30,7 +30,7 @@ jobs:
           api-key: ${{ secrets.GEMINI_API_KEY }}
 ```
 
-That is the whole setup. The key is passed to the CLI through the environment, so it never appears in a command line or a log; the diff goes to the provider you named and nowhere else.
+That is the whole setup. `GEMINI_API_KEY` is the secret name because `provider` defaults to Gemini; set `provider` to `openai`, or to `openai-compatible` with a `base-url`, and the key is whatever that endpoint wants. The key is passed to the CLI through the environment, so it never appears in a command line or a log; the diff goes to the provider you named and nowhere else.
 
 The `concurrency` block is not decoration. Every run of every pull request writes to one shared branch and one shared comment, so two runs of the same pull request racing is ordinary. A group per pull request means a new push supersedes the render it replaces instead of the two fighting for the comment.
 

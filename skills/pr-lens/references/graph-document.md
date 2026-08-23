@@ -1,6 +1,8 @@
 # Authoring a graph document
 
-The authoritative shape is `node_modules/@coldtea/pr-lens-schema/json-schema/graph-doc.schema.json`. This page is what that schema cannot tell you: which parts matter, and where documents actually go wrong.
+This page is the whole shape, and what a schema cannot tell you besides: which parts matter, and where documents actually go wrong. `references/example.graph.json` is one document that validates, if you would rather read than be told.
+
+The validator enforces the same thing from a JSON Schema, published at `https://unpkg.com/@coldtea/pr-lens-schema/json-schema/graph-doc.schema.json` if you want it machine-readable.
 
 Every schema here is **strict**: an unknown key is a rejection, not a warning. A field with a default may be left out.
 
@@ -162,7 +164,7 @@ Labels 120 characters, summaries 2000, chip values 32. They are display fields: 
 ## Then validate
 
 ```bash
-npx @coldtea/pr-lens-cli validate pr-lens/graph.json
+npx @coldtea/pr-lens-cli validate .pr-lens/graph.json
 ```
 
 Every problem is reported at once, with a path into the document. Fix them all and run it again until it is clean.

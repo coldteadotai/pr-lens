@@ -10,10 +10,10 @@ npx @coldtea/pr-lens-cli analyze --base origin/main
 
 ## Bring your own key
 
-The key is read from the environment, never from a flag: a flag lands in shell history and in the log of whatever CI runs it. The diff goes to the provider you name and nowhere else: there is no PR Lens service in this path.
+Only `analyze` talks to a model; `render`, `comment`, `validate` and `export` never do. Its key is read from the environment, never from a flag: a flag lands in shell history and in the log of whatever CI runs it. The diff goes to the provider you name and nowhere else: there is no PR Lens service in this path.
 
 ```bash
-export GEMINI_API_KEY=…
+export GEMINI_API_KEY=…      # Gemini is the default, not a requirement
 pr-lens analyze --base origin/main --head HEAD
 ```
 
@@ -35,6 +35,14 @@ pr-lens analyze --base origin/main \
   --api-key-env OLLAMA_KEY
 ```
 
+## Where the files go
+
+`analyze` and `render` write to `.pr-lens/` in the current directory, and the first write adds `.pr-lens/` to the repository's `.gitignore` alongside a README saying what the directory holds.
+
+None of it is meant to be committed. The SVGs, the document and the manifest are rebuilt from the diff whenever anyone wants them, and a diagram of a pull request that merged months ago is worse than no diagram. What is meant to last is the comment on the pull request, and the map `export` writes.
+
+`--out` overrides the location on every command that writes. Point it somewhere else and PR Lens leaves your `.gitignore` alone: that directory is yours to decide about.
+
 ## The commands
 
 ### `analyze`
@@ -42,8 +50,10 @@ pr-lens analyze --base origin/main \
 Diff in, graph document out.
 
 ```bash
-pr-lens analyze --base origin/main --pr 42 -o pr-lens/graph.json
+pr-lens analyze --base origin/main --pr 42
 ```
+
+The document lands in `.pr-lens/graph.json` unless `--out` says otherwise.
 
 The base is the merge base of the two refs, not the tip of the base branch: a diff against the tip would blame this pull request for every change made on the base branch since it forked.
 
@@ -54,7 +64,7 @@ The answer is parsed against the contract. If it fails, the validation errors, p
 ### `render`
 
 ```bash
-pr-lens render pr-lens/graph.json -o pr-lens/
+pr-lens render .pr-lens/graph.json
 ```
 
 Draws the document as self-contained light and dark SVGs (one pair per drill-down section per lens, or one pair per lens when the document has no sections), and writes two files beside them: `manifest.json`, which says what was drawn and under which file name, and `drawn.graph.json`, the document those pictures actually show.
@@ -66,7 +76,7 @@ The SVGs carry no script and no external reference, and the same document render
 ### `comment`
 
 ```bash
-pr-lens comment --graph pr-lens/drawn.graph.json --manifest pr-lens/manifest.json \
+pr-lens comment --graph .pr-lens/drawn.graph.json --manifest .pr-lens/manifest.json \
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 ```
 
@@ -75,7 +85,7 @@ Composes the markdown (the `<picture>` pairs that read in both GitHub themes, th
 ### `validate`
 
 ```bash
-pr-lens validate pr-lens/graph.json .github/pr-lens.yml
+pr-lens validate .pr-lens/graph.json .github/pr-lens.yml
 ```
 
 Parses graph documents, patch documents, render manifests and configs, JSON or YAML, and reports every problem in each rather than only the first. A file with no `kind` field is read as a config, because a config is the only one of the four a person writes by hand.
@@ -83,7 +93,7 @@ Parses graph documents, patch documents, render manifests and configs, JSON or Y
 ### `export`
 
 ```bash
-pr-lens export pr-lens/graph.json -o .github/pr-lens.map.json
+pr-lens export .pr-lens/graph.json -o .github/pr-lens.map.json
 ```
 
 Turns a pull-request document into the map of the system once that pull request has merged: elements the change deletes are dropped, along with the edges and flow steps that hung from them; the rest stops being annotated, and the result is stamped with the single commit it reflects.
