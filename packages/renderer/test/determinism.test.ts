@@ -102,6 +102,19 @@ describe("a rename moves nothing", () => {
     });
     expect(boxes(renamed)).toEqual(boxes(postmarkRefactorGraph));
   });
+
+  it("does not stretch the canvas to fit the longer name", () => {
+    const renamed = parseGraphDoc({
+      ...JSON.parse(JSON.stringify(postmarkRefactorGraph)),
+      nodes: JSON.parse(JSON.stringify(postmarkRefactorGraph.nodes)).map((entry: GraphNode) =>
+        entry.id === "broadcast-lib" ? { ...entry, label: "B".repeat(120) } : entry,
+      ),
+    });
+    const before = layoutOf(postmarkRefactorGraph);
+    const after = layoutOf(renamed);
+
+    expect([after.width, after.height]).toEqual([before.width, before.height]);
+  });
 });
 
 describe("ranking", () => {
