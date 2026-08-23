@@ -74,3 +74,7 @@ The comment is a picture, a set of numbers and a `<details>` tree. There is no c
 ## Forks
 
 A pull request from a fork gets no secrets, so there is no key for the action to use and the job cannot run. That is GitHub's rule and the right one — a fork can change the workflow. Run PR Lens on same-repository pull requests, or from a workflow that a maintainer triggers.
+
+---
+
+Part of [PR Lens](https://prlens.dev) — review what actually matters.

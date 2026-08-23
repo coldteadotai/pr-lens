@@ -111,3 +111,7 @@ A lane pin may name a lane the document never declared; the band is created and 
 ## Failures
 
 Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`. Misuse exits 2, everything else exits 1.
+
+---
+
+Part of [PR Lens](https://prlens.dev) — review what actually matters.

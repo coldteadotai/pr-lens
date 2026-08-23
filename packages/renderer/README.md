@@ -85,3 +85,7 @@ Labels, subtitles and titles come from a model. They are escaped for XML at the 
 `PrLensRenderError` carries a `code` a caller can switch on: `UNKNOWN_VIEW`, `LENS_NOT_DECLARED`, `NOTHING_TO_RENDER`, `NO_FLOW_IN_SCOPE`, `TOO_MANY_ASSETS`. A document that parsed is otherwise safe to render — the renderer trusts `@coldtea/pr-lens-schema` and never re-validates it.
 
 `TOO_MANY_ASSETS` cannot be reached by a parsed document: the contract caps a view tree at `MAX_VIEWS`, which is `MAX_RENDER_ASSETS` divided by the two themes a `<picture>` pair needs. A hand-built one can reach it, because that cap lives in a refinement and a refinement does not survive into the inferred type. The check is a postcondition on what `renderAll` is about to produce rather than a re-reading of what came in — how many pictures a render makes depends on how many themes the caller asked for, which no document knows.
+
+---
+
+Part of [PR Lens](https://prlens.dev) — review what actually matters.

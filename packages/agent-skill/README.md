@@ -39,3 +39,7 @@ The agent is usually the model. Rather than spending a provider key to describe 
 ## Why this exists
 
 A coding agent that opens a pull request is asking a person to review code the person did not write. A diagram of what moved is the cheapest thing the agent can add to make that review possible.
+
+---
+
+Part of [PR Lens](https://prlens.dev) — review what actually matters.

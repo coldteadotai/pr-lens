@@ -144,3 +144,7 @@ They tell one story — a real refactor that moved broadcast sending from one Po
 ## Versioning
 
 `SCHEMA_VERSION` is the contract version, and it is not the package version's twin by accident — they move together. While the contract is below `1.0.0`, a minor bump may break: parsers accept only their exact `major.minor`. From `1.0.0` on, minor releases only add optional fields or widen an enum, and a parser accepts any minor at or below its own.
+
+---
+
+Part of [PR Lens](https://prlens.dev) — review what actually matters.
