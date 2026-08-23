@@ -1,6 +1,6 @@
 {
   "name": "@coldtea/pr-lens-schema",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The PR Lens contract: versioned schemas for architecture / data-flow graph documents, baseline patches, config and render manifests.",
   "license": "MIT",
   "author": "Coldtea AI",

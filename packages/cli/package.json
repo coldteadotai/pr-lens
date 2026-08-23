@@ -1,6 +1,6 @@
 {
   "name": "@coldtea/pr-lens-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The PR Lens command line: turn a pull request diff into a schema-valid graph with your own model key, render it, and compose the comment.",
   "license": "MIT",
   "author": "Coldtea AI",

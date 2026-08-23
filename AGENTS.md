@@ -6,6 +6,7 @@ Hard rules for anyone (human or agent) working in this repo. Read fully before w
 
 - **No secrets in this repo, ever.** This repo needs no credentials. Do not read `~/Documents/dev/pr-lens-secrets/`.
 - **Verify before claiming done**: tests green, `pnpm build` + typecheck clean, and visual output verified in a real browser when the change affects rendered SVGs.
+- **Pass user-facing words through the humanizer before shipping them.** Anything a person reads — comments, captions, tips, README prose, share pages, cards, terminal output — goes through the [humanizer skill](https://github.com/blader/humanizer/blob/main/SKILL.md) first. Copy that reads as machine-written spends trust the diagrams then have to earn back.
 
 # General
 
