@@ -1,5 +1,6 @@
 import { LENSES, type GraphDocInput, type Lens } from "@coldtea/pr-lens-schema";
 import { createRequire } from "node:module";
+import { dirname } from "node:path";
 import { parseOptions, readBoolean, readInt, readList, readString } from "../args.js";
 import { discoverConfig, loadConfig, type LoadedConfig } from "../config-file.js";
 import { PrLensCliError, usageError } from "../errors.js";
@@ -10,8 +11,9 @@ import { buildExtractionPrompt, SYSTEM_PROMPT } from "../prompt.js";
 import { completeJson, isProviderId, PROVIDER_IDS, resolveProvider } from "../providers/index.js";
 import type { Terminal } from "../terminal.js";
 import { CLI_VERSION, GENERATOR_NAME } from "../version.js";
+import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
 
-const DEFAULT_OUT = "pr-lens/graph.json";
+const DEFAULT_OUT = `${WORKSPACE_DIR}/graph.json`;
 const DEFAULT_MAX_OUTPUT_TOKENS = 32_768;
 const DEFAULT_MAX_DIFF_BYTES = 400_000;
 
@@ -199,7 +201,9 @@ export const analyzeCommand = async (
     (request) => completeJson(provider, request),
   );
 
-  const written = await writeJsonFile(readString(values.out, "out") ?? DEFAULT_OUT, document);
+  const outPath = readString(values.out, "out") ?? DEFAULT_OUT;
+  await prepareWorkspace(dirname(outPath), terminal);
+  const written = await writeJsonFile(outPath, document);
   terminal.out(
     `✓ ${written} — ${document.nodes.length} nodes, ${document.edges.length} edges, ${document.flows.length} flows${attempts > 1 ? ` (${attempts} attempts)` : ""}`,
   );

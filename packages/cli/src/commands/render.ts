@@ -9,8 +9,9 @@ import { PrLensCliError, usageError } from "../errors.js";
 import { repositoryRoot } from "../git.js";
 import { writeJsonFile, writeTextFile } from "../io.js";
 import type { Terminal } from "../terminal.js";
+import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
 
-const DEFAULT_OUT = "pr-lens";
+const DEFAULT_OUT = WORKSPACE_DIR;
 const MANIFEST = "manifest.json";
 
 /**
@@ -108,6 +109,8 @@ export const renderCommand = async (args: readonly string[], terminal: Terminal)
       throw new PrLensCliError("RENDER_FAILED", `${error.message} [${error.code}]`);
     }
   })();
+
+  await prepareWorkspace(out, terminal);
 
   for (const drawing of rendered.assets) {
     const { id, path } = drawing.asset;
