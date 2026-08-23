@@ -19,6 +19,7 @@
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r run test",
     "schema:emit": "pnpm --filter @coldtea/pr-lens-schema run schema:emit",
+    "skill:sync": "pnpm --filter @coldtea/pr-lens-agent-skill run skill:sync",
     "verify": "pnpm run build && pnpm run typecheck && pnpm run test"
   },
   "devDependencies": {

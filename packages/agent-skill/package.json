@@ -29,6 +29,7 @@
     "access": "public"
   },
   "scripts": {
+    "skill:sync": "tsx scripts/sync.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -36,6 +37,7 @@
     "@coldtea/pr-lens-renderer": "workspace:^",
     "@coldtea/pr-lens-schema": "workspace:^",
     "@types/node": "^20.19.0",
+    "tsx": "4.23.12",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
     "yaml": "^2.8.1"
