@@ -23,6 +23,7 @@ import {
   badgeRow,
   badgeWidth,
   cardBadges,
+  cardTextWidth,
   deltaBadgeText,
   laneHeaderText,
   type PlacedNode,
@@ -92,7 +93,7 @@ const cardOutlineClass = (node: GraphNode): string => {
 export const paintCard = (placed: PlacedNode): string => {
   const { node, box, showIcon, titleSize } = placed;
   const textX = box.x + CARD_PADDING_X + (showIcon ? ICON_CHIP_SIZE + ICON_CHIP_GAP : 0);
-  const textWidth = box.x + box.width - CARD_PADDING_X - textX;
+  const textWidth = cardTextWidth(box.width, showIcon);
   const hasSubtitle = node.subtitle !== undefined;
   const titleBaseline = box.y + (hasSubtitle ? 27 : 31);
 

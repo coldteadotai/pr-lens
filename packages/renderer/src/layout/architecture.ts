@@ -13,6 +13,8 @@ import {
   CARD_PADDING_X,
   CONTENT_TOP,
   DIAGRAM_MARGIN,
+  ICON_CHIP_GAP,
+  ICON_CHIP_SIZE,
   ICON_MIN_CARD_WIDTH,
   LANE_BOTTOM_PADDING,
   LANE_GAP,
@@ -23,7 +25,9 @@ import {
   LANE_TOP,
   ROW_GAP,
   TITLE_SIZE,
+  TITLE_SIZE_MIN,
   TITLE_SIZE_SMALL,
+  TITLE_SIZE_STEP,
 } from "../design.js";
 import type { Box } from "../geometry.js";
 import type { ScopedGraph } from "../scope.js";
@@ -67,6 +71,7 @@ export type PlacedNode = {
   box: Box;
   /** Wide enough for the kind glyph to earn its place. */
   showIcon: boolean;
+  /** The size the title is actually set at, after fitting it to the card. */
   titleSize: number;
   row: number;
   laneIndex: number;
@@ -186,6 +191,34 @@ const rowWidths = (contentWidth: number, row: SeatedRow): number[] => {
   return [half, contentWidth - CARD_GAP_X - half];
 };
 
+/**
+ * Every kind draws something, on every card: the chip is reserved space and
+ * the title gives way around it, so recognition wins at any width.
+ */
+const SHOW_ICON = true;
+
+/**
+ * The horizontal run a card's text gets, once the padding either side and the
+ * kind chip have taken their share. The layout fits the title into this and
+ * the painter cuts against the same number, so it is owned in one place.
+ */
+export const cardTextWidth = (cardWidth: number, showIcon: boolean): number =>
+  cardWidth - CARD_PADDING_X * 2 - (showIcon ? ICON_CHIP_SIZE + ICON_CHIP_GAP : 0);
+
+/**
+ * The size a title is set at: the largest half-point step, at or below the
+ * size the card's width earns, where the whole label still fits its run.
+ *
+ * Stops at the floor, and the painter truncates from there — at that point the
+ * name really is longer than the card, rather than a point or two over.
+ */
+const fittedTitleSize = (label: string, earned: number, budget: number): number => {
+  let size = earned;
+  while (size > TITLE_SIZE_MIN && measure(label, "sans-bold", size) > budget)
+    size = Math.max(TITLE_SIZE_MIN, size - TITLE_SIZE_STEP);
+  return size;
+};
+
 export const layoutArchitecture = (
   graph: ScopedGraph,
   hints: LayoutHints | undefined,
@@ -248,10 +281,12 @@ export const layoutArchitecture = (
         placedNodes.push({
           node,
           box: { x, y: top, width, height: cardHeight(node) },
-          // Every kind draws something, on every card: the chip is reserved
-          // space and the title truncates, so recognition wins at any width.
-          showIcon: true,
-          titleSize: width >= ICON_MIN_CARD_WIDTH ? TITLE_SIZE : TITLE_SIZE_SMALL,
+          showIcon: SHOW_ICON,
+          titleSize: fittedTitleSize(
+            node.label,
+            width >= ICON_MIN_CARD_WIDTH ? TITLE_SIZE : TITLE_SIZE_SMALL,
+            cardTextWidth(width, SHOW_ICON),
+          ),
           row: row.grid,
           laneIndex,
         });

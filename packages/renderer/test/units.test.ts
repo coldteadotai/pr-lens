@@ -19,6 +19,7 @@ import {
 } from "../src/index.js";
 import { matchesGlob } from "../src/glob.js";
 import { measure, truncate } from "../src/text.js";
+import { TITLE_SIZE_MIN, TITLE_SIZE_SMALL } from "../src/design.js";
 
 const corrections = (map: Partial<Config["map"]>): Config["map"] =>
   parseConfig({ schemaVersion: "0.1.0", map }).map;
@@ -60,6 +61,58 @@ describe("truncation", () => {
 
   it("gives back an ellipsis when there is room for nothing else", () => {
     expect(truncate("anything", "sans", 13, 1)).toBe("…");
+  });
+});
+
+describe("fitting a title to its card", () => {
+  const pairedLane = (...labels: readonly string[]): GraphDoc =>
+    parseGraphDoc({
+      ...minimalGraph,
+      nodes: labels.map((label, index) => ({
+        id: `n${index}`,
+        label,
+        kind: "service",
+        delta: "modified",
+        lane: "api",
+        files: [],
+        badges: [],
+      })),
+    });
+
+  /** The `font-size` every card title was set at, in the order they are drawn. */
+  const titleSizes = (svg: string): number[] =>
+    [...svg.matchAll(/class="ntitle"[^>]*font-size="([\d.]+)"/g)].map((match) =>
+      Number(match[1]),
+    );
+
+  it("sets a name that overruns its card a step smaller rather than cutting it", () => {
+    const { svg } = render(pairedLane("Cancellations Service", "Billing"), {
+      lens: "architecture",
+      theme: "dark",
+    });
+
+    expect(svg).toContain("Cancellations Service");
+    expect(svg).not.toContain("…");
+    expect(titleSizes(svg)[0]).toBeLessThan(TITLE_SIZE_SMALL);
+  });
+
+  it("leaves a name that already fits at the size its card earned", () => {
+    const { svg } = render(pairedLane("Billing", "Search"), {
+      lens: "architecture",
+      theme: "dark",
+    });
+
+    expect(titleSizes(svg)).toEqual([TITLE_SIZE_SMALL, TITLE_SIZE_SMALL]);
+  });
+
+  it("cuts a name that is still too long at the smallest size it may be set", () => {
+    const { svg } = render(
+      pairedLane("Cancellations and Refunds Reconciliation Service", "Billing"),
+      { lens: "architecture", theme: "dark" },
+    );
+
+    expect(svg).toContain("…");
+    expect(titleSizes(svg)[0]).toBe(TITLE_SIZE_MIN);
   });
 });
 

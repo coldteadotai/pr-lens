@@ -40,11 +40,26 @@ export const CARD_PADDING_X = 14;
 export const ICON_CHIP_SIZE = 26;
 export const ICON_CHIP_GAP = 10;
 export const ICON_CHIP_RADIUS = 7;
-/** Below this a card's title steps down a size to keep its room. */
+/** Below this a card's title starts a size down, to keep its room. */
 export const ICON_MIN_CARD_WIDTH = 200;
 
 export const TITLE_SIZE = 13;
 export const TITLE_SIZE_SMALL = 11.5;
+
+/**
+ * How a title that overruns its card gives way. Cards cannot widen — their
+ * width is a constant so that a rename moves nothing — so a name longer than
+ * the run it was given steps down in half-points until it fits, and is cut
+ * only once it would go below the floor. A reader can read a name set half a
+ * point smaller; a name with its tail missing is a different name.
+ *
+ * Half-points because the step has to be coarse enough that two cards side by
+ * side do not look randomly sized, and fine enough that one step is usually
+ * the whole of it.
+ */
+export const TITLE_SIZE_MIN = 10.5;
+export const TITLE_SIZE_STEP = 0.5;
+
 export const SUBTITLE_SIZE = 9.5;
 
 export const BADGE_HEIGHT = 16;

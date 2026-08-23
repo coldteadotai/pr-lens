@@ -46,7 +46,7 @@
 <g class="bdg bdg-added"><rect x="164.45" y="312" width="40.55" height="16" rx="8"/><text x="184.73" y="323" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="224" y="320" width="180" height="52" rx="10"/>
 <rect class="chip" x="238" y="333" width="26" height="26" rx="7"/><g><text class="glyph" x="251" y="350.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
-<text class="ntitle" x="274" y="351" font-size="11.5">getSuppressedEma…</text>
+<text class="ntitle" x="274" y="351" font-size="11">getSuppressedEmails</text>
 <g class="bdg bdg-added"><rect x="356.45" y="312" width="40.55" height="16" rx="8"/><text x="376.73" y="323" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-modified" x="456" y="320" width="372" height="62" rx="10"/>
 <rect class="chip" x="470" y="338" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="475" y="345" width="16" height="12" rx="2"/>
