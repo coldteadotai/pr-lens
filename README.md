@@ -7,6 +7,14 @@
 
 # PR Lens
 
+<p align="center">
+  <a href="https://github.com/apps/coldtea-pr-lens"><img alt="Install the GitHub App" src="https://img.shields.io/badge/GitHub%20App-install-3fb950?style=flat-square&logo=github&logoColor=white&labelColor=21262d"></a>
+  <a href="https://www.npmjs.com/package/@coldtea/pr-lens-cli"><img alt="The CLI on npm" src="https://img.shields.io/npm/v/%40coldtea%2Fpr-lens-cli?style=flat-square&logo=npm&logoColor=white&label=cli&labelColor=21262d&color=21262d"></a>
+  <a href="https://discord.gg/nTEFnmBQMJ"><img alt="Join the Discord" src="https://img.shields.io/badge/Discord-join-5865F2?style=flat-square&logo=discord&logoColor=white&labelColor=21262d"></a>
+  <a href="https://prlens.dev"><img alt="prlens.dev" src="https://img.shields.io/badge/website-prlens.dev-21262d?style=flat-square&labelColor=21262d"></a>
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/github/license/coldteadotai/pr-lens?style=flat-square&labelColor=21262d&color=21262d"></a>
+</p>
+
 Reduce the cognitive load on AI-generated PRs. PR Lens draws a pull request as animated diagrams **inside the pull request itself**: architecture blast radius and data-flow pipelines, not another findings table.
 
 <img alt="A PR Lens bot comment in a pull request: stats chips, an architecture diagram of a tiny change, view-option checkboxes and the PR Lens footer" src="docs/showcase/teaser.comment.dark.svg">
