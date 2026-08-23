@@ -1,6 +1,6 @@
 {
   "name": "@coldtea/pr-lens-renderer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The PR Lens renderer: a schema-valid graph document in, a self-contained animated SVG out.",
   "license": "MIT",
   "author": "Ohans Emmanuel",

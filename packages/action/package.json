@@ -1,6 +1,6 @@
 {
   "name": "@coldtea/pr-lens-action",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The PR Lens GitHub Action: analyze a pull request with your own model key, publish the diagrams, post one static comment.",
   "license": "MIT",
   "author": "Ohans Emmanuel",
