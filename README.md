@@ -1,7 +1,9 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark.dark.svg">
-  <img alt="" src="docs/brand/mark.light.svg" width="76">
-</picture>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark.dark.svg">
+    <img alt="" src="docs/brand/mark.light.svg" width="76">
+  </picture>
+</p>
 
 # PR Lens
 
@@ -195,10 +197,6 @@ pnpm verify      # build, typecheck, test
 ```
 
 Node 20.11+ and pnpm 10.
-
-## End-to-end tests
-
-The product's visual guarantees, written as plain-English end-to-end tests for future agent-driven QA: [`e2e.md`](e2e.md).
 
 ## License
 
