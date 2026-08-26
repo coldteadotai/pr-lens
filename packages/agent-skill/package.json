@@ -1,6 +1,6 @@
 {
   "name": "@coldtea/pr-lens-agent-skill",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "The PR Lens skill for coding agents: author a graph document from a diff, validate it, render it, and correct a repository's map.",
   "license": "MIT",
   "author": "Coldtea AI",
