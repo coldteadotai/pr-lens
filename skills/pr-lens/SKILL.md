@@ -45,6 +45,14 @@ If you would rather not author the document yourself, `npx @coldtea/pr-lens-cli 
 - **Attach file refs**: they become the permalinks a reviewer clicks.
 - **There is no findings lens.** PR Lens is the comprehension layer, not another review bot. There is no field for a bug, a risk or a security note, and a document that invents one is rejected rather than trimmed.
 
+## Choosing architecture views
+
+Treat architecture views as a C4-inspired decision tree, not a checklist. One useful view is enough for a small change. Start with system context when the change affects a user, an external system or a system boundary. Use a container view for the affected applications, services, jobs, data stores and runtimes. Add a component child only when an affected container's internals matter. Do not add code-level views by default.
+
+Every child moves down one level and covers a materially narrower scope. Skip empty, repetitive or speculative levels, and do not infer architecture from folder names alone. Two views should not carry substantially the same nodes and edges. Keep the unchanged direct neighbours that explain blast radius.
+
+Keep data-flow views as separate roots rather than nesting them in the architecture tree. Set `defaultOpen: true` on the highest useful architecture view. Lower levels should normally keep the default, `false`.
+
 ## What the validator will catch
 
 Read `references/graph-document.md` before writing. The four failures that account for nearly everything:

@@ -141,6 +141,69 @@ The drill-down tree in the comment: up to 32 at the root, nesting up to 32 child
 
 `scope` is either `{ "kind": "all" }` (the default) or a selection naming at least one lane, node, edge or flow. The two are distinct states on purpose: removing the last element a view pointed at can never quietly turn it into a view of everything. A view's `lens` must be one the document declares.
 
+### Choosing architecture views
+
+Treat the architecture tree as a set of decisions, not a quota:
+
+1. Ask whether the change affects a user, an external system or a system boundary. If it does, start with a system-context view. If it does not, leave that level out.
+2. Show affected applications, services, jobs, data stores and runtimes in a container view. Make it the root when there is no useful context view; otherwise make it a child of that context.
+3. Add a component child only when the internals of an affected container matter to the change. Components may be modules, routes or functions, but the view should explain their responsibilities and relationships rather than mirror folders.
+4. Stop at components unless someone explicitly asks for code-level detail.
+
+One architecture view may be the right answer for a small change. Each child must move down exactly one level and cover a materially narrower scope. Skip a level when it would be empty, speculative or a repeat of its parent. Do not create two views with substantially the same nodes and edges, and do not infer a boundary from a folder name alone. Keep unchanged direct neighbours when they make the blast radius clear.
+
+Set `defaultOpen: true` on the highest useful architecture view. Lower levels should normally stay collapsed. A data-flow view describes an ordered sequence, so keep it as a separate root instead of placing it inside the architecture hierarchy.
+
+This compact fragment shows the shape. The selected ids refer to elements declared elsewhere in the document:
+
+```json
+{
+  "views": [
+    {
+      "id": "checkout-context",
+      "title": "Checkout in its environment",
+      "lens": "architecture",
+      "defaultOpen": true,
+      "scope": {
+        "kind": "selection",
+        "nodes": ["shopper", "commerce-platform", "payment-provider", "fulfilment-system"],
+        "edges": ["shopper-to-commerce", "commerce-to-payment", "commerce-to-fulfilment"]
+      },
+      "children": [
+        {
+          "id": "checkout-containers",
+          "title": "Checkout containers",
+          "lens": "architecture",
+          "scope": {
+            "kind": "selection",
+            "nodes": ["storefront", "checkout-api", "orders-db", "payment-provider"],
+            "edges": ["storefront-to-checkout", "checkout-to-orders", "checkout-to-payment"]
+          },
+          "children": [
+            {
+              "id": "checkout-components",
+              "title": "Checkout API components",
+              "lens": "architecture",
+              "scope": {
+                "kind": "selection",
+                "nodes": ["checkout-route", "order-service", "payment-client"],
+                "edges": ["route-to-orders", "orders-to-payment-client"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place-order-flow",
+      "title": "Placing an order",
+      "lens": "data-flow",
+      "scope": { "kind": "selection", "flows": ["place-order"] }
+    }
+  ]
+}
+```
+
 ## Layout
 
 ```json
