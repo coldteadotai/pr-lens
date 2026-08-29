@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1708 492" width="1708" height="492" role="img" aria-label="ASGI request path">
+<title>ASGI request path</title>
+<desc>An ASGI server enters Django's new handler, then reaches existing request and database services.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:rgba(110,118,129,.07)}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#9198a1}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.card-modified{stroke:#d29922;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#f85149;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#e6edf3}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:rgba(110,118,129,.18)}.glyph{fill:#9198a1}.glyph-stroke{stroke:#9198a1;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.bdg-added text{fill:#3fb950}.bdg-modified rect{fill:rgba(187,128,9,.15);stroke:rgba(210,153,34,.4)}.bdg-modified text{fill:#d29922}.bdg-removed rect{fill:rgba(248,81,73,.12);stroke:rgba(248,81,73,.4)}.bdg-removed text{fill:#f85149}.bdg-neutral rect{fill:rgba(110,118,129,.18);stroke:#3d444d}.bdg-neutral text{fill:#9198a1}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#3fb950}.edge-modified{stroke:#d29922}.edge-removed{stroke:#f85149;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#6e7681}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#e6edf3}.lpill{fill:#0d1117;stroke:#21262d;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#9198a1}.ltext-added{fill:#3fb950}.ltext-modified{fill:#d29922}.ltext-removed{fill:#f85149}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}.lifeline{stroke:#30363d;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.msg{fill:none;stroke-width:1.5}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-strong{stroke-width:2.25}</style>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mko-added" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#3fb950" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mko-modified" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#d29922" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mko-removed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#f85149" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker><marker id="mko-neutral" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#6e7681" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1708" height="492" rx="12" fill="#0d1117"/>
+<rect x="0" y="0" width="1708" height="492" rx="12" fill="url(#dots)"/>
+<g><rect class="lanebox" x="16" y="44" width="404" height="432" rx="12"/>
+<text class="lanelabel" x="32" y="68">ASGI SERVER · DAPHNE / UVICORN</text>
+<rect class="lanebox" x="440" y="44" width="404" height="432" rx="12"/>
+<text class="lanelabel" x="456" y="68">APPLICATION ENTRY · ASGI.PY</text>
+<rect class="lanebox" x="864" y="44" width="404" height="432" rx="12"/>
+<text class="lanelabel" x="880" y="68">REQUEST HANDLERS</text>
+<rect class="lanebox" x="1288" y="44" width="404" height="432" rx="12"/>
+<text class="lanelabel" x="1304" y="68">DATA &amp; CONCURRENCY</text></g>
+<g><path class="glow" stroke="#3fb950" d="M404,118 L417,118 C424.18,118 430,123.82 430,131 L430,144 C430,158.36 441.64,170 456,170 L832,170 C848.57,170 862,183.43 862,200 L862,221 C862,225.97 866.03,230 871,230 L880,230"/>
+<path class="edge edge-added hero" d="M404,118 L417,118 C424.18,118 430,123.82 430,131 L430,144 C430,158.36 441.64,170 456,170 L832,170 C848.57,170 862,183.43 862,200 L862,221 C862,225.97 866.03,230 871,230 L880,230" marker-end="url(#mk-added)"/>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M404,118 L417,118 C424.18,118 430,123.82 430,131 L430,144 C430,158.36 441.64,170 456,170 L832,170 C848.57,170 862,183.43 862,200 L862,221 C862,225.97 866.03,230 871,230 L880,230"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-1.4s" repeatCount="indefinite" path="M404,118 L417,118 C424.18,118 430,123.82 430,131 L430,144 C430,158.36 441.64,170 456,170 L832,170 C848.57,170 862,183.43 862,200 L862,221 C862,225.97 866.03,230 871,230 L880,230"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-0.7s" repeatCount="indefinite" path="M404,118 L417,118 C424.18,118 430,123.82 430,131 L430,144 C430,158.36 441.64,170 456,170 L832,170 C848.57,170 862,183.43 862,200 L862,221 C862,225.97 866.03,230 871,230 L880,230"/></circle>
+<path class="edge edge-added" d="M828,118 L837,118 C841.97,118 846,122.03 846,127 L846,197 C846,206.39 853.61,214 863,214 L880,214" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1066,248 L1066,300" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M1066,248 L1066,300"/></circle>
+<path class="edge edge-added" d="M1252,222 L1261,222 C1265.97,222 1270,226.03 1270,231 L1270,309 C1270,318.39 1277.61,326 1287,326 L1304,326" marker-end="url(#mk-added)"/>
+<path class="edge edge-neutral context" d="M1252,326 L1269,326 C1278.39,326 1286,333.61 1286,343 L1286,421 C1286,425.97 1290.03,430 1295,430 L1304,430" marker-end="url(#mk-neutral)"/>
+<circle r="2.6" fill="#6e7681"><animateMotion dur="1.6s" repeatCount="indefinite" path="M1252,326 L1269,326 C1278.39,326 1286,333.61 1286,343 L1286,421 C1286,425.97 1290.03,430 1295,430 L1304,430"/></circle></g>
+<g><g class="cardsh context"><rect class="card" x="32" y="92" width="372" height="52" rx="10"/>
+<rect class="chip" x="46" y="105" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="51" y="112" width="16" height="12" rx="2"/>
+<path class="glyph-stroke" d="M51,114 l8,6 8,-6"/></g>
+<text class="ntitle" x="82" y="123" font-size="13">ASGI server (Daphne/Uvicorn)</text></g>
+<g class="cardsh"><rect class="card card-added" x="456" y="92" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="105" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M476,114 h14"/>
+<path class="glyph-stroke" d="M476,122 h14"/>
+<circle class="glyph" cx="481" cy="114" r="2.2"/>
+<circle class="glyph" cx="486" cy="122" r="2.2"/></g>
+<text class="ntitle" x="506" y="123" font-size="13">get_asgi_application()</text>
+<g class="bdg bdg-added"><rect x="780.45" y="84" width="40.55" height="16" rx="8"/><text x="800.73" y="95" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="880" y="196" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="209" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="900.5" y="215.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="907" cy="222" r="2"/></g>
+<text class="ntitle" x="930" y="227" font-size="13">ASGIHandler / ASGIRequest</text>
+<g class="bdg bdg-added"><rect x="1204.45" y="188" width="40.55" height="16" rx="8"/><text x="1224.73" y="199" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh context"><rect class="card" x="880" y="300" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="313" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="900.5" y="319.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="907" cy="326" r="2"/></g>
+<text class="ntitle" x="930" y="331" font-size="13">BaseHandler.get_response</text></g>
+<g class="cardsh"><rect class="card card-added" x="1304" y="300" width="372" height="52" rx="10"/>
+<rect class="chip" x="1318" y="313" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M1331,319 l6.5,3.5 v7 l-6.5,3.5 l-6.5,-3.5 v-7 Z"/>
+<path class="glyph-stroke" d="M1324.5,322.5 l6.5,3.5 l6.5,-3.5"/>
+<path class="glyph-stroke" d="M1331,326 v7"/></g>
+<text class="ntitle" x="1354" y="331" font-size="13">asgiref (new dependency)</text>
+<g class="bdg bdg-added"><rect x="1628.45" y="292" width="40.55" height="16" rx="8"/><text x="1648.73" y="303" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="1304" y="404" width="372" height="52" rx="10"/>
+<rect class="chip" x="1318" y="417" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="1331" cy="425.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M1324.5,425.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="1354" y="435" font-size="13">DB backend connections</text>
+<g class="bdg bdg-modified"><rect x="1602.38" y="396" width="66.62" height="16" rx="8"/><text x="1635.69" y="407" text-anchor="middle">CHANGED</text></g></g></g>
+<g><g><rect class="lpill" x="560.16" y="162.5" width="167.68" height="15" rx="7.5"/><text class="ltext ltext-added" x="644" y="173.5" text-anchor="middle">scope / receive / send per request</text></g>
+<g><rect class="lpill" x="755.45" y="154.5" width="181.1" height="15" rx="7.5"/><text class="ltext ltext-added" x="846" y="165.5" text-anchor="middle">django.setup(); return ASGIHandler()</text></g>
+<g><rect class="lpill" x="941.3" y="266.5" width="249.4" height="15" rx="7.5"/><text class="ltext ltext-added" x="1066" y="277.5" text-anchor="middle">get_response(request), via sync_to_async if needed</text></g>
+<g><rect class="lpill" x="1159.85" y="249.5" width="220.3" height="15" rx="7.5"/><text class="ltext ltext-added" x="1270" y="260.5" text-anchor="middle">sync_to_async bridges to threaded sync code</text></g>
+<g><rect class="lpill" x="1215.33" y="374.5" width="141.35" height="15" rx="7.5"/><text class="ltext" x="1286" y="385.5" text-anchor="middle">views execute ORM queries</text></g></g>
+</svg>

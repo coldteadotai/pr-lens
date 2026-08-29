@@ -1,23 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1048 1006.01" width="1048" height="1006.01" role="img" aria-label="PR Lens comment preview — Add a welcome email on signup">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1048 891.77" width="1048" height="891.77" role="img" aria-label="PR Lens comment preview — Add a welcome email on signup">
 <title>PR Lens comment preview — Add a welcome email on signup</title>
-<rect x="0" y="0" width="1048" height="1006.01" fill="#0d1117"/>
-<defs><linearGradient id="frame-avatar" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6e40c9"/><stop offset="1" stop-color="#388bfd"/></linearGradient></defs>
-<rect x="16" y="16" width="40" height="40" rx="8" fill="url(#frame-avatar)"/>
-<text x="36" y="42" fill="#ffffff" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:18px;font-weight:700">◈</text>
-<rect x="72" y="16" width="960" height="974.01" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+<rect x="0" y="0" width="1048" height="891.77" fill="#0d1117"/>
+<rect x="16" y="16" width="40" height="40" rx="6" fill="#0d1117"/>
+<svg x="21" y="21" width="30" height="30" viewBox="60 60 400 400"><circle cx="216" cy="216" r="132" fill="none" stroke="#e6edf3" stroke-width="24"/>
+<path d="M312 312 L426 426" stroke="#e6edf3" stroke-width="44" stroke-linecap="round"/>
+<path d="M152 262 L262 178" stroke="#6e7681" stroke-width="12"/>
+<circle cx="152" cy="262" r="22" fill="#e6edf3"/>
+<rect x="222" y="134" width="88" height="88" rx="24" fill="#3fb950"/></svg>
+<rect x="72" y="16" width="960" height="859.77" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
 <path d="M72,24 a8,8 0 0 1 8,-8 h944 a8,8 0 0 1 8,8 v28 h-960 Z" fill="#1c2128"/>
 <line x1="72" y1="52" x2="1032" y2="52" stroke="#30363d" stroke-width="1"/>
-<text x="88" y="39" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">pr-lens</text>
-<text x="130.11" y="39" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">  </text>
-<text x="137.34" y="39" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">bot commented 13 minutes ago</text>
-<rect x="329.43" y="25" width="30.51" height="18" rx="9" fill="none" stroke="#30363d" stroke-width="1"/>
-<text x="344.69" y="38" fill="#9198a1" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:11px">Bot</text>
-<rect x="365.94" y="25" width="33.57" height="18" rx="9" fill="none" stroke="#ab7df8" stroke-width="1"/>
-<text x="382.73" y="38" fill="#ab7df8" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:11px">App</text>
+<text x="88" y="39" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">coldtea-pr-lens</text>
+<rect x="187.13" y="25" width="30.51" height="18" rx="9" fill="none" stroke="#30363d" stroke-width="1"/>
+<text x="202.39" y="38" fill="#9198a1" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:11px">Bot</text>
+<text x="225.64" y="39" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">commented 13 minutes ago</text>
 <text x="991.2" y="39" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">···</text>
 <text x="88" y="92" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:18px;font-weight:600">◈ PR Lens</text>
 <rect x="88" y="112.5" width="76.2" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
-<text x="94" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">🟢 +1 new</text>
+<text x="94" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">🟢 +3 new</text>
 <text x="164.2" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400"> · </text>
 <rect x="178.07" y="112.5" width="105" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
 <text x="184.07" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">🟠 ~1 changed</text>
@@ -29,79 +29,87 @@
 <text x="421.81" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">0 flows</text>
 <text x="478.21" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400"> · </text>
 <rect x="492.08" y="112.5" width="62.4" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
-<text x="498.08" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">3 files</text>
+<text x="498.08" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">5 files</text>
 <text x="554.48" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400"> · </text>
 <text x="568.35" y="126" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12px;font-weight:400">commit </text>
 <rect x="610.35" y="112.5" width="62.4" height="18" rx="6" fill="rgba(110,118,129,.18)"/>
 <text x="616.35" y="126" fill="#e6edf3" style="font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace;font-size:12px;font-weight:400">1111111</text>
 <text x="88" y="162" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">Architecture</text>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1294 502" x="88" y="174" width="928" height="360.01" role="img" aria-label="Add a welcome email on signup">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1294 616" x="88" y="174" width="928" height="441.77" role="img" aria-label="Add a welcome email on signup">
 <title>Add a welcome email on signup</title>
-<desc>A new welcome service replaces the inline legacy mailer.</desc>
+<desc>Signup now publishes an event; a new welcome worker drains it and retires the inline mailer.</desc>
 <style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:rgba(110,118,129,.07)}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#9198a1}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.card-modified{stroke:#d29922;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#f85149;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#e6edf3}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:rgba(110,118,129,.18)}.glyph{fill:#9198a1}.glyph-stroke{stroke:#9198a1;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.bdg-added text{fill:#3fb950}.bdg-modified rect{fill:rgba(187,128,9,.15);stroke:rgba(210,153,34,.4)}.bdg-modified text{fill:#d29922}.bdg-removed rect{fill:rgba(248,81,73,.12);stroke:rgba(248,81,73,.4)}.bdg-removed text{fill:#f85149}.bdg-neutral rect{fill:rgba(110,118,129,.18);stroke:#3d444d}.bdg-neutral text{fill:#9198a1}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#3fb950}.edge-modified{stroke:#d29922}.edge-removed{stroke:#f85149;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#6e7681}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#e6edf3}.lpill{fill:#0d1117;stroke:#21262d;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#9198a1}.ltext-added{fill:#3fb950}.ltext-modified{fill:#d29922}.ltext-removed{fill:#f85149}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}.lifeline{stroke:#30363d;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.msg{fill:none;stroke-width:1.5}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-strong{stroke-width:2.25}</style>
 <defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mko-added" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#3fb950" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mko-modified" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#d29922" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mko-removed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#f85149" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker><marker id="mko-neutral" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#6e7681" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-<rect x="0" y="0" width="1294" height="502" rx="12" fill="#0d1117"/>
-<rect x="0" y="0" width="1294" height="502" rx="12" fill="url(#dots)"/>
-<g><rect class="lanebox" x="16" y="44" width="404" height="442" rx="12"/>
+<rect x="0" y="0" width="1294" height="616" rx="12" fill="#0d1117"/>
+<rect x="0" y="0" width="1294" height="616" rx="12" fill="url(#dots)"/>
+<g><rect class="lanebox" x="16" y="44" width="404" height="556" rx="12"/>
 <text class="lanelabel" x="32" y="68">API</text>
-<rect class="lanebox" x="440" y="44" width="404" height="442" rx="12"/>
+<rect class="lanebox" x="440" y="44" width="404" height="556" rx="12"/>
 <text class="lanelabel" x="456" y="68">SERVICES</text>
-<rect class="lanebox" x="864" y="44" width="404" height="442" rx="12"/>
+<rect class="lanebox" x="864" y="44" width="404" height="556" rx="12"/>
 <text class="lanelabel" x="880" y="68">DATA</text></g>
 <g><path class="glow" stroke="#3fb950" d="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227"/>
 <path class="edge edge-added hero" d="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227" marker-end="url(#mk-added)"/>
 <circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227"/></circle>
 <circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-1.4s" repeatCount="indefinite" path="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227"/></circle>
 <circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-0.7s" repeatCount="indefinite" path="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227"/></circle>
-<path class="edge edge-added" d="M828,227 L837,227 C841.97,227 846,231.03 846,236 L846,319 C846,328.39 853.61,336 863,336 L880,336" marker-end="url(#mk-added)"/>
-<path class="edge edge-removed" d="M404,110 L413,110 C417.97,110 422,114.03 422,119 L422,140 C422,156.57 435.43,170 452,170 L1244,170 C1262.78,170 1278,185.22 1278,204 L1278,354 C1278,372.78 1262.78,388 1244,388 L888,388 C873.64,388 862,399.64 862,414 L862,423 C862,432.39 854.39,440 845,440 L828,440" marker-end="url(#mk-removed)"/></g>
+<path class="edge edge-added" d="M642,258 L642,310" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M642,258 L642,310"/></circle>
+<path class="edge edge-added" d="M828,349 L841,349 C848.18,349 854,354.82 854,362 L854,437 C854,444.18 859.82,450 867,450 L880,450" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M828,349 L841,349 C848.18,349 854,354.82 854,362 L854,437 C854,444.18 859.82,450 867,450 L880,450"/></circle>
+<path class="edge edge-added" d="M828,333 L833,333 C835.76,333 838,335.24 838,338 L838,365.5 C838,383.45 852.55,398 870.5,398 L1149,398 C1156.18,398 1162,403.82 1162,411 L1162,424" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M828,333 L833,333 C835.76,333 838,335.24 838,338 L838,365.5 C838,383.45 852.55,398 870.5,398 L1149,398 C1156.18,398 1162,403.82 1162,411 L1162,424"/></circle>
+<path class="edge edge-removed" d="M404,110 L413,110 C417.97,110 422,114.03 422,119 L422,140 C422,156.57 435.43,170 452,170 L1244,170 C1262.78,170 1278,185.22 1278,204 L1278,468 C1278,486.78 1262.78,502 1244,502 L896,502 C881.64,502 870,513.64 870,528 L870,533 C870,544.6 860.6,554 849,554 L828,554" marker-end="url(#mk-removed)"/></g>
 <g><g class="cardsh"><rect class="card card-modified" x="32" y="92" width="372" height="52" rx="10"/>
 <rect class="chip" x="46" y="105" width="26" height="26" rx="7"/><g><path class="glyph" d="M52,112 L66,118 L52,124 Z"/></g>
 <text class="ntitle" x="82" y="123" font-size="13">POST /signup</text>
 <g class="bdg bdg-modified"><rect x="330.38" y="84" width="66.62" height="16" rx="8"/><text x="363.69" y="95" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="456" y="196" width="372" height="62" rx="10"/>
-<rect class="chip" x="470" y="214" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="476.5" y="220.5" width="13" height="13" rx="3"/>
-<circle class="glyph" cx="483" cy="227" r="2"/></g>
-<text class="ntitle" x="506" y="223" font-size="13">welcome-service</text>
-<text class="nsub" x="506" y="241">queue worker</text>
+<rect class="chip" x="470" y="214" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M476.5,222.5 h13"/>
+<path class="glyph-stroke" d="M476.5,227 h13"/>
+<path class="glyph-stroke" d="M476.5,231.5 h13"/></g>
+<text class="ntitle" x="506" y="223" font-size="13">email-queue</text>
+<text class="nsub" x="506" y="241">signup.welcome</text>
 <g class="bdg bdg-added"><rect x="780.45" y="188" width="40.55" height="16" rx="8"/><text x="800.73" y="199" text-anchor="middle">NEW</text></g></g>
-<g class="cardsh ghost"><rect class="card" x="456" y="414" width="372" height="52" rx="10"/>
-<rect class="chip" x="470" y="427" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="476.5" y="433.5" width="13" height="13" rx="3"/>
-<circle class="glyph" cx="483" cy="440" r="2"/></g>
-<text class="ntitle strike" x="506" y="445" font-size="13">legacy-mailer</text>
-<g class="bdg bdg-removed"><rect x="753.88" y="406" width="67.12" height="16" rx="8"/><text x="787.44" y="417" text-anchor="middle">REMOVED</text></g></g>
-<g class="cardsh context"><rect class="card" x="880" y="310" width="372" height="52" rx="10"/>
-<rect class="chip" x="894" y="323" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="907" cy="331.5" rx="6.5" ry="2.6"/>
-<path class="glyph-stroke" d="M900.5,331.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
-<text class="ntitle" x="930" y="341" font-size="13">user store</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="456" y="310" width="372" height="62" rx="10"/>
+<rect class="chip" x="470" y="328" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="476.5" y="334.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="483" cy="341" r="2"/></g>
+<text class="ntitle" x="506" y="337" font-size="13">welcome-service</text>
+<text class="nsub" x="506" y="355">queue worker</text>
+<g class="bdg bdg-added"><rect x="780.45" y="302" width="40.55" height="16" rx="8"/><text x="800.73" y="313" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh ghost"><rect class="card" x="456" y="528" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="541" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="476.5" y="547.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="483" cy="554" r="2"/></g>
+<text class="ntitle strike" x="506" y="559" font-size="13">legacy-mailer</text>
+<g class="bdg bdg-removed"><rect x="753.88" y="520" width="67.12" height="16" rx="8"/><text x="787.44" y="531" text-anchor="middle">REMOVED</text></g></g>
+<g class="cardsh context"><rect class="card" x="880" y="424" width="180" height="52" rx="10"/>
+<rect class="chip" x="894" y="437" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="907" cy="445.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M900.5,445.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="930" y="455" font-size="11.5">user store</text></g>
+<g class="cardsh"><rect class="card card-added" x="1072" y="424" width="180" height="52" rx="10"/>
+<rect class="chip" x="1086" y="437" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="1099" cy="445.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M1092.5,445.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="1122" y="455" font-size="11.5">email log</text>
+<g class="bdg bdg-added"><rect x="1204.45" y="416" width="40.55" height="16" rx="8"/><text x="1224.73" y="427" text-anchor="middle">NEW</text></g></g></g>
 <g><g><rect class="lpill" x="401.45" y="173" width="73.1" height="15" rx="7.5"/><text class="ltext ltext-added" x="438" y="184" text-anchor="middle">signup event</text></g>
-<g><rect class="lpill" x="813.38" y="270" width="65.25" height="15" rx="7.5"/><text class="ltext ltext-added" x="846" y="281" text-anchor="middle">load profile</text></g>
+<g><rect class="lpill" x="606.02" y="276.5" width="71.96" height="15" rx="7.5"/><text class="ltext ltext-added" x="642" y="287.5" text-anchor="middle">welcome job</text></g>
+<g><rect class="lpill" x="821.38" y="392" width="65.25" height="15" rx="7.5"/><text class="ltext ltext-added" x="854" y="403" text-anchor="middle">load profile</text></g>
+<g><rect class="lpill" x="975.17" y="390.5" width="69.17" height="15" rx="7.5"/><text class="ltext ltext-added" x="1009.75" y="401.5" text-anchor="middle">record send</text></g>
 <g><rect class="lpill" x="815.94" y="162.5" width="64.13" height="15" rx="7.5"/><text class="ltext ltext-removed" x="848" y="173.5" text-anchor="middle">send inline</text></g></g>
 </svg>
-<text x="88" y="554.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400;font-style:italic">3 components touched across 3 lanes.</text>
-<text x="88" y="584.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">Data flow</text>
-<text x="88" y="602.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400;font-style:italic">No data-flow sequence changed in this PR.</text>
-<text x="88" y="632.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
-<text x="99.41" y="632.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">Drill down</text>
-<text x="88" y="666.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">View</text>
-<rect x="88" y="686.01" width="14" height="14" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1.2"/><path d="M91.2,693.21 l2.7,2.7 l5,-5.4" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="110" y="698.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Architecture lens</text>
-<rect x="88" y="710.01" width="14" height="14" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1.2"/><path d="M91.2,717.21 l2.7,2.7 l5,-5.4" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="110" y="722.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Data flow lens</text>
-<rect x="88" y="734.01" width="14" height="14" rx="3" fill="none" stroke="#30363d" stroke-width="1.2"/>
-<text x="110" y="746.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Expand every detail</text>
-<rect x="88" y="758.01" width="14" height="14" rx="3" fill="none" stroke="#30363d" stroke-width="1.2"/>
-<text x="110" y="770.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Show unchanged neighbours</text>
-<text x="88" y="804.01" fill="#e6edf3" xml:space="preserve" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Thanks for using <tspan fill="#4493f8">PR Lens</tspan>. It's free for open source and grows by word of mouth. If these lenses help, please share 🙏</text>
-<text x="88" y="830.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
-<text x="99.41" y="830.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">❤️ Share</text>
-<g transform="translate(107, 851.51)" fill="#3fb950"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/></g>
-<text x="131" y="864.01" fill="#3fb950" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">Tip</text>
-<text x="107" y="888.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">You can run PR Lens locally too. Tell your coding agent: &quot;Diagram the change you just made with PR Lens and attach it to the pull request.&quot;</text>
-<rect x="88" y="843.01" width="3" height="53" fill="#3fb950"/>
-<text x="88" y="922.01" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
-<text x="99.41" y="922.01" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">🪧 Tips</text>
-<line x1="88" y1="950.01" x2="1016" y2="950.01" stroke="#30363d" stroke-width="1"/>
-<text x="88" y="974.01" fill="#9198a1" xml:space="preserve" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:12.5px;font-weight:400">◈ Rendered by PR Lens · from the team behind <tspan fill="#4493f8">Coldtea</tspan></text>
-<rect x="72" y="16" width="960" height="974.01" rx="8" fill="none" stroke="#30363d" stroke-width="1"/>
+<text x="88" y="635.77" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400;font-style:italic">5 components touched across 3 lanes.</text>
+<text x="88" y="665.77" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">Data flow</text>
+<text x="88" y="683.77" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400;font-style:italic">No data-flow sequence changed in this PR.</text>
+<text x="88" y="713.77" fill="#9198a1" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">▸ </text>
+<text x="99.41" y="713.77" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">Drill down</text>
+<text x="88" y="747.77" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-weight:600">View</text>
+<rect x="88" y="767.77" width="14" height="14" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1.2"/><path d="M91.2,774.97 l2.7,2.7 l5,-5.4" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="110" y="779.77" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Architecture lens</text>
+<rect x="88" y="791.77" width="14" height="14" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1.2"/><path d="M91.2,798.97 l2.7,2.7 l5,-5.4" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="110" y="803.77" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Data flow lens</text>
+<rect x="88" y="815.77" width="14" height="14" rx="3" fill="none" stroke="#30363d" stroke-width="1.2"/>
+<text x="110" y="827.77" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Expand every detail</text>
+<rect x="88" y="839.77" width="14" height="14" rx="3" fill="none" stroke="#30363d" stroke-width="1.2"/>
+<text x="110" y="851.77" fill="#e6edf3" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">Show unchanged neighbours</text>
+<rect x="72" y="16" width="960" height="859.77" rx="8" fill="none" stroke="#30363d" stroke-width="1"/>
 </svg>

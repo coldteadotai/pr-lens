@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 132" width="960" height="132" role="img" aria-label="Three steps: paste the prompt into your coding agent, it sets up the skill and the GitHub App, every pull request gets the diagram">
-<title>Set up PR Lens in three steps</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 132" width="960" height="132" role="img" aria-label="Three steps: install the GitHub App on any repository, open a pull request, the diagram appears and is redrawn on every push">
+<title>Install PR Lens in three steps</title>
 <style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.chip{fill:rgba(110,118,129,.18)}.num{font-size:12px;font-weight:700;fill:#3fb950}.ntitle{font-weight:600;fill:#e6edf3}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em;fill:#3fb950}.bdg rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4);stroke-width:1}.edge{fill:none;stroke:#3fb950;stroke-width:1.5}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}</style>
 <defs>
 <pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern>
@@ -20,20 +20,20 @@
 <g class="cardsh"><rect class="card" x="20" y="34" width="272" height="64" rx="10"/>
 <rect class="chip" x="34" y="52" width="26" height="26" rx="7"/>
 <text class="num" x="47" y="69.5" text-anchor="middle">1</text>
-<text class="ntitle" x="70" y="61" font-size="13">Paste the prompt</text>
-<text class="nsub" x="70" y="79">into your coding agent</text>
+<text class="ntitle" x="70" y="61" font-size="13">Install the App</text>
+<text class="nsub" x="70" y="79">on any repository</text>
 </g>
 <g class="cardsh"><rect class="card" x="344" y="34" width="272" height="64" rx="10"/>
 <rect class="chip" x="358" y="52" width="26" height="26" rx="7"/>
 <text class="num" x="371" y="69.5" text-anchor="middle">2</text>
-<text class="ntitle" x="394" y="61" font-size="13">It sets everything up</text>
-<text class="nsub" x="394" y="79">the skill, then the GitHub App</text>
+<text class="ntitle" x="394" y="61" font-size="13">Open a pull request</text>
+<text class="nsub" x="394" y="79">no key, no workflow file</text>
 </g>
 <g class="cardsh"><rect class="card card-added" x="668" y="34" width="272" height="64" rx="10"/>
 <rect class="chip" x="682" y="52" width="26" height="26" rx="7"/>
 <text class="num" x="695" y="69.5" text-anchor="middle">3</text>
-<text class="ntitle" x="718" y="61" font-size="13">Every pull request</text>
-<text class="nsub" x="718" y="79">gets the diagram, on every push</text>
+<text class="ntitle" x="718" y="61" font-size="13">The diagram appears</text>
+<text class="nsub" x="718" y="79">redrawn on every push</text>
 <g class="bdg"><rect x="880" y="26" width="46" height="16" rx="8"/><text x="903" y="37" text-anchor="middle">DRAWN</text></g>
 </g>
 </svg>

@@ -10,7 +10,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { GraphDoc } from "../../packages/schema/src/index.js";
-import { render, THEMES } from "../../packages/renderer/src/index.js";
+import { findView, render, THEMES } from "../../packages/renderer/src/index.js";
 import { tiers } from "../../packages/renderer/test/tiers.js";
 import { mixedKindsGraph } from "../../packages/renderer/test/mixed-kinds.js";
 import { frameAsComment, type FrameSection } from "./frame.js";
@@ -23,17 +23,38 @@ const counts = (doc: GraphDoc): string =>
   `${doc.lanes.length} lanes · ${doc.nodes.length} nodes · ${doc.edges.length} edges`;
 
 for (const theme of THEMES)
-  writeFileSync(join(OUT, `teaser.architecture.${theme}.svg`), render(teaserGraph, { lens: "architecture", theme }).svg);
+  writeFileSync(
+    join(OUT, `teaser.architecture.${theme}.svg`),
+    render(teaserGraph, { lens: "architecture", theme }).svg,
+  );
 console.log(`teaser: ${counts(teaserGraph)}`);
 
 for (const { name, doc } of tiers) {
   for (const theme of THEMES)
-    writeFileSync(join(OUT, `${name}.architecture.${theme}.svg`), render(doc, { lens: "architecture", theme }).svg);
+    writeFileSync(
+      join(OUT, `${name}.architecture.${theme}.svg`),
+      render(doc, { lens: "architecture", theme }).svg,
+    );
   console.log(`${name}: ${counts(doc)}`);
 }
 
 const reference = tiers.find(({ name }) => name === "tier2-reference");
-if (reference === undefined) throw new Error("the complexity ladder lost its reference tier");
+if (reference === undefined)
+  throw new Error("the complexity ladder lost its reference tier");
+
+// One nested view on its own, for the README's drill-down feature: the same
+// document scoped down to the child section a reader expands.
+const batchPath = findView(reference.doc.views, "new-batch-path");
+if (batchPath === undefined)
+  throw new Error("the reference document lost its new-batch-path view");
+
+for (const theme of THEMES)
+  writeFileSync(
+    join(OUT, `reference.new-batch-path.${theme}.svg`),
+    render(reference.doc, { lens: "architecture", theme, view: batchPath.id })
+      .svg,
+  );
+console.log(`view: ${batchPath.title}`);
 
 for (const theme of THEMES) {
   writeFileSync(
@@ -45,12 +66,19 @@ for (const theme of THEMES) {
     render(mixedKindsGraph, { lens: "data-flow", theme }).svg,
   );
 }
-console.log(`reference flow: ${reference.doc.flows[0]?.messages.length ?? 0} messages`);
-console.log(`mixed kinds: ${mixedKindsGraph.flows[0]?.messages.length ?? 0} messages`);
+console.log(
+  `reference flow: ${reference.doc.flows[0]?.messages.length ?? 0} messages`,
+);
+console.log(
+  `mixed kinds: ${mixedKindsGraph.flows[0]?.messages.length ?? 0} messages`,
+);
 
 // The framed comment mockups: the same renders, seated in the comment card
 // the app posts. Captions repeat the composer's own lines.
-const architectureSection = (doc: GraphDoc, theme: (typeof THEMES)[number]): FrameSection => ({
+const architectureSection = (
+  doc: GraphDoc,
+  theme: (typeof THEMES)[number],
+): FrameSection => ({
   title: "Architecture",
   diagram: render(doc, { lens: "architecture", theme }),
   caption: [
@@ -68,7 +96,10 @@ for (const theme of THEMES) {
       theme,
       sections: [
         architectureSection(teaserGraph, theme),
-        { title: "Data flow", caption: [{ text: "No data-flow sequence changed in this PR." }] },
+        {
+          title: "Data flow",
+          caption: [{ text: "No data-flow sequence changed in this PR." }],
+        },
       ],
     }),
   );
@@ -77,12 +108,16 @@ for (const theme of THEMES) {
     frameAsComment({
       doc: reference.doc,
       theme,
+      growth: true,
       sections: [
         architectureSection(reference.doc, theme),
         {
           title: "Data flow",
           diagram: render(reference.doc, { lens: "data-flow", theme }),
-          caption: reference.doc.flows.map((flow) => ({ text: flow.title, code: true })),
+          caption: reference.doc.flows.map((flow) => ({
+            text: flow.title,
+            code: true,
+          })),
         },
       ],
     }),

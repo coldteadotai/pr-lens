@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1708 596" width="1708" height="596" role="img" aria-label="Container build pipeline">
+<title>Container build pipeline</title>
+<desc>ContainerPlugin connects compiler hooks to a generated container module and bundle.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:rgba(110,118,129,.07)}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#9198a1}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.card-modified{stroke:#d29922;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#f85149;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#e6edf3}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:rgba(110,118,129,.18)}.glyph{fill:#9198a1}.glyph-stroke{stroke:#9198a1;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.bdg-added text{fill:#3fb950}.bdg-modified rect{fill:rgba(187,128,9,.15);stroke:rgba(210,153,34,.4)}.bdg-modified text{fill:#d29922}.bdg-removed rect{fill:rgba(248,81,73,.12);stroke:rgba(248,81,73,.4)}.bdg-removed text{fill:#f85149}.bdg-neutral rect{fill:rgba(110,118,129,.18);stroke:#3d444d}.bdg-neutral text{fill:#9198a1}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#3fb950}.edge-modified{stroke:#d29922}.edge-removed{stroke:#f85149;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#6e7681}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#e6edf3}.lpill{fill:#0d1117;stroke:#21262d;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#9198a1}.ltext-added{fill:#3fb950}.ltext-modified{fill:#d29922}.ltext-removed{fill:#f85149}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}.lifeline{stroke:#30363d;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.msg{fill:none;stroke-width:1.5}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-strong{stroke-width:2.25}</style>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mko-added" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#3fb950" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mko-modified" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#d29922" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mko-removed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#f85149" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker><marker id="mko-neutral" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#6e7681" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1708" height="596" rx="12" fill="#0d1117"/>
+<rect x="0" y="0" width="1708" height="596" rx="12" fill="url(#dots)"/>
+<g><rect class="lanebox" x="16" y="44" width="404" height="536" rx="12"/>
+<text class="lanelabel" x="32" y="68">CONTAINERPLUGIN</text>
+<rect class="lanebox" x="440" y="44" width="404" height="536" rx="12"/>
+<text class="lanelabel" x="456" y="68">WEBPACK COMPILER CORE</text>
+<rect class="lanebox" x="864" y="44" width="404" height="536" rx="12"/>
+<text class="lanelabel" x="880" y="68">CONTAINER MODULE GRAPH</text>
+<rect class="lanebox" x="1288" y="44" width="404" height="536" rx="12"/>
+<text class="lanelabel" x="1304" y="68">GENERATED BUNDLE</text></g>
+<g><path class="edge edge-added" d="M404,106 L409,106 C411.76,106 414,108.24 414,111 L414,138 C414,155.67 428.33,170 446,170 L725,170 C732.18,170 738,175.82 738,183 L738,196" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M404,106 L409,106 C411.76,106 414,108.24 414,111 L414,138 C414,155.67 428.33,170 446,170 L725,170 C732.18,170 738,175.82 738,183 L738,196"/></circle>
+<path class="edge edge-added" d="M828,222 L837,222 C841.97,222 846,226.03 846,231 L846,309 C846,318.39 853.61,326 863,326 L880,326" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M828,222 L837,222 C841.97,222 846,226.03 846,231 L846,309 C846,318.39 853.61,326 863,326 L880,326"/></circle>
+<path class="edge edge-added" d="M1066,352 L1066,404" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M1066,352 L1066,404"/></circle>
+<path class="edge edge-added" d="M404,118 L417,118 C424.18,118 430,123.82 430,131 L430,209 C430,216.18 435.82,222 443,222 L456,222" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M404,130 L425,130 C436.6,130 446,139.4 446,151 L446,321 C446,323.76 448.24,326 451,326 L456,326" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M404,130 L425,130 C436.6,130 446,139.4 446,151 L446,321 C446,323.76 448.24,326 451,326 L456,326"/></circle>
+<path class="glow" stroke="#3fb950" d="M1252,430 L1261,430 C1265.97,430 1270,434.03 1270,439 L1270,509 C1270,518.39 1277.61,526 1287,526 L1304,526"/>
+<path class="edge edge-added hero" d="M1252,430 L1261,430 C1265.97,430 1270,434.03 1270,439 L1270,509 C1270,518.39 1277.61,526 1287,526 L1304,526" marker-end="url(#mk-added)"/>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M1252,430 L1261,430 C1265.97,430 1270,434.03 1270,439 L1270,509 C1270,518.39 1277.61,526 1287,526 L1304,526"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-1.4s" repeatCount="indefinite" path="M1252,430 L1261,430 C1265.97,430 1270,434.03 1270,439 L1270,509 C1270,518.39 1277.61,526 1287,526 L1304,526"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-0.7s" repeatCount="indefinite" path="M1252,430 L1261,430 C1265.97,430 1270,434.03 1270,439 L1270,509 C1270,518.39 1277.61,526 1287,526 L1304,526"/></circle>
+<path class="edge edge-added" d="M828,326 L845,326 C854.39,326 862,333.61 862,343 L862,448 C862,466.78 877.22,482 896,482 L1256,482 C1272.57,482 1286,495.43 1286,512 L1286,533 C1286,537.97 1290.03,542 1295,542 L1304,542" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M828,326 L845,326 C854.39,326 862,333.61 862,343 L862,448 C862,466.78 877.22,482 896,482 L1256,482 C1272.57,482 1286,495.43 1286,512 L1286,533 C1286,537.97 1290.03,542 1295,542 L1304,542"/></circle></g>
+<g><g class="cardsh"><rect class="card card-added" x="32" y="92" width="372" height="52" rx="10"/>
+<rect class="chip" x="46" y="105" width="26" height="26" rx="7"/><g><text class="glyph" x="59" y="122.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="82" y="123" font-size="13">ContainerPlugin</text>
+<g class="bdg bdg-added"><rect x="356.45" y="84" width="40.55" height="16" rx="8"/><text x="376.73" y="95" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh context"><rect class="card" x="456" y="196" width="180" height="52" rx="10"/>
+<rect class="chip" x="470" y="209" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="226.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="506" y="227" font-size="11">NormalModuleFactory</text></g>
+<g class="cardsh context"><rect class="card" x="648" y="196" width="180" height="52" rx="10"/>
+<rect class="chip" x="662" y="209" width="26" height="26" rx="7"/><g><text class="glyph" x="675" y="226.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="698" y="227" font-size="10.5">Compiler / Compilatio…</text></g>
+<g class="cardsh context"><rect class="card" x="456" y="300" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="313" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="330.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="506" y="331" font-size="13">JavascriptModulesPlugin</text></g>
+<g class="cardsh"><rect class="card card-added" x="880" y="300" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="313" width="26" height="26" rx="7"/><g><text class="glyph" x="907" y="330.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="930" y="331" font-size="13">ContainerEntryModuleFactory</text>
+<g class="bdg bdg-added"><rect x="1204.45" y="292" width="40.55" height="16" rx="8"/><text x="1224.73" y="303" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="880" y="404" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="417" width="26" height="26" rx="7"/><g><text class="glyph" x="907" y="434.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="930" y="435" font-size="13">ContainerEntryModule</text>
+<g class="bdg bdg-added"><rect x="1204.45" y="396" width="40.55" height="16" rx="8"/><text x="1224.73" y="407" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="1304" y="508" width="372" height="52" rx="10"/>
+<rect class="chip" x="1318" y="521" width="26" height="26" rx="7"/><g><circle class="glyph" cx="1326" cy="534" r="1.8"/>
+<circle class="glyph" cx="1331" cy="534" r="1.8"/>
+<circle class="glyph" cx="1336" cy="534" r="1.8"/></g>
+<text class="ntitle" x="1354" y="539" font-size="13">Container chunk output</text>
+<g class="bdg bdg-added"><rect x="1628.45" y="500" width="40.55" height="16" rx="8"/><text x="1648.73" y="511" text-anchor="middle">NEW</text></g></g></g>
+<g><g><rect class="lpill" x="502.28" y="162.5" width="166.44" height="15" rx="7.5"/><text class="ltext ltext-added" x="585.5" y="173.5" text-anchor="middle">hooks.make → addEntry(exposes)</text></g>
+<g><rect class="lpill" x="781.75" y="262.5" width="128.5" height="15" rx="7.5"/><text class="ltext ltext-added" x="846" y="273.5" text-anchor="middle">dependencyFactories.set</text></g>
+<g><rect class="lpill" x="1026.1" y="370.5" width="79.8" height="15" rx="7.5"/><text class="ltext ltext-added" x="1066" y="381.5" text-anchor="middle">create module</text></g>
+<g><rect class="lpill" x="292.71" y="145.5" width="274.58" height="15" rx="7.5"/><text class="ltext ltext-added" x="430" y="156.5" text-anchor="middle">dependencyFactories.set(ContainerExposedDependency)</text></g>
+<g><rect class="lpill" x="402.74" y="228.5" width="86.53" height="15" rx="7.5"/><text class="ltext ltext-added" x="446" y="239.5" text-anchor="middle">tap render hook</text></g>
+<g><rect class="lpill" x="1207.3" y="466.5" width="125.41" height="15" rx="7.5"/><text class="ltext ltext-added" x="1270" y="477.5" text-anchor="middle">emit module map + get()</text></g>
+<g><rect class="lpill" x="1020.44" y="474.5" width="111.13" height="15" rx="7.5"/><text class="ltext ltext-added" x="1076" y="485.5" text-anchor="middle">wrap chunk as library</text></g></g>
+</svg>

@@ -1,43 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1294 502" width="1294" height="502" role="img" aria-label="Add a welcome email on signup">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1294 616" width="1294" height="616" role="img" aria-label="Add a welcome email on signup">
 <title>Add a welcome email on signup</title>
-<desc>A new welcome service replaces the inline legacy mailer.</desc>
+<desc>Signup now publishes an event; a new welcome worker drains it and retires the inline mailer.</desc>
 <style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:#f6f8fa}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#59636e}.card{fill:#ffffff;stroke:#d1d9e0;stroke-width:1}.card-added{stroke:#1a7f37;stroke-opacity:.55}.card-modified{stroke:#9a6700;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#d1242f;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#1f2328}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#59636e;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:#f6f8fa}.glyph{fill:#59636e}.glyph-stroke{stroke:#59636e;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:#dafbe1;stroke:rgba(31,136,61,.4)}.bdg-added text{fill:#1a7f37}.bdg-modified rect{fill:#fff8c5;stroke:rgba(154,103,0,.35)}.bdg-modified text{fill:#9a6700}.bdg-removed rect{fill:#ffebe9;stroke:rgba(209,36,47,.35)}.bdg-removed text{fill:#d1242f}.bdg-neutral rect{fill:#f6f8fa;stroke:#d1d9e0}.bdg-neutral text{fill:#59636e}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#1a7f37}.edge-modified{stroke:#9a6700}.edge-removed{stroke:#d1242f;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#8c959f}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#1f2328}.lpill{fill:#ffffff;stroke:#d8dee4;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#59636e}.ltext-added{fill:#1a7f37}.ltext-modified{fill:#9a6700}.ltext-removed{fill:#d1242f}.cardsh{filter:drop-shadow(0 1px 2px rgba(31,35,40,.14))}.lifeline{stroke:#d1d9e0;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:#dafbe1;stroke:rgba(31,136,61,.4)}.msg{fill:none;stroke-width:1.5}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-strong{stroke-width:2.25}</style>
 <defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(140,149,159,.35)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a7f37"/></marker><marker id="mko-added" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#1a7f37" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9a6700"/></marker><marker id="mko-modified" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#9a6700" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d1242f"/></marker><marker id="mko-removed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#d1242f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8c959f"/></marker><marker id="mko-neutral" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#8c959f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-<rect x="0" y="0" width="1294" height="502" rx="12" fill="#ffffff"/>
-<rect x="0" y="0" width="1294" height="502" rx="12" fill="url(#dots)"/>
-<g><rect class="lanebox" x="16" y="44" width="404" height="442" rx="12"/>
+<rect x="0" y="0" width="1294" height="616" rx="12" fill="#ffffff"/>
+<rect x="0" y="0" width="1294" height="616" rx="12" fill="url(#dots)"/>
+<g><rect class="lanebox" x="16" y="44" width="404" height="556" rx="12"/>
 <text class="lanelabel" x="32" y="68">API</text>
-<rect class="lanebox" x="440" y="44" width="404" height="442" rx="12"/>
+<rect class="lanebox" x="440" y="44" width="404" height="556" rx="12"/>
 <text class="lanelabel" x="456" y="68">SERVICES</text>
-<rect class="lanebox" x="864" y="44" width="404" height="442" rx="12"/>
+<rect class="lanebox" x="864" y="44" width="404" height="556" rx="12"/>
 <text class="lanelabel" x="880" y="68">DATA</text></g>
 <g><path class="glow" stroke="#1a7f37" d="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227"/>
 <path class="edge edge-added hero" d="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227" marker-end="url(#mk-added)"/>
 <circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" repeatCount="indefinite" path="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227"/></circle>
 <circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" begin="-1.4s" repeatCount="indefinite" path="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227"/></circle>
 <circle r="3" fill="#1a7f37"><animateMotion dur="2.1s" begin="-0.7s" repeatCount="indefinite" path="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,218 C438,222.97 442.03,227 447,227 L456,227"/></circle>
-<path class="edge edge-added" d="M828,227 L837,227 C841.97,227 846,231.03 846,236 L846,319 C846,328.39 853.61,336 863,336 L880,336" marker-end="url(#mk-added)"/>
-<path class="edge edge-removed" d="M404,110 L413,110 C417.97,110 422,114.03 422,119 L422,140 C422,156.57 435.43,170 452,170 L1244,170 C1262.78,170 1278,185.22 1278,204 L1278,354 C1278,372.78 1262.78,388 1244,388 L888,388 C873.64,388 862,399.64 862,414 L862,423 C862,432.39 854.39,440 845,440 L828,440" marker-end="url(#mk-removed)"/></g>
+<path class="edge edge-added" d="M642,258 L642,310" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#1a7f37"><animateMotion dur="1.6s" repeatCount="indefinite" path="M642,258 L642,310"/></circle>
+<path class="edge edge-added" d="M828,349 L841,349 C848.18,349 854,354.82 854,362 L854,437 C854,444.18 859.82,450 867,450 L880,450" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#1a7f37"><animateMotion dur="1.6s" repeatCount="indefinite" path="M828,349 L841,349 C848.18,349 854,354.82 854,362 L854,437 C854,444.18 859.82,450 867,450 L880,450"/></circle>
+<path class="edge edge-added" d="M828,333 L833,333 C835.76,333 838,335.24 838,338 L838,365.5 C838,383.45 852.55,398 870.5,398 L1149,398 C1156.18,398 1162,403.82 1162,411 L1162,424" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#1a7f37"><animateMotion dur="1.6s" repeatCount="indefinite" path="M828,333 L833,333 C835.76,333 838,335.24 838,338 L838,365.5 C838,383.45 852.55,398 870.5,398 L1149,398 C1156.18,398 1162,403.82 1162,411 L1162,424"/></circle>
+<path class="edge edge-removed" d="M404,110 L413,110 C417.97,110 422,114.03 422,119 L422,140 C422,156.57 435.43,170 452,170 L1244,170 C1262.78,170 1278,185.22 1278,204 L1278,468 C1278,486.78 1262.78,502 1244,502 L896,502 C881.64,502 870,513.64 870,528 L870,533 C870,544.6 860.6,554 849,554 L828,554" marker-end="url(#mk-removed)"/></g>
 <g><g class="cardsh"><rect class="card card-modified" x="32" y="92" width="372" height="52" rx="10"/>
 <rect class="chip" x="46" y="105" width="26" height="26" rx="7"/><g><path class="glyph" d="M52,112 L66,118 L52,124 Z"/></g>
 <text class="ntitle" x="82" y="123" font-size="13">POST /signup</text>
 <g class="bdg bdg-modified"><rect x="330.38" y="84" width="66.62" height="16" rx="8"/><text x="363.69" y="95" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-added" x="456" y="196" width="372" height="62" rx="10"/>
-<rect class="chip" x="470" y="214" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="476.5" y="220.5" width="13" height="13" rx="3"/>
-<circle class="glyph" cx="483" cy="227" r="2"/></g>
-<text class="ntitle" x="506" y="223" font-size="13">welcome-service</text>
-<text class="nsub" x="506" y="241">queue worker</text>
+<rect class="chip" x="470" y="214" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M476.5,222.5 h13"/>
+<path class="glyph-stroke" d="M476.5,227 h13"/>
+<path class="glyph-stroke" d="M476.5,231.5 h13"/></g>
+<text class="ntitle" x="506" y="223" font-size="13">email-queue</text>
+<text class="nsub" x="506" y="241">signup.welcome</text>
 <g class="bdg bdg-added"><rect x="780.45" y="188" width="40.55" height="16" rx="8"/><text x="800.73" y="199" text-anchor="middle">NEW</text></g></g>
-<g class="cardsh ghost"><rect class="card" x="456" y="414" width="372" height="52" rx="10"/>
-<rect class="chip" x="470" y="427" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="476.5" y="433.5" width="13" height="13" rx="3"/>
-<circle class="glyph" cx="483" cy="440" r="2"/></g>
-<text class="ntitle strike" x="506" y="445" font-size="13">legacy-mailer</text>
-<g class="bdg bdg-removed"><rect x="753.88" y="406" width="67.12" height="16" rx="8"/><text x="787.44" y="417" text-anchor="middle">REMOVED</text></g></g>
-<g class="cardsh context"><rect class="card" x="880" y="310" width="372" height="52" rx="10"/>
-<rect class="chip" x="894" y="323" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="907" cy="331.5" rx="6.5" ry="2.6"/>
-<path class="glyph-stroke" d="M900.5,331.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
-<text class="ntitle" x="930" y="341" font-size="13">user store</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="456" y="310" width="372" height="62" rx="10"/>
+<rect class="chip" x="470" y="328" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="476.5" y="334.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="483" cy="341" r="2"/></g>
+<text class="ntitle" x="506" y="337" font-size="13">welcome-service</text>
+<text class="nsub" x="506" y="355">queue worker</text>
+<g class="bdg bdg-added"><rect x="780.45" y="302" width="40.55" height="16" rx="8"/><text x="800.73" y="313" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh ghost"><rect class="card" x="456" y="528" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="541" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="476.5" y="547.5" width="13" height="13" rx="3"/>
+<circle class="glyph" cx="483" cy="554" r="2"/></g>
+<text class="ntitle strike" x="506" y="559" font-size="13">legacy-mailer</text>
+<g class="bdg bdg-removed"><rect x="753.88" y="520" width="67.12" height="16" rx="8"/><text x="787.44" y="531" text-anchor="middle">REMOVED</text></g></g>
+<g class="cardsh context"><rect class="card" x="880" y="424" width="180" height="52" rx="10"/>
+<rect class="chip" x="894" y="437" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="907" cy="445.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M900.5,445.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="930" y="455" font-size="11.5">user store</text></g>
+<g class="cardsh"><rect class="card card-added" x="1072" y="424" width="180" height="52" rx="10"/>
+<rect class="chip" x="1086" y="437" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="1099" cy="445.5" rx="6.5" ry="2.6"/>
+<path class="glyph-stroke" d="M1092.5,445.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
+<text class="ntitle" x="1122" y="455" font-size="11.5">email log</text>
+<g class="bdg bdg-added"><rect x="1204.45" y="416" width="40.55" height="16" rx="8"/><text x="1224.73" y="427" text-anchor="middle">NEW</text></g></g></g>
 <g><g><rect class="lpill" x="401.45" y="173" width="73.1" height="15" rx="7.5"/><text class="ltext ltext-added" x="438" y="184" text-anchor="middle">signup event</text></g>
-<g><rect class="lpill" x="813.38" y="270" width="65.25" height="15" rx="7.5"/><text class="ltext ltext-added" x="846" y="281" text-anchor="middle">load profile</text></g>
+<g><rect class="lpill" x="606.02" y="276.5" width="71.96" height="15" rx="7.5"/><text class="ltext ltext-added" x="642" y="287.5" text-anchor="middle">welcome job</text></g>
+<g><rect class="lpill" x="821.38" y="392" width="65.25" height="15" rx="7.5"/><text class="ltext ltext-added" x="854" y="403" text-anchor="middle">load profile</text></g>
+<g><rect class="lpill" x="975.17" y="390.5" width="69.17" height="15" rx="7.5"/><text class="ltext ltext-added" x="1009.75" y="401.5" text-anchor="middle">record send</text></g>
 <g><rect class="lpill" x="815.94" y="162.5" width="64.13" height="15" rx="7.5"/><text class="ltext ltext-removed" x="848" y="173.5" text-anchor="middle">send inline</text></g></g>
 </svg>

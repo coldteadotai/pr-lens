@@ -1,19 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1048 1722.76" width="1048" height="1722.76" role="img" aria-label="PR Lens comment preview — Batch broadcast sending through Postmark">
 <title>PR Lens comment preview — Batch broadcast sending through Postmark</title>
 <rect x="0" y="0" width="1048" height="1722.76" fill="#ffffff"/>
-<defs><linearGradient id="frame-avatar" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6e40c9"/><stop offset="1" stop-color="#388bfd"/></linearGradient></defs>
-<rect x="16" y="16" width="40" height="40" rx="8" fill="url(#frame-avatar)"/>
-<text x="36" y="42" fill="#ffffff" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:18px;font-weight:700">◈</text>
+<rect x="16" y="16" width="40" height="40" rx="6" fill="#0d1117"/>
+<svg x="21" y="21" width="30" height="30" viewBox="60 60 400 400"><circle cx="216" cy="216" r="132" fill="none" stroke="#e6edf3" stroke-width="24"/>
+<path d="M312 312 L426 426" stroke="#e6edf3" stroke-width="44" stroke-linecap="round"/>
+<path d="M152 262 L262 178" stroke="#6e7681" stroke-width="12"/>
+<circle cx="152" cy="262" r="22" fill="#e6edf3"/>
+<rect x="222" y="134" width="88" height="88" rx="24" fill="#3fb950"/></svg>
 <rect x="72" y="16" width="960" height="1690.76" rx="8" fill="#ffffff" stroke="#d1d9e0" stroke-width="1"/>
 <path d="M72,24 a8,8 0 0 1 8,-8 h944 a8,8 0 0 1 8,8 v28 h-960 Z" fill="#f6f8fa"/>
 <line x1="72" y1="52" x2="1032" y2="52" stroke="#d1d9e0" stroke-width="1"/>
-<text x="88" y="39" fill="#1f2328" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">pr-lens</text>
-<text x="130.11" y="39" fill="#59636e" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">  </text>
-<text x="137.34" y="39" fill="#59636e" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">bot commented 13 minutes ago</text>
-<rect x="329.43" y="25" width="30.51" height="18" rx="9" fill="none" stroke="#d1d9e0" stroke-width="1"/>
-<text x="344.69" y="38" fill="#59636e" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:11px">Bot</text>
-<rect x="365.94" y="25" width="33.57" height="18" rx="9" fill="none" stroke="#8250df" stroke-width="1"/>
-<text x="382.73" y="38" fill="#8250df" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:11px">App</text>
+<text x="88" y="39" fill="#1f2328" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">coldtea-pr-lens</text>
+<rect x="187.13" y="25" width="30.51" height="18" rx="9" fill="none" stroke="#d1d9e0" stroke-width="1"/>
+<text x="202.39" y="38" fill="#59636e" text-anchor="middle" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:11px">Bot</text>
+<text x="225.64" y="39" fill="#59636e" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:400">commented 13 minutes ago</text>
 <text x="991.2" y="39" fill="#59636e" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:13px;font-weight:600">···</text>
 <text x="88" y="92" fill="#1f2328" style="font-family:-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;font-size:18px;font-weight:600">◈ PR Lens</text>
 <rect x="88" y="112.5" width="76.2" height="18" rx="6" fill="rgba(175,184,193,.2)"/>

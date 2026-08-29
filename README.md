@@ -5,7 +5,13 @@
   </picture>
 </p>
 
-# PR Lens
+<h1 align="center">PR Lens</h1>
+
+<p align="center">
+  <b>Understand a pull request before you read a line of it.</b><br>
+  PR Lens draws every pull request as animated architecture and data-flow diagrams,<br>
+  posted as a comment inside the pull request itself
+</p>
 
 <p align="center">
   <a href="https://github.com/apps/coldtea-pr-lens"><img alt="Install the GitHub App" src="https://img.shields.io/badge/GitHub%20App-install-3fb950?style=flat-square&logo=github&logoColor=white&labelColor=21262d"></a>
@@ -15,25 +21,194 @@
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/github/license/coldteadotai/pr-lens?style=flat-square&labelColor=21262d&color=21262d"></a>
 </p>
 
-Reduce the cognitive load on AI-generated PRs. PR Lens draws a pull request as animated diagrams **inside the pull request itself**: architecture blast radius and data-flow pipelines, not another findings table.
+<h3 align="center"><a href="https://github.com/apps/coldtea-pr-lens">Install the GitHub App</a></h3>
 
-<img alt="A PR Lens bot comment in a pull request: stats chips, an architecture diagram of a tiny change, view-option checkboxes and the PR Lens footer" src="docs/showcase/teaser.comment.dark.svg">
-
-<sub>This is what lands in your pull request: a bot comment, drawn here card and all. Green is new, amber changed, red gone, and the pulse is the data moving along the new path.</sub>
-
-Two lenses ship: **architecture** (what this change touches, against the existing system) and **data flow** (the ordered pipeline, animated). Every diagram on this page was rendered by this repo's renderer from a JSON document in this repo. This page _is_ the product demo.
-
-## Start here
+<p align="center">
+  <sub>Free for open source. No API key, no workflow file.</sub>
+</p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/brand/cta-strip.dark.svg">
-    <img alt="Three steps: paste the prompt into your coding agent, it sets up the skill and the GitHub App, every pull request gets the diagram" src="docs/brand/cta-strip.light.svg" width="960">
+    <img alt="Three steps: install the GitHub App on any repository, open a pull request, the diagram appears and is redrawn on every push" src="docs/brand/cta-strip.light.svg" width="960">
   </picture>
 </p>
 
-> [!TIP]
-> **Paste this into your coding agent.** It installs the skill, walks you through the GitHub App, and proves the setup by diagramming the last change in your repository.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/teaser.comment.dark.svg">
+  <img alt="A PR Lens bot comment in a pull request: stats chips, an architecture diagram of a small change, and the view-option checkboxes" src="docs/showcase/teaser.comment.light.svg">
+</picture>
+
+<br />
+
+## Features
+
+<table>
+<tr>
+<td width="46%" valign="middle">
+
+### Architecture blast radius
+
+What the pull request touches, drawn against the system around it: the components involved, and the calls that run between them.
+
+Colour carries the delta: **green** new, **amber** changed, **red** gone
+
+</td>
+<td width="54%" valign="middle">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/tier2-reference.architecture.dark.svg">
+  <img alt="An architecture diagram of a real refactor: three lanes, ten components, the changed ones picked out in colour" src="docs/showcase/tier2-reference.architecture.light.svg">
+</picture>
+</td>
+</tr>
+
+<tr>
+<td width="46%" valign="middle">
+
+### Data flow you can watch
+
+The ordered pipeline of the change as an animated sequence: one dot crosses one arrow at a time, in the order the steps happen.
+
+This is the same pull request as the row above, through the other another lens
+
+</td>
+<td width="54%" valign="middle">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/reference.data-flow.dark.svg">
+  <img alt="An animated sequence diagram: seven steps taking one cycle in turn" src="docs/showcase/reference.data-flow.light.svg">
+</picture>
+</td>
+</tr>
+
+<tr>
+<td width="46%" valign="middle">
+
+### Drill down without leaving the page
+
+The comment nests `<details>` sections, each carrying its own diagram scoped to one part of the change: the whole blast radius on top, then the new path, then what was retired.
+
+Every level ships pre-rendered, so opening one costs no round trip.
+
+</td>
+<td width="54%" valign="middle">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/reference.new-batch-path.dark.svg">
+  <img alt="The same pull request narrowed to one nested view: two lanes, the new batch path only" src="docs/showcase/reference.new-batch-path.light.svg">
+</picture>
+</td>
+</tr>
+
+<tr>
+<td width="46%" valign="middle">
+
+### From one card to a monorepo
+
+The same visual grammar answers for every size of change: lanes, node cards, delta colours, and routes you can trace with your eye alone.
+
+Crossings happen inside corridors, so a big graph reads as wiring rather than spaghetti.
+
+</td>
+<td width="54%" valign="middle">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/tier5-monorepo.architecture.dark.svg">
+  <img alt="A six-lane monorepo graph: 37 nodes and 49 routed edges" src="docs/showcase/tier5-monorepo.architecture.light.svg">
+</picture>
+</td>
+</tr>
+
+</table>
+
+## Hall of Fame
+
+The pull requests behind Hooks, Node fetch and Ingress, run back through PR Lens. Same renderer and same contract as the diagrams above, on someone else's code.
+
+<a href="https://prlens.dev/gallery/react/react/13968"><img alt="React Hooks, redrawn: four lanes across the React package, the reconciler, the server renderer and shared config" src="docs/showcase/gallery/react-hooks.svg"></a>
+
+<sub><b><a href="https://prlens.dev/gallery/react/react/13968">react/react#13968</a></b> · 36 files · +5,868/−130 · 5 lanes. Hooks arrive behind a feature flag.</sub>
+
+<a href="https://prlens.dev/gallery/nodejs/node/41749"><img alt="Node's fetch implementation, redrawn across five lanes" src="docs/showcase/gallery/node-fetch.svg"></a>
+
+<sub><b><a href="https://prlens.dev/gallery/nodejs/node/41749">nodejs/node#41749</a></b> · 16 files · +8,076/−3 · 5 lanes. `fetch`, `Request`, `Response` and `Headers` land in core.</sub>
+
+<a href="https://prlens.dev/gallery/kubernetes/kubernetes/14175"><img alt="The first Kubernetes Ingress type, redrawn across four lanes" src="docs/showcase/gallery/kubernetes-ingress.svg"></a>
+
+<sub><b><a href="https://prlens.dev/gallery/kubernetes/kubernetes/14175">kubernetes/kubernetes#14175</a></b> · 8 files · +766/−0 · 4 lanes. The first Ingress resource type, for L7 load balancing.</sub>
+
+<details>
+<summary><b>Seven more</b> · Vue, Rust, Tokio, Neovim, Django, webpack, vLLM</summary>
+<br>
+
+<a href="https://prlens.dev/gallery/vuejs/core/2532"><img alt="Vue's script setup and ref sugar, redrawn across three lanes" src="docs/showcase/gallery/vue-script-setup.svg"></a>
+
+<sub><b>vuejs/core#2532</b> · 11 files · +1,081/−670 · 3 lanes. `&lt;script setup&gt;` and the original ref sugar.</sub>
+
+<a href="https://prlens.dev/gallery/rust-lang/rust/31954"><img alt="Rust's question-mark operator, redrawn across four lanes" src="docs/showcase/gallery/rust-try-operator.svg"></a>
+
+<sub><b>rust-lang/rust#31954</b> · 26 files · +369/−16 · 4 lanes. The postfix `?` operator, chainable shorthand for `try!`.</sub>
+
+<a href="https://prlens.dev/gallery/tokio-rs/tokio/1657"><img alt="Tokio's work-stealing thread pool rewrite, redrawn across three lanes" src="docs/showcase/gallery/tokio-work-stealing.svg"></a>
+
+<sub><b>tokio-rs/tokio#1657</b> · 100 files · +7,408/−6,795 · 3 lanes. The work-stealing pool rebuilt to cut scheduler overhead.</sub>
+
+<a href="https://prlens.dev/gallery/neovim/neovim/11336"><img alt="Neovim's built-in LSP client, redrawn across three lanes" src="docs/showcase/gallery/neovim-lsp.svg"></a>
+
+<sub><b>neovim/neovim#11336</b> · 15 files · +5,556/−1 · 3 lanes. The LSP client moves into Neovim itself.</sub>
+
+<a href="https://prlens.dev/gallery/django/django/11209"><img alt="Django's ASGI handler, redrawn across five lanes" src="docs/showcase/gallery/django-asgi.svg"></a>
+
+<sub><b>django/django#11209</b> · 38 files · +931/−42 · 5 lanes. An ASGI handler and a coroutine-safe request context.</sub>
+
+<a href="https://prlens.dev/gallery/webpack/webpack/10440"><img alt="Webpack's ContainerPlugin, redrawn across five lanes" src="docs/showcase/gallery/webpack-federation.svg"></a>
+
+<sub><b>webpack/webpack#10440</b> · 13 files · +567/−5 · 5 lanes. `ContainerPlugin`, and module federation with it.</sub>
+
+<a href="https://prlens.dev/gallery/vllm-project/vllm/1348"><img alt="vLLM's PagedAttention V2, redrawn across three lanes" src="docs/showcase/gallery/vllm-paged-attention.svg"></a>
+
+<sub><b>vllm-project/vllm#1348</b> · 6 files · +764/−139 · 3 lanes. PagedAttention V2 and its sequence-level parallelism.</sub>
+
+</details>
+
+<b><a href="https://prlens.dev/gallery">Open the Hall of Fame →</a></b> Every diagram there is live: the lanes drill down, the pulses run.
+
+<br />
+
+## Make corrections
+
+When a diagram calls something by the wrong name, the fix is a correction file. Editing the generated SVG only lasts until the next push. Commit `.github/pr-lens.yml` and every later render honours it:
+
+```yaml
+schemaVersion: 0.1.0
+map:
+  rename:
+    - match: services/legacy-mailer.ts
+      to: Postmark sender
+  exclude:
+    - "**/*.test.ts"
+```
+
+It is an overlay, so it keeps holding as the code moves and the model renames things between runs. Renames, exclusions, lane pins and groupings, all in [`packages/cli`](packages/cli#corrections).
+
+## Other ways to run it
+
+The App is the whole setup for most people. The modes below cover what it does not: your own CI, your own model, or a diagram before the pull request exists.
+
+<details>
+<summary><b>Via your coding agent</b> · it writes the document itself · no second model bill</summary>
+<br>
+
+Your agent is usually already the model. Rather than spending a provider key to describe a diff it already understands, it writes the graph document itself and lets the validator hold it to the contract.
+
+```bash
+npx skills add coldteadotai/pr-lens
+```
+
+Then say, literally:
+
+> Diagram the change you just made with PR Lens and attach it to the pull request.
+
+The agent reads the diff, writes the document, runs `npx @coldtea/pr-lens-cli validate` until the contract is satisfied, renders, and attaches the `<picture>` pair. When someone says the diagram names things wrongly, the same skill teaches it to fix `.github/pr-lens.yml` instead of editing generated output. Details in [`packages/agent-skill`](packages/agent-skill).
+
+Prefer to have the agent do the whole setup? Paste this:
 
 ```text
 Set up PR Lens (prlens.dev) for me: it draws each pull request as animated architecture and data-flow diagrams, inside the pull request itself.
@@ -47,40 +222,10 @@ Set up PR Lens (prlens.dev) for me: it draws each pull request as animated archi
 4. Then prove it: diagram the most recent change in this repository and show me the rendered SVGs.
 ```
 
-No coding agent to hand? [**Install the PR Lens GitHub App**](https://github.com/apps/coldtea-pr-lens) on its own, that gets every pull request the comment, with no key of yours involved.
-
-## Ways to use it
-
-Five ways in, the prompt above sets up the first two. Every mode produces the same diagrams from the same document; pick the one that matches where you review.
-
-<details>
-<summary><b>1. In your pull requests: the GitHub App</b> · hosted · live checkboxes · no key of yours</summary>
-<br>
-
-Install the [PR Lens GitHub App](https://github.com/apps/coldtea-pr-lens) on your repository and open a pull request. That is the whole setup: every pull request gets the comment (the framed mockups at the top of this page are what lands), and each push updates it in place. This is the hosted mode, and the only one where the view-option checkboxes are live: tick one and the comment re-renders within seconds from the stored graph, no re-analysis, no key of yours involved.
-
 </details>
 
 <details>
-<summary><b>2. Via your coding agent</b> · it writes the document itself · no second model bill</summary>
-<br>
-
-Your agent is usually the model. Rather than spending a provider key to describe a diff it already understands, it writes the graph document itself and lets the validator hold it to the contract.
-
-```bash
-npx skills add coldteadotai/pr-lens
-```
-
-Then say, literally:
-
-> Diagram the change you just made with PR Lens and attach it to the pull request.
-
-The agent reads the diff, writes the document, runs `npx @coldtea/pr-lens-cli validate` until the contract is satisfied, renders, and attaches the `<picture>` pair. When someone says the diagram names things wrongly, the same skill teaches it to fix `.github/pr-lens.yml` instead of editing generated output. Details in [`packages/agent-skill`](packages/agent-skill).
-
-</details>
-
-<details>
-<summary><b>3. As a workflow: the GitHub Action</b> · your CI · your key · one static comment</summary>
+<summary><b>As a workflow: the GitHub Action</b> · your CI · your key · one static comment</summary>
 <br>
 
 The same comment from your own CI, drawn with your own model key. Add that key as a repository secret — `GEMINI_API_KEY` below, because `provider` defaults to Gemini — then commit this as `.github/workflows/pr-lens.yml`:
@@ -111,12 +256,12 @@ jobs:
           api-key: ${{ secrets.GEMINI_API_KEY }}
 ```
 
-Nothing here is tied to one model. `provider` takes `gemini` (the default), `openai`, or `openai-compatible` with a `base-url` and `model`, so the same workflow runs against OpenRouter, DeepSeek or a server of your own. The key reaches the CLI through the environment, never a command line, and the diff goes to the provider you name and nowhere else. The comment here is deliberately static. An Action cannot hold state between runs, so the checkboxes live in the App. Providers, lenses, branding and the rest of the inputs are in [`packages/action`](packages/action).
+Nothing here is tied to one model. `provider` takes `gemini` (the default), `openai`, or `openai-compatible` with a `base-url` and `model`, so the same workflow runs against OpenRouter, DeepSeek or a server of your own. The key reaches the CLI through the environment, never a command line, and the diff goes to the provider you name and nowhere else. The comment here is deliberately static — an Action cannot hold state between runs, so the checkboxes live in the App. Providers, lenses, branding and the rest of the inputs are in [`packages/action`](packages/action).
 
 </details>
 
 <details>
-<summary><b>4. From the CLI</b> · every step on your machine, one at a time</summary>
+<summary><b>From the CLI</b> · every step on your machine, one at a time</summary>
 <br>
 
 Everything the other modes do, one step at a time, on your machine. Only `analyze` talks to a model, and its key is read from the environment, never from a flag:
@@ -148,7 +293,7 @@ Ollama, DeepSeek, OpenRouter and anything else speaking `/chat/completions` are 
 </details>
 
 <details>
-<summary><b>5. In your terminal</b> · the diagram before the pull request exists</summary>
+<summary><b>In your terminal</b> · the diagram before the pull request exists</summary>
 <br>
 
 Nothing about the diagrams needs a pull request. Render locally and look at the change before anyone else does:
@@ -162,46 +307,6 @@ open .pr-lens/*-dark-*.svg    # macOS; the SVGs are self-contained, any browser 
 This is also the shape of reviewing an agent's work: while you read the diff, the agent that wrote it renders it. With the skill installed, "render this change with PR Lens and open the SVGs" gets you the diagram beside the diff, the same picture its pull request will carry, minutes earlier.
 
 </details>
-
-## From one card to a monorepo
-
-The renderer answers for every size of change with the same visual grammar: lanes, node cards, delta colours, and routes you can trace with the eye alone.
-
-<img alt="A single-card diagram: the smallest change PR Lens draws" src="docs/showcase/tier1-minimal.architecture.dark.svg">
-
-<sub>The smallest honest diagram: 1 lane · 1 node · 0 edges.</sub>
-
-<img alt="A dense three-lane graph: every route stays traceable through corridors" src="docs/showcase/tier3-dense.architecture.dark.svg">
-
-<sub>The dense synthetic: 3 lanes · 15 nodes · 19 edges. Crossings happen inside corridors and read as wiring, not spaghetti.</sub>
-
-<details>
-<summary><b>Tier 4: a checkout flow</b> · 5 lanes · 21 nodes · 24 edges</summary>
-<br>
-<img alt="A five-lane checkout system with two dozen routed edges" src="docs/showcase/tier4-checkout.architecture.dark.svg">
-</details>
-
-<details>
-<summary><b>Tier 5: a monorepo</b> · 6 lanes · 37 nodes · 49 edges</summary>
-<br>
-<img alt="A six-lane monorepo graph: the largest tier the renderer answers for" src="docs/showcase/tier5-monorepo.architecture.dark.svg">
-</details>
-
-<sub>Collapsed tiers dogfood the same `<details>` drill-down pattern the PR comment uses.</sub>
-
-## The data-flow lens
-
-The ordered pipeline of the change, drawn in the same design system: participants are real node cards, labels are the same pills, colours are the same deltas. **The pulses are moving right now**: PR Lens diagrams are animated SVG, and the animation survives GitHub's image proxy, a hook no findings table has.
-
-<img alt="The reference pull request's send pipeline as an animated sequence diagram" src="docs/showcase/reference.data-flow.dark.svg">
-
-<sub>The reference pull request's send pipeline: 7 steps sharing one cycle and taking it in turn. One dot crosses one arrow at a time, in the order the steps happen, and the next arrow lights as the last dot lands.</sub>
-
-<img alt="A sequence diagram mixing waited-on calls, fire-and-forget messages, returns and a self message" src="docs/showcase/mixed-kinds.data-flow.dark.svg">
-
-<sub>Every message kind at once: a filled head waits for an answer, an open head is fire-and-forget, a dashed line _is_ the answer, and only waited-on work lights an activation bar.</sub>
-
-Every render above comes from a checked-in fixture, regenerated deterministically by [`docs/showcase/render.mts`](docs/showcase/render.mts): the [teaser](docs/showcase/teaser.ts), the [reference pull request](packages/schema/src/examples/postmark-refactor.ts), the [dense synthetic](packages/renderer/test/dense.ts), the [upper tiers](packages/renderer/test/fixtures), the [mixed-kinds flow](packages/renderer/test/mixed-kinds.ts). The comment mockups up top are framed by [`docs/showcase/frame.ts`](docs/showcase/frame.ts) around the same renders, with the composer's real text.
 
 ## Packages
 
@@ -224,4 +329,4 @@ Node 20.11+ and pnpm 10.
 
 ## License
 
-MIT © Coldtea AI.
+MIT © Coldtea AI

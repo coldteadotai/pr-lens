@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1708 492" width="1708" height="492" role="img" aria-label="Add Ingress resource type to the experimental API (internal + v1)">
+<title>Add Ingress resource type to the experimental API (internal + v1)</title>
+<desc>This PR defines a new Ingress/IngressList API object — the initial version of Kubernetes' L7 load-balancing resource — as pure type scaffolding: it adds the Go structs (IngressSpec, IngressStatus, IngressRule, IngressPath, IngressBackend) to both the internal experimental API package and its versioned experimental/v1 counterpart, registers the new types with each package's runtime scheme, generates the deep-copy and bidirectional v1↔internal conversion functions the API machinery needs to store and serve them, and generates swagger field docs for the v1 type. IngressStatus reuses the existing core LoadBalancerStatus/LoadBalancerIngress types that Service already relies on, so this change also backfills deep-copy/convert functions for those types where the experimental package previously had no need to generate them. No REST storage, admission, or controller wiring is included yet — this is the type-definition groundwork only.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif}.lanebox{fill:rgba(110,118,129,.07)}.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:#9198a1}.card{fill:#1c2128;stroke:#3d444d;stroke-width:1}.card-added{stroke:#3fb950;stroke-opacity:.55}.card-modified{stroke:#d29922;stroke-opacity:.5}.ghost{opacity:.55}.ghost .card{stroke:#f85149;stroke-dasharray:4 3;stroke-opacity:.6}.context{opacity:.82}.ntitle{font-weight:600;fill:#e6edf3}.strike{text-decoration:line-through}.nsub{font-size:9.5px;fill:#9198a1;font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace}.chip{fill:rgba(110,118,129,.18)}.glyph{fill:#9198a1}.glyph-stroke{stroke:#9198a1;stroke-width:1.4;fill:none}.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}.bdg rect{stroke-width:1}.bdg-added rect{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.bdg-added text{fill:#3fb950}.bdg-modified rect{fill:rgba(187,128,9,.15);stroke:rgba(210,153,34,.4)}.bdg-modified text{fill:#d29922}.bdg-removed rect{fill:rgba(248,81,73,.12);stroke:rgba(248,81,73,.4)}.bdg-removed text{fill:#f85149}.bdg-neutral rect{fill:rgba(110,118,129,.18);stroke:#3d444d}.bdg-neutral text{fill:#9198a1}.edge{fill:none;stroke-width:1.5}.edge-added{stroke:#3fb950}.edge-modified{stroke:#d29922}.edge-removed{stroke:#f85149;stroke-dasharray:5 4;opacity:.7}.edge-neutral{stroke:#6e7681}.hero{stroke-width:2.25}.faded{opacity:.45}.glow{fill:none;stroke-width:7;opacity:.14}.msg-self{font-size:11px;fill:#e6edf3}.lpill{fill:#0d1117;stroke:#21262d;stroke-width:1}.ltext{font-size:9.5px;font-weight:600;fill:#9198a1}.ltext-added{fill:#3fb950}.ltext-modified{fill:#d29922}.ltext-removed{fill:#f85149}.cardsh{filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}.lifeline{stroke:#30363d;stroke-width:1;stroke-dasharray:3 4}.actbar{fill:rgba(46,160,67,.15);stroke:rgba(63,185,80,.4)}.msg{fill:none;stroke-width:1.5}.msg-return{stroke-dasharray:4 3;opacity:.8}.msg-strong{stroke-width:2.25}</style>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mko-added" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#3fb950" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mko-modified" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#d29922" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mko-removed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#f85149" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker><marker id="mko-neutral" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#6e7681" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1708" height="492" rx="12" fill="#0d1117"/>
+<rect x="0" y="0" width="1708" height="492" rx="12" fill="url(#dots)"/>
+<g><rect class="lanebox" x="16" y="44" width="404" height="432" rx="12"/>
+<text class="lanelabel" x="32" y="68">VERSIONED API (EXPERIMENTAL/V1) · WIRE FORMAT</text>
+<rect class="lanebox" x="440" y="44" width="404" height="432" rx="12"/>
+<text class="lanelabel" x="456" y="68">CONVERSION MACHINERY · GENERATED</text>
+<rect class="lanebox" x="864" y="44" width="404" height="432" rx="12"/>
+<text class="lanelabel" x="880" y="68">INTERNAL API (EXPERIMENTAL) · SERVER-SIDE CANONIC…</text>
+<rect class="lanebox" x="1288" y="44" width="404" height="432" rx="12"/>
+<text class="lanelabel" x="1304" y="68">CORE API (PKG/API) · EXISTING TYPES</text></g>
+<g><path class="edge edge-added" d="M404,110 L413,110 C417.97,110 422,114.03 422,119 L422,205 C422,214.39 429.61,222 439,222 L456,222" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M404,110 L413,110 C417.97,110 422,114.03 422,119 L422,205 C422,214.39 429.61,222 439,222 L456,222"/></circle>
+<path class="glow" stroke="#3fb950" d="M828,222 L841,222 C848.18,222 854,227.82 854,235 L854,313 C854,320.18 859.82,326 867,326 L880,326"/>
+<path class="edge edge-added hero" d="M828,222 L841,222 C848.18,222 854,227.82 854,235 L854,313 C854,320.18 859.82,326 867,326 L880,326" marker-end="url(#mk-added)"/>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" repeatCount="indefinite" path="M828,222 L841,222 C848.18,222 854,227.82 854,235 L854,313 C854,320.18 859.82,326 867,326 L880,326"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-1.4s" repeatCount="indefinite" path="M828,222 L841,222 C848.18,222 854,227.82 854,235 L854,313 C854,320.18 859.82,326 867,326 L880,326"/></circle>
+<circle r="3" fill="#3fb950"><animateMotion dur="2.1s" begin="-0.7s" repeatCount="indefinite" path="M828,222 L841,222 C848.18,222 854,227.82 854,235 L854,313 C854,320.18 859.82,326 867,326 L880,326"/></circle>
+<path class="edge edge-added" d="M1066,352 L1066,404" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950"><animateMotion dur="1.6s" repeatCount="indefinite" path="M1066,352 L1066,404"/></circle>
+<path class="edge edge-added" d="M218,144 L218,161 C218,170.39 210.39,178 201,178 L131,178 C126.03,178 122,182.03 122,187 L122,196" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M218,144 L218,153 C218,157.97 222.03,162 227,162 L297,162 C306.39,162 314,169.61 314,179 L314,196" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M1252,326 L1261,326 C1265.97,326 1270,330.03 1270,335 L1270,405 C1270,414.39 1277.61,422 1287,422 L1304,422" marker-end="url(#mk-added)"/>
+<path class="edge edge-added" d="M404,126 L421,126 C430.39,126 438,133.61 438,143 L438,336 C438,354.78 453.22,370 472,370 L1252,370 C1270.78,370 1286,385.22 1286,404 L1286,429 C1286,433.97 1290.03,438 1295,438 L1304,438" marker-end="url(#mk-added)"/></g>
+<g><g class="cardsh"><rect class="card card-added" x="32" y="92" width="372" height="52" rx="10"/>
+<rect class="chip" x="46" y="105" width="26" height="26" rx="7"/><g><text class="glyph" x="59" y="122.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="82" y="123" font-size="13">Ingress type (v1)</text>
+<g class="bdg bdg-added"><rect x="356.45" y="84" width="40.55" height="16" rx="8"/><text x="376.73" y="95" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="32" y="196" width="180" height="52" rx="10"/>
+<rect class="chip" x="46" y="209" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M52,218 h14"/>
+<path class="glyph-stroke" d="M52,226 h14"/>
+<circle class="glyph" cx="57" cy="218" r="2.2"/>
+<circle class="glyph" cx="62" cy="226" r="2.2"/></g>
+<text class="ntitle" x="82" y="227" font-size="10.5">v1 scheme registration</text>
+<g class="bdg bdg-modified"><rect x="138.38" y="188" width="66.62" height="16" rx="8"/><text x="171.69" y="199" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="224" y="196" width="180" height="52" rx="10"/>
+<rect class="chip" x="238" y="209" width="26" height="26" rx="7"/><g><text class="glyph" x="251" y="226.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="274" y="227" font-size="11">v1 swagger field docs</text>
+<g class="bdg bdg-added"><rect x="356.45" y="188" width="40.55" height="16" rx="8"/><text x="376.73" y="199" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="456" y="196" width="372" height="52" rx="10"/>
+<rect class="chip" x="470" y="209" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="226.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="506" y="227" font-size="13">v1 ↔ internal conversion</text>
+<g class="bdg bdg-modified"><rect x="754.38" y="188" width="66.62" height="16" rx="8"/><text x="787.69" y="199" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh"><rect class="card card-added" x="880" y="300" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="313" width="26" height="26" rx="7"/><g><text class="glyph" x="907" y="330.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="930" y="331" font-size="13">Ingress type (internal)</text>
+<g class="bdg bdg-added"><rect x="1204.45" y="292" width="40.55" height="16" rx="8"/><text x="1224.73" y="303" text-anchor="middle">NEW</text></g></g>
+<g class="cardsh"><rect class="card card-modified" x="880" y="404" width="372" height="52" rx="10"/>
+<rect class="chip" x="894" y="417" width="26" height="26" rx="7"/><g><path class="glyph-stroke" d="M900,426 h14"/>
+<path class="glyph-stroke" d="M900,434 h14"/>
+<circle class="glyph" cx="905" cy="426" r="2.2"/>
+<circle class="glyph" cx="910" cy="434" r="2.2"/></g>
+<text class="ntitle" x="930" y="435" font-size="13">internal scheme registration</text>
+<g class="bdg bdg-modified"><rect x="1178.38" y="396" width="66.62" height="16" rx="8"/><text x="1211.69" y="407" text-anchor="middle">CHANGED</text></g></g>
+<g class="cardsh context"><rect class="card" x="1304" y="404" width="372" height="52" rx="10"/>
+<rect class="chip" x="1318" y="417" width="26" height="26" rx="7"/><g><text class="glyph" x="1331" y="434.5" text-anchor="middle" style="font-size:11px;font-family:ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, monospace">{ }</text></g>
+<text class="ntitle" x="1354" y="435" font-size="13">LoadBalancerStatus (Service)</text></g></g>
+<g><g><rect class="lpill" x="367.55" y="154.5" width="108.91" height="15" rx="7.5"/><text class="ltext ltext-added" x="422" y="165.5" text-anchor="middle">submitted v1 Ingress</text></g>
+<g><rect class="lpill" x="788.92" y="266.5" width="130.17" height="15" rx="7.5"/><text class="ltext ltext-added" x="854" y="277.5" text-anchor="middle">converted to internal form</text></g>
+<g><rect class="lpill" x="1011.97" y="370.5" width="108.07" height="15" rx="7.5"/><text class="ltext ltext-added" x="1066" y="381.5" text-anchor="middle">register + deep-copy</text></g>
+<g><rect class="lpill" x="111.97" y="170.5" width="108.07" height="15" rx="7.5"/><text class="ltext ltext-added" x="166" y="181.5" text-anchor="middle">register + deep-copy</text></g>
+<g><rect class="lpill" x="232.73" y="154.5" width="58.54" height="15" rx="7.5"/><text class="ltext ltext-added" x="262" y="165.5" text-anchor="middle">field docs</text></g>
+<g><rect class="lpill" x="1198.75" y="362.5" width="142.5" height="15" rx="7.5"/><text class="ltext ltext-added" x="1270" y="373.5" text-anchor="middle">IngressStatus.LoadBalancer</text></g>
+<g><rect class="lpill" x="790.75" y="362.5" width="142.5" height="15" rx="7.5"/><text class="ltext ltext-added" x="862" y="373.5" text-anchor="middle">IngressStatus.LoadBalancer</text></g></g>
+</svg>

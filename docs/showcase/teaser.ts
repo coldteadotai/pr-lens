@@ -3,15 +3,20 @@ import { parseGraphDoc, SCHEMA_VERSION } from "../../packages/schema/src/index.j
 
 /**
  * The README's opening diagram: a pull request a visitor grasps in two
- * seconds that still shows the whole grammar — all three delta colours, one
- * animated hero path, one ghosted removal in the dead band. Deliberately
- * generic; the reference fixture below it carries the realistic detail.
+ * seconds that still shows the whole grammar — all three delta colours, the
+ * new path animated end to end, one ghosted removal in the dead band, and an
+ * unchanged neighbour to measure the change against.
+ *
+ * The four added edges chain left to right (route → queue → worker → stores),
+ * so a reader's eye is carried along the path the change introduced rather
+ * than to four unrelated pulses. Deliberately generic; the reference fixture
+ * below it carries the realistic detail.
  */
 export const teaserGraph: GraphDoc = parseGraphDoc({
   schemaVersion: SCHEMA_VERSION,
   kind: "graph",
   title: "Add a welcome email on signup",
-  summary: "A new welcome service replaces the inline legacy mailer.",
+  summary: "Signup now publishes an event; a new welcome worker drains it and retires the inline mailer.",
   lenses: ["architecture"],
   provenance: {
     repo: { owner: "acme", name: "webapp" },
@@ -31,6 +36,15 @@ export const teaserGraph: GraphDoc = parseGraphDoc({
       delta: "modified",
       lane: "api",
       files: [{ path: "app/api/signup/route.ts" }],
+    },
+    {
+      id: "email-queue",
+      label: "email-queue",
+      kind: "queue",
+      delta: "added",
+      lane: "services",
+      subtitle: "signup.welcome",
+      files: [{ path: "infra/queues/email.ts" }],
     },
     {
       id: "welcome-service",
@@ -56,12 +70,20 @@ export const teaserGraph: GraphDoc = parseGraphDoc({
       delta: "unchanged",
       lane: "data",
     },
+    {
+      id: "email-log",
+      label: "email log",
+      kind: "datastore",
+      delta: "added",
+      lane: "data",
+      files: [{ path: "services/welcome/log.ts" }],
+    },
   ],
   edges: [
     {
-      id: "signup-to-welcome",
+      id: "signup-to-queue",
       from: "signup-route",
-      to: "welcome-service",
+      to: "email-queue",
       kind: "event",
       delta: "added",
       emphasis: "hero",
@@ -69,12 +91,31 @@ export const teaserGraph: GraphDoc = parseGraphDoc({
       label: "signup event",
     },
     {
+      id: "queue-to-welcome",
+      from: "email-queue",
+      to: "welcome-service",
+      kind: "queue",
+      delta: "added",
+      animated: true,
+      label: "welcome job",
+    },
+    {
       id: "welcome-to-store",
       from: "welcome-service",
       to: "user-store",
       kind: "data",
       delta: "added",
+      animated: true,
       label: "load profile",
+    },
+    {
+      id: "welcome-to-log",
+      from: "welcome-service",
+      to: "email-log",
+      kind: "data",
+      delta: "added",
+      animated: true,
+      label: "record send",
     },
     {
       id: "signup-to-legacy",
