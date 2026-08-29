@@ -69,8 +69,6 @@ Colour carries the delta: **green** new, **amber** changed, **red** gone
 
 The ordered pipeline of the change as an animated sequence: one dot crosses one arrow at a time, in the order the steps happen.
 
-This is the same pull request as the row above, through the other another lens
-
 </td>
 <td width="54%" valign="middle">
 <picture>
@@ -87,9 +85,8 @@ This is the same pull request as the row above, through the other another lens
 
 The comment nests `<details>` sections, each carrying its own diagram scoped to one part of the change: the whole blast radius on top, then the new path, then what was retired.
 
-Every level ships pre-rendered, so opening one costs no round trip.
-
 </td>
+
 <td width="54%" valign="middle">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/showcase/reference.new-batch-path.dark.svg">
@@ -105,7 +102,7 @@ Every level ships pre-rendered, so opening one costs no round trip.
 
 The same visual grammar answers for every size of change: lanes, node cards, delta colours, and routes you can trace with your eye alone.
 
-Crossings happen inside corridors, so a big graph reads as wiring rather than spaghetti.
+For what its worth, you should not be opening a PR this large
 
 </td>
 <td width="54%" valign="middle">
@@ -118,9 +115,11 @@ Crossings happen inside corridors, so a big graph reads as wiring rather than sp
 
 </table>
 
+<br />
+
 ## Hall of Fame
 
-The pull requests behind Hooks, Node fetch and Ingress, run back through PR Lens. Same renderer and same contract as the diagrams above, on someone else's code.
+The pull requests behind Hooks, Node fetch and Ingress, run back through PR Lens. Same renderer and same contract as the diagrams above.
 
 <a href="https://prlens.dev/gallery/react/react/13968"><img alt="React Hooks, redrawn: four lanes across the React package, the reconciler, the server renderer and shared config" src="docs/showcase/gallery/react-hooks.svg"></a>
 
@@ -168,7 +167,7 @@ The pull requests behind Hooks, Node fetch and Ingress, run back through PR Lens
 
 </details>
 
-<b><a href="https://prlens.dev/gallery">Open the Hall of Fame →</a></b> Every diagram there is live: the lanes drill down, the pulses run.
+<b><a href="https://prlens.dev/gallery">Open the Hall of Fame →</a></b> Every diagram there is live.
 
 <br />
 
@@ -187,6 +186,8 @@ map:
 ```
 
 It is an overlay, so it keeps holding as the code moves and the model renames things between runs. Renames, exclusions, lane pins and groupings, all in [`packages/cli`](packages/cli#corrections).
+
+<br />
 
 ## Other ways to run it
 
@@ -308,6 +309,8 @@ This is also the shape of reviewing an agent's work: while you read the diff, th
 
 </details>
 
+<br />
+
 ## Packages
 
 | Package                                        | What it is                                                                                           |
@@ -318,6 +321,8 @@ This is also the shape of reviewing an agent's work: while you read the diff, th
 | [`packages/action`](packages/action)           | the GitHub Action: analyze, publish, post one static comment                                         |
 | [`packages/agent-skill`](packages/agent-skill) | `@coldtea/pr-lens-agent-skill`: teaches a coding agent to draw the change it just made               |
 
+<br />
+
 ## Working in this repo
 
 ```bash
@@ -326,6 +331,8 @@ pnpm verify      # build, typecheck, test
 ```
 
 Node 20.11+ and pnpm 10.
+
+<br />
 
 ## License
 
