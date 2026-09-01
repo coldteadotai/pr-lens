@@ -336,7 +336,7 @@ Node 20.11+ and pnpm 10.
 
 ## Why we built this
 
-[Reducing the cognitive load of reviewing PRs](https://www.coldtea.ai/blog/reducing-cognitive-load-ai-generated-prs).
+[Reducing the cognitive load of reviewing PRs](https://www.coldtea.ai/blog/reducing-cognitive-load-ai-generated-prs)
 
 <br />
 
