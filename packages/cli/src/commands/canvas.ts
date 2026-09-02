@@ -129,10 +129,27 @@ const settleRotation = async (
   nextToken: string,
   terminal: Terminal,
 ): Promise<{ registered: Registered; editUrl: string }> => {
-  const rotated = await rotateCanvas(api, id, requireWriteToken({ id, entry }), nextToken).catch((error: unknown) => {
-    if (error instanceof PrLensCliError) throw unfinishedRotation(error);
-    throw error;
-  });
+  const rotated = await rotateCanvas(api, id, requireWriteToken({ id, entry }), nextToken).catch(
+    async (error: unknown) => {
+      if (!(error instanceof PrLensCliError)) throw error;
+      if (error.code !== "CANVAS_UNKNOWN") throw unfinishedRotation(error);
+
+      // Conclusive: the app would have said "rotated" if the pending token
+      // were the one on record, so neither it nor the stored token opens
+      // the canvas. The transition is abandoned here, or a token imported
+      // later would carry it out.
+      await updateRegistry((registry) => {
+        const current = registry.canvases[id];
+        if (current === undefined || current.nextWriteToken !== nextToken) return;
+        registry.canvases[id] = { ...current, nextWriteToken: undefined };
+      }, terminal);
+      throw new PrLensCliError(
+        error.code,
+        `${error.message}; the rotation that was pending has been dropped`,
+        error.details,
+      );
+    },
+  );
 
   // Only this transition is closed. A different token pending by now belongs
   // to a later rotation, which will close its own.
@@ -240,27 +257,51 @@ const pull = async (
 
   // An edit link's token is proven before it is written down: an old
   // bookmark from before a rotation must not replace the token that works.
+  // The proof is about the entry as it was read; if another command changes
+  // the entry in the meantime, the proof is stale and is not acted on.
+  const seenToken = registry.canvases[id]?.writeToken;
   const proven = writeToken !== undefined && (await verifyWriteToken(api, id, writeToken));
+
+  type Recorded = "imported" | "kept" | "overtaken" | "refused";
+  const outcome: { recorded: Recorded } = { recorded: "kept" };
 
   // Every pull records the revision, and a proven edit link records its
   // token: a checkout that lost canvas.json, or never had it, gets its pen
-  // back here.
+  // back here. A token that changes hands drops any rotation that was
+  // pending for the old one; that rotation was the old holder's business.
   await updateRegistry((current) => {
     const entry = current.canvases[id];
-    const kept = proven ? writeToken : entry?.writeToken;
+    const untouched = entry?.writeToken === seenToken;
+    const imports = proven && untouched && writeToken !== entry?.writeToken;
+    outcome.recorded =
+      imports ? "imported" : proven && !untouched ? "overtaken" : writeToken !== undefined && !proven ? "refused" : "kept";
+    const kept = imports ? writeToken : entry?.writeToken;
+    const pending = imports ? undefined : entry?.nextWriteToken;
     current.canvases[id] = {
       name: entry?.name ?? fetched.document.title,
       source: entry?.source ?? sourceKey(out),
-      ...(entry?.nextWriteToken === undefined ? {} : { nextWriteToken: entry.nextWriteToken }),
+      ...(pending === undefined ? {} : { nextWriteToken: pending }),
       ...(kept === undefined ? {} : { writeToken: kept }),
       rev: fetched.rev,
     };
   }, terminal);
 
   terminal.out(`✓ ${out} — rev ${fetched.rev} of ${fetched.viewUrl}`);
-  if (proven) terminal.out(`  the edit link's token is now in ${REGISTRY_PATH}`);
-  else if (writeToken !== undefined)
-    terminal.err(`  the edit link's token no longer opens ${id}; nothing was recorded for it`);
+  switch (outcome.recorded) {
+    case "imported":
+      terminal.out(`  the edit link's token is now in ${REGISTRY_PATH}`);
+      return;
+    case "refused":
+      terminal.err(`  the edit link's token no longer opens ${id}; nothing was recorded for it`);
+      return;
+    case "overtaken":
+      terminal.err(`  ${REGISTRY_PATH} changed while the edit link was being checked; its token was not recorded`);
+      return;
+    case "kept":
+      return;
+    default:
+      return assertNever(outcome.recorded, "Unhandled record outcome");
+  }
 };
 
 const rotate = async (

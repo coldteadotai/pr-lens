@@ -524,6 +524,73 @@ test("rotate on a canvas pulled by its view link leaves nothing pending behind",
   expect(seen[0]?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
 });
 
+test("a proof made against one entry is not acted on once another command has changed it", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const other = "other-token".padEnd(22, "b");
+  const entries = await registry();
+
+  // The proof succeeds; then, before the pull writes, a rotate elsewhere
+  // lands a different token in the registry and on the app.
+  const proving = fakeFetch;
+  vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    const answer = await proving(input, init);
+    if (url.pathname.endsWith("/rotate")) {
+      await writeFile(REGISTRY, JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: other } } }), "utf8");
+      canvases.get(FIRST)!.token = other;
+    }
+    return answer;
+  });
+
+  err = [];
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  expect(err.join("\n")).toContain("changed while the edit link was being checked");
+  expect((await registry())[FIRST]?.writeToken).toBe(other);
+});
+
+test("a rotation the app has refused for good is dropped, not carried out by a later pen", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const gone = "gone".padEnd(22, "g");
+  const pending = "pending".padEnd(22, "p");
+  const current = "current".padEnd(22, "c");
+  const entries = await registry();
+  await writeFile(
+    REGISTRY,
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: gone, nextWriteToken: pending } } }),
+    "utf8",
+  );
+  canvases.get(FIRST)!.token = current;
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("the rotation that was pending has been dropped");
+  expect((await registry())[FIRST]).not.toHaveProperty("nextWriteToken");
+
+  seen = [];
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${current}`)).toBe(0);
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  expect(seen.map((request) => [request.method, request.path.endsWith("/rotate")])).toEqual([["PUT", false]]);
+  expect(canvases.get(FIRST)?.token).toBe(current);
+});
+
+test("importing a token drops a rotation that was pending for the old one", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const pending = "pending".padEnd(22, "p");
+  const current = "current".padEnd(22, "c");
+  const entries = await registry();
+  await writeFile(
+    REGISTRY,
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], nextWriteToken: pending } } }),
+    "utf8",
+  );
+  canvases.get(FIRST)!.token = current;
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${current}`)).toBe(0);
+  const entry = (await registry())[FIRST];
+  expect(entry?.writeToken).toBe(current);
+  expect(entry).not.toHaveProperty("nextWriteToken");
+});
+
 test("pulling a view link records the revision, and push then asks for the edit link", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
   const fresh = await mkdtemp(join(tmpdir(), "pr-lens-canvas-other-"));
