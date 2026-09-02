@@ -29,15 +29,18 @@ export const mintWriteToken = (): string => randomBytes(16).toString("base64url"
 const Entry = z.object({
   name: z.string(),
   source: z.string(),
+  /**
+   * The app the canvas lives on. Everything below is only meaningful there:
+   * another app's answers, its 404 above all, say nothing about this entry.
+   */
+  api: z.string(),
   /** Absent for a canvas pulled by its view link: readable, not writable, from here. */
   writeToken: z.string().optional(),
   /**
-   * A rotation in flight: minted here and sent to one app, not yet confirmed
-   * as the one on record there. Kept so a lost answer is finished, not lost,
-   * and bound to the app it was sent to, since only that app can say what
-   * became of it.
+   * A rotation in flight: minted here and sent to the app, not yet confirmed
+   * as the one on record. Kept so a lost answer is finished, not lost.
    */
-  pending: z.object({ writeToken: z.string(), api: z.string() }).optional(),
+  pending: z.string().optional(),
   rev: z.number().int().nonnegative(),
 });
 
@@ -181,6 +184,13 @@ export const ensureRegistryHome = async (terminal: Terminal): Promise<void> => {
   await prepareWorkspace(WORKSPACE_DIR, terminal);
   await assertRegistryPrivate();
 };
+
+/** The names the registry lives under, which nothing else may write to. */
+export const reservedRegistryPaths = (): string[] => [
+  resolve(REGISTRY_PATH),
+  resolve(LOCK_PATH),
+  secretStagingPath(REGISTRY_PATH),
+];
 
 export const writeRegistry = async (registry: CanvasRegistry, terminal: Terminal): Promise<void> => {
   await ensureRegistryHome(terminal);

@@ -138,7 +138,7 @@ afterEach(() => {
 });
 
 const registry = async (): Promise<
-  Record<string, { name: string; source: string; writeToken?: string; pending?: { writeToken: string; api: string }; rev: number }>
+  Record<string, { name: string; source: string; api: string; writeToken?: string; pending?: string; rev: number }>
 > =>
   JSON.parse(await readFile(REGISTRY, "utf8")).canvases;
 
@@ -158,6 +158,7 @@ test("the first push mints a canvas, records it, and prints the three links", as
     [FIRST]: {
       name: "Batch broadcast sending through Postmark",
       source: "drawn.graph.json",
+      api: API,
       writeToken: TOKEN1,
       rev: 1,
     },
@@ -272,7 +273,7 @@ test("a rotation whose answer was lost is finished by the next command", async (
 
   const pending = (await registry())[FIRST];
   expect(pending?.writeToken).toBe(TOKEN1);
-  expect(pending?.pending).toEqual({ writeToken: expect.stringMatching(/^[A-Za-z0-9_-]{22}$/), api: API });
+  expect(pending?.pending).toMatch(/^[A-Za-z0-9_-]{22}$/);
 
   err = [];
   seen = [];
@@ -282,7 +283,7 @@ test("a rotation whose answer was lost is finished by the next command", async (
     ["PUT", false],
   ]);
   const settled = (await registry())[FIRST];
-  expect(settled?.writeToken).toBe(pending?.pending?.writeToken);
+  expect(settled?.writeToken).toBe(pending?.pending);
   expect(settled).not.toHaveProperty("pending");
   expect(seen[1]?.headers.get("authorization")).toBe(`Bearer ${settled?.writeToken}`);
 });
@@ -480,6 +481,7 @@ test("pulling an edit link brings its token into a checkout that never had it", 
   expect((await registry())[FIRST]).toEqual({
     name: "Batch broadcast sending through Postmark",
     source: ".pr-lens/graph.json",
+    api: API,
     writeToken: TOKEN1,
     rev: 1,
   });
@@ -558,7 +560,7 @@ test("a rotation the app has refused for good is dropped, not carried out by a l
   const entries = await registry();
   await writeFile(
     REGISTRY,
-    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: gone, pending: { writeToken: pending, api: API } } } }),
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: gone, pending } } }),
     "utf8",
   );
   canvases.get(FIRST)!.token = current;
@@ -582,7 +584,7 @@ test("importing a token drops a rotation that was pending for the old one", asyn
   const entries = await registry();
   await writeFile(
     REGISTRY,
-    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], pending: { writeToken: pending, api: API } } } }),
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], pending } } }),
     "utf8",
   );
   canvases.get(FIRST)!.token = current;
@@ -593,27 +595,63 @@ test("importing a token drops a rotation that was pending for the old one", asyn
   expect(entry).not.toHaveProperty("pending");
 });
 
-test("a rotation pending against another app is neither carried out nor dropped here", async () => {
+test("an entry answers only for the app it was made against", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
   const pending = "pending".padEnd(22, "p");
   const entries = await registry();
   await writeFile(
     REGISTRY,
-    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], pending: { writeToken: pending, api: "https://staging.test" } } } }),
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], api: "https://staging.test", pending } } }),
     "utf8",
   );
+  const before = (await registry())[FIRST];
 
+  // Neither push nor rotate here may act on it, and nothing changes.
   err = [];
   seen = [];
-  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
-  expect(seen.map((request) => [request.method, request.path.endsWith("/rotate")])).toEqual([["PUT", false]]);
-  expect(err.join("\n")).toContain("still pending against https://staging.test");
-  expect((await registry())[FIRST]?.pending).toEqual({ writeToken: pending, api: "https://staging.test" });
-
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("registered against https://staging.test");
+  expect(seen).toEqual([]);
   err = [];
   expect(await invoke("canvas", "rotate", "--api", API)).toBe(1);
-  expect(err.join("\n")).toContain("finish it there first");
-  expect((await registry())[FIRST]?.pending).toEqual({ writeToken: pending, api: "https://staging.test" });
+  expect(err.join("\n")).toContain("registered against https://staging.test");
+  expect((await registry())[FIRST]).toEqual(before);
+
+  // A pull of the same id from this app leaves that entry alone too, even
+  // with a token this app vouches for.
+  err = [];
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  expect(err.join("\n")).toContain("registered against another app");
+  expect((await registry())[FIRST]).toEqual(before);
+});
+
+test("a minted canvas whose token cannot be written down is handed to the terminal", async () => {
+  // The moment the app mints, the registry path becomes a directory: the
+  // write that follows the mint fails, and the mint has already happened.
+  const minting = fakeFetch;
+  vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    const answer = await minting(input, init);
+    if (init?.method === "POST") await mkdir(REGISTRY, { recursive: true });
+    return answer;
+  });
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  const reported = err.join("\n");
+  expect(reported).toContain("the canvas was minted and its token is not saved");
+  expect(reported).toContain(`${API}/c/${FIRST}#w=${TOKEN1}`);
+  expect(seen.map((request) => request.method)).toEqual(["POST"]);
+});
+
+test("pull will not write a document over the registry", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const entries = await registry();
+
+  for (const target of [REGISTRY, `./${REGISTRY}`, `${REGISTRY}.lock`]) {
+    err = [];
+    expect(await invoke("canvas", "pull", "-o", target, "--api", API)).toBe(2);
+    expect(err.join("\n")).toContain("write tokens live");
+  }
+  expect(await registry()).toEqual(entries);
 });
 
 test("pulling a view link records the revision, and push then asks for the edit link", async () => {
@@ -626,6 +664,7 @@ test("pulling a view link records the revision, and push then asks for the edit 
   expect((await registry())[FIRST]).toEqual({
     name: "Batch broadcast sending through Postmark",
     source: ".pr-lens/graph.json",
+    api: API,
     rev: 1,
   });
 

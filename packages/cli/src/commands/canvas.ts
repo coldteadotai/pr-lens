@@ -1,4 +1,5 @@
 import { assertNever } from "@coldtea/pr-lens-schema";
+import { resolve } from "node:path";
 import { parseOptions, readString } from "../args.js";
 import { fetchCanvas, mintCanvas, pushCanvas, rotateCanvas, verifyWriteToken } from "../canvas/api.js";
 import {
@@ -10,6 +11,7 @@ import {
   onlyCanvas,
   readRegistry,
   REGISTRY_PATH,
+  reservedRegistryPaths,
   sourceKey,
   updateRegistry,
   withRegistryLock,
@@ -98,6 +100,19 @@ const readCanvasRef = (value: string): CanvasRef => {
   return { id, origin: url.origin, writeToken };
 };
 
+/**
+ * An entry answers only for the app it was made against. Sending its token
+ * elsewhere gets a 404 that means nothing, and acting on that 404 would.
+ */
+const requireSameApi = (api: string, { id, entry }: Registered): void => {
+  if (entry.api === api) return;
+  throw new PrLensCliError(
+    "CANVAS_UNREGISTERED",
+    `${id} is registered against ${entry.api}, not ${api}`,
+    `pass --api ${entry.api}, or push the document without --canvas to mint a canvas here`,
+  );
+};
+
 /** The pen for a canvas, or the way to get one. */
 const requireWriteToken = ({ id, entry }: Registered): string => {
   if (entry.writeToken !== undefined) return entry.writeToken;
@@ -140,7 +155,7 @@ const settleRotation = async (
       // later would carry it out.
       await updateRegistry((registry) => {
         const current = registry.canvases[id];
-        if (current?.pending?.writeToken !== nextToken || current.pending.api !== api) return;
+        if (current === undefined || current.pending !== nextToken || current.api !== api) return;
         registry.canvases[id] = { ...current, pending: undefined };
       }, terminal);
       throw new PrLensCliError(
@@ -155,7 +170,7 @@ const settleRotation = async (
   // to a later rotation, which will close its own.
   await updateRegistry((registry) => {
     const current = registry.canvases[id];
-    if (current?.pending?.writeToken !== nextToken || current.pending.api !== api) return;
+    if (current === undefined || current.pending !== nextToken || current.api !== api) return;
     registry.canvases[id] = { ...current, writeToken: nextToken, pending: undefined };
   }, terminal);
 
@@ -163,17 +178,6 @@ const settleRotation = async (
     registered: { id, entry: { ...entry, writeToken: nextToken, pending: undefined } },
     editUrl: rotated.editUrl,
   };
-};
-
-/**
- * A rotation pending against another app is that app's to finish. Here it
- * is neither carried out nor dropped: this app's answers say nothing about
- * it. The stored token is used, and the reader is told.
- */
-const pendingElsewhere = (api: string, { id, entry }: Registered, terminal: Terminal): boolean => {
-  if (entry.pending === undefined || entry.pending.api === api) return false;
-  terminal.err(`  a rotation of ${id} is still pending against ${entry.pending.api}; run pr-lens canvas rotate --api ${entry.pending.api} to finish it`);
-  return true;
 };
 
 const push = async (
@@ -213,19 +217,35 @@ const push = async (
       const entry: CanvasEntry = {
         name: readString(values.name, "name") ?? document.title,
         source: sourceKey(source),
+        api,
         writeToken: minted.writeToken,
         rev: minted.rev,
       };
       current.canvases[minted.id] = entry;
-      await writeRegistry(current, terminal);
+      try {
+        await writeRegistry(current, terminal);
+      } catch (error) {
+        // The app has handed the token out, once. If it cannot be written
+        // down here, the terminal is the only place it can go.
+        if (!(error instanceof PrLensCliError)) throw error;
+        throw new PrLensCliError(
+          error.code,
+          `${error.message}; the canvas was minted and its token is not saved`,
+          [
+            `keep this edit link, it is the only copy: ${minted.editUrl}`,
+            "pull it once the registry can be written, and the token is recorded",
+            error.details ?? "",
+          ]
+            .filter((line) => line !== "")
+            .join("\n"),
+        );
+      }
       return { id: minted.id, entry };
     }));
 
+  requireSameApi(api, registered);
   const pending = registered.entry.pending;
-  const target =
-    pending === undefined || pendingElsewhere(api, registered, terminal)
-      ? registered
-      : (await settleRotation(api, registered, pending.writeToken, terminal)).registered;
+  const target = pending === undefined ? registered : (await settleRotation(api, registered, pending, terminal)).registered;
 
   const pushed = await pushCanvas(api, target.id, requireWriteToken(target), target.entry.rev, document);
 
@@ -264,6 +284,8 @@ const pull = async (
   const explicit = readString(values.api, "api");
   const api = explicit === undefined && origin !== undefined ? origin : readApi(explicit, env);
   const out = readString(values.out, "out") ?? DEFAULT_OUT;
+  if (reservedRegistryPaths().includes(resolve(out)))
+    throw usageError(`${out} is where the write tokens live; a document cannot be written there`);
 
   const fetched = await fetchCanvas(api, id);
   await writeJsonFile(out, fetched.document);
@@ -275,15 +297,20 @@ const pull = async (
   const seenToken = registry.canvases[id]?.writeToken;
   const proven = writeToken !== undefined && (await verifyWriteToken(api, id, writeToken));
 
-  type Recorded = "imported" | "kept" | "overtaken" | "refused";
+  type Recorded = "imported" | "kept" | "overtaken" | "refused" | "elsewhere";
   const outcome: { recorded: Recorded } = { recorded: "kept" };
 
   // Every pull records the revision, and a proven edit link records its
   // token: a checkout that lost canvas.json, or never had it, gets its pen
   // back here. A token that changes hands drops any rotation that was
   // pending for the old one; that rotation was the old holder's business.
+  // An entry made against another app is not this app's to change at all.
   await updateRegistry((current) => {
     const entry = current.canvases[id];
+    if (entry !== undefined && entry.api !== api) {
+      outcome.recorded = "elsewhere";
+      return;
+    }
     const untouched = entry?.writeToken === seenToken;
     const imports = proven && untouched && writeToken !== entry?.writeToken;
     outcome.recorded =
@@ -293,6 +320,7 @@ const pull = async (
     current.canvases[id] = {
       name: entry?.name ?? fetched.document.title,
       source: entry?.source ?? sourceKey(out),
+      api,
       ...(pending === undefined ? {} : { pending }),
       ...(kept === undefined ? {} : { writeToken: kept }),
       rev: fetched.rev,
@@ -309,6 +337,9 @@ const pull = async (
       return;
     case "overtaken":
       terminal.err(`  ${REGISTRY_PATH} changed while the edit link was being checked; its token was not recorded`);
+      return;
+    case "elsewhere":
+      terminal.err(`  ${id} is registered against another app in ${REGISTRY_PATH}; that entry was left as it is`);
       return;
     case "kept":
       return;
@@ -345,21 +376,15 @@ const rotate = async (
     // No pen, no rotation: a pending token written here would be carried
     // out by the next push once a pen arrives, retiring the very link that
     // brought it.
+    requireSameApi(api, { id, entry });
     requireWriteToken({ id, entry });
-    if (entry.pending !== undefined && entry.pending.api !== api)
-      throw new PrLensCliError(
-        "CANVAS_UNREGISTERED",
-        `a rotation of ${id} is still pending against ${entry.pending.api}`,
-        `finish it there first: pr-lens canvas rotate --api ${entry.pending.api}`,
-      );
-    const writeToken = entry.pending?.writeToken ?? mintWriteToken();
-    pending = { id, entry: { ...entry, pending: { writeToken, api } } };
+    pending = { id, entry: { ...entry, pending: entry.pending ?? mintWriteToken() } };
     current.canvases[id] = pending.entry;
   }, terminal);
   if (pending === undefined || pending.entry.pending === undefined)
     throw new PrLensCliError("CANVAS_UNREGISTERED", `${id} is no longer in ${REGISTRY_PATH}`);
 
-  const { editUrl } = await settleRotation(api, pending, pending.entry.pending.writeToken, terminal);
+  const { editUrl } = await settleRotation(api, pending, pending.entry.pending, terminal);
 
   const view = new URL(editUrl);
   view.hash = "";
