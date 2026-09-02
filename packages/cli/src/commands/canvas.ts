@@ -17,6 +17,7 @@ import {
   withRegistryLock,
   writeRegistry,
   type CanvasEntry,
+  type CanvasRegistry,
   type Registered,
 } from "../canvas/registry.js";
 import { readGraphDoc } from "../document.js";
@@ -180,25 +181,69 @@ const settleRotation = async (
   };
 };
 
-/** An edit link for a canvas nobody has pushed to: registered at rev 0, the way a mint is. */
-const registerUnpushed = (
-  api: string,
-  id: string,
-  writeToken: string,
-  seenToken: string | undefined,
-  terminal: Terminal,
-): Promise<unknown> =>
-  updateRegistry((current) => {
-    const entry = current.canvases[id];
-    if (entry !== undefined && (entry.api !== api || entry.writeToken !== seenToken)) return;
-    current.canvases[id] = {
-      name: entry?.name ?? id,
-      source: entry?.source ?? DEFAULT_SOURCE,
-      api,
-      writeToken,
-      rev: entry?.rev ?? 0,
-    };
-  }, terminal);
+type Recorded = "imported" | "kept" | "overtaken" | "refused" | "elsewhere";
+
+type PullRecord = {
+  api: string;
+  id: string;
+  /** What the app showed, or nothing for a canvas minted and never pushed to. */
+  fetched: { rev: number; title: string } | undefined;
+  out: string;
+  writeToken: string | undefined;
+  /** The stored token when the proof was made; a different one now means the proof is stale. */
+  seenToken: string | undefined;
+  proven: boolean;
+};
+
+/**
+ * What a pull leaves in the registry, decided under the lock. Every pull
+ * records the revision it saw, and a proven edit link records its token: a
+ * checkout that lost canvas.json, or never had it, gets its pen back here.
+ * A token that changes hands drops any rotation that was pending for the
+ * old one; that rotation was the old holder's business. The same token
+ * again leaves a pending rotation where it is. An entry made against
+ * another app is not this app's to change at all.
+ */
+const recordPull = (current: CanvasRegistry, pull: PullRecord): Recorded => {
+  const entry = current.canvases[pull.id];
+  if (entry !== undefined && entry.api !== pull.api) return "elsewhere";
+
+  const untouched = entry?.writeToken === pull.seenToken;
+  const imports = pull.proven && untouched && pull.writeToken !== entry?.writeToken;
+  const kept = imports ? pull.writeToken : entry?.writeToken;
+  const pending = imports ? undefined : entry?.pending;
+  current.canvases[pull.id] = {
+    name: entry?.name ?? pull.fetched?.title ?? pull.id,
+    source: entry?.source ?? (pull.fetched === undefined ? DEFAULT_SOURCE : sourceKey(pull.out)),
+    api: pull.api,
+    ...(pending === undefined ? {} : { pending }),
+    ...(kept === undefined ? {} : { writeToken: kept }),
+    rev: pull.fetched?.rev ?? entry?.rev ?? 0,
+  };
+
+  return imports ? "imported" : pull.proven && !untouched ? "overtaken" : pull.writeToken !== undefined && !pull.proven ? "refused" : "kept";
+};
+
+const tellRecorded = (recorded: Recorded, id: string, terminal: Terminal): void => {
+  switch (recorded) {
+    case "imported":
+      terminal.out(`  the edit link's token is now in ${REGISTRY_PATH}`);
+      return;
+    case "refused":
+      terminal.err(`  the edit link's token no longer opens ${id}; nothing was recorded for it`);
+      return;
+    case "overtaken":
+      terminal.err(`  ${REGISTRY_PATH} changed while the edit link was being checked; its token was not recorded`);
+      return;
+    case "elsewhere":
+      terminal.err(`  ${id} is registered against another app in ${REGISTRY_PATH}; that entry was left as it is`);
+      return;
+    case "kept":
+      return;
+    default:
+      return assertNever(recorded, "Unhandled record outcome");
+  }
+};
 
 const push = async (
   args: readonly string[],
@@ -316,68 +361,33 @@ const pull = async (
   const seenToken = registry.canvases[id]?.writeToken;
   const proven = writeToken !== undefined && (await verifyWriteToken(api, id, writeToken));
 
-  const fetched = await fetchCanvas(api, id).catch(async (error: unknown) => {
-    if (!(error instanceof PrLensCliError) || error.code !== "CANVAS_UNKNOWN" || !proven) throw error;
-    // Minted and never pushed: the app shows nothing yet, but the pen is
-    // real, and recording it is the whole point of pulling an edit link.
-    await registerUnpushed(api, id, writeToken, seenToken, terminal);
-    return undefined;
+  const fetched = await fetchCanvas(api, id).catch((error: unknown) => {
+    // Minted and never pushed: the app shows nothing yet, but a proven pen
+    // is real, and recording it is the whole point of pulling an edit link.
+    if (error instanceof PrLensCliError && error.code === "CANVAS_UNKNOWN" && proven) return undefined;
+    throw error;
   });
-  if (fetched === undefined) {
-    terminal.out(`✓ ${id} has nothing pushed to it yet; its token is now in ${REGISTRY_PATH}`);
-    return;
-  }
-  await writeJsonFile(out, fetched.document);
+  if (fetched !== undefined) await writeJsonFile(out, fetched.document);
 
-  type Recorded = "imported" | "kept" | "overtaken" | "refused" | "elsewhere";
   const outcome: { recorded: Recorded } = { recorded: "kept" };
-
-  // Every pull records the revision, and a proven edit link records its
-  // token: a checkout that lost canvas.json, or never had it, gets its pen
-  // back here. A token that changes hands drops any rotation that was
-  // pending for the old one; that rotation was the old holder's business.
-  // An entry made against another app is not this app's to change at all.
   await updateRegistry((current) => {
-    const entry = current.canvases[id];
-    if (entry !== undefined && entry.api !== api) {
-      outcome.recorded = "elsewhere";
-      return;
-    }
-    const untouched = entry?.writeToken === seenToken;
-    const imports = proven && untouched && writeToken !== entry?.writeToken;
-    outcome.recorded =
-      imports ? "imported" : proven && !untouched ? "overtaken" : writeToken !== undefined && !proven ? "refused" : "kept";
-    const kept = imports ? writeToken : entry?.writeToken;
-    const pending = imports ? undefined : entry?.pending;
-    current.canvases[id] = {
-      name: entry?.name ?? fetched.document.title,
-      source: entry?.source ?? sourceKey(out),
+    outcome.recorded = recordPull(current, {
       api,
-      ...(pending === undefined ? {} : { pending }),
-      ...(kept === undefined ? {} : { writeToken: kept }),
-      rev: fetched.rev,
-    };
+      id,
+      fetched: fetched === undefined ? undefined : { rev: fetched.rev, title: fetched.document.title },
+      out,
+      writeToken,
+      seenToken,
+      proven,
+    });
   }, terminal);
 
-  terminal.out(`✓ ${out} — rev ${fetched.rev} of ${fetched.viewUrl}`);
-  switch (outcome.recorded) {
-    case "imported":
-      terminal.out(`  the edit link's token is now in ${REGISTRY_PATH}`);
-      return;
-    case "refused":
-      terminal.err(`  the edit link's token no longer opens ${id}; nothing was recorded for it`);
-      return;
-    case "overtaken":
-      terminal.err(`  ${REGISTRY_PATH} changed while the edit link was being checked; its token was not recorded`);
-      return;
-    case "elsewhere":
-      terminal.err(`  ${id} is registered against another app in ${REGISTRY_PATH}; that entry was left as it is`);
-      return;
-    case "kept":
-      return;
-    default:
-      return assertNever(outcome.recorded, "Unhandled record outcome");
-  }
+  terminal.out(
+    fetched === undefined
+      ? `✓ ${id} has nothing pushed to it yet`
+      : `✓ ${out} — rev ${fetched.rev} of ${fetched.viewUrl}`,
+  );
+  tellRecorded(outcome.recorded, id, terminal);
 };
 
 const rotate = async (

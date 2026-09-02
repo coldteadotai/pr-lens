@@ -200,13 +200,18 @@ const sameFile = (a: Stats, b: Stats): boolean => a.dev === b.dev && a.ino === b
 export const isReservedRegistryTarget = async (path: string): Promise<boolean> => {
   const target = resolve(path);
   const reserved = reservedRegistryPaths();
+  const names = reserved.map((entry) => basename(entry).toLowerCase());
 
-  const workspace = await realpath(dirname(reserved[0] ?? target)).catch(() => undefined);
+  // The spelling first, before anything exists to look at: a fresh checkout
+  // has no workspace yet, and the names are reserved all the same.
+  const workspaceDir = dirname(reserved[0] ?? target);
+  if (dirname(target).toLowerCase() === workspaceDir.toLowerCase() && names.includes(basename(target).toLowerCase()))
+    return true;
+
+  // Then what the paths really are, for a workspace reached under another name.
+  const workspace = await realpath(workspaceDir).catch(() => undefined);
   const parent = await realpath(dirname(target)).catch(() => undefined);
-  if (workspace !== undefined && parent === workspace) {
-    const names = reserved.map((entry) => basename(entry).toLowerCase());
-    if (names.includes(basename(target).toLowerCase())) return true;
-  }
+  if (workspace !== undefined && parent === workspace && names.includes(basename(target).toLowerCase())) return true;
 
   const existing = await stat(target).catch(() => undefined);
   if (existing === undefined) return false;

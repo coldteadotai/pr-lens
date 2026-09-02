@@ -657,7 +657,7 @@ test("an edit link for a canvas nobody has pushed to is registered, and the push
   seen = [];
 
   expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
-  expect(out).toEqual([`✓ ${FIRST} has nothing pushed to it yet; its token is now in .pr-lens/canvas.json`]);
+  expect(out).toEqual([`✓ ${FIRST} has nothing pushed to it yet`, "  the edit link's token is now in .pr-lens/canvas.json"]);
   expect((await registry())[FIRST]).toEqual({ name: FIRST, source: ".pr-lens/drawn.graph.json", api: API, writeToken: TOKEN1, rev: 0 });
 
   seen = [];
@@ -665,6 +665,48 @@ test("an edit link for a canvas nobody has pushed to is registered, and the push
   expect(seen.map((request) => request.method)).toEqual(["PUT"]);
   expect(seen[0]?.headers.get("if-match")).toBe("0");
   expect((await registry())[FIRST]?.rev).toBe(1);
+});
+
+test("pulling an unpushed canvas's own link again keeps a rotation that is pending on it", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const pending = "pending".padEnd(22, "p");
+  const entries = await registry();
+  await writeFile(REGISTRY, JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], rev: 0, pending } } }), "utf8");
+  canvases.get(FIRST)!.document = undefined;
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  const entry = (await registry())[FIRST];
+  expect(entry?.writeToken).toBe(TOKEN1);
+  expect(entry?.pending).toBe(pending);
+});
+
+test("pull refuses the registry's names in a checkout that has no workspace yet", async () => {
+  for (const target of [REGISTRY, ".pr-lens/Canvas.json", `${REGISTRY}.lock`]) {
+    err = [];
+    expect(await invoke("canvas", "pull", `${API}/c/${FIRST}`, "-o", target)).toBe(2);
+    expect(err.join("\n")).toContain("write tokens live");
+  }
+  expect(seen).toEqual([]);
+  await expect(stat(".pr-lens")).rejects.toThrow();
+});
+
+test("a connection that dies after the headers is reported in the CLI's words too", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  vi.stubGlobal("fetch", async () => ({
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    text: async () => {
+      throw new TypeError("terminated: other side closed (10.0.0.7:443)");
+    },
+  }));
+  err = [];
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  const reported = err.join("\n");
+  expect(reported).toContain("[CANVAS_UNAVAILABLE]");
+  expect(reported).toContain("cut off");
+  expect(reported).not.toContain("10.0.0.7");
 });
 
 test("a connection that fails is reported in the CLI's words, not the runtime's", async () => {

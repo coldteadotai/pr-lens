@@ -166,7 +166,11 @@ const call = async <T>(api: string, request: Request, schema: z.ZodType<T>): Pro
     throw unavailable(api, undefined, "check the address and the connection, then try again");
   });
 
-  const body = parseJson(await response.text());
+  // The connection can fail after the headers as well as before them.
+  const text = await response.text().catch(() => {
+    throw unavailable(api, response.status, "the answer was cut off; check the connection, then try again");
+  });
+  const body = parseJson(text);
   if (!response.ok) throw refusal(api, request, response.status, body);
 
   const parsed = schema.safeParse(body);
