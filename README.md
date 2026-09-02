@@ -207,7 +207,7 @@ Then say, literally:
 
 > Diagram the change you just made with PR Lens and attach it to the pull request.
 
-The agent reads the diff, writes the document, runs `npx @coldtea/pr-lens-cli validate` until the contract is satisfied, renders, and attaches the `<picture>` pair. When someone says the diagram names things wrongly, the same skill teaches it to fix `.github/pr-lens.yml` instead of editing generated output. Details in [`packages/agent-skill`](packages/agent-skill).
+The agent reads the diff, writes the document, runs `npx @coldtea/pr-lens-cli validate` until the contract is satisfied, renders, and puts the diagram in the pull request description with `gh pr create --attach`, so it lands with the change instead of behind it. If a diagram names things wrongly, the same skill teaches it to fix `.github/pr-lens.yml` instead of editing generated output. Details in [`packages/agent-skill`](packages/agent-skill).
 
 Prefer to have the agent do the whole setup? Paste this:
 
