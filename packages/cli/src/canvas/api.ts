@@ -159,8 +159,11 @@ const call = async <T>(api: string, request: Request, schema: z.ZodType<T>): Pro
     headers,
     body: request.body === undefined ? undefined : JSON.stringify(request.body),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  }).catch((error: unknown) => {
-    throw unavailable(api, undefined, error instanceof Error ? error.message : undefined);
+  }).catch(() => {
+    // The runtime's own words for a failed connection name addresses and
+    // internals; the reader needs to know the app was not reached, and how
+    // to check.
+    throw unavailable(api, undefined, "check the address and the connection, then try again");
   });
 
   const body = parseJson(await response.text());

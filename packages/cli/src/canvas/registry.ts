@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
-import { access, link, lstat, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import { dirname, join, relative, resolve } from "node:path";
+import type { Stats } from "node:fs";
+import { access, link, lstat, mkdir, readFile, realpath, stat, unlink, writeFile } from "node:fs/promises";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { assertNever } from "@coldtea/pr-lens-schema";
 import { z } from "zod";
@@ -186,11 +187,35 @@ export const ensureRegistryHome = async (terminal: Terminal): Promise<void> => {
 };
 
 /** The names the registry lives under, which nothing else may write to. */
-export const reservedRegistryPaths = (): string[] => [
-  resolve(REGISTRY_PATH),
-  resolve(LOCK_PATH),
-  secretStagingPath(REGISTRY_PATH),
-];
+const reservedRegistryPaths = (): string[] => [resolve(REGISTRY_PATH), resolve(LOCK_PATH), secretStagingPath(REGISTRY_PATH)];
+
+const sameFile = (a: Stats, b: Stats): boolean => a.dev === b.dev && a.ino === b.ino;
+
+/**
+ * Whether writing to `path` would land on the registry or one of its names.
+ * Spelling is not identity: the workspace directory is compared by what it
+ * really is, its files case-blind since the usual filesystems are, and an
+ * existing target by inode, so a link or an alias is caught as well.
+ */
+export const isReservedRegistryTarget = async (path: string): Promise<boolean> => {
+  const target = resolve(path);
+  const reserved = reservedRegistryPaths();
+
+  const workspace = await realpath(dirname(reserved[0] ?? target)).catch(() => undefined);
+  const parent = await realpath(dirname(target)).catch(() => undefined);
+  if (workspace !== undefined && parent === workspace) {
+    const names = reserved.map((entry) => basename(entry).toLowerCase());
+    if (names.includes(basename(target).toLowerCase())) return true;
+  }
+
+  const existing = await stat(target).catch(() => undefined);
+  if (existing === undefined) return false;
+  for (const entry of reserved) {
+    const kept = await stat(entry).catch(() => undefined);
+    if (kept !== undefined && sameFile(existing, kept)) return true;
+  }
+  return false;
+};
 
 export const writeRegistry = async (registry: CanvasRegistry, terminal: Terminal): Promise<void> => {
   await ensureRegistryHome(terminal);
@@ -223,7 +248,17 @@ const readLock = (path: string): Promise<LockState> =>
       const holder = holderOf(text);
       return holder === undefined ? { type: "unfinished" } : { type: "held", holder };
     },
-    () => ({ type: "absent" }),
+    (error: unknown) => (isMissing(error) ? { type: "absent" } : { type: "unfinished" }),
+  );
+
+/** A filesystem that would not let the lock be taken, as the typed failure it is. */
+const cannotLock = (error: unknown): PrLensCliError =>
+  new PrLensCliError(
+    "UNREADABLE_FILE",
+    `cannot take the lock on ${REGISTRY_PATH}`,
+    typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
+      ? `the filesystem answered ${error.code} for ${LOCK_PATH}`
+      : `the filesystem refused ${LOCK_PATH}`,
   );
 
 /** Whether a process is still running here. A signal of 0 is only a question. */
@@ -243,13 +278,15 @@ const alive = (pid: number): boolean => {
  */
 const takeLock = async (mine: Holder): Promise<boolean> => {
   const draft = `${LOCK_PATH}.${mine.nonce}`;
-  await writeFile(draft, `${mine.pid}:${mine.nonce}`, { encoding: "utf8", mode: 0o600 });
+  await writeFile(draft, `${mine.pid}:${mine.nonce}`, { encoding: "utf8", mode: 0o600 }).catch((error: unknown) => {
+    throw cannotLock(error);
+  });
   try {
     await link(draft, LOCK_PATH);
     return true;
   } catch (error) {
     if (isAlreadyThere(error)) return false;
-    throw error;
+    throw cannotLock(error);
   } finally {
     await unlink(draft).catch(() => undefined);
   }
@@ -293,7 +330,9 @@ const inUse = (lock: LockState): PrLensCliError => {
  * name when the turn does not come.
  */
 export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> => {
-  await mkdir(dirname(LOCK_PATH), { recursive: true });
+  await mkdir(dirname(LOCK_PATH), { recursive: true }).catch((error: unknown) => {
+    throw cannotLock(error);
+  });
   const mine: Holder = { pid: process.pid, nonce: randomBytes(8).toString("hex") };
 
   for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt += 1) {

@@ -9,9 +9,9 @@ import {
   isCanvasId,
   mintWriteToken,
   onlyCanvas,
+  isReservedRegistryTarget,
   readRegistry,
   REGISTRY_PATH,
-  reservedRegistryPaths,
   sourceKey,
   updateRegistry,
   withRegistryLock,
@@ -180,6 +180,26 @@ const settleRotation = async (
   };
 };
 
+/** An edit link for a canvas nobody has pushed to: registered at rev 0, the way a mint is. */
+const registerUnpushed = (
+  api: string,
+  id: string,
+  writeToken: string,
+  seenToken: string | undefined,
+  terminal: Terminal,
+): Promise<unknown> =>
+  updateRegistry((current) => {
+    const entry = current.canvases[id];
+    if (entry !== undefined && (entry.api !== api || entry.writeToken !== seenToken)) return;
+    current.canvases[id] = {
+      name: entry?.name ?? id,
+      source: entry?.source ?? DEFAULT_SOURCE,
+      api,
+      writeToken,
+      rev: entry?.rev ?? 0,
+    };
+  }, terminal);
+
 const push = async (
   args: readonly string[],
   terminal: Terminal,
@@ -284,18 +304,30 @@ const pull = async (
   const explicit = readString(values.api, "api");
   const api = explicit === undefined && origin !== undefined ? origin : readApi(explicit, env);
   const out = readString(values.out, "out") ?? DEFAULT_OUT;
-  if (reservedRegistryPaths().includes(resolve(out)))
+  if (await isReservedRegistryTarget(out))
     throw usageError(`${out} is where the write tokens live; a document cannot be written there`);
-
-  const fetched = await fetchCanvas(api, id);
-  await writeJsonFile(out, fetched.document);
 
   // An edit link's token is proven before it is written down: an old
   // bookmark from before a rotation must not replace the token that works.
   // The proof is about the entry as it was read; if another command changes
-  // the entry in the meantime, the proof is stale and is not acted on.
+  // the entry in the meantime, the proof is stale and is not acted on. It
+  // comes before the fetch because a canvas nobody has pushed to yet has
+  // nothing to fetch, and its edit link is still worth registering.
   const seenToken = registry.canvases[id]?.writeToken;
   const proven = writeToken !== undefined && (await verifyWriteToken(api, id, writeToken));
+
+  const fetched = await fetchCanvas(api, id).catch(async (error: unknown) => {
+    if (!(error instanceof PrLensCliError) || error.code !== "CANVAS_UNKNOWN" || !proven) throw error;
+    // Minted and never pushed: the app shows nothing yet, but the pen is
+    // real, and recording it is the whole point of pulling an edit link.
+    await registerUnpushed(api, id, writeToken, seenToken, terminal);
+    return undefined;
+  });
+  if (fetched === undefined) {
+    terminal.out(`✓ ${id} has nothing pushed to it yet; its token is now in ${REGISTRY_PATH}`);
+    return;
+  }
+  await writeJsonFile(out, fetched.document);
 
   type Recorded = "imported" | "kept" | "overtaken" | "refused" | "elsewhere";
   const outcome: { recorded: Recorded } = { recorded: "kept" };

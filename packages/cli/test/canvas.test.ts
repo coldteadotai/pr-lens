@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, stat, symlink, unlink, utimes, writeFile } from "node:fs/promises";
+import { chmod, link, mkdir, mkdtemp, readFile, rm, stat, symlink, unlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -642,15 +642,77 @@ test("a minted canvas whose token cannot be written down is handed to the termin
   expect(seen.map((request) => request.method)).toEqual(["POST"]);
 });
 
+test("an edit link for a canvas nobody has pushed to is registered, and the push then lands", async () => {
+  // The mint's answer was the only copy of the token, kept from the terminal.
+  const minting = fakeFetch;
+  vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    const answer = await minting(input, init);
+    if (init?.method === "POST") await mkdir(REGISTRY, { recursive: true });
+    return answer;
+  });
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  vi.stubGlobal("fetch", fakeFetch);
+  await rm(REGISTRY, { recursive: true });
+  out = [];
+  seen = [];
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  expect(out).toEqual([`✓ ${FIRST} has nothing pushed to it yet; its token is now in .pr-lens/canvas.json`]);
+  expect((await registry())[FIRST]).toEqual({ name: FIRST, source: ".pr-lens/drawn.graph.json", api: API, writeToken: TOKEN1, rev: 0 });
+
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(0);
+  expect(seen.map((request) => request.method)).toEqual(["PUT"]);
+  expect(seen[0]?.headers.get("if-match")).toBe("0");
+  expect((await registry())[FIRST]?.rev).toBe(1);
+});
+
+test("a connection that fails is reported in the CLI's words, not the runtime's", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  vi.stubGlobal("fetch", async () => {
+    throw new TypeError("fetch failed: connect ECONNREFUSED 127.0.0.1:1 (https://canvas.test/api/canvas?secret=1)");
+  });
+  err = [];
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  const reported = err.join("\n");
+  expect(reported).toContain("[CANVAS_UNAVAILABLE]");
+  expect(reported).toContain("did not answer");
+  expect(reported).not.toContain("ECONNREFUSED");
+  expect(reported).not.toContain("secret=1");
+});
+
+test("a filesystem that will not take the lock is a typed failure, not a crash", async () => {
+  await mkdir(".pr-lens", { recursive: true });
+  await chmod(".pr-lens", 0o500);
+  try {
+    // Whichever write the read-only directory refuses first, the workspace
+    // README or the lock, the answer is the typed file error, not a trace.
+    expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+    const reported = err.join("\n");
+    expect(reported).toContain("[UNREADABLE_FILE]");
+    expect(reported).toMatch(/cannot (write|take the lock)/);
+    expect(reported).not.toContain("    at ");
+  } finally {
+    await chmod(".pr-lens", 0o700);
+  }
+});
+
 test("pull will not write a document over the registry", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
   const entries = await registry();
 
-  for (const target of [REGISTRY, `./${REGISTRY}`, `${REGISTRY}.lock`]) {
+  for (const target of [REGISTRY, `./${REGISTRY}`, `${REGISTRY}.lock`, ".pr-lens/Canvas.json", ".pr-lens/CANVAS.JSON"]) {
     err = [];
     expect(await invoke("canvas", "pull", "-o", target, "--api", API)).toBe(2);
     expect(err.join("\n")).toContain("write tokens live");
   }
+  expect(await registry()).toEqual(entries);
+
+  // A hard link to the registry is the registry.
+  await link(REGISTRY, "alias.json");
+  err = [];
+  expect(await invoke("canvas", "pull", "-o", "alias.json", "--api", API)).toBe(2);
   expect(await registry()).toEqual(entries);
 });
 
