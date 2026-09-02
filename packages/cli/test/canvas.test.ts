@@ -137,7 +137,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const registry = async (): Promise<Record<string, { name: string; source: string; writeToken?: string; nextWriteToken?: string; rev: number }>> =>
+const registry = async (): Promise<
+  Record<string, { name: string; source: string; writeToken?: string; pending?: { writeToken: string; api: string }; rev: number }>
+> =>
   JSON.parse(await readFile(REGISTRY, "utf8")).canvases;
 
 const FIRST = "1".padStart(22, "0");
@@ -246,7 +248,7 @@ test("rotate mints the next token here, and the old one stops opening the door",
   const next = (await registry())[FIRST]?.writeToken;
   expect(next).toMatch(/^[A-Za-z0-9_-]{22}$/);
   expect(next).not.toBe(TOKEN1);
-  expect((await registry())[FIRST]).not.toHaveProperty("nextWriteToken");
+  expect((await registry())[FIRST]).not.toHaveProperty("pending");
   expect(out).toEqual([
     `✓ new edit link for ${API}/c/${FIRST}: ${API}/c/${FIRST}#w=${next}`,
     "  the old edit link no longer works",
@@ -270,7 +272,7 @@ test("a rotation whose answer was lost is finished by the next command", async (
 
   const pending = (await registry())[FIRST];
   expect(pending?.writeToken).toBe(TOKEN1);
-  expect(pending?.nextWriteToken).toMatch(/^[A-Za-z0-9_-]{22}$/);
+  expect(pending?.pending).toEqual({ writeToken: expect.stringMatching(/^[A-Za-z0-9_-]{22}$/), api: API });
 
   err = [];
   seen = [];
@@ -280,8 +282,8 @@ test("a rotation whose answer was lost is finished by the next command", async (
     ["PUT", false],
   ]);
   const settled = (await registry())[FIRST];
-  expect(settled?.writeToken).toBe(pending?.nextWriteToken);
-  expect(settled).not.toHaveProperty("nextWriteToken");
+  expect(settled?.writeToken).toBe(pending?.pending?.writeToken);
+  expect(settled).not.toHaveProperty("pending");
   expect(seen[1]?.headers.get("authorization")).toBe(`Bearer ${settled?.writeToken}`);
 });
 
@@ -511,7 +513,7 @@ test("rotate on a canvas pulled by its view link leaves nothing pending behind",
 
   expect(await invoke("canvas", "rotate", "--api", API)).toBe(1);
   expect(err.join("\n")).toContain("[CANVAS_UNREGISTERED]");
-  expect((await registry())[FIRST]).not.toHaveProperty("nextWriteToken");
+  expect((await registry())[FIRST]).not.toHaveProperty("pending");
 
   // The edit link arrives later; nothing retires it on the next push. (The
   // pull itself proves the token with a rotation onto itself, which is not
@@ -556,14 +558,14 @@ test("a rotation the app has refused for good is dropped, not carried out by a l
   const entries = await registry();
   await writeFile(
     REGISTRY,
-    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: gone, nextWriteToken: pending } } }),
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: gone, pending: { writeToken: pending, api: API } } } }),
     "utf8",
   );
   canvases.get(FIRST)!.token = current;
 
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
   expect(err.join("\n")).toContain("the rotation that was pending has been dropped");
-  expect((await registry())[FIRST]).not.toHaveProperty("nextWriteToken");
+  expect((await registry())[FIRST]).not.toHaveProperty("pending");
 
   seen = [];
   expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${current}`)).toBe(0);
@@ -580,7 +582,7 @@ test("importing a token drops a rotation that was pending for the old one", asyn
   const entries = await registry();
   await writeFile(
     REGISTRY,
-    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], nextWriteToken: pending } } }),
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], pending: { writeToken: pending, api: API } } } }),
     "utf8",
   );
   canvases.get(FIRST)!.token = current;
@@ -588,7 +590,30 @@ test("importing a token drops a rotation that was pending for the old one", asyn
   expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${current}`)).toBe(0);
   const entry = (await registry())[FIRST];
   expect(entry?.writeToken).toBe(current);
-  expect(entry).not.toHaveProperty("nextWriteToken");
+  expect(entry).not.toHaveProperty("pending");
+});
+
+test("a rotation pending against another app is neither carried out nor dropped here", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const pending = "pending".padEnd(22, "p");
+  const entries = await registry();
+  await writeFile(
+    REGISTRY,
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], pending: { writeToken: pending, api: "https://staging.test" } } } }),
+    "utf8",
+  );
+
+  err = [];
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  expect(seen.map((request) => [request.method, request.path.endsWith("/rotate")])).toEqual([["PUT", false]]);
+  expect(err.join("\n")).toContain("still pending against https://staging.test");
+  expect((await registry())[FIRST]?.pending).toEqual({ writeToken: pending, api: "https://staging.test" });
+
+  err = [];
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("finish it there first");
+  expect((await registry())[FIRST]?.pending).toEqual({ writeToken: pending, api: "https://staging.test" });
 });
 
 test("pulling a view link records the revision, and push then asks for the edit link", async () => {

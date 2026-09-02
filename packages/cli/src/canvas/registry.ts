@@ -32,10 +32,12 @@ const Entry = z.object({
   /** Absent for a canvas pulled by its view link: readable, not writable, from here. */
   writeToken: z.string().optional(),
   /**
-   * A rotation in flight: minted here and sent to the app, not yet confirmed
-   * as the one on record. Kept so a lost answer is finished, not lost.
+   * A rotation in flight: minted here and sent to one app, not yet confirmed
+   * as the one on record there. Kept so a lost answer is finished, not lost,
+   * and bound to the app it was sent to, since only that app can say what
+   * became of it.
    */
-  nextWriteToken: z.string().optional(),
+  pending: z.object({ writeToken: z.string(), api: z.string() }).optional(),
   rev: z.number().int().nonnegative(),
 });
 

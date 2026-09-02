@@ -140,8 +140,8 @@ const settleRotation = async (
       // later would carry it out.
       await updateRegistry((registry) => {
         const current = registry.canvases[id];
-        if (current === undefined || current.nextWriteToken !== nextToken) return;
-        registry.canvases[id] = { ...current, nextWriteToken: undefined };
+        if (current?.pending?.writeToken !== nextToken || current.pending.api !== api) return;
+        registry.canvases[id] = { ...current, pending: undefined };
       }, terminal);
       throw new PrLensCliError(
         error.code,
@@ -155,14 +155,25 @@ const settleRotation = async (
   // to a later rotation, which will close its own.
   await updateRegistry((registry) => {
     const current = registry.canvases[id];
-    if (current === undefined || current.nextWriteToken !== nextToken) return;
-    registry.canvases[id] = { ...current, writeToken: nextToken, nextWriteToken: undefined };
+    if (current?.pending?.writeToken !== nextToken || current.pending.api !== api) return;
+    registry.canvases[id] = { ...current, writeToken: nextToken, pending: undefined };
   }, terminal);
 
   return {
-    registered: { id, entry: { ...entry, writeToken: nextToken, nextWriteToken: undefined } },
+    registered: { id, entry: { ...entry, writeToken: nextToken, pending: undefined } },
     editUrl: rotated.editUrl,
   };
+};
+
+/**
+ * A rotation pending against another app is that app's to finish. Here it
+ * is neither carried out nor dropped: this app's answers say nothing about
+ * it. The stored token is used, and the reader is told.
+ */
+const pendingElsewhere = (api: string, { id, entry }: Registered, terminal: Terminal): boolean => {
+  if (entry.pending === undefined || entry.pending.api === api) return false;
+  terminal.err(`  a rotation of ${id} is still pending against ${entry.pending.api}; run pr-lens canvas rotate --api ${entry.pending.api} to finish it`);
+  return true;
 };
 
 const push = async (
@@ -210,9 +221,11 @@ const push = async (
       return { id: minted.id, entry };
     }));
 
-  const pending = registered.entry.nextWriteToken;
+  const pending = registered.entry.pending;
   const target =
-    pending === undefined ? registered : (await settleRotation(api, registered, pending, terminal)).registered;
+    pending === undefined || pendingElsewhere(api, registered, terminal)
+      ? registered
+      : (await settleRotation(api, registered, pending.writeToken, terminal)).registered;
 
   const pushed = await pushCanvas(api, target.id, requireWriteToken(target), target.entry.rev, document);
 
@@ -276,11 +289,11 @@ const pull = async (
     outcome.recorded =
       imports ? "imported" : proven && !untouched ? "overtaken" : writeToken !== undefined && !proven ? "refused" : "kept";
     const kept = imports ? writeToken : entry?.writeToken;
-    const pending = imports ? undefined : entry?.nextWriteToken;
+    const pending = imports ? undefined : entry?.pending;
     current.canvases[id] = {
       name: entry?.name ?? fetched.document.title,
       source: entry?.source ?? sourceKey(out),
-      ...(pending === undefined ? {} : { nextWriteToken: pending }),
+      ...(pending === undefined ? {} : { pending }),
       ...(kept === undefined ? {} : { writeToken: kept }),
       rev: fetched.rev,
     };
@@ -333,14 +346,20 @@ const rotate = async (
     // out by the next push once a pen arrives, retiring the very link that
     // brought it.
     requireWriteToken({ id, entry });
-    const nextWriteToken = entry.nextWriteToken ?? mintWriteToken();
-    pending = { id, entry: { ...entry, nextWriteToken } };
+    if (entry.pending !== undefined && entry.pending.api !== api)
+      throw new PrLensCliError(
+        "CANVAS_UNREGISTERED",
+        `a rotation of ${id} is still pending against ${entry.pending.api}`,
+        `finish it there first: pr-lens canvas rotate --api ${entry.pending.api}`,
+      );
+    const writeToken = entry.pending?.writeToken ?? mintWriteToken();
+    pending = { id, entry: { ...entry, pending: { writeToken, api } } };
     current.canvases[id] = pending.entry;
   }, terminal);
-  if (pending === undefined || pending.entry.nextWriteToken === undefined)
+  if (pending === undefined || pending.entry.pending === undefined)
     throw new PrLensCliError("CANVAS_UNREGISTERED", `${id} is no longer in ${REGISTRY_PATH}`);
 
-  const { editUrl } = await settleRotation(api, pending, pending.entry.nextWriteToken, terminal);
+  const { editUrl } = await settleRotation(api, pending, pending.entry.pending.writeToken, terminal);
 
   const view = new URL(editUrl);
   view.hash = "";
