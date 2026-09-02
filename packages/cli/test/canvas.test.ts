@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -137,7 +137,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const registry = async (): Promise<Record<string, { name: string; source: string; writeToken: string; rev: number }>> =>
+const registry = async (): Promise<Record<string, { name: string; source: string; writeToken: string; nextWriteToken?: string; rev: number }>> =>
   JSON.parse(await readFile(REGISTRY, "utf8")).canvases;
 
 const FIRST = "1".padStart(22, "0");
@@ -298,6 +298,31 @@ test("two commands changing the registry at once both keep their canvas", async 
   expect(Object.values(entries).map((entry) => entry.source).sort()).toEqual(["drawn.graph.json", "other.json"]);
 });
 
+test("a lock left behind by a dead command is taken over, once", async () => {
+  const lock = `${REGISTRY}.lock`;
+  await mkdir(".pr-lens", { recursive: true });
+  await writeFile(lock, "gone.deadbeef", "utf8");
+  const longAgo = new Date(Date.now() - 60_000);
+  await utimes(lock, longAgo, longAgo);
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  await expect(stat(lock)).rejects.toThrow();
+});
+
+test("a lock somebody else holds is waited for, not removed", async () => {
+  const lock = `${REGISTRY}.lock`;
+  await mkdir(".pr-lens", { recursive: true });
+  await writeFile(lock, "other.cafebabe", "utf8");
+
+  const pushing = invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  expect((await registry().catch(() => ({})))).toEqual({});
+  await unlink(lock);
+
+  expect(await pushing).toBe(0);
+  expect(Object.keys(await registry())).toHaveLength(1);
+});
+
 test("the registry is refused a home git would commit", async () => {
   await sh("git", ["init", "--quiet"], { cwd: process.cwd() });
   await writeFile(".gitignore", "!.pr-lens/\n", "utf8");
@@ -306,6 +331,23 @@ test("the registry is refused a home git would commit", async () => {
   expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
   expect(seen).toEqual([]);
   await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
+
+  // Ignoring the registry alone is not enough: it is staged through a
+  // sibling name, and a crash would leave the tokens there.
+  await writeFile(".gitignore", "!.pr-lens/\n.pr-lens/canvas.json\n", "utf8");
+  err = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
+});
+
+test("rotate prints the link the app answered with, not one guessed from --api", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", `${API}/`)).toBe(0);
+  out = [];
+
+  expect(await invoke("canvas", "rotate", "--api", `${API}/`)).toBe(0);
+  const next = (await registry())[FIRST]?.writeToken;
+  expect(out[0]).toBe(`✓ new edit link for ${API}/c/${FIRST}: ${API}/c/${FIRST}#w=${next}`);
 });
 
 test("a document the app would refuse is refused with its reasons", async () => {

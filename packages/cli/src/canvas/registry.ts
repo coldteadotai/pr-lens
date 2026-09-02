@@ -1,11 +1,11 @@
 import { randomBytes } from "node:crypto";
-import { access, mkdir, open, stat, unlink } from "node:fs/promises";
+import { access, mkdir, open, readFile, rename, stat, unlink } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { z } from "zod";
 import { PrLensCliError, usageError } from "../errors.js";
 import { git } from "../git.js";
-import { readJsonFile, writeSecretJsonFile } from "../io.js";
+import { readJsonFile, secretStagingPath, writeSecretJsonFile } from "../io.js";
 import type { Terminal } from "../terminal.js";
 import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
 
@@ -15,6 +15,8 @@ import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
  * sits in the workspace git already ignores rather than beside the document.
  */
 export const REGISTRY_PATH = join(WORKSPACE_DIR, "canvas.json");
+
+const LOCK_PATH = `${REGISTRY_PATH}.lock`;
 
 const CANVAS_ID = /^[A-Za-z0-9_-]{22}$/;
 
@@ -84,16 +86,21 @@ const assertRegistryPrivate = async (): Promise<void> => {
       `git rm --cached ${REGISTRY_PATH}, make sure ${WORKSPACE_DIR}/ is ignored, then try again`,
     );
 
-  const ignored = await git(cwd, ["check-ignore", "-q", "--", REGISTRY_PATH]).then(
-    () => true,
-    () => false,
-  );
-  if (!ignored)
-    throw new PrLensCliError(
-      "CANVAS_REGISTRY_EXPOSED",
-      `${REGISTRY_PATH} is not ignored by git, and it holds write tokens`,
-      `ignore ${WORKSPACE_DIR}/ or ${REGISTRY_PATH} in .gitignore, then try again`,
+  // The registry, the file it is staged through, and the lock beside it: a
+  // rule that covers the first alone leaves a token under the second name
+  // whenever a write is interrupted.
+  for (const path of [REGISTRY_PATH, relative(cwd, secretStagingPath(REGISTRY_PATH)), LOCK_PATH]) {
+    const ignored = await git(cwd, ["check-ignore", "-q", "--", path]).then(
+      () => true,
+      () => false,
     );
+    if (!ignored)
+      throw new PrLensCliError(
+        "CANVAS_REGISTRY_EXPOSED",
+        `${path} is not ignored by git, and ${REGISTRY_PATH} holds write tokens`,
+        `ignore the whole ${WORKSPACE_DIR}/ directory in .gitignore, then try again`,
+      );
+  }
 };
 
 /**
@@ -110,8 +117,6 @@ export const writeRegistry = async (registry: CanvasRegistry, terminal: Terminal
   await writeSecretJsonFile(REGISTRY_PATH, registry);
 };
 
-const LOCK_PATH = `${REGISTRY_PATH}.lock`;
-
 /** A lock left by a command that died; anything this old is not a command. */
 const LOCK_STALE_MS = 30_000;
 const LOCK_WAIT_MS = 50;
@@ -121,36 +126,67 @@ const isAlreadyThere = (error: unknown): boolean =>
   typeof error === "object" && error !== null && "code" in error && error.code === "EEXIST";
 
 /**
+ * Takes the lock, or nothing. The file is created exclusively and signed with
+ * this holder's nonce, so releasing it later removes this holder's lock and
+ * never one that was taken over in the meantime.
+ */
+const takeLock = async (nonce: string): Promise<boolean> => {
+  const handle = await open(LOCK_PATH, "wx").catch((error: unknown) => {
+    if (isAlreadyThere(error)) return undefined;
+    throw error;
+  });
+  if (handle === undefined) return false;
+  try {
+    await handle.writeFile(nonce, "utf8");
+  } finally {
+    await handle.close();
+  }
+  return true;
+};
+
+const releaseLock = async (nonce: string): Promise<void> => {
+  const holder = await readFile(LOCK_PATH, "utf8").catch(() => undefined);
+  if (holder === nonce) await unlink(LOCK_PATH).catch(() => undefined);
+};
+
+/**
+ * Removes a lock nobody is holding any more. The lock is moved aside first,
+ * and only one of several waiters can move the same file, so a lock taken
+ * afresh by another waiter in the meantime is never the one removed.
+ */
+const reclaimStaleLock = async (nonce: string): Promise<void> => {
+  const age = await stat(LOCK_PATH).then(
+    (info) => Date.now() - info.mtimeMs,
+    () => 0,
+  );
+  if (age <= LOCK_STALE_MS) return;
+
+  const aside = `${LOCK_PATH}.stale.${nonce}`;
+  const moved = await rename(LOCK_PATH, aside).then(
+    () => true,
+    () => false,
+  );
+  if (moved) await unlink(aside).catch(() => undefined);
+};
+
+/**
  * The registry is read, changed and written back as a whole, and two commands
  * doing that at once would each keep only their own change. One holds the
  * lock at a time; the other waits its turn.
  */
 export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> => {
   await mkdir(dirname(LOCK_PATH), { recursive: true });
+  const nonce = `${process.pid}.${randomBytes(8).toString("hex")}`;
 
   for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt += 1) {
-    const handle = await open(LOCK_PATH, "wx").catch((error: unknown) => {
-      if (isAlreadyThere(error)) return undefined;
-      throw error;
-    });
-
-    if (handle !== undefined) {
-      await handle.close();
+    if (await takeLock(nonce)) {
       try {
         return await work();
       } finally {
-        await unlink(LOCK_PATH).catch(() => undefined);
+        await releaseLock(nonce);
       }
     }
-
-    const age = await stat(LOCK_PATH).then(
-      (info) => Date.now() - info.mtimeMs,
-      () => 0,
-    );
-    if (age > LOCK_STALE_MS) {
-      await unlink(LOCK_PATH).catch(() => undefined);
-      continue;
-    }
+    await reclaimStaleLock(nonce);
     await sleep(LOCK_WAIT_MS);
   }
 

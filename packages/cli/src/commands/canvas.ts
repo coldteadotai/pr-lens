@@ -101,19 +101,24 @@ const settleRotation = async (
   { id, entry }: Registered,
   nextToken: string,
   terminal: Terminal,
-): Promise<Registered> => {
-  try {
-    await rotateCanvas(api, id, entry.writeToken, nextToken);
-  } catch (error) {
+): Promise<{ registered: Registered; editUrl: string }> => {
+  const rotated = await rotateCanvas(api, id, entry.writeToken, nextToken).catch((error: unknown) => {
     if (error instanceof PrLensCliError) throw unfinishedRotation(error);
     throw error;
-  }
+  });
 
-  const settled = { ...entry, writeToken: nextToken, nextWriteToken: undefined };
+  // Only this transition is closed. A different token pending by now belongs
+  // to a later rotation, which will close its own.
   await updateRegistry((registry) => {
-    registry.canvases[id] = { ...(registry.canvases[id] ?? entry), writeToken: nextToken, nextWriteToken: undefined };
+    const current = registry.canvases[id];
+    if (current === undefined || current.nextWriteToken !== nextToken) return;
+    registry.canvases[id] = { ...current, writeToken: nextToken, nextWriteToken: undefined };
   }, terminal);
-  return { id, entry: settled };
+
+  return {
+    registered: { id, entry: { ...entry, writeToken: nextToken, nextWriteToken: undefined } },
+    editUrl: rotated.editUrl,
+  };
 };
 
 const push = async (
@@ -157,7 +162,8 @@ const push = async (
   })();
 
   const pending = registered.entry.nextWriteToken;
-  const target = pending === undefined ? registered : await settleRotation(api, registered, pending, terminal);
+  const target =
+    pending === undefined ? registered : (await settleRotation(api, registered, pending, terminal)).registered;
 
   const pushed = await pushCanvas(api, target.id, target.entry.writeToken, target.entry.rev, document);
 
@@ -226,21 +232,27 @@ const rotate = async (
   await ensureRegistryHome(terminal);
   const registry = await readRegistry();
   const ref = readString(values.canvas, "canvas");
-  const registered = ref === undefined ? onlyCanvas(registry) : findCanvas(registry, ref);
-  const { id, entry } = registered;
+  const { id } = ref === undefined ? onlyCanvas(registry) : findCanvas(registry, ref);
 
   // The new token is written down before the app hears of it, so nothing
-  // that happens on the way back can leave the canvas without a holder.
-  const nextToken = entry.nextWriteToken ?? mintWriteToken();
+  // that happens on the way back can leave the canvas without a holder. It
+  // is chosen under the lock: two rotations at once finish the same one.
+  let pending: Registered | undefined;
   await updateRegistry((current) => {
-    current.canvases[id] = { ...(current.canvases[id] ?? entry), nextWriteToken: nextToken };
+    const entry = current.canvases[id];
+    if (entry === undefined) return;
+    const nextWriteToken = entry.nextWriteToken ?? mintWriteToken();
+    pending = { id, entry: { ...entry, nextWriteToken } };
+    current.canvases[id] = pending.entry;
   }, terminal);
+  if (pending === undefined || pending.entry.nextWriteToken === undefined)
+    throw new PrLensCliError("CANVAS_UNREGISTERED", `${id} is no longer in ${REGISTRY_PATH}`);
 
-  const settled = await settleRotation(api, registered, nextToken, terminal);
+  const { editUrl } = await settleRotation(api, pending, pending.entry.nextWriteToken, terminal);
 
-  const view = new URL(api);
-  view.pathname = `/c/${id}`;
-  terminal.out(`✓ new edit link for ${view.href}: ${view.href}#w=${settled.entry.writeToken}`);
+  const view = new URL(editUrl);
+  view.hash = "";
+  terminal.out(`✓ new edit link for ${view.href}: ${editUrl}`);
   terminal.out("  the old edit link no longer works");
 };
 
