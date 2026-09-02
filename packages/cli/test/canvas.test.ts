@@ -1,9 +1,13 @@
+import { execFile } from "node:child_process";
 import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { run } from "../src/cli.js";
 import type { Terminal } from "../src/terminal.js";
+
+const sh = promisify(execFile);
 
 const GOLDEN = new URL("../../schema/examples/postmark-refactor.graph.json", import.meta.url).pathname;
 const API = "https://canvas.test";
@@ -25,6 +29,7 @@ type Seen = { method: string; path: string; headers: Headers; body: unknown };
 let canvases = new Map<string, Stored>();
 let seen: Seen[] = [];
 let minted = 0;
+let loseNextAnswer = false;
 
 const json = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -79,12 +84,20 @@ const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Pro
     return json(200, { id, rev: canvas.rev, ...links(id), document: canvas.document, tiles: TILES });
   }
 
-  if (bearer(headers) !== canvas.token) return refuse(404, "NOT_FOUND", "There is no canvas here");
-
   if (method === "POST" && action === "rotate") {
-    canvas.token = `${canvas.token}-rotated`;
-    return json(200, { id, writeToken: canvas.token, editUrl: `${API}/c/${id}#w=${canvas.token}` });
+    const next = typeof body === "object" && body !== null && "writeToken" in body ? body.writeToken : undefined;
+    if (typeof next !== "string" || !/^[A-Za-z0-9_-]{22}$/.test(next))
+      return refuse(400, "INVALID_REQUEST", "The body must carry the new writeToken");
+    if (bearer(headers) === canvas.token) canvas.token = next;
+    else if (next !== canvas.token) return refuse(404, "NOT_FOUND", "There is no canvas here");
+    if (loseNextAnswer) {
+      loseNextAnswer = false;
+      throw new TypeError("fetch failed");
+    }
+    return json(200, { id, editUrl: `${API}/c/${id}#w=${canvas.token}` });
   }
+
+  if (bearer(headers) !== canvas.token) return refuse(404, "NOT_FOUND", "There is no canvas here");
 
   if (method === "PUT" && action === undefined) {
     if (headers.get("if-match") !== String(canvas.rev))
@@ -111,6 +124,7 @@ beforeEach(async () => {
   canvases = new Map();
   seen = [];
   minted = 0;
+  loseNextAnswer = false;
   vi.stubGlobal("fetch", fakeFetch);
 
   const directory = await mkdtemp(join(tmpdir(), "pr-lens-canvas-"));
@@ -221,26 +235,77 @@ test("pull takes the view link as it was shared, fragment included", async () =>
   expect(JSON.parse(await readFile("pulled.json", "utf8"))).toHaveProperty("lanes");
 });
 
-test("rotate replaces the token, and the old one stops opening the door", async () => {
+test("rotate mints the next token here, and the old one stops opening the door", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
   out = [];
+  seen = [];
 
   expect(await invoke("canvas", "rotate", "--api", API)).toBe(0);
 
+  const next = (await registry())[FIRST]?.writeToken;
+  expect(next).toMatch(/^[A-Za-z0-9_-]{22}$/);
+  expect(next).not.toBe("token-1-a");
+  expect((await registry())[FIRST]).not.toHaveProperty("nextWriteToken");
   expect(out).toEqual([
-    `✓ new edit link for ${API}/c/${FIRST}: ${API}/c/${FIRST}#w=token-1-a-rotated`,
+    `✓ new edit link for ${API}/c/${FIRST}: ${API}/c/${FIRST}#w=${next}`,
     "  the old edit link no longer works",
   ]);
-  expect((await registry())[FIRST]?.writeToken).toBe("token-1-a-rotated");
+  expect(seen[0]?.headers.get("authorization")).toBe("Bearer token-1-a");
+  expect(seen[0]?.body).toEqual({ writeToken: next });
 
-  const stale = JSON.parse(await readFile(REGISTRY, "utf8"));
-  stale.canvases[FIRST].writeToken = "token-1-a";
-  await writeFile(REGISTRY, JSON.stringify(stale), "utf8");
+  // The app now knows only the new token, and the registry sends that one.
+  out = [];
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  expect(seen[0]?.headers.get("authorization")).toBe(`Bearer ${next}`);
+});
+
+test("a rotation whose answer was lost is finished by the next command", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  loseNextAnswer = true;
+
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("the rotation is not finished");
+
+  const pending = (await registry())[FIRST];
+  expect(pending?.writeToken).toBe("token-1-a");
+  expect(pending?.nextWriteToken).toMatch(/^[A-Za-z0-9_-]{22}$/);
+
+  err = [];
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  expect(seen.map((request) => [request.method, request.path.endsWith("/rotate")])).toEqual([
+    ["POST", true],
+    ["PUT", false],
+  ]);
+  const settled = (await registry())[FIRST];
+  expect(settled?.writeToken).toBe(pending?.nextWriteToken);
+  expect(settled).not.toHaveProperty("nextWriteToken");
+  expect(seen[1]?.headers.get("authorization")).toBe(`Bearer ${settled?.writeToken}`);
+});
+
+test("two commands changing the registry at once both keep their canvas", async () => {
+  await writeFile("other.json", await readFile(GOLDEN, "utf8"), "utf8");
+
+  const [first, second] = await Promise.all([
+    invoke("canvas", "push", "drawn.graph.json", "--api", API),
+    invoke("canvas", "push", "other.json", "--api", API),
+  ]);
+  expect([first, second]).toEqual([0, 0]);
+
+  const entries = await registry();
+  expect(Object.keys(entries)).toHaveLength(2);
+  expect(Object.values(entries).map((entry) => entry.source).sort()).toEqual(["drawn.graph.json", "other.json"]);
+});
+
+test("the registry is refused a home git would commit", async () => {
+  await sh("git", ["init", "--quiet"], { cwd: process.cwd() });
+  await writeFile(".gitignore", "!.pr-lens/\n", "utf8");
 
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
-  const reported = err.join("\n");
-  expect(reported).toContain("[CANVAS_UNKNOWN]");
-  expect(reported).toContain("or the token is wrong");
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
 });
 
 test("a document the app would refuse is refused with its reasons", async () => {

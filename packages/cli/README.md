@@ -122,7 +122,9 @@ The view link is the one to share. The edit link is the same page with the write
 
 `pull` fetches the document back, by the view link or the bare id, into `.pr-lens/graph.json` unless `-o` says otherwise. A push carries the revision it last saw, and one that has been overtaken is refused rather than applied: pull, then push again.
 
-`rotate` mints a new write token and retires the old one, which is the whole answer to an edit link that got out. The token lives in `.pr-lens/canvas.json`, keyed by canvas id, and git ignores it. Lose that file and the canvas is still readable by everyone; pushing to it again needs the token, which the edit link still carries.
+`rotate` mints a new write token and retires the old one, which is the whole answer to an edit link that got out. The new token is written to the registry before the app hears of it, so a connection that drops mid-way is finished by the next command rather than lost. The token lives in `.pr-lens/canvas.json`, keyed by canvas id, and git ignores it. Lose that file and the canvas is still readable by everyone; pushing to it again needs the token, which the edit link still carries.
+
+The registry is written only where git will never take it: a checkout that tracks `.pr-lens/canvas.json`, or un-ignores `.pr-lens/`, gets a `CANVAS_REGISTRY_EXPOSED` refusal instead of a token on disk.
 
 `--api` points at another PR Lens app, or set `PR_LENS_API_URL`.
 
@@ -146,7 +148,7 @@ A lane pin may name a lane the document never declared; the band is created and 
 
 ## Failures
 
-Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`, and for `canvas`: `CANVAS_UNREGISTERED`, `CANVAS_UNKNOWN`, `CANVAS_CONFLICT`, `CANVAS_REJECTED`, `CANVAS_RATE_LIMITED`, `CANVAS_UNAVAILABLE`. Misuse exits 2, everything else exits 1.
+Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`, and for `canvas`: `CANVAS_UNREGISTERED`, `CANVAS_UNKNOWN`, `CANVAS_CONFLICT`, `CANVAS_REJECTED`, `CANVAS_RATE_LIMITED`, `CANVAS_UNAVAILABLE`, `CANVAS_REGISTRY_EXPOSED`. Misuse exits 2, everything else exits 1.
 
 ---
 

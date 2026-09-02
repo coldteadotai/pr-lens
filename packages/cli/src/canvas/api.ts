@@ -44,7 +44,7 @@ const Pushed = z.object({
   tiles: z.array(Tile),
 });
 
-const Rotated = z.object({ id: z.string(), writeToken: z.string(), editUrl: z.string() });
+const Rotated = z.object({ id: z.string(), editUrl: z.string() });
 
 export type Minted = z.infer<typeof Minted>;
 export type Pushed = z.infer<typeof Pushed>;
@@ -200,5 +200,14 @@ export const pushCanvas = (
 ): Promise<Pushed> =>
   call(api, { method: "PUT", path: canvasPath(id), canvas: id, token, ifMatch: rev, body: document }, Pushed);
 
-export const rotateCanvas = (api: string, id: string, token: string): Promise<Rotated> =>
-  call(api, { method: "POST", path: `${canvasPath(id)}/rotate`, canvas: id, token }, Rotated);
+/**
+ * The next token is minted here and sent along, so the app's answer can be
+ * lost and the same question asked again: once the token is on record, the
+ * app says so whichever bearer is presented.
+ */
+export const rotateCanvas = (api: string, id: string, token: string, nextToken: string): Promise<Rotated> =>
+  call(
+    api,
+    { method: "POST", path: `${canvasPath(id)}/rotate`, canvas: id, token, body: { writeToken: nextToken } },
+    Rotated,
+  );

@@ -2,14 +2,16 @@ import { assertNever } from "@coldtea/pr-lens-schema";
 import { parseOptions, readString } from "../args.js";
 import { fetchCanvas, mintCanvas, pushCanvas, rotateCanvas } from "../canvas/api.js";
 import {
+  ensureRegistryHome,
   findBySource,
   findCanvas,
   isCanvasId,
+  mintWriteToken,
   onlyCanvas,
   readRegistry,
   REGISTRY_PATH,
   sourceKey,
-  writeRegistry,
+  updateRegistry,
   type Registered,
 } from "../canvas/registry.js";
 import { readGraphDoc } from "../document.js";
@@ -81,6 +83,39 @@ const readCanvasRef = (value: string): { id: string; origin: string | undefined 
 
 const countDiagrams = (count: number): string => `${count} ${count === 1 ? "diagram" : "diagrams"}`;
 
+const unfinishedRotation = (error: PrLensCliError): PrLensCliError =>
+  new PrLensCliError(
+    error.code,
+    `${error.message}; the rotation is not finished`,
+    [error.details, "run pr-lens canvas rotate again to finish it: the new token is kept until the app confirms it"]
+      .filter((line) => line !== undefined && line !== "")
+      .join("\n"),
+  );
+
+/**
+ * Finishes a rotation whose answer never arrived. The app takes the same
+ * pair again and says "rotated" once the new token is the one on record.
+ */
+const settleRotation = async (
+  api: string,
+  { id, entry }: Registered,
+  nextToken: string,
+  terminal: Terminal,
+): Promise<Registered> => {
+  try {
+    await rotateCanvas(api, id, entry.writeToken, nextToken);
+  } catch (error) {
+    if (error instanceof PrLensCliError) throw unfinishedRotation(error);
+    throw error;
+  }
+
+  const settled = { ...entry, writeToken: nextToken, nextWriteToken: undefined };
+  await updateRegistry((registry) => {
+    registry.canvases[id] = { ...(registry.canvases[id] ?? entry), writeToken: nextToken, nextWriteToken: undefined };
+  }, terminal);
+  return { id, entry: settled };
+};
+
 const push = async (
   args: readonly string[],
   terminal: Terminal,
@@ -97,12 +132,13 @@ const push = async (
   const source = positionals[0] ?? DEFAULT_SOURCE;
   const document = await readGraphDoc(source);
   const api = readApi(values.api, env);
+  await ensureRegistryHome(terminal);
   const registry = await readRegistry();
 
   const ref = readString(values.canvas, "canvas");
   const known = ref === undefined ? findBySource(registry, source) : findCanvas(registry, ref);
 
-  const target: Registered = await (async () => {
+  const registered: Registered = await (async () => {
     if (known !== undefined) return known;
 
     const minted = await mintCanvas(api);
@@ -114,15 +150,20 @@ const push = async (
     };
     // Recorded before the first push, so a push that fails can be tried again
     // against the same canvas instead of minting another.
-    registry.canvases[minted.id] = entry;
-    await writeRegistry(registry, terminal);
+    await updateRegistry((current) => {
+      current.canvases[minted.id] = entry;
+    }, terminal);
     return { id: minted.id, entry };
   })();
 
+  const pending = registered.entry.nextWriteToken;
+  const target = pending === undefined ? registered : await settleRotation(api, registered, pending, terminal);
+
   const pushed = await pushCanvas(api, target.id, target.entry.writeToken, target.entry.rev, document);
 
-  registry.canvases[target.id] = { ...target.entry, source: sourceKey(source), rev: pushed.rev };
-  await writeRegistry(registry, terminal);
+  await updateRegistry((current) => {
+    current.canvases[target.id] = { ...(current.canvases[target.id] ?? target.entry), source: sourceKey(source), rev: pushed.rev };
+  }, terminal);
 
   terminal.out(`✓ ${pushed.viewUrl} — rev ${pushed.rev} · ${countDiagrams(pushed.tiles.length)}`);
   terminal.out(`  edit link, keep it to yourself: ${pushed.editUrl}`);
@@ -159,10 +200,11 @@ const pull = async (
   const fetched = await fetchCanvas(api, id);
   await writeJsonFile(out, fetched.document);
 
-  const entry = registry.canvases[id];
-  if (entry !== undefined) {
-    registry.canvases[id] = { ...entry, rev: fetched.rev };
-    await writeRegistry(registry, terminal);
+  if (registry.canvases[id] !== undefined) {
+    await updateRegistry((current) => {
+      const entry = current.canvases[id];
+      if (entry !== undefined) current.canvases[id] = { ...entry, rev: fetched.rev };
+    }, terminal);
   }
 
   terminal.out(`✓ ${out} — rev ${fetched.rev} of ${fetched.viewUrl}`);
@@ -181,30 +223,25 @@ const rotate = async (
     throw usageError(`rotate takes no positional arguments, got ${positionals.join(" ")}`);
 
   const api = readApi(values.api, env);
+  await ensureRegistryHome(terminal);
   const registry = await readRegistry();
   const ref = readString(values.canvas, "canvas");
-  const { id, entry } = ref === undefined ? onlyCanvas(registry) : findCanvas(registry, ref);
+  const registered = ref === undefined ? onlyCanvas(registry) : findCanvas(registry, ref);
+  const { id, entry } = registered;
 
-  const rotated = await rotateCanvas(api, id, entry.writeToken);
+  // The new token is written down before the app hears of it, so nothing
+  // that happens on the way back can leave the canvas without a holder.
+  const nextToken = entry.nextWriteToken ?? mintWriteToken();
+  await updateRegistry((current) => {
+    current.canvases[id] = { ...(current.canvases[id] ?? entry), nextWriteToken: nextToken };
+  }, terminal);
 
-  // The old token is already retired, so the new one is the only way back
-  // in. Whatever happens to the registry, the link is shown.
-  const view = new URL(rotated.editUrl);
-  view.hash = "";
-  terminal.out(`✓ new edit link for ${view.href}: ${rotated.editUrl}`);
+  const settled = await settleRotation(api, registered, nextToken, terminal);
+
+  const view = new URL(api);
+  view.pathname = `/c/${id}`;
+  terminal.out(`✓ new edit link for ${view.href}: ${view.href}#w=${settled.entry.writeToken}`);
   terminal.out("  the old edit link no longer works");
-
-  registry.canvases[id] = { ...entry, writeToken: rotated.writeToken };
-  try {
-    await writeRegistry(registry, terminal);
-  } catch (error) {
-    if (!(error instanceof PrLensCliError)) throw error;
-    throw new PrLensCliError(
-      error.code,
-      `${error.message}; the new edit link above is now the only copy of the token`,
-      error.details,
-    );
-  }
 };
 
 export const canvasCommand = async (

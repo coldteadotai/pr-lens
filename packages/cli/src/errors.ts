@@ -20,7 +20,8 @@ export type CliErrorCode =
   | "CANVAS_CONFLICT"
   | "CANVAS_REJECTED"
   | "CANVAS_RATE_LIMITED"
-  | "CANVAS_UNAVAILABLE";
+  | "CANVAS_UNAVAILABLE"
+  | "CANVAS_REGISTRY_EXPOSED";
 
 export class PrLensCliError extends Error {
   readonly code: CliErrorCode;
