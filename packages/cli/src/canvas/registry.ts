@@ -140,11 +140,25 @@ const repositoryStanding = async (cwd: string): Promise<RepositoryStanding> => {
   }
 };
 
-/** The entry itself, not what it points at: a dangling `.git` link is still a checkout. */
+const isMissing = (error: unknown): boolean =>
+  typeof error === "object" && error !== null && "code" in error && (error.code === "ENOENT" || error.code === "ENOTDIR");
+
+/**
+ * The entry itself, not what it points at: a dangling `.git` link is still a
+ * checkout. Only an entry that is not there counts as absent; one that cannot
+ * be looked at is a question left open, and no secret is written on one.
+ */
 const gitEntryAt = (directory: string): Promise<boolean> =>
   lstat(join(directory, ".git")).then(
     () => true,
-    () => false,
+    (error: unknown) => {
+      if (isMissing(error)) return false;
+      throw new PrLensCliError(
+        "CANVAS_REGISTRY_EXPOSED",
+        `${join(directory, ".git")} could not be looked at, so ${REGISTRY_PATH} might be committed`,
+        error instanceof Error ? error.message : String(error),
+      );
+    },
   );
 
 const hasGitAbove = async (start: string): Promise<boolean> => {

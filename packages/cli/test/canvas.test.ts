@@ -70,7 +70,7 @@ const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Pro
   if (method === "POST" && url.pathname === "/api/canvas") {
     minted += 1;
     const id = String(minted).padStart(22, "0");
-    const token = `token-${minted}-a`;
+    const token = `token-${minted}-a`.padEnd(22, "a");
     canvases.set(id, { token, rev: 0, document: undefined });
     return json(201, { id, writeToken: token, rev: 0, ...links(id, token) });
   }
@@ -141,13 +141,14 @@ const registry = async (): Promise<Record<string, { name: string; source: string
   JSON.parse(await readFile(REGISTRY, "utf8")).canvases;
 
 const FIRST = "1".padStart(22, "0");
+const TOKEN1 = "token-1-a".padEnd(22, "a");
 
 test("the first push mints a canvas, records it, and prints the three links", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
 
   expect(out).toEqual([
     `✓ ${API}/c/${FIRST} — rev 1 · 2 diagrams`,
-    `  edit link, keep it to yourself: ${API}/c/${FIRST}#w=token-1-a`,
+    `  edit link, keep it to yourself: ${API}/c/${FIRST}#w=${TOKEN1}`,
     `  README embed: ${API}/c/${FIRST}.svg`,
   ]);
 
@@ -155,7 +156,7 @@ test("the first push mints a canvas, records it, and prints the three links", as
     [FIRST]: {
       name: "Batch broadcast sending through Postmark",
       source: "drawn.graph.json",
-      writeToken: "token-1-a",
+      writeToken: TOKEN1,
       rev: 1,
     },
   });
@@ -244,13 +245,13 @@ test("rotate mints the next token here, and the old one stops opening the door",
 
   const next = (await registry())[FIRST]?.writeToken;
   expect(next).toMatch(/^[A-Za-z0-9_-]{22}$/);
-  expect(next).not.toBe("token-1-a");
+  expect(next).not.toBe(TOKEN1);
   expect((await registry())[FIRST]).not.toHaveProperty("nextWriteToken");
   expect(out).toEqual([
     `✓ new edit link for ${API}/c/${FIRST}: ${API}/c/${FIRST}#w=${next}`,
     "  the old edit link no longer works",
   ]);
-  expect(seen[0]?.headers.get("authorization")).toBe("Bearer token-1-a");
+  expect(seen[0]?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
   expect(seen[0]?.body).toEqual({ writeToken: next });
 
   // The app now knows only the new token, and the registry sends that one.
@@ -268,7 +269,7 @@ test("a rotation whose answer was lost is finished by the next command", async (
   expect(err.join("\n")).toContain("the rotation is not finished");
 
   const pending = (await registry())[FIRST];
-  expect(pending?.writeToken).toBe("token-1-a");
+  expect(pending?.writeToken).toBe(TOKEN1);
   expect(pending?.nextWriteToken).toMatch(/^[A-Za-z0-9_-]{22}$/);
 
   err = [];
@@ -472,18 +473,55 @@ test("pulling an edit link brings its token into a checkout that never had it", 
   out = [];
   seen = [];
 
-  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=token-1-a`)).toBe(0);
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
   expect(out).toEqual([`✓ .pr-lens/graph.json — rev 1 of ${API}/c/${FIRST}`, "  the edit link's token is now in .pr-lens/canvas.json"]);
   expect((await registry())[FIRST]).toEqual({
     name: "Batch broadcast sending through Postmark",
     source: ".pr-lens/graph.json",
-    writeToken: "token-1-a",
+    writeToken: TOKEN1,
     rev: 1,
   });
 
   expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(0);
-  expect(seen.at(-1)?.headers.get("authorization")).toBe("Bearer token-1-a");
+  expect(seen.at(-1)?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
   expect((await registry())[FIRST]?.rev).toBe(2);
+});
+
+test("pulling an edit link that no longer opens the canvas keeps the token that does", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(0);
+  const current = (await registry())[FIRST]?.writeToken;
+  err = [];
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  expect(err.join("\n")).toContain("no longer opens");
+  expect((await registry())[FIRST]?.writeToken).toBe(current);
+});
+
+test("a link with something that is not a token after #w= is a misuse", async () => {
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=A`)).toBe(2);
+  expect(seen).toEqual([]);
+});
+
+test("rotate on a canvas pulled by its view link leaves nothing pending behind", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const fresh = await mkdtemp(join(tmpdir(), "pr-lens-canvas-other-"));
+  process.chdir(fresh);
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}`)).toBe(0);
+
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_UNREGISTERED]");
+  expect((await registry())[FIRST]).not.toHaveProperty("nextWriteToken");
+
+  // The edit link arrives later; nothing retires it on the next push. (The
+  // pull itself proves the token with a rotation onto itself, which is not
+  // a rotation; the push after it must send none at all.)
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  await writeFile("drawn.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(0);
+  expect(seen.map((request) => [request.method, request.path.endsWith("/rotate")])).toEqual([["PUT", false]]);
+  expect(seen[0]?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
 });
 
 test("pulling a view link records the revision, and push then asks for the edit link", async () => {

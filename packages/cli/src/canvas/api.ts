@@ -205,6 +205,20 @@ export const pushCanvas = (
  * lost and the same question asked again: once the token is on record, the
  * app says so whichever bearer is presented.
  */
+/**
+ * Whether a token is the one on record, without changing anything: a token
+ * turned over onto itself is answered "rotated" only when it is current, and
+ * with the reader's 404 otherwise.
+ */
+export const verifyWriteToken = (api: string, id: string, token: string): Promise<boolean> =>
+  rotateCanvas(api, id, token, token).then(
+    () => true,
+    (error: unknown) => {
+      if (error instanceof PrLensCliError && error.code === "CANVAS_UNKNOWN") return false;
+      throw error;
+    },
+  );
+
 export const rotateCanvas = (api: string, id: string, token: string, nextToken: string): Promise<Rotated> =>
   call(
     api,

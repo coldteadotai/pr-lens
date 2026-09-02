@@ -1,6 +1,6 @@
 import { assertNever } from "@coldtea/pr-lens-schema";
 import { parseOptions, readString } from "../args.js";
-import { fetchCanvas, mintCanvas, pushCanvas, rotateCanvas } from "../canvas/api.js";
+import { fetchCanvas, mintCanvas, pushCanvas, rotateCanvas, verifyWriteToken } from "../canvas/api.js";
 import {
   ensureRegistryHome,
   findBySource,
@@ -67,8 +67,8 @@ const readApi = (value: unknown, env: Record<string, string | undefined>): strin
 
 type CanvasRef = { id: string; origin: string | undefined; writeToken: string | undefined };
 
-/** What a token in a fragment may be spelled with; anything else is not one. */
-const TOKEN_SHAPE = /^[A-Za-z0-9_-]+$/;
+/** A write token is 128 bits as base64url, the same shape as an id; anything else is not one. */
+const TOKEN_SHAPE = /^[A-Za-z0-9_-]{22}$/;
 
 /**
  * A bare id, or a link a page shows: {app}/c/{id}. An edit link carries the
@@ -93,7 +93,9 @@ const readCanvasRef = (value: string): CanvasRef => {
 
   const fragment = new URLSearchParams(url.hash.replace(/^#/, ""));
   const writeToken = fragment.get("w") ?? undefined;
-  return { id, origin: url.origin, writeToken: writeToken !== undefined && TOKEN_SHAPE.test(writeToken) ? writeToken : undefined };
+  if (writeToken !== undefined && !TOKEN_SHAPE.test(writeToken))
+    throw usageError(`${value} carries something after #w= that is not a write token`, "an edit link ends in #w= and 22 characters");
+  return { id, origin: url.origin, writeToken };
 };
 
 /** The pen for a canvas, or the way to get one. */
@@ -236,21 +238,29 @@ const pull = async (
   const fetched = await fetchCanvas(api, id);
   await writeJsonFile(out, fetched.document);
 
-  // Every pull records the revision, and an edit link records its token: a
-  // checkout that lost canvas.json, or never had it, gets its pen back here.
+  // An edit link's token is proven before it is written down: an old
+  // bookmark from before a rotation must not replace the token that works.
+  const proven = writeToken !== undefined && (await verifyWriteToken(api, id, writeToken));
+
+  // Every pull records the revision, and a proven edit link records its
+  // token: a checkout that lost canvas.json, or never had it, gets its pen
+  // back here.
   await updateRegistry((current) => {
     const entry = current.canvases[id];
+    const kept = proven ? writeToken : entry?.writeToken;
     current.canvases[id] = {
       name: entry?.name ?? fetched.document.title,
       source: entry?.source ?? sourceKey(out),
       ...(entry?.nextWriteToken === undefined ? {} : { nextWriteToken: entry.nextWriteToken }),
-      ...(writeToken ?? entry?.writeToken) === undefined ? {} : { writeToken: writeToken ?? entry?.writeToken },
+      ...(kept === undefined ? {} : { writeToken: kept }),
       rev: fetched.rev,
     };
   }, terminal);
 
   terminal.out(`✓ ${out} — rev ${fetched.rev} of ${fetched.viewUrl}`);
-  if (writeToken !== undefined) terminal.out(`  the edit link's token is now in ${REGISTRY_PATH}`);
+  if (proven) terminal.out(`  the edit link's token is now in ${REGISTRY_PATH}`);
+  else if (writeToken !== undefined)
+    terminal.err(`  the edit link's token no longer opens ${id}; nothing was recorded for it`);
 };
 
 const rotate = async (
@@ -278,6 +288,10 @@ const rotate = async (
   await updateRegistry((current) => {
     const entry = current.canvases[id];
     if (entry === undefined) return;
+    // No pen, no rotation: a pending token written here would be carried
+    // out by the next push once a pen arrives, retiring the very link that
+    // brought it.
+    requireWriteToken({ id, entry });
     const nextWriteToken = entry.nextWriteToken ?? mintWriteToken();
     pending = { id, entry: { ...entry, nextWriteToken } };
     current.canvases[id] = pending.entry;
