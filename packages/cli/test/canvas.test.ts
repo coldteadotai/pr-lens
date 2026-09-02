@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, stat, unlink, utimes, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, stat, symlink, unlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -137,7 +137,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const registry = async (): Promise<Record<string, { name: string; source: string; writeToken: string; nextWriteToken?: string; rev: number }>> =>
+const registry = async (): Promise<Record<string, { name: string; source: string; writeToken?: string; nextWriteToken?: string; rev: number }>> =>
   JSON.parse(await readFile(REGISTRY, "utf8")).canvases;
 
 const FIRST = "1".padStart(22, "0");
@@ -228,7 +228,7 @@ test("pull takes the view link as it was shared, fragment included", async () =>
   seen = [];
   out = [];
 
-  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=whatever`, "-o", "pulled.json")).toBe(0);
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#v=371,80,0.414`, "-o", "pulled.json")).toBe(0);
 
   expect(seen[0]?.path).toBe(`/api/canvas/${FIRST}`);
   expect(out).toEqual([`✓ pulled.json — rev 1 of ${API}/c/${FIRST}`]);
@@ -462,4 +462,51 @@ test("a document the renderer refuses is a rejection with the app's own words", 
   const reported = err.join("\n");
   expect(reported).toContain("[CANVAS_REJECTED]");
   expect(reported).toContain("The document has nothing the canvas can draw");
+});
+
+test("pulling an edit link brings its token into a checkout that never had it", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const fresh = await mkdtemp(join(tmpdir(), "pr-lens-canvas-other-"));
+  process.chdir(fresh);
+  await writeFile("drawn.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+  out = [];
+  seen = [];
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=token-1-a`)).toBe(0);
+  expect(out).toEqual([`✓ .pr-lens/graph.json — rev 1 of ${API}/c/${FIRST}`, "  the edit link's token is now in .pr-lens/canvas.json"]);
+  expect((await registry())[FIRST]).toEqual({
+    name: "Batch broadcast sending through Postmark",
+    source: ".pr-lens/graph.json",
+    writeToken: "token-1-a",
+    rev: 1,
+  });
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(0);
+  expect(seen.at(-1)?.headers.get("authorization")).toBe("Bearer token-1-a");
+  expect((await registry())[FIRST]?.rev).toBe(2);
+});
+
+test("pulling a view link records the revision, and push then asks for the edit link", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const fresh = await mkdtemp(join(tmpdir(), "pr-lens-canvas-other-"));
+  process.chdir(fresh);
+  await writeFile("drawn.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}`)).toBe(0);
+  expect((await registry())[FIRST]).toEqual({
+    name: "Batch broadcast sending through Postmark",
+    source: ".pr-lens/graph.json",
+    rev: 1,
+  });
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("pull its edit link");
+});
+
+test("a checkout whose .git is a dangling link is not outside a repository", async () => {
+  await symlink("nowhere", ".git");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
 });

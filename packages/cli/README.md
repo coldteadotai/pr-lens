@@ -120,7 +120,7 @@ Puts the document on prlens.dev as a canvas: a page anyone with the link can rea
 
 The view link is the one to share. The edit link is the same page with the write token in the fragment, and anyone holding it can push over your canvas, so it stays with you. The embed is the hero diagram as an SVG, for a README or a wiki.
 
-`pull` fetches the document back, by the view link or the bare id, into `.pr-lens/graph.json` unless `-o` says otherwise. A push carries the revision it last saw, and one that has been overtaken is refused rather than applied: pull, then push again.
+`pull` fetches the document back, by the view link or the bare id, into `.pr-lens/graph.json` unless `-o` says otherwise, and records the revision. Pull the edit link, the one ending in `#w=…`, and its token is recorded too: that is how a fresh checkout, or one that lost `.pr-lens/canvas.json`, gets the canvas back. A push carries the revision it last saw, and one that has been overtaken is refused rather than applied: pull, then push again.
 
 `rotate` mints a new write token and retires the old one, which is the whole answer to an edit link that got out. The new token is written to the registry before the app hears of it, so a connection that drops mid-way is finished by the next command rather than lost. The token lives in `.pr-lens/canvas.json`, keyed by canvas id, and git ignores it. Lose that file and the canvas is still readable by everyone; pushing to it again needs the token, which the edit link still carries.
 

@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { access, link, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { access, link, lstat, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { assertNever } from "@coldtea/pr-lens-schema";
@@ -29,7 +29,8 @@ export const mintWriteToken = (): string => randomBytes(16).toString("base64url"
 const Entry = z.object({
   name: z.string(),
   source: z.string(),
-  writeToken: z.string(),
+  /** Absent for a canvas pulled by its view link: readable, not writable, from here. */
+  writeToken: z.string().optional(),
   /**
    * A rotation in flight: minted here and sent to the app, not yet confirmed
    * as the one on record. Kept so a lost answer is finished, not lost.
@@ -139,10 +140,17 @@ const repositoryStanding = async (cwd: string): Promise<RepositoryStanding> => {
   }
 };
 
+/** The entry itself, not what it points at: a dangling `.git` link is still a checkout. */
+const gitEntryAt = (directory: string): Promise<boolean> =>
+  lstat(join(directory, ".git")).then(
+    () => true,
+    () => false,
+  );
+
 const hasGitAbove = async (start: string): Promise<boolean> => {
   let directory = resolve(start);
   for (;;) {
-    if (await exists(join(directory, ".git"))) return true;
+    if (await gitEntryAt(directory)) return true;
     const parent = dirname(directory);
     if (parent === directory) return false;
     directory = parent;
@@ -180,8 +188,17 @@ const holderOf = (text: string): Holder | undefined => {
     : undefined;
 };
 
-const readHolder = async (path: string): Promise<Holder | undefined> =>
-  readFile(path, "utf8").then(holderOf, () => undefined);
+/** What is at the lock path: nothing, a lock with a holder, or a lock nobody finished. */
+type LockState = { type: "absent" } | { type: "held"; holder: Holder } | { type: "unfinished" };
+
+const readLock = (path: string): Promise<LockState> =>
+  readFile(path, "utf8").then(
+    (text) => {
+      const holder = holderOf(text);
+      return holder === undefined ? { type: "unfinished" } : { type: "held", holder };
+    },
+    () => ({ type: "absent" }),
+  );
 
 /** Whether a process is still running here. A signal of 0 is only a question. */
 const alive = (pid: number): boolean => {
@@ -220,20 +237,26 @@ const takeLock = async (mine: Holder): Promise<boolean> => {
  * worth a stale lock, which a person removes in a second once told which
  * process left it.
  */
-const inUse = async (): Promise<PrLensCliError> => {
-  const holder = await readHolder(LOCK_PATH);
-  const who =
-    holder === undefined
-      ? "a command that did not finish taking it"
-      : alive(holder.pid)
-        ? `pid ${holder.pid}, which is still running`
-        : `pid ${holder.pid}, which is no longer running`;
+const inUse = (lock: LockState): PrLensCliError => {
+  const who = (() => {
+    switch (lock.type) {
+      case "absent":
+        return "commands taking turns faster than this one could get one";
+      case "unfinished":
+        return "a command that did not finish taking it";
+      case "held":
+        return alive(lock.holder.pid)
+          ? `pid ${lock.holder.pid}, which is still running`
+          : `pid ${lock.holder.pid}, which is no longer running`;
+      default:
+        return assertNever(lock, "Unhandled lock state");
+    }
+  })();
+  const running = lock.type === "absent" || (lock.type === "held" && alive(lock.holder.pid));
   return new PrLensCliError(
     "UNREADABLE_FILE",
     `${REGISTRY_PATH} is locked by ${who}`,
-    holder !== undefined && alive(holder.pid)
-      ? "wait for it to finish, then try again"
-      : `remove ${LOCK_PATH} and try again; nothing is running under it`,
+    running ? "wait for it to finish, then try again" : `remove ${LOCK_PATH} and try again; nothing is running under it`,
   );
 };
 
@@ -259,12 +282,23 @@ export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> =>
       }
     }
 
-    const holder = await readHolder(LOCK_PATH);
-    if (holder === undefined || !alive(holder.pid)) break;
-    await sleep(LOCK_WAIT_MS);
+    const lock = await readLock(LOCK_PATH);
+    switch (lock.type) {
+      case "absent":
+        // Released between the failed link and the look: try again at once.
+        continue;
+      case "unfinished":
+        throw inUse(lock);
+      case "held":
+        if (!alive(lock.holder.pid)) throw inUse(lock);
+        await sleep(LOCK_WAIT_MS);
+        continue;
+      default:
+        return assertNever(lock, "Unhandled lock state");
+    }
   }
 
-  throw await inUse();
+  throw inUse(await readLock(LOCK_PATH));
 };
 
 /** One change to the registry, read and written under the lock. */

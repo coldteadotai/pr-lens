@@ -12,6 +12,9 @@ import {
   REGISTRY_PATH,
   sourceKey,
   updateRegistry,
+  withRegistryLock,
+  writeRegistry,
+  type CanvasEntry,
   type Registered,
 } from "../canvas/registry.js";
 import { readGraphDoc } from "../document.js";
@@ -62,9 +65,18 @@ const readApi = (value: unknown, env: Record<string, string | undefined>): strin
   return api.replace(/\/+$/, "");
 };
 
-/** A bare id, or the view link a page shows: {api}/c/{id}, fragment and all. */
-const readCanvasRef = (value: string): { id: string; origin: string | undefined } => {
-  if (isCanvasId(value)) return { id: value, origin: undefined };
+type CanvasRef = { id: string; origin: string | undefined; writeToken: string | undefined };
+
+/** What a token in a fragment may be spelled with; anything else is not one. */
+const TOKEN_SHAPE = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * A bare id, or a link a page shows: {app}/c/{id}. An edit link carries the
+ * write token in its fragment, and pulling one is how a checkout that never
+ * pushed the canvas comes to hold its pen.
+ */
+const readCanvasRef = (value: string): CanvasRef => {
+  if (isCanvasId(value)) return { id: value, origin: undefined, writeToken: undefined };
 
   const url = (() => {
     try {
@@ -78,7 +90,20 @@ const readCanvasRef = (value: string): { id: string; origin: string | undefined 
   const id = last?.replace(/\.svg$/, "");
   if (c !== "c" || id === undefined || deeper.length > 0 || !isCanvasId(id))
     throw usageError(`${value} is not a canvas URL`, "expected {app}/c/{id}");
-  return { id, origin: url.origin };
+
+  const fragment = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const writeToken = fragment.get("w") ?? undefined;
+  return { id, origin: url.origin, writeToken: writeToken !== undefined && TOKEN_SHAPE.test(writeToken) ? writeToken : undefined };
+};
+
+/** The pen for a canvas, or the way to get one. */
+const requireWriteToken = ({ id, entry }: Registered): string => {
+  if (entry.writeToken !== undefined) return entry.writeToken;
+  throw new PrLensCliError(
+    "CANVAS_UNREGISTERED",
+    `this checkout can read ${id} but holds no write token for it`,
+    "pull its edit link, the one with #w= at the end, and the token comes with it",
+  );
 };
 
 const countDiagrams = (count: number): string => `${count} ${count === 1 ? "diagram" : "diagrams"}`;
@@ -102,7 +127,7 @@ const settleRotation = async (
   nextToken: string,
   terminal: Terminal,
 ): Promise<{ registered: Registered; editUrl: string }> => {
-  const rotated = await rotateCanvas(api, id, entry.writeToken, nextToken).catch((error: unknown) => {
+  const rotated = await rotateCanvas(api, id, requireWriteToken({ id, entry }), nextToken).catch((error: unknown) => {
     if (error instanceof PrLensCliError) throw unfinishedRotation(error);
     throw error;
   });
@@ -143,29 +168,34 @@ const push = async (
   const ref = readString(values.canvas, "canvas");
   const known = ref === undefined ? findBySource(registry, source) : findCanvas(registry, ref);
 
-  const registered: Registered = await (async () => {
-    if (known !== undefined) return known;
+  const registered: Registered =
+    known ??
+    // Minted and recorded under one lock: a minted canvas whose token cannot
+    // be written down is a canvas lost, so the lock comes first, and a second
+    // push of the same file racing this one finds the entry instead of
+    // minting its own.
+    (await withRegistryLock(async () => {
+      const current = await readRegistry();
+      const meanwhile = ref === undefined ? findBySource(current, source) : undefined;
+      if (meanwhile !== undefined) return meanwhile;
 
-    const minted = await mintCanvas(api);
-    const entry = {
-      name: readString(values.name, "name") ?? document.title,
-      source: sourceKey(source),
-      writeToken: minted.writeToken,
-      rev: minted.rev,
-    };
-    // Recorded before the first push, so a push that fails can be tried again
-    // against the same canvas instead of minting another.
-    await updateRegistry((current) => {
+      const minted = await mintCanvas(api);
+      const entry: CanvasEntry = {
+        name: readString(values.name, "name") ?? document.title,
+        source: sourceKey(source),
+        writeToken: minted.writeToken,
+        rev: minted.rev,
+      };
       current.canvases[minted.id] = entry;
-    }, terminal);
-    return { id: minted.id, entry };
-  })();
+      await writeRegistry(current, terminal);
+      return { id: minted.id, entry };
+    }));
 
   const pending = registered.entry.nextWriteToken;
   const target =
     pending === undefined ? registered : (await settleRotation(api, registered, pending, terminal)).registered;
 
-  const pushed = await pushCanvas(api, target.id, target.entry.writeToken, target.entry.rev, document);
+  const pushed = await pushCanvas(api, target.id, requireWriteToken(target), target.entry.rev, document);
 
   await updateRegistry((current) => {
     current.canvases[target.id] = { ...(current.canvases[target.id] ?? target.entry), source: sourceKey(source), rev: pushed.rev };
@@ -193,10 +223,10 @@ const pull = async (
   const ref = readString(values.canvas, "canvas");
   const [positional] = positionals;
 
-  const { id, origin } =
+  const { id, origin, writeToken } =
     positional !== undefined
       ? readCanvasRef(positional)
-      : { id: (ref === undefined ? onlyCanvas(registry) : findCanvas(registry, ref)).id, origin: undefined };
+      : { ...(ref === undefined ? onlyCanvas(registry) : findCanvas(registry, ref)), origin: undefined, writeToken: undefined };
 
   // A pasted link says where it lives; --api still wins when both are given.
   const explicit = readString(values.api, "api");
@@ -206,14 +236,21 @@ const pull = async (
   const fetched = await fetchCanvas(api, id);
   await writeJsonFile(out, fetched.document);
 
-  if (registry.canvases[id] !== undefined) {
-    await updateRegistry((current) => {
-      const entry = current.canvases[id];
-      if (entry !== undefined) current.canvases[id] = { ...entry, rev: fetched.rev };
-    }, terminal);
-  }
+  // Every pull records the revision, and an edit link records its token: a
+  // checkout that lost canvas.json, or never had it, gets its pen back here.
+  await updateRegistry((current) => {
+    const entry = current.canvases[id];
+    current.canvases[id] = {
+      name: entry?.name ?? fetched.document.title,
+      source: entry?.source ?? sourceKey(out),
+      ...(entry?.nextWriteToken === undefined ? {} : { nextWriteToken: entry.nextWriteToken }),
+      ...(writeToken ?? entry?.writeToken) === undefined ? {} : { writeToken: writeToken ?? entry?.writeToken },
+      rev: fetched.rev,
+    };
+  }, terminal);
 
   terminal.out(`✓ ${out} — rev ${fetched.rev} of ${fetched.viewUrl}`);
+  if (writeToken !== undefined) terminal.out(`  the edit link's token is now in ${REGISTRY_PATH}`);
 };
 
 const rotate = async (
