@@ -65,6 +65,7 @@ const Refusal = z.discriminatedUnion("code", [
     message: z.string(),
     issues: z.array(z.object({ code: z.string(), path: z.string(), message: z.string() })),
   }),
+  z.object({ code: z.literal("CANNOT_DRAW"), message: z.string() }),
   z.object({ code: z.literal("REVISION_MOVED"), message: z.string(), rev: z.number().int() }),
   z.object({ code: z.literal("RATE_LIMITED"), message: z.string(), retryAt: z.string() }),
   z.object({ code: z.literal("TOO_LARGE"), message: z.string() }),
@@ -126,6 +127,10 @@ const refusal = (api: string, request: Request, status: number, body: unknown): 
         error.message,
         error.issues.map((issue) => (issue.path === "" ? issue.message : `${issue.path}: ${issue.message}`)).join("\n"),
       );
+    case "CANNOT_DRAW":
+      // The document passed the contract and the renderer still had nothing to
+      // draw; the app's own words say why, and there is no issue list to add.
+      return new PrLensCliError("CANVAS_REJECTED", error.message);
     case "RATE_LIMITED":
       return new PrLensCliError(
         "CANVAS_RATE_LIMITED",

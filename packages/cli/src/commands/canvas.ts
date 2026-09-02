@@ -13,7 +13,7 @@ import {
   type Registered,
 } from "../canvas/registry.js";
 import { readGraphDoc } from "../document.js";
-import { usageError } from "../errors.js";
+import { PrLensCliError, usageError } from "../errors.js";
 import { writeJsonFile } from "../io.js";
 import type { Terminal } from "../terminal.js";
 import { WORKSPACE_DIR } from "../workspace.js";
@@ -187,13 +187,24 @@ const rotate = async (
 
   const rotated = await rotateCanvas(api, id, entry.writeToken);
 
-  registry.canvases[id] = { ...entry, writeToken: rotated.writeToken };
-  await writeRegistry(registry, terminal);
-
+  // The old token is already retired, so the new one is the only way back
+  // in. Whatever happens to the registry, the link is shown.
   const view = new URL(rotated.editUrl);
   view.hash = "";
   terminal.out(`✓ new edit link for ${view.href}: ${rotated.editUrl}`);
   terminal.out("  the old edit link no longer works");
+
+  registry.canvases[id] = { ...entry, writeToken: rotated.writeToken };
+  try {
+    await writeRegistry(registry, terminal);
+  } catch (error) {
+    if (!(error instanceof PrLensCliError)) throw error;
+    throw new PrLensCliError(
+      error.code,
+      `${error.message}; the new edit link above is now the only copy of the token`,
+      error.details,
+    );
+  }
 };
 
 export const canvasCommand = async (

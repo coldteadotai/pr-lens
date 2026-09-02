@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { PrLensCliError } from "./errors.js";
 
@@ -36,3 +36,21 @@ export const writeTextFile = async (path: string, contents: string): Promise<str
 /** One trailing newline, so written documents behave in a diff and in a shell. */
 export const writeJsonFile = (path: string, value: unknown): Promise<string> =>
   writeTextFile(path, `${JSON.stringify(value, null, 2)}\n`);
+
+/**
+ * A file that holds a secret and nothing else can rebuild: readable by its
+ * owner alone, and replaced in one step so an interrupted write leaves the
+ * old copy rather than half of a new one.
+ */
+export const writeSecretJsonFile = async (path: string, value: unknown): Promise<string> => {
+  const absolute = resolve(path);
+  const staging = `${absolute}.${process.pid}.tmp`;
+  try {
+    await mkdir(dirname(absolute), { recursive: true });
+    await writeFile(staging, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+    await rename(staging, absolute);
+  } catch (error) {
+    throw new PrLensCliError("UNREADABLE_FILE", `cannot write ${path}`, describe(error));
+  }
+  return absolute;
+};

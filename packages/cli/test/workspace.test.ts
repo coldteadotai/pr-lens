@@ -231,7 +231,7 @@ test("render leaves its previews in the workspace, ignored and explained", async
     "assets",
   );
   expect(await readFile(join(directory, WORKSPACE_DIR, "README.md"), "utf8")).toContain(
-    "None of it belongs in a commit",
+    "None of that belongs in a commit",
   );
   expect(await ignoresPreviews(directory, join(directory, WORKSPACE_DIR))).toBe(true);
 });

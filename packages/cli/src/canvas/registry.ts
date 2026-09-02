@@ -2,7 +2,7 @@ import { access } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { z } from "zod";
 import { PrLensCliError, usageError } from "../errors.js";
-import { readJsonFile, writeJsonFile } from "../io.js";
+import { readJsonFile, writeSecretJsonFile } from "../io.js";
 import type { Terminal } from "../terminal.js";
 import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
 
@@ -52,7 +52,7 @@ export const readRegistry = async (): Promise<CanvasRegistry> => {
 
 export const writeRegistry = async (registry: CanvasRegistry, terminal: Terminal): Promise<void> => {
   await prepareWorkspace(WORKSPACE_DIR, terminal);
-  await writeJsonFile(REGISTRY_PATH, registry);
+  await writeSecretJsonFile(REGISTRY_PATH, registry);
 };
 
 /** The path as the registry records it, so the same file matches however it was spelled. */

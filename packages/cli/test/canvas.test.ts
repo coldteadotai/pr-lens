@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -93,6 +93,8 @@ const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Pro
       return refuse(422, "INVALID_DOCUMENT", "The document does not match the PR Lens contract", {
         issues: [{ code: "INVALID_DOCUMENT", path: "lanes", message: "expected array, received undefined" }],
       });
+    if ("title" in body && body.title === "Nothing to draw")
+      return refuse(422, "CANNOT_DRAW", "The document has nothing the canvas can draw");
     canvas.rev += 1;
     canvas.document = body;
     return json(200, { id, rev: canvas.rev, ...links(id, canvas.token), tiles: TILES });
@@ -295,4 +297,24 @@ test("a subcommand that is not one is a misuse", async () => {
   const reported = err.join("\n");
   expect(reported).toContain('unknown canvas subcommand "publish"');
   expect(reported).toContain("pr-lens canvas <push | pull | rotate>");
+});
+
+test("the registry is the owner's alone, and replaced whole", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+
+  const mode = (await stat(REGISTRY)).mode & 0o777;
+  expect(mode.toString(8)).toBe("600");
+  await expect(stat(`${REGISTRY}.${process.pid}.tmp`)).rejects.toThrow();
+});
+
+test("a document the renderer refuses is a rejection with the app's own words", async () => {
+  const empty = JSON.parse(await readFile(GOLDEN, "utf8"));
+  empty.title = "Nothing to draw";
+  await writeFile("empty.json", JSON.stringify(empty), "utf8");
+
+  expect(await invoke("canvas", "push", "empty.json", "--api", API)).toBe(1);
+
+  const reported = err.join("\n");
+  expect(reported).toContain("[CANVAS_REJECTED]");
+  expect(reported).toContain("The document has nothing the canvas can draw");
 });
