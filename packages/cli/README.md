@@ -124,6 +124,8 @@ The view link is the one to share. The edit link is the same page with the write
 
 `rotate` mints a new write token and retires the old one, which is the whole answer to an edit link that got out. The new token is written to the registry before the app hears of it, so a connection that drops mid-way is finished by the next command rather than lost. The token lives in `.pr-lens/canvas.json`, keyed by canvas id, and git ignores it. Lose that file and the canvas is still readable by everyone; pushing to it again needs the token, which the edit link still carries.
 
+Registry writes take a lock, `.pr-lens/canvas.json.lock`, and never take one away from another command; a lock left by a command that died is reported with its process id and removed by hand.
+
 The registry is written only where git will never take it: a checkout that tracks `.pr-lens/canvas.json`, or un-ignores `.pr-lens/`, gets a `CANVAS_REGISTRY_EXPOSED` refusal instead of a token on disk.
 
 `--api` points at another PR Lens app, or set `PR_LENS_API_URL`.

@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { access, mkdir, open, readFile, rename, unlink } from "node:fs/promises";
+import { access, link, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { assertNever } from "@coldtea/pr-lens-schema";
@@ -121,12 +121,31 @@ const repositoryStanding = async (cwd: string): Promise<RepositoryStanding> => {
     await git(cwd, ["rev-parse", "--is-inside-work-tree"]);
     return "inside";
   } catch (error) {
-    if (error instanceof PrLensCliError && error.details?.includes("not a git repository")) return "outside";
+    // Git says "not a repository" about a broken checkout too, one with its
+    // HEAD missing for instance, and that checkout is repaired one day with
+    // whatever was written into it meanwhile. Only a tree with no .git
+    // anywhere above it is outside a repository.
+    const outside =
+      error instanceof PrLensCliError &&
+      error.details?.includes("not a git repository") === true &&
+      !(await hasGitAbove(cwd));
+    if (outside) return "outside";
+
     throw new PrLensCliError(
       "CANVAS_REGISTRY_EXPOSED",
       `git could not say whether ${REGISTRY_PATH} would be committed`,
       error instanceof PrLensCliError ? error.details : undefined,
     );
+  }
+};
+
+const hasGitAbove = async (start: string): Promise<boolean> => {
+  let directory = resolve(start);
+  for (;;) {
+    if (await exists(join(directory, ".git"))) return true;
+    const parent = dirname(directory);
+    if (parent === directory) return false;
+    directory = parent;
   }
 };
 
@@ -175,63 +194,54 @@ const alive = (pid: number): boolean => {
 };
 
 /**
- * Takes the lock, or nothing. The file is created exclusively and signed with
- * this holder, so nothing later removes it by path alone.
+ * Takes the lock, or nothing. The holder is written to a private file first
+ * and that file is linked into place, so the lock either exists with its
+ * holder inside or does not exist: there is no moment at which it is empty.
  */
-const takeLock = async (holder: Holder): Promise<boolean> => {
-  const handle = await open(LOCK_PATH, "wx").catch((error: unknown) => {
-    if (isAlreadyThere(error)) return undefined;
-    throw error;
-  });
-  if (handle === undefined) return false;
+const takeLock = async (mine: Holder): Promise<boolean> => {
+  const draft = `${LOCK_PATH}.${mine.nonce}`;
+  await writeFile(draft, `${mine.pid}:${mine.nonce}`, { encoding: "utf8", mode: 0o600 });
   try {
-    await handle.writeFile(`${holder.pid}:${holder.nonce}`, "utf8");
-  } finally {
-    await handle.close();
-  }
-  return true;
-};
-
-/**
- * Moves the lock aside in one step and looks at what was moved. A rename is
- * the one operation that both checks the path is there and takes it, so no
- * one else can slip a fresh lock in between; whatever was taken by mistake
- * is put straight back.
- */
-const takeAside = async (mine: Holder, expected: (holder: Holder | undefined) => boolean): Promise<boolean> => {
-  const aside = `${LOCK_PATH}.aside.${mine.nonce}`;
-  const moved = await rename(LOCK_PATH, aside).then(
-    () => true,
-    () => false,
-  );
-  if (!moved) return false;
-
-  if (expected(await readHolder(aside))) {
-    await unlink(aside).catch(() => undefined);
+    await link(draft, LOCK_PATH);
     return true;
+  } catch (error) {
+    if (isAlreadyThere(error)) return false;
+    throw error;
+  } finally {
+    await unlink(draft).catch(() => undefined);
   }
-  await rename(aside, LOCK_PATH).catch(() => undefined);
-  return false;
 };
 
-const releaseLock = (mine: Holder): Promise<boolean> =>
-  takeAside(mine, (holder) => holder?.nonce === mine.nonce);
-
 /**
- * Removes a lock whose holder is no longer running. Time is not evidence: a
- * command asleep with the machine is still a command, and it wakes up to
- * finish what it started. Only a process that is gone has given the lock up.
+ * No lock is ever taken away from another command by this code. Reclaiming
+ * a lock means deciding its holder is gone and then removing it, and those
+ * are two moments: another command can take the same path in between, and
+ * the removal then lands on a live lock. Nothing that risks two writers is
+ * worth a stale lock, which a person removes in a second once told which
+ * process left it.
  */
-const reclaimDeadLock = async (mine: Holder): Promise<void> => {
+const inUse = async (): Promise<PrLensCliError> => {
   const holder = await readHolder(LOCK_PATH);
-  if (holder === undefined || alive(holder.pid)) return;
-  await takeAside(mine, (found) => found?.pid === holder.pid && found.nonce === holder.nonce);
+  const who =
+    holder === undefined
+      ? "a command that did not finish taking it"
+      : alive(holder.pid)
+        ? `pid ${holder.pid}, which is still running`
+        : `pid ${holder.pid}, which is no longer running`;
+  return new PrLensCliError(
+    "UNREADABLE_FILE",
+    `${REGISTRY_PATH} is locked by ${who}`,
+    holder !== undefined && alive(holder.pid)
+      ? "wait for it to finish, then try again"
+      : `remove ${LOCK_PATH} and try again; nothing is running under it`,
+  );
 };
 
 /**
  * The registry is read, changed and written back as a whole, and two commands
  * doing that at once would each keep only their own change. One holds the
- * lock at a time; the other waits its turn, as long as the holder is alive.
+ * lock at a time; the other waits its turn, and gives up with the holder's
+ * name when the turn does not come.
  */
 export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> => {
   await mkdir(dirname(LOCK_PATH), { recursive: true });
@@ -242,19 +252,19 @@ export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> =>
       try {
         return await work();
       } finally {
-        await releaseLock(mine);
+        // Only this command's own lock is removed. The path cannot hold
+        // anything else while this command holds it, since nothing here
+        // takes a lock away.
+        await unlink(LOCK_PATH).catch(() => undefined);
       }
     }
-    await reclaimDeadLock(mine);
+
+    const holder = await readHolder(LOCK_PATH);
+    if (holder === undefined || !alive(holder.pid)) break;
     await sleep(LOCK_WAIT_MS);
   }
 
-  const holder = await readHolder(LOCK_PATH);
-  throw new PrLensCliError(
-    "UNREADABLE_FILE",
-    `${REGISTRY_PATH} is in use by another pr-lens command${holder === undefined ? "" : ` (pid ${holder.pid})`}`,
-    `wait for it to finish; delete ${LOCK_PATH} only if that process is not running`,
-  );
+  throw await inUse();
 };
 
 /** One change to the registry, read and written under the lock. */

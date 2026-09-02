@@ -301,13 +301,27 @@ test("two commands changing the registry at once both keep their canvas", async 
 /** A pid nothing is running under: the largest Linux allows, which macOS never reaches. */
 const DEAD_PID = 4194304;
 
-test("a lock left behind by a command that is gone is taken over", async () => {
+test("a lock left behind by a command that is gone is reported, with the way out, never taken over", async () => {
   const lock = `${REGISTRY}.lock`;
   await mkdir(".pr-lens", { recursive: true });
   await writeFile(lock, `${DEAD_PID}:deadbeef`, "utf8");
 
-  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
-  await expect(stat(lock)).rejects.toThrow();
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  const reported = err.join("\n");
+  expect(reported).toContain(`locked by pid ${DEAD_PID}, which is no longer running`);
+  expect(reported).toContain(`remove ${lock}`);
+  expect(await readFile(lock, "utf8")).toBe(`${DEAD_PID}:deadbeef`);
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
+});
+
+test("a lock with nobody written in it is reported the same way", async () => {
+  const lock = `${REGISTRY}.lock`;
+  await mkdir(".pr-lens", { recursive: true });
+  await writeFile(lock, "", "utf8");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("did not finish taking it");
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
 });
 
 test("a lock held by a command that is still running is waited for, however old, not removed", async () => {
@@ -325,6 +339,16 @@ test("a lock held by a command that is still running is waited for, however old,
 
   expect(await pushing).toBe(0);
   expect(Object.keys(await registry())).toHaveLength(1);
+});
+
+test("a checkout git cannot read is not outside a repository", async () => {
+  await sh("git", ["init", "--quiet"], { cwd: process.cwd() });
+  await unlink(".git/HEAD");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
 });
 
 test("git failing for any reason but absence refuses to write the registry", async () => {
