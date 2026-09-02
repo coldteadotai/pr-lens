@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { access, mkdir, open, readFile, rename, stat, unlink } from "node:fs/promises";
+import { access, mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { assertNever } from "@coldtea/pr-lens-schema";
 import { z } from "zod";
 import { PrLensCliError, usageError } from "../errors.js";
 import { git } from "../git.js";
@@ -72,11 +73,15 @@ export const readRegistry = async (): Promise<CanvasRegistry> => {
  */
 const assertRegistryPrivate = async (): Promise<void> => {
   const cwd = process.cwd();
-  const inRepository = await git(cwd, ["rev-parse", "--is-inside-work-tree"]).then(
-    () => true,
-    () => false,
-  );
-  if (!inRepository) return;
+  const standing = await repositoryStanding(cwd);
+  switch (standing) {
+    case "outside":
+      return;
+    case "inside":
+      break;
+    default:
+      return assertNever(standing, "Unhandled repository standing");
+  }
 
   const tracked = (await git(cwd, ["ls-files", "--", REGISTRY_PATH])).trim() !== "";
   if (tracked)
@@ -103,6 +108,28 @@ const assertRegistryPrivate = async (): Promise<void> => {
   }
 };
 
+type RepositoryStanding = "inside" | "outside";
+
+/**
+ * Whether this directory is in a git work tree. Only git's own "not a
+ * repository" is taken as being outside one; git failing for any other
+ * reason (an owner it distrusts, a broken config, a corrupt index) leaves the
+ * question open, and an open question is not permission to write a secret.
+ */
+const repositoryStanding = async (cwd: string): Promise<RepositoryStanding> => {
+  try {
+    await git(cwd, ["rev-parse", "--is-inside-work-tree"]);
+    return "inside";
+  } catch (error) {
+    if (error instanceof PrLensCliError && error.details?.includes("not a git repository")) return "outside";
+    throw new PrLensCliError(
+      "CANVAS_REGISTRY_EXPOSED",
+      `git could not say whether ${REGISTRY_PATH} would be committed`,
+      error instanceof PrLensCliError ? error.details : undefined,
+    );
+  }
+};
+
 /**
  * The workspace, ready to hold a token: on disk, ignored, and not tracked.
  * Asked before a canvas is minted, so a refusal costs nothing on the app.
@@ -117,83 +144,116 @@ export const writeRegistry = async (registry: CanvasRegistry, terminal: Terminal
   await writeSecretJsonFile(REGISTRY_PATH, registry);
 };
 
-/** A lock left by a command that died; anything this old is not a command. */
-const LOCK_STALE_MS = 30_000;
 const LOCK_WAIT_MS = 50;
 const LOCK_ATTEMPTS = 100;
 
 const isAlreadyThere = (error: unknown): boolean =>
   typeof error === "object" && error !== null && "code" in error && error.code === "EEXIST";
 
+/** Who holds a lock: the process, and a nonce so two lives of one pid differ. */
+type Holder = { pid: number; nonce: string };
+
+const holderOf = (text: string): Holder | undefined => {
+  const [pid, nonce] = text.trim().split(":");
+  const number = Number(pid);
+  return Number.isInteger(number) && number > 0 && nonce !== undefined && nonce !== ""
+    ? { pid: number, nonce }
+    : undefined;
+};
+
+const readHolder = async (path: string): Promise<Holder | undefined> =>
+  readFile(path, "utf8").then(holderOf, () => undefined);
+
+/** Whether a process is still running here. A signal of 0 is only a question. */
+const alive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return typeof error === "object" && error !== null && "code" in error && error.code === "EPERM";
+  }
+};
+
 /**
  * Takes the lock, or nothing. The file is created exclusively and signed with
- * this holder's nonce, so releasing it later removes this holder's lock and
- * never one that was taken over in the meantime.
+ * this holder, so nothing later removes it by path alone.
  */
-const takeLock = async (nonce: string): Promise<boolean> => {
+const takeLock = async (holder: Holder): Promise<boolean> => {
   const handle = await open(LOCK_PATH, "wx").catch((error: unknown) => {
     if (isAlreadyThere(error)) return undefined;
     throw error;
   });
   if (handle === undefined) return false;
   try {
-    await handle.writeFile(nonce, "utf8");
+    await handle.writeFile(`${holder.pid}:${holder.nonce}`, "utf8");
   } finally {
     await handle.close();
   }
   return true;
 };
 
-const releaseLock = async (nonce: string): Promise<void> => {
-  const holder = await readFile(LOCK_PATH, "utf8").catch(() => undefined);
-  if (holder === nonce) await unlink(LOCK_PATH).catch(() => undefined);
-};
-
 /**
- * Removes a lock nobody is holding any more. The lock is moved aside first,
- * and only one of several waiters can move the same file, so a lock taken
- * afresh by another waiter in the meantime is never the one removed.
+ * Moves the lock aside in one step and looks at what was moved. A rename is
+ * the one operation that both checks the path is there and takes it, so no
+ * one else can slip a fresh lock in between; whatever was taken by mistake
+ * is put straight back.
  */
-const reclaimStaleLock = async (nonce: string): Promise<void> => {
-  const age = await stat(LOCK_PATH).then(
-    (info) => Date.now() - info.mtimeMs,
-    () => 0,
-  );
-  if (age <= LOCK_STALE_MS) return;
-
-  const aside = `${LOCK_PATH}.stale.${nonce}`;
+const takeAside = async (mine: Holder, expected: (holder: Holder | undefined) => boolean): Promise<boolean> => {
+  const aside = `${LOCK_PATH}.aside.${mine.nonce}`;
   const moved = await rename(LOCK_PATH, aside).then(
     () => true,
     () => false,
   );
-  if (moved) await unlink(aside).catch(() => undefined);
+  if (!moved) return false;
+
+  if (expected(await readHolder(aside))) {
+    await unlink(aside).catch(() => undefined);
+    return true;
+  }
+  await rename(aside, LOCK_PATH).catch(() => undefined);
+  return false;
+};
+
+const releaseLock = (mine: Holder): Promise<boolean> =>
+  takeAside(mine, (holder) => holder?.nonce === mine.nonce);
+
+/**
+ * Removes a lock whose holder is no longer running. Time is not evidence: a
+ * command asleep with the machine is still a command, and it wakes up to
+ * finish what it started. Only a process that is gone has given the lock up.
+ */
+const reclaimDeadLock = async (mine: Holder): Promise<void> => {
+  const holder = await readHolder(LOCK_PATH);
+  if (holder === undefined || alive(holder.pid)) return;
+  await takeAside(mine, (found) => found?.pid === holder.pid && found.nonce === holder.nonce);
 };
 
 /**
  * The registry is read, changed and written back as a whole, and two commands
  * doing that at once would each keep only their own change. One holds the
- * lock at a time; the other waits its turn.
+ * lock at a time; the other waits its turn, as long as the holder is alive.
  */
 export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> => {
   await mkdir(dirname(LOCK_PATH), { recursive: true });
-  const nonce = `${process.pid}.${randomBytes(8).toString("hex")}`;
+  const mine: Holder = { pid: process.pid, nonce: randomBytes(8).toString("hex") };
 
   for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt += 1) {
-    if (await takeLock(nonce)) {
+    if (await takeLock(mine)) {
       try {
         return await work();
       } finally {
-        await releaseLock(nonce);
+        await releaseLock(mine);
       }
     }
-    await reclaimStaleLock(nonce);
+    await reclaimDeadLock(mine);
     await sleep(LOCK_WAIT_MS);
   }
 
+  const holder = await readHolder(LOCK_PATH);
   throw new PrLensCliError(
     "UNREADABLE_FILE",
-    `${REGISTRY_PATH} is in use by another pr-lens command`,
-    `wait for it to finish, or delete ${LOCK_PATH} if nothing is running`,
+    `${REGISTRY_PATH} is in use by another pr-lens command${holder === undefined ? "" : ` (pid ${holder.pid})`}`,
+    `wait for it to finish; delete ${LOCK_PATH} only if that process is not running`,
   );
 };
 

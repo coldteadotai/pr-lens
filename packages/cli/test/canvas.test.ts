@@ -298,29 +298,43 @@ test("two commands changing the registry at once both keep their canvas", async 
   expect(Object.values(entries).map((entry) => entry.source).sort()).toEqual(["drawn.graph.json", "other.json"]);
 });
 
-test("a lock left behind by a dead command is taken over, once", async () => {
+/** A pid nothing is running under: the largest Linux allows, which macOS never reaches. */
+const DEAD_PID = 4194304;
+
+test("a lock left behind by a command that is gone is taken over", async () => {
   const lock = `${REGISTRY}.lock`;
   await mkdir(".pr-lens", { recursive: true });
-  await writeFile(lock, "gone.deadbeef", "utf8");
-  const longAgo = new Date(Date.now() - 60_000);
-  await utimes(lock, longAgo, longAgo);
+  await writeFile(lock, `${DEAD_PID}:deadbeef`, "utf8");
 
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
   await expect(stat(lock)).rejects.toThrow();
 });
 
-test("a lock somebody else holds is waited for, not removed", async () => {
+test("a lock held by a command that is still running is waited for, however old, not removed", async () => {
   const lock = `${REGISTRY}.lock`;
   await mkdir(".pr-lens", { recursive: true });
-  await writeFile(lock, "other.cafebabe", "utf8");
+  await writeFile(lock, `${process.pid}:cafebabe`, "utf8");
+  const longAgo = new Date(Date.now() - 600_000);
+  await utimes(lock, longAgo, longAgo);
 
   const pushing = invoke("canvas", "push", "drawn.graph.json", "--api", API);
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  expect((await registry().catch(() => ({})))).toEqual({});
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  expect(await registry().catch(() => ({}))).toEqual({});
+  expect(await readFile(lock, "utf8")).toBe(`${process.pid}:cafebabe`);
   await unlink(lock);
 
   expect(await pushing).toBe(0);
   expect(Object.keys(await registry())).toHaveLength(1);
+});
+
+test("git failing for any reason but absence refuses to write the registry", async () => {
+  await sh("git", ["init", "--quiet"], { cwd: process.cwd() });
+  await writeFile(".git/config", "[core]\n\tthis is not a config\n", "utf8");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
 });
 
 test("the registry is refused a home git would commit", async () => {
