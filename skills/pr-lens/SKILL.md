@@ -20,7 +20,7 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
 3. **Validate, and fix**
 
    ```bash
-   npx @coldtea/pr-lens-cli validate .pr-lens/graph.json
+   npx @coldtea/pr-lens-cli@latest validate .pr-lens/graph.json
    ```
 
    Fix every failure and run it again. Do not render an invalid document; do not "work around" a failure by deleting the element it names.
@@ -28,7 +28,7 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
 4. **Render.**
 
    ```bash
-   npx @coldtea/pr-lens-cli render .pr-lens/graph.json --theme dark
+   npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme dark
    ```
 
    Render dark as the default theme unless explicitly requested. The SVGs, the manifest and `drawn.graph.json` land in `.pr-lens/`, which the CLI adds to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
@@ -36,7 +36,7 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
    If the user asked for a diagram, an explanation or a picture of the architecture and nothing more, put it on a canvas and hand back the link:
 
    ```bash
-   npx @coldtea/pr-lens-cli canvas push
+   npx @coldtea/pr-lens-cli@latest canvas push
    ```
 
    This pushes `.pr-lens/drawn.graph.json` and prints three links. Give the user the view link, `https://prlens.dev/c/{id}`: that is the diagram, full screen, every view on one page, and it opens without a login. The edit link, the one ending in `#w=…`, lets its holder push over the canvas, so leave it out of the reply unless they ask, and never paste it anywhere public. The embed link serves the top view as an SVG for a README.
@@ -70,7 +70,7 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
    When `--attach` is not an option, publish the SVGs somewhere durable and let the CLI compose the comment instead:
 
    ```bash
-   npx @coldtea/pr-lens-cli comment \
+   npx @coldtea/pr-lens-cli@latest comment \
      --graph .pr-lens/drawn.graph.json \
      --manifest .pr-lens/manifest.json \
      --asset-base-url https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<dir>
@@ -78,7 +78,7 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
 
    `--graph` takes `drawn.graph.json`, not the document you wrote, because corrections change what the diagrams show and the CLI refuses a document its manifest does not describe. `--asset-base-url` is where you published the SVGs; leave it out and the markdown points at local paths no reader can fetch. The markdown goes to stdout, with each diagram as a `<picture>` pair; posting it is your business.
 
-If you would rather not author the document yourself, `npx @coldtea/pr-lens-cli analyze --base <ref>` does steps 1 and 2 by asking a provider — Gemini, OpenAI, or any endpoint speaking `/chat/completions` — with a key of your own. That is the only path here that needs one.
+If you would rather not author the document yourself, `npx @coldtea/pr-lens-cli@latest analyze --base <ref>` does steps 1 and 2 by asking a provider — Gemini, OpenAI, or any endpoint speaking `/chat/completions` — with a key of your own. That is the only path here that needs one.
 
 ## The pull request body, when there is one
 
@@ -131,7 +131,7 @@ map:
       lane: functions
 ```
 
-`references/config.md` has the full format and the recipes. Validate it the same way: `npx @coldtea/pr-lens-cli validate .github/pr-lens.yml`.
+`references/config.md` has the full format and the recipes. Validate it the same way: `npx @coldtea/pr-lens-cli@latest validate .github/pr-lens.yml`.
 
 A `match` beginning with `id:` addresses one node exactly; anything else is a path glob matched against a node's file paths. Prefer the glob, because it keeps holding when the next run names the node differently. A lane pin may name a lane the document never declared: the band is created, and takes the id for its label, so give it one a reader would want to see.
 

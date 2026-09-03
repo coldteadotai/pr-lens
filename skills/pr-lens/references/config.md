@@ -84,7 +84,7 @@ lenses: [architecture]
 ## Check it
 
 ```bash
-npx @coldtea/pr-lens-cli validate .github/pr-lens.yml
+npx @coldtea/pr-lens-cli@latest validate .github/pr-lens.yml
 ```
 
 `pr-lens render` reports any correction that changed nothing about the document it drew. That is a config that has drifted out of date, usually because the file a selector named has moved or gone. It is not an error and nothing stops, but it is worth fixing: a correction that matches nothing is a correction nobody is getting.
