@@ -108,7 +108,7 @@ The map is a snapshot, not a source of truth. Nothing reads it back into the pip
 pr-lens canvas push
 ```
 
-Puts the document on prlens.dev as a canvas: a page anyone with the link can read, and an SVG a README can embed. Three verbs.
+Puts the document on prlens.dev as a canvas: a page anyone with the link can read, and an SVG a README can embed.
 
 `push` sends the JSON document, never an SVG; the app draws it. The default is `.pr-lens/drawn.graph.json`, the document `render` drew, so what the page shows is what the diagrams show. The first push of a file mints a canvas and every push after that updates the same one, matched by the path it came from. `--canvas <id|name>` picks a different one and `--name` says what to call a new one; the document's title is the default. It prints three links:
 
@@ -122,11 +122,11 @@ The view link is the one to share. The edit link is the same page with the write
 
 `pull` fetches the document back, by the view link or the bare id, into `.pr-lens/graph.json` unless `-o` says otherwise, and records the revision. Pull the edit link, the one ending in `#w=…`, and its token is recorded too: that is how a fresh checkout, or one that lost `.pr-lens/canvas.json`, gets the canvas back. A push carries the revision it last saw, and one that has been overtaken is refused rather than applied: pull, then push again.
 
-`rotate` mints a new write token and retires the old one, which is the whole answer to an edit link that got out. The new token is written to the registry before the app hears of it, so a connection that drops mid-way is finished by the next command rather than lost. The token lives in `.pr-lens/canvas.json`, keyed by canvas id, and git ignores it. Lose that file and the canvas is still readable by everyone; pushing to it again needs the token, which the edit link still carries.
+`rotate` mints a new write token and retires the old one. Use it when an edit link has leaked. The CLI saves the new token before it sends the request, so if the connection drops, the next command finishes the rotation instead of losing the token. The token lives in `.pr-lens/canvas.json`, keyed by canvas id, and git ignores it. Lose that file and the canvas is still readable by everyone; pushing to it again needs the token, which the edit link still carries.
 
-Registry writes take a lock, `.pr-lens/canvas.json.lock`, and never take one away from another command; a lock left by a command that died is reported with its process id and removed by hand.
+Registry writes take a lock at `.pr-lens/canvas.json.lock`. The CLI never removes another command's lock. If a command dies and leaves one behind, the error names its process id and you remove the file yourself.
 
-The registry is written only where git will never take it: a checkout that tracks `.pr-lens/canvas.json`, or un-ignores `.pr-lens/`, gets a `CANVAS_REGISTRY_EXPOSED` refusal instead of a token on disk.
+The CLI refuses to write the registry where git could commit it. If a checkout tracks `.pr-lens/canvas.json` or un-ignores `.pr-lens/`, the command fails with `CANVAS_REGISTRY_EXPOSED` and writes nothing.
 
 `--api` points at another PR Lens app, or set `PR_LENS_API_URL`.
 

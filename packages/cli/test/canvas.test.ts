@@ -566,7 +566,7 @@ test("a rotation the app has refused for good is dropped, not carried out by a l
   canvases.get(FIRST)!.token = current;
 
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
-  expect(err.join("\n")).toContain("the rotation that was pending has been dropped");
+  expect(err.join("\n")).toContain("the pending rotation was dropped");
   expect((await registry())[FIRST]).not.toHaveProperty("pending");
 
   seen = [];

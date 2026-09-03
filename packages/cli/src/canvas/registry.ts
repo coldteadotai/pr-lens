@@ -25,7 +25,7 @@ export const mintWriteToken = (): string => randomBytes(16).toString("base64url"
 const Entry = z.object({
   name: z.string(),
   source: z.string(),
-  /** Another app's answers, its 404 above all, say nothing about this entry. */
+  /** Another app's 404 says nothing about this entry. */
   api: z.string(),
   /** Absent for a canvas pulled by its view link. */
   writeToken: z.string().optional(),
@@ -98,7 +98,7 @@ const assertRegistryPrivate = async (): Promise<void> => {
 
 type RepositoryStanding = "inside" | "outside";
 
-/** Any git failure but "not a repository" leaves the question open, and an open question is no permission to write a secret. */
+/** Only git's own "not a repository" means outside; any other git failure must not let a secret be written. */
 const repositoryStanding = async (cwd: string): Promise<RepositoryStanding> => {
   try {
     await git(cwd, ["rev-parse", "--is-inside-work-tree"]);
@@ -157,7 +157,7 @@ const reservedRegistryPaths = (): string[] => [resolve(REGISTRY_PATH), resolve(L
 
 const sameFile = (a: Stats, b: Stats): boolean => a.dev === b.dev && a.ino === b.ino;
 
-/** Case-blind and by inode, because spelling is not identity on the usual filesystems. */
+/** Compared case-blind and by inode: macOS ignores case, and a link is the same file. */
 export const isReservedRegistryTarget = async (path: string): Promise<boolean> => {
   const target = resolve(path);
   const reserved = reservedRegistryPaths();
@@ -259,7 +259,7 @@ const inUse = (lock: LockState): PrLensCliError => {
   const who = (() => {
     switch (lock.type) {
       case "absent":
-        return "commands taking turns faster than this one could get one";
+        return "other pr-lens commands, which kept it busy";
       case "unfinished":
         return "a command that did not finish taking it";
       case "held":

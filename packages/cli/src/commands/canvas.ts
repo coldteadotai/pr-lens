@@ -115,7 +115,7 @@ const readCanvasRef = (value: string): CanvasRef => {
   return { id, origin: url.origin, writeToken };
 };
 
-/** Another app's 404 means nothing about this entry, and acting on it would. */
+/** Another app's 404 says nothing about this entry, so it must not change it. */
 const requireSameApi = (api: string, { id, entry }: Registered): void => {
   if (entry.api === api) return;
   throw new PrLensCliError(
@@ -165,8 +165,8 @@ const settleRotation = async (
     if (!(error instanceof PrLensCliError)) throw error;
     if (error.code !== "CANVAS_UNKNOWN") throw unfinishedRotation(error);
 
-    // Conclusive, since a current pending token would have been answered
-    // "rotated". Dropped here, or a token imported later would carry it out.
+    // Final: a pending token that was current would have been answered
+    // "rotated". Drop it now, or a token imported later would carry it out.
     await updateRegistry((registry) => {
       const current = registry.canvases[id];
       if (
@@ -179,7 +179,7 @@ const settleRotation = async (
     }, terminal);
     throw new PrLensCliError(
       error.code,
-      `${error.message}; the rotation that was pending has been dropped`,
+      `${error.message}; the pending rotation was dropped`,
       error.details,
     );
   });
@@ -488,8 +488,8 @@ const rotate = async (
   const { id } =
     ref === undefined ? onlyCanvas(registry) : findCanvas(registry, ref);
 
-  // Written down before the app hears of it, so a lost answer cannot lose
-  // it; chosen under the lock, so two rotations at once finish the same one.
+  // Saved before the request, so a lost answer cannot lose it; chosen under
+  // the lock, so two rotations at once finish the same one.
   let pending: Registered | undefined;
   await updateRegistry((current) => {
     const entry = current.canvases[id];

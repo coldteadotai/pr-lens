@@ -110,7 +110,7 @@ const refusal = (api: string, request: Request, status: number, body: unknown): 
         : new PrLensCliError(
             "CANVAS_UNKNOWN",
             `no canvas ${request.canvas} at ${hostOf(api)}, or the token is wrong`,
-            "a rotated token has to be pulled into .pr-lens/canvas.json by hand",
+            "if the token was rotated elsewhere, pull the current edit link to record it",
           );
     case "REVISION_MOVED":
       return new PrLensCliError(
@@ -125,7 +125,7 @@ const refusal = (api: string, request: Request, status: number, body: unknown): 
         error.issues.map((issue) => (issue.path === "" ? issue.message : `${issue.path}: ${issue.message}`)).join("\n"),
       );
     case "CANNOT_DRAW":
-      // Passed the contract, nothing to draw: the app's message is the whole story.
+      // Passed the contract but nothing to draw; the app's message says why.
       return new PrLensCliError("CANVAS_REJECTED", error.message);
     case "RATE_LIMITED":
       return new PrLensCliError(
@@ -169,7 +169,7 @@ const call = async <T>(api: string, request: Request, schema: z.ZodType<T>): Pro
 
   const parsed = schema.safeParse(body);
   if (!parsed.success)
-    throw unavailable(api, response.status, "the answer did not have the shape the canvas API documents");
+    throw unavailable(api, response.status, "the answer was not in the shape the canvas API documents");
   return parsed.data;
 };
 
