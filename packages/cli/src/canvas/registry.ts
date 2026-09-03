@@ -1,15 +1,27 @@
-import { randomBytes } from "node:crypto";
-import type { Stats } from "node:fs";
-import { access, link, lstat, mkdir, readFile, realpath, stat, unlink, writeFile } from "node:fs/promises";
-import { basename, dirname, join, relative, resolve } from "node:path";
-import { setTimeout as sleep } from "node:timers/promises";
-import { assertNever } from "@coldtea/pr-lens-schema";
+import {
+  access,
+  link,
+  lstat,
+  stat,
+  mkdir,
+  unlink,
+  realpath,
+  readFile,
+  writeFile,
+} from "node:fs/promises";
 import { z } from "zod";
-import { PrLensCliError, usageError } from "../errors.js";
+import type { Stats } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { setTimeout as sleep } from "node:timers/promises";
+import { basename, dirname, join, relative, resolve } from "node:path";
+
+import { assertNever } from "@coldtea/pr-lens-schema";
+
 import { git } from "../git.js";
-import { readJsonFile, secretStagingPath, writeSecretJsonFile } from "../io.js";
 import type { Terminal } from "../terminal.js";
+import { PrLensCliError, usageError } from "../errors.js";
 import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
+import { readJsonFile, secretStagingPath, writeSecretJsonFile } from "../io.js";
 
 /** Holds write tokens, the one thing here nothing can rebuild. */
 export const REGISTRY_PATH = join(WORKSPACE_DIR, "canvas.json");
@@ -20,7 +32,8 @@ const CANVAS_ID = /^[A-Za-z0-9_-]{22}$/;
 
 export const isCanvasId = (value: string): boolean => CANVAS_ID.test(value);
 
-export const mintWriteToken = (): string => randomBytes(16).toString("base64url");
+export const mintWriteToken = (): string =>
+  randomBytes(16).toString("base64url");
 
 const Entry = z.object({
   name: z.string(),
@@ -34,7 +47,9 @@ const Entry = z.object({
   rev: z.number().int().nonnegative(),
 });
 
-const Registry = z.object({ canvases: z.record(z.string().regex(CANVAS_ID), Entry) });
+const Registry = z.object({
+  canvases: z.record(z.string().regex(CANVAS_ID), Entry),
+});
 
 export type CanvasEntry = z.infer<typeof Entry>;
 export type CanvasRegistry = z.infer<typeof Registry>;
@@ -54,7 +69,9 @@ export const readRegistry = async (): Promise<CanvasRegistry> => {
     throw new PrLensCliError(
       "UNREADABLE_FILE",
       `${REGISTRY_PATH} is not a canvas registry`,
-      parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("\n"),
+      parsed.error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join("\n"),
     );
 
   return parsed.data;
@@ -73,7 +90,9 @@ const assertRegistryPrivate = async (): Promise<void> => {
       return assertNever(standing, "Unhandled repository standing");
   }
 
-  const tracked = (await git(cwd, ["ls-files", "--", REGISTRY_PATH])).trim() !== "";
+  const tracked =
+    (await git(cwd, ["ls-files", "--", REGISTRY_PATH])).trim() !== "";
+
   if (tracked)
     throw new PrLensCliError(
       "CANVAS_REGISTRY_EXPOSED",
@@ -82,7 +101,11 @@ const assertRegistryPrivate = async (): Promise<void> => {
     );
 
   // An interrupted write leaves the tokens under the staging name.
-  for (const path of [REGISTRY_PATH, relative(cwd, secretStagingPath(REGISTRY_PATH)), LOCK_PATH]) {
+  for (const path of [
+    REGISTRY_PATH,
+    relative(cwd, secretStagingPath(REGISTRY_PATH)),
+    LOCK_PATH,
+  ]) {
     const ignored = await git(cwd, ["check-ignore", "-q", "--", path]).then(
       () => true,
       () => false,
@@ -121,7 +144,10 @@ const repositoryStanding = async (cwd: string): Promise<RepositoryStanding> => {
 };
 
 const isMissing = (error: unknown): boolean =>
-  typeof error === "object" && error !== null && "code" in error && (error.code === "ENOENT" || error.code === "ENOTDIR");
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  (error.code === "ENOENT" || error.code === "ENOTDIR");
 
 /** lstat, not stat: a dangling `.git` link is still a checkout. */
 const gitEntryAt = (directory: string): Promise<boolean> =>
@@ -153,24 +179,39 @@ export const ensureRegistryHome = async (terminal: Terminal): Promise<void> => {
   await assertRegistryPrivate();
 };
 
-const reservedRegistryPaths = (): string[] => [resolve(REGISTRY_PATH), resolve(LOCK_PATH), secretStagingPath(REGISTRY_PATH)];
+const reservedRegistryPaths = (): string[] => [
+  resolve(REGISTRY_PATH),
+  resolve(LOCK_PATH),
+  secretStagingPath(REGISTRY_PATH),
+];
 
-const sameFile = (a: Stats, b: Stats): boolean => a.dev === b.dev && a.ino === b.ino;
+const sameFile = (a: Stats, b: Stats): boolean =>
+  a.dev === b.dev && a.ino === b.ino;
 
 /** Compared case-blind and by inode: macOS ignores case, and a link is the same file. */
-export const isReservedRegistryTarget = async (path: string): Promise<boolean> => {
+export const isReservedRegistryTarget = async (
+  path: string,
+): Promise<boolean> => {
   const target = resolve(path);
   const reserved = reservedRegistryPaths();
   const names = reserved.map((entry) => basename(entry).toLowerCase());
 
   // Spelling first: a fresh checkout has nothing on disk to compare yet.
   const workspaceDir = dirname(reserved[0] ?? target);
-  if (dirname(target).toLowerCase() === workspaceDir.toLowerCase() && names.includes(basename(target).toLowerCase()))
+  if (
+    dirname(target).toLowerCase() === workspaceDir.toLowerCase() &&
+    names.includes(basename(target).toLowerCase())
+  )
     return true;
 
   const workspace = await realpath(workspaceDir).catch(() => undefined);
   const parent = await realpath(dirname(target)).catch(() => undefined);
-  if (workspace !== undefined && parent === workspace && names.includes(basename(target).toLowerCase())) return true;
+  if (
+    workspace !== undefined &&
+    parent === workspace &&
+    names.includes(basename(target).toLowerCase())
+  )
+    return true;
 
   const existing = await stat(target).catch(() => undefined);
   if (existing === undefined) return false;
@@ -181,7 +222,10 @@ export const isReservedRegistryTarget = async (path: string): Promise<boolean> =
   return false;
 };
 
-export const writeRegistry = async (registry: CanvasRegistry, terminal: Terminal): Promise<void> => {
+export const writeRegistry = async (
+  registry: CanvasRegistry,
+  terminal: Terminal,
+): Promise<void> => {
   await ensureRegistryHome(terminal);
   await writeSecretJsonFile(REGISTRY_PATH, registry);
 };
@@ -190,7 +234,10 @@ const LOCK_WAIT_MS = 50;
 const LOCK_ATTEMPTS = 100;
 
 const isAlreadyThere = (error: unknown): boolean =>
-  typeof error === "object" && error !== null && "code" in error && error.code === "EEXIST";
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  error.code === "EEXIST";
 
 /** A nonce beside the pid, since pids are reused. */
 type Holder = { pid: number; nonce: string };
@@ -198,27 +245,39 @@ type Holder = { pid: number; nonce: string };
 const holderOf = (text: string): Holder | undefined => {
   const [pid, nonce] = text.trim().split(":");
   const number = Number(pid);
-  return Number.isInteger(number) && number > 0 && nonce !== undefined && nonce !== ""
+  return Number.isInteger(number) &&
+    number > 0 &&
+    nonce !== undefined &&
+    nonce !== ""
     ? { pid: number, nonce }
     : undefined;
 };
 
-type LockState = { type: "absent" } | { type: "held"; holder: Holder } | { type: "unfinished" };
+type LockState =
+  | { type: "absent" }
+  | { type: "held"; holder: Holder }
+  | { type: "unfinished" };
 
 const readLock = (path: string): Promise<LockState> =>
   readFile(path, "utf8").then(
     (text) => {
       const holder = holderOf(text);
-      return holder === undefined ? { type: "unfinished" } : { type: "held", holder };
+      return holder === undefined
+        ? { type: "unfinished" }
+        : { type: "held", holder };
     },
-    (error: unknown) => (isMissing(error) ? { type: "absent" } : { type: "unfinished" }),
+    (error: unknown) =>
+      isMissing(error) ? { type: "absent" } : { type: "unfinished" },
   );
 
 const cannotLock = (error: unknown): PrLensCliError =>
   new PrLensCliError(
     "UNREADABLE_FILE",
     `cannot take the lock on ${REGISTRY_PATH}`,
-    typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
+    typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof error.code === "string"
       ? `the filesystem answered ${error.code} for ${LOCK_PATH}`
       : `the filesystem refused ${LOCK_PATH}`,
   );
@@ -229,14 +288,22 @@ const alive = (pid: number): boolean => {
     process.kill(pid, 0);
     return true;
   } catch (error) {
-    return typeof error === "object" && error !== null && "code" in error && error.code === "EPERM";
+    return (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "EPERM"
+    );
   }
 };
 
 /** Written first, linked into place second, so the lock is never empty. */
 const takeLock = async (mine: Holder): Promise<boolean> => {
   const draft = `${LOCK_PATH}.${mine.nonce}`;
-  await writeFile(draft, `${mine.pid}:${mine.nonce}`, { encoding: "utf8", mode: 0o600 }).catch((error: unknown) => {
+  await writeFile(draft, `${mine.pid}:${mine.nonce}`, {
+    encoding: "utf8",
+    mode: 0o600,
+  }).catch((error: unknown) => {
     throw cannotLock(error);
   });
   try {
@@ -270,20 +337,31 @@ const inUse = (lock: LockState): PrLensCliError => {
         return assertNever(lock, "Unhandled lock state");
     }
   })();
-  const running = lock.type === "absent" || (lock.type === "held" && alive(lock.holder.pid));
+
+  const running =
+    lock.type === "absent" || (lock.type === "held" && alive(lock.holder.pid));
   return new PrLensCliError(
     "UNREADABLE_FILE",
     `${REGISTRY_PATH} is locked by ${who}`,
-    running ? "wait for it to finish, then try again" : `remove ${LOCK_PATH} and try again; nothing is running under it`,
+    running
+      ? "wait for it to finish, then try again"
+      : `remove ${LOCK_PATH} and try again; nothing is running under it`,
   );
 };
 
 /** Two commands writing the whole file at once would each keep only their own change. */
-export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> => {
-  await mkdir(dirname(LOCK_PATH), { recursive: true }).catch((error: unknown) => {
-    throw cannotLock(error);
-  });
-  const mine: Holder = { pid: process.pid, nonce: randomBytes(8).toString("hex") };
+export const withRegistryLock = async <T>(
+  work: () => Promise<T>,
+): Promise<T> => {
+  await mkdir(dirname(LOCK_PATH), { recursive: true }).catch(
+    (error: unknown) => {
+      throw cannotLock(error);
+    },
+  );
+  const mine: Holder = {
+    pid: process.pid,
+    nonce: randomBytes(8).toString("hex"),
+  };
 
   for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt += 1) {
     if (await takeLock(mine)) {
@@ -295,15 +373,19 @@ export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> =>
     }
 
     const lock = await readLock(LOCK_PATH);
+
     switch (lock.type) {
       case "absent":
         continue;
+
       case "unfinished":
         throw inUse(lock);
+
       case "held":
         if (!alive(lock.holder.pid)) throw inUse(lock);
         await sleep(LOCK_WAIT_MS);
         continue;
+
       default:
         return assertNever(lock, "Unhandled lock state");
     }
@@ -323,7 +405,8 @@ export const updateRegistry = (
     return registry;
   });
 
-export const sourceKey = (path: string): string => relative(process.cwd(), resolve(path));
+export const sourceKey = (path: string): string =>
+  relative(process.cwd(), resolve(path));
 
 const entries = (registry: CanvasRegistry): Registered[] =>
   Object.entries(registry.canvases).map(([id, entry]) => ({ id, entry }));
@@ -333,17 +416,22 @@ const describe = ({ id, entry }: Registered): string => `${id} (${entry.name})`;
 const unregistered = (message: string, details: string): PrLensCliError =>
   new PrLensCliError("CANVAS_UNREGISTERED", message, details);
 
-export const findCanvas = (registry: CanvasRegistry, ref: string): Registered => {
+export const findCanvas = (
+  registry: CanvasRegistry,
+  ref: string,
+): Registered => {
   const byId = registry.canvases[ref];
   if (byId !== undefined) return { id: ref, entry: byId };
 
   const byName = entries(registry).filter(({ entry }) => entry.name === ref);
   const [only, ...more] = byName;
+
   if (only === undefined)
     throw unregistered(
       `no canvas ${JSON.stringify(ref)} in ${REGISTRY_PATH}`,
       "pass the id or name of a canvas this checkout pushed, or push without --canvas to mint one",
     );
+
   if (more.length > 0)
     throw usageError(
       `${byName.length} canvases are named ${JSON.stringify(ref)}`,
@@ -353,9 +441,14 @@ export const findCanvas = (registry: CanvasRegistry, ref: string): Registered =>
   return only;
 };
 
-export const findBySource = (registry: CanvasRegistry, path: string): Registered | undefined => {
+export const findBySource = (
+  registry: CanvasRegistry,
+  path: string,
+): Registered | undefined => {
   const key = sourceKey(path);
-  const matching = entries(registry).filter(({ entry }) => sourceKey(entry.source) === key);
+  const matching = entries(registry).filter(
+    ({ entry }) => sourceKey(entry.source) === key,
+  );
   const [only, ...more] = matching;
   if (more.length > 0)
     throw unregistered(
@@ -369,11 +462,13 @@ export const findBySource = (registry: CanvasRegistry, path: string): Registered
 export const onlyCanvas = (registry: CanvasRegistry): Registered => {
   const all = entries(registry);
   const [only, ...more] = all;
+
   if (only === undefined)
     throw unregistered(
       `no canvas in ${REGISTRY_PATH}`,
       "pr-lens canvas push mints one, or pass --canvas <id|name> for one pushed elsewhere",
     );
+
   if (more.length > 0)
     throw unregistered(
       `${all.length} canvases in ${REGISTRY_PATH}`,

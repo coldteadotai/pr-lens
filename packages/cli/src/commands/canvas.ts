@@ -1,5 +1,4 @@
 import { assertNever } from "@coldtea/pr-lens-schema";
-import { resolve } from "node:path";
 import { parseOptions, readString } from "../args.js";
 import {
   fetchCanvas,
@@ -234,8 +233,10 @@ const recordPull = (current: CanvasRegistry, pull: PullRecord): Recorded => {
   const untouched = entry?.writeToken === pull.seenToken;
   const imports =
     pull.proven && untouched && pull.writeToken !== entry?.writeToken;
+
   const kept = imports ? pull.writeToken : entry?.writeToken;
   const pending = imports ? undefined : entry?.pending;
+
   current.canvases[pull.id] = {
     name: entry?.name ?? pull.fetched?.title ?? pull.id,
     source:
@@ -333,6 +334,7 @@ const push = async (
         rev: minted.rev,
       };
       current.canvases[minted.id] = entry;
+
       try {
         await writeRegistry(current, terminal);
       } catch (error) {
