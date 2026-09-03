@@ -19,10 +19,10 @@ pr-lens analyze --base origin/main --head HEAD
 
 Three request shapes are implemented rather than a list of vendors:
 
-| `--provider` | Endpoint | Key |
-| --- | --- | --- |
-| `gemini` (default) | Google's own API | `GEMINI_API_KEY` |
-| `openai` | OpenAI's own API | `OPENAI_API_KEY` |
+| `--provider`        | Endpoint                                                          | Key              |
+| ------------------- | ----------------------------------------------------------------- | ---------------- |
+| `gemini` (default)  | Google's own API                                                  | `GEMINI_API_KEY` |
+| `openai`            | OpenAI's own API                                                  | `OPENAI_API_KEY` |
 | `openai-compatible` | anything else speaking `/chat/completions`, named by `--base-url` | `OPENAI_API_KEY` |
 
 DeepSeek, Anthropic's compatibility endpoint, OpenRouter, Ollama and llama.cpp are all reached by pointing `--base-url` at them, and a new vendor needs no release here. OpenAI is listed separately from the servers that copied it because the two have drifted: it renamed the output limit to `max_completion_tokens` and its newer models reject `max_tokens`, which is the only spelling the others know. There is no field both accept, so you say which endpoint you are talking to rather than the CLI guessing from a hostname.
@@ -43,7 +43,7 @@ None of it is meant to be committed. The SVGs, the document and the manifest are
 
 `--out` overrides the location on every command that writes. Point it somewhere else and PR Lens leaves your `.gitignore` alone: that directory is yours to decide about.
 
-`canvas` keeps one more file there, `.pr-lens/canvas.json`, which holds the write token for every canvas this checkout has pushed. It is the one file in the directory that cannot be rebuilt, and the reason the directory is ignored matters twice over.
+`canvas` keeps one more file there, `.pr-lens/canvas.json`, which holds the write token for every canvas this checkout has pushed. It is the one file in the directory that cannot be rebuilt, and a bigger reason the directory is ignored.
 
 ## The commands
 
@@ -71,7 +71,7 @@ pr-lens render .pr-lens/graph.json
 
 Draws the document as self-contained light and dark SVGs (one pair per drill-down section per lens, or one pair per lens when the document has no sections), and writes two files beside them: `manifest.json`, which says what was drawn and under which file name, and `drawn.graph.json`, the document those pictures actually show.
 
-Both matter to what comes next. The manifest is where `comment` gets its file names, so neither command re-derives the other's. And `drawn.graph.json` exists because this is where corrections are applied: excluding a node can empty out a whole drill-down section, and the renderer then draws no picture for it. A comment composed from the document that went *in* would announce a section that came out of nothing.
+Both matter to what comes next. The manifest is where `comment` gets its file names, so neither command re-derives the other's. And `drawn.graph.json` exists because this is where corrections are applied: excluding a node can empty out a whole drill-down section, and the renderer then draws no picture for it. A comment composed from the document that went _in_ would announce a section that came out of nothing.
 
 The SVGs carry no script and no external reference, and the same document renders to the same bytes every time. `--theme light` or `--theme dark` draws one half of the pair.
 

@@ -51,10 +51,7 @@ export type Pushed = z.infer<typeof Pushed>;
 export type Rotated = z.infer<typeof Rotated>;
 export type Fetched = Omit<z.infer<typeof Fetched>, "document"> & { document: GraphDoc };
 
-/**
- * Every error the app sends wears this envelope; the known codes carry more,
- * and the inner object is left loose so the refusal below still sees it.
- */
+/** Loose inner object: an unknown code must still reach the refusal below. */
 const Envelope = z.object({ error: z.looseObject({ code: z.string(), message: z.string() }) });
 
 const Refusal = z.discriminatedUnion("code", [
@@ -74,7 +71,7 @@ const Refusal = z.discriminatedUnion("code", [
 type Request = {
   method: "GET" | "POST" | "PUT";
   path: string;
-  /** The canvas the route is about, so a 404 can name it. Minting has none. */
+  /** Undefined when minting, so a 404 there is not blamed on a canvas. */
   canvas: string | undefined;
   token?: string;
   ifMatch?: number;
@@ -128,8 +125,7 @@ const refusal = (api: string, request: Request, status: number, body: unknown): 
         error.issues.map((issue) => (issue.path === "" ? issue.message : `${issue.path}: ${issue.message}`)).join("\n"),
       );
     case "CANNOT_DRAW":
-      // The document passed the contract and the renderer still had nothing to
-      // draw; the app's own words say why, and there is no issue list to add.
+      // Passed the contract, nothing to draw: the app's message is the whole story.
       return new PrLensCliError("CANVAS_REJECTED", error.message);
     case "RATE_LIMITED":
       return new PrLensCliError(
@@ -160,13 +156,11 @@ const call = async <T>(api: string, request: Request, schema: z.ZodType<T>): Pro
     body: request.body === undefined ? undefined : JSON.stringify(request.body),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   }).catch(() => {
-    // The runtime's own words for a failed connection name addresses and
-    // internals; the reader needs to know the app was not reached, and how
-    // to check.
+    // The runtime's message names addresses and internals; keep it out.
     throw unavailable(api, undefined, "check the address and the connection, then try again");
   });
 
-  // The connection can fail after the headers as well as before them.
+  // A body can fail after the headers arrived.
   const text = await response.text().catch(() => {
     throw unavailable(api, response.status, "the answer was cut off; check the connection, then try again");
   });
@@ -207,16 +201,7 @@ export const pushCanvas = (
 ): Promise<Pushed> =>
   call(api, { method: "PUT", path: canvasPath(id), canvas: id, token, ifMatch: rev, body: document }, Pushed);
 
-/**
- * The next token is minted here and sent along, so the app's answer can be
- * lost and the same question asked again: once the token is on record, the
- * app says so whichever bearer is presented.
- */
-/**
- * Whether a token is the one on record, without changing anything: a token
- * turned over onto itself is answered "rotated" only when it is current, and
- * with the reader's 404 otherwise.
- */
+/** A rotation onto itself changes nothing and is answered "rotated" only for the current token. */
 export const verifyWriteToken = (api: string, id: string, token: string): Promise<boolean> =>
   rotateCanvas(api, id, token, token).then(
     () => true,
@@ -226,6 +211,7 @@ export const verifyWriteToken = (api: string, id: string, token: string): Promis
     },
   );
 
+/** The caller mints the next token, so a lost answer can be asked for again. */
 export const rotateCanvas = (api: string, id: string, token: string, nextToken: string): Promise<Rotated> =>
   call(
     api,

@@ -11,11 +11,7 @@ import { readJsonFile, secretStagingPath, writeSecretJsonFile } from "../io.js";
 import type { Terminal } from "../terminal.js";
 import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
 
-/**
- * Which canvases this checkout has pushed, and the token each one takes. The
- * token is the only thing here that cannot be rebuilt, which is why the file
- * sits in the workspace git already ignores rather than beside the document.
- */
+/** Holds write tokens, the one thing here nothing can rebuild. */
 export const REGISTRY_PATH = join(WORKSPACE_DIR, "canvas.json");
 
 const LOCK_PATH = `${REGISTRY_PATH}.lock`;
@@ -24,23 +20,16 @@ const CANVAS_ID = /^[A-Za-z0-9_-]{22}$/;
 
 export const isCanvasId = (value: string): boolean => CANVAS_ID.test(value);
 
-/** A write token has the same shape as an id: 128 random bits as base64url. */
 export const mintWriteToken = (): string => randomBytes(16).toString("base64url");
 
 const Entry = z.object({
   name: z.string(),
   source: z.string(),
-  /**
-   * The app the canvas lives on. Everything below is only meaningful there:
-   * another app's answers, its 404 above all, say nothing about this entry.
-   */
+  /** Another app's answers, its 404 above all, say nothing about this entry. */
   api: z.string(),
-  /** Absent for a canvas pulled by its view link: readable, not writable, from here. */
+  /** Absent for a canvas pulled by its view link. */
   writeToken: z.string().optional(),
-  /**
-   * A rotation in flight: minted here and sent to the app, not yet confirmed
-   * as the one on record. Kept so a lost answer is finished, not lost.
-   */
+  /** Next token of a rotation whose answer has not arrived yet, so it can be asked again. */
   pending: z.string().optional(),
   rev: z.number().int().nonnegative(),
 });
@@ -71,13 +60,7 @@ export const readRegistry = async (): Promise<CanvasRegistry> => {
   return parsed.data;
 };
 
-/**
- * Whether git would ever take the registry. The workspace is normally ignored,
- * but a repository may un-ignore it on purpose, and a file already tracked is
- * committed whatever the rules say. A bearer token in a commit is a token
- * given to everyone with the repository, so the answer has to be no before a
- * token is written down.
- */
+/** A token in a commit is a token given to everyone with the repository. */
 const assertRegistryPrivate = async (): Promise<void> => {
   const cwd = process.cwd();
   const standing = await repositoryStanding(cwd);
@@ -98,9 +81,7 @@ const assertRegistryPrivate = async (): Promise<void> => {
       `git rm --cached ${REGISTRY_PATH}, make sure ${WORKSPACE_DIR}/ is ignored, then try again`,
     );
 
-  // The registry, the file it is staged through, and the lock beside it: a
-  // rule that covers the first alone leaves a token under the second name
-  // whenever a write is interrupted.
+  // An interrupted write leaves the tokens under the staging name.
   for (const path of [REGISTRY_PATH, relative(cwd, secretStagingPath(REGISTRY_PATH)), LOCK_PATH]) {
     const ignored = await git(cwd, ["check-ignore", "-q", "--", path]).then(
       () => true,
@@ -117,21 +98,14 @@ const assertRegistryPrivate = async (): Promise<void> => {
 
 type RepositoryStanding = "inside" | "outside";
 
-/**
- * Whether this directory is in a git work tree. Only git's own "not a
- * repository" is taken as being outside one; git failing for any other
- * reason (an owner it distrusts, a broken config, a corrupt index) leaves the
- * question open, and an open question is not permission to write a secret.
- */
+/** Any git failure but "not a repository" leaves the question open, and an open question is no permission to write a secret. */
 const repositoryStanding = async (cwd: string): Promise<RepositoryStanding> => {
   try {
     await git(cwd, ["rev-parse", "--is-inside-work-tree"]);
     return "inside";
   } catch (error) {
-    // Git says "not a repository" about a broken checkout too, one with its
-    // HEAD missing for instance, and that checkout is repaired one day with
-    // whatever was written into it meanwhile. Only a tree with no .git
-    // anywhere above it is outside a repository.
+    // Git says "not a repository" about a checkout with a missing HEAD too,
+    // and that checkout gets repaired one day.
     const outside =
       error instanceof PrLensCliError &&
       error.details?.includes("not a git repository") === true &&
@@ -149,11 +123,7 @@ const repositoryStanding = async (cwd: string): Promise<RepositoryStanding> => {
 const isMissing = (error: unknown): boolean =>
   typeof error === "object" && error !== null && "code" in error && (error.code === "ENOENT" || error.code === "ENOTDIR");
 
-/**
- * The entry itself, not what it points at: a dangling `.git` link is still a
- * checkout. Only an entry that is not there counts as absent; one that cannot
- * be looked at is a question left open, and no secret is written on one.
- */
+/** lstat, not stat: a dangling `.git` link is still a checkout. */
 const gitEntryAt = (directory: string): Promise<boolean> =>
   lstat(join(directory, ".git")).then(
     () => true,
@@ -177,38 +147,27 @@ const hasGitAbove = async (start: string): Promise<boolean> => {
   }
 };
 
-/**
- * The workspace, ready to hold a token: on disk, ignored, and not tracked.
- * Asked before a canvas is minted, so a refusal costs nothing on the app.
- */
+/** Asked before a canvas is minted, so a refusal costs nothing on the app. */
 export const ensureRegistryHome = async (terminal: Terminal): Promise<void> => {
   await prepareWorkspace(WORKSPACE_DIR, terminal);
   await assertRegistryPrivate();
 };
 
-/** The names the registry lives under, which nothing else may write to. */
 const reservedRegistryPaths = (): string[] => [resolve(REGISTRY_PATH), resolve(LOCK_PATH), secretStagingPath(REGISTRY_PATH)];
 
 const sameFile = (a: Stats, b: Stats): boolean => a.dev === b.dev && a.ino === b.ino;
 
-/**
- * Whether writing to `path` would land on the registry or one of its names.
- * Spelling is not identity: the workspace directory is compared by what it
- * really is, its files case-blind since the usual filesystems are, and an
- * existing target by inode, so a link or an alias is caught as well.
- */
+/** Case-blind and by inode, because spelling is not identity on the usual filesystems. */
 export const isReservedRegistryTarget = async (path: string): Promise<boolean> => {
   const target = resolve(path);
   const reserved = reservedRegistryPaths();
   const names = reserved.map((entry) => basename(entry).toLowerCase());
 
-  // The spelling first, before anything exists to look at: a fresh checkout
-  // has no workspace yet, and the names are reserved all the same.
+  // Spelling first: a fresh checkout has nothing on disk to compare yet.
   const workspaceDir = dirname(reserved[0] ?? target);
   if (dirname(target).toLowerCase() === workspaceDir.toLowerCase() && names.includes(basename(target).toLowerCase()))
     return true;
 
-  // Then what the paths really are, for a workspace reached under another name.
   const workspace = await realpath(workspaceDir).catch(() => undefined);
   const parent = await realpath(dirname(target)).catch(() => undefined);
   if (workspace !== undefined && parent === workspace && names.includes(basename(target).toLowerCase())) return true;
@@ -233,7 +192,7 @@ const LOCK_ATTEMPTS = 100;
 const isAlreadyThere = (error: unknown): boolean =>
   typeof error === "object" && error !== null && "code" in error && error.code === "EEXIST";
 
-/** Who holds a lock: the process, and a nonce so two lives of one pid differ. */
+/** A nonce beside the pid, since pids are reused. */
 type Holder = { pid: number; nonce: string };
 
 const holderOf = (text: string): Holder | undefined => {
@@ -244,7 +203,6 @@ const holderOf = (text: string): Holder | undefined => {
     : undefined;
 };
 
-/** What is at the lock path: nothing, a lock with a holder, or a lock nobody finished. */
 type LockState = { type: "absent" } | { type: "held"; holder: Holder } | { type: "unfinished" };
 
 const readLock = (path: string): Promise<LockState> =>
@@ -256,7 +214,6 @@ const readLock = (path: string): Promise<LockState> =>
     (error: unknown) => (isMissing(error) ? { type: "absent" } : { type: "unfinished" }),
   );
 
-/** A filesystem that would not let the lock be taken, as the typed failure it is. */
 const cannotLock = (error: unknown): PrLensCliError =>
   new PrLensCliError(
     "UNREADABLE_FILE",
@@ -266,7 +223,7 @@ const cannotLock = (error: unknown): PrLensCliError =>
       : `the filesystem refused ${LOCK_PATH}`,
   );
 
-/** Whether a process is still running here. A signal of 0 is only a question. */
+/** Signal 0 only asks. */
 const alive = (pid: number): boolean => {
   try {
     process.kill(pid, 0);
@@ -276,11 +233,7 @@ const alive = (pid: number): boolean => {
   }
 };
 
-/**
- * Takes the lock, or nothing. The holder is written to a private file first
- * and that file is linked into place, so the lock either exists with its
- * holder inside or does not exist: there is no moment at which it is empty.
- */
+/** Written first, linked into place second, so the lock is never empty. */
 const takeLock = async (mine: Holder): Promise<boolean> => {
   const draft = `${LOCK_PATH}.${mine.nonce}`;
   await writeFile(draft, `${mine.pid}:${mine.nonce}`, { encoding: "utf8", mode: 0o600 }).catch((error: unknown) => {
@@ -298,12 +251,9 @@ const takeLock = async (mine: Holder): Promise<boolean> => {
 };
 
 /**
- * No lock is ever taken away from another command by this code. Reclaiming
- * a lock means deciding its holder is gone and then removing it, and those
- * are two moments: another command can take the same path in between, and
- * the removal then lands on a live lock. Nothing that risks two writers is
- * worth a stale lock, which a person removes in a second once told which
- * process left it.
+ * Nothing here ever removes another command's lock: deciding a holder is
+ * gone and removing its lock are two moments, and a live lock can slip in
+ * between. A stale lock is cheap for a person to remove once told whose it is.
  */
 const inUse = (lock: LockState): PrLensCliError => {
   const who = (() => {
@@ -328,12 +278,7 @@ const inUse = (lock: LockState): PrLensCliError => {
   );
 };
 
-/**
- * The registry is read, changed and written back as a whole, and two commands
- * doing that at once would each keep only their own change. One holds the
- * lock at a time; the other waits its turn, and gives up with the holder's
- * name when the turn does not come.
- */
+/** Two commands writing the whole file at once would each keep only their own change. */
 export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> => {
   await mkdir(dirname(LOCK_PATH), { recursive: true }).catch((error: unknown) => {
     throw cannotLock(error);
@@ -345,9 +290,6 @@ export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> =>
       try {
         return await work();
       } finally {
-        // Only this command's own lock is removed. The path cannot hold
-        // anything else while this command holds it, since nothing here
-        // takes a lock away.
         await unlink(LOCK_PATH).catch(() => undefined);
       }
     }
@@ -355,7 +297,6 @@ export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> =>
     const lock = await readLock(LOCK_PATH);
     switch (lock.type) {
       case "absent":
-        // Released between the failed link and the look: try again at once.
         continue;
       case "unfinished":
         throw inUse(lock);
@@ -371,7 +312,6 @@ export const withRegistryLock = async <T>(work: () => Promise<T>): Promise<T> =>
   throw inUse(await readLock(LOCK_PATH));
 };
 
-/** One change to the registry, read and written under the lock. */
 export const updateRegistry = (
   change: (registry: CanvasRegistry) => void,
   terminal: Terminal,
@@ -383,7 +323,6 @@ export const updateRegistry = (
     return registry;
   });
 
-/** The path as the registry records it, so the same file matches however it was spelled. */
 export const sourceKey = (path: string): string => relative(process.cwd(), resolve(path));
 
 const entries = (registry: CanvasRegistry): Registered[] =>
@@ -394,7 +333,6 @@ const describe = ({ id, entry }: Registered): string => `${id} (${entry.name})`;
 const unregistered = (message: string, details: string): PrLensCliError =>
   new PrLensCliError("CANVAS_UNREGISTERED", message, details);
 
-/** An id first, then a name; a name two canvases share names neither. */
 export const findCanvas = (registry: CanvasRegistry, ref: string): Registered => {
   const byId = registry.canvases[ref];
   if (byId !== undefined) return { id: ref, entry: byId };
@@ -428,7 +366,6 @@ export const findBySource = (registry: CanvasRegistry, path: string): Registered
   return only;
 };
 
-/** The canvas a command means when nobody named one: the checkout's only one. */
 export const onlyCanvas = (registry: CanvasRegistry): Registered => {
   const all = entries(registry);
   const [only, ...more] = all;
