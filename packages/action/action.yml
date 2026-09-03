@@ -35,7 +35,7 @@ inputs:
     default: pr-lens
   cli-version:
     description: Version of @coldtea/pr-lens-cli to run.
-    default: 0.1.3
+    default: 0.2.0
   comment-author:
     description: >-
       Login that owns the PR Lens comment. Only a comment posted by this
