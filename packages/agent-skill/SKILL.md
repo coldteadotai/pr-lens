@@ -33,7 +33,15 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
 
    Render dark as the default theme unless explicitly requested. The SVGs, the manifest and `drawn.graph.json` land in `.pr-lens/`, which the CLI adds to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
 
-   If the user asked for a diagram and nothing more, this is the end of the loop. If working in an environment that supports a visual way to display the image e.g., an in-app browser, an artifact, do so. Otherwise, tell them where the SVGs are and which one is the top view.
+   If the user asked for a diagram, an explanation or a picture of the architecture and nothing more, put it on a canvas and hand back the link:
+
+   ```bash
+   npx @coldtea/pr-lens-cli canvas push
+   ```
+
+   This pushes `.pr-lens/drawn.graph.json` and prints three links. Give the user the view link, `https://prlens.dev/c/{id}`: that is the diagram, full screen, every view on one page, and it opens without a login. The edit link, the one ending in `#w=…`, lets its holder push over the canvas, so leave it out of the reply unless they ask, and never paste it anywhere public. The embed link serves the top view as an SVG for a README.
+
+   Pushing the same file again updates the same canvas, so a follow-up such as "rename that node" or "add the queue" is: edit the document, validate, render, push. The link stays the same. If the push fails, say so and tell them where the SVGs are and which one is the top view.
 
 5. **Attach, when there is a pull request to attach to.** That means the user asked you to open a PR, asked for a diagram on one that exists, or you are opening a PR as part of changes made. Otherwise skip this step.
 
