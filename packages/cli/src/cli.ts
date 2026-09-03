@@ -1,5 +1,6 @@
 import { assertNever } from "@coldtea/pr-lens-schema";
 import { analyzeCommand, USAGE as ANALYZE_USAGE } from "./commands/analyze.js";
+import { canvasCommand, USAGE as CANVAS_USAGE } from "./commands/canvas.js";
 import { commentCommand, USAGE as COMMENT_USAGE } from "./commands/comment.js";
 import { exportCommand, USAGE as EXPORT_USAGE } from "./commands/export.js";
 import { renderCommand, USAGE as RENDER_USAGE } from "./commands/render.js";
@@ -8,7 +9,7 @@ import { formatError, PrLensCliError } from "./errors.js";
 import type { Terminal } from "./terminal.js";
 import { CLI_VERSION } from "./version.js";
 
-const COMMANDS = ["analyze", "render", "comment", "validate", "export"] as const;
+const COMMANDS = ["analyze", "render", "comment", "validate", "export", "canvas"] as const;
 type CommandName = (typeof COMMANDS)[number];
 
 const isCommand = (value: string): value is CommandName =>
@@ -21,6 +22,7 @@ const HELP = `pr-lens — review what actually matters
   pr-lens comment   --graph --manifest      the pull request comment, as markdown
   pr-lens validate  <file...>               any PR Lens document, checked against the contract
   pr-lens export    <graph.json>            the merged state, as a map worth committing
+  pr-lens canvas    push | pull | rotate    that document, kept on prlens.dev as a page and an embed
 
   pr-lens <command> --help                  what a command takes
   pr-lens --version
@@ -40,6 +42,8 @@ const usageFor = (command: CommandName): string => {
       return VALIDATE_USAGE;
     case "export":
       return EXPORT_USAGE;
+    case "canvas":
+      return CANVAS_USAGE;
     default:
       return assertNever(command, "Unhandled command");
   }
@@ -62,6 +66,8 @@ const dispatch = (
       return validateCommand(args, terminal);
     case "export":
       return exportCommand(args, terminal);
+    case "canvas":
+      return canvasCommand(args, terminal, env);
     default:
       return assertNever(command, "Unhandled command");
   }

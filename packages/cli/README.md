@@ -10,7 +10,7 @@ npx @coldtea/pr-lens-cli analyze --base origin/main
 
 ## Bring your own key
 
-Only `analyze` talks to a model; `render`, `comment`, `validate` and `export` never do. Its key is read from the environment, never from a flag: a flag lands in shell history and in the log of whatever CI runs it. The diff goes to the provider you name and nowhere else: there is no PR Lens service in this path.
+Only `analyze` talks to a model; `render`, `comment`, `validate`, `export` and `canvas` never do. Its key is read from the environment, never from a flag: a flag lands in shell history and in the log of whatever CI runs it. The diff goes to the provider you name and nowhere else: there is no PR Lens service in this path.
 
 ```bash
 export GEMINI_API_KEY=…      # Gemini is the default, not a requirement
@@ -19,10 +19,10 @@ pr-lens analyze --base origin/main --head HEAD
 
 Three request shapes are implemented rather than a list of vendors:
 
-| `--provider` | Endpoint | Key |
-| --- | --- | --- |
-| `gemini` (default) | Google's own API | `GEMINI_API_KEY` |
-| `openai` | OpenAI's own API | `OPENAI_API_KEY` |
+| `--provider`        | Endpoint                                                          | Key              |
+| ------------------- | ----------------------------------------------------------------- | ---------------- |
+| `gemini` (default)  | Google's own API                                                  | `GEMINI_API_KEY` |
+| `openai`            | OpenAI's own API                                                  | `OPENAI_API_KEY` |
 | `openai-compatible` | anything else speaking `/chat/completions`, named by `--base-url` | `OPENAI_API_KEY` |
 
 DeepSeek, Anthropic's compatibility endpoint, OpenRouter, Ollama and llama.cpp are all reached by pointing `--base-url` at them, and a new vendor needs no release here. OpenAI is listed separately from the servers that copied it because the two have drifted: it renamed the output limit to `max_completion_tokens` and its newer models reject `max_tokens`, which is the only spelling the others know. There is no field both accept, so you say which endpoint you are talking to rather than the CLI guessing from a hostname.
@@ -42,6 +42,8 @@ pr-lens analyze --base origin/main \
 None of it is meant to be committed. The SVGs, the document and the manifest are rebuilt from the diff whenever anyone wants them, and a diagram of a pull request that merged months ago is worse than no diagram. What is meant to last is the comment on the pull request, and the map `export` writes.
 
 `--out` overrides the location on every command that writes. Point it somewhere else and PR Lens leaves your `.gitignore` alone: that directory is yours to decide about.
+
+`canvas` keeps one more file there, `.pr-lens/canvas.json`, which holds the write token for every canvas this checkout has pushed. It is the one file in the directory that cannot be rebuilt, and a bigger reason the directory is ignored.
 
 ## The commands
 
@@ -69,7 +71,7 @@ pr-lens render .pr-lens/graph.json
 
 Draws the document as self-contained light and dark SVGs (one pair per drill-down section per lens, or one pair per lens when the document has no sections), and writes two files beside them: `manifest.json`, which says what was drawn and under which file name, and `drawn.graph.json`, the document those pictures actually show.
 
-Both matter to what comes next. The manifest is where `comment` gets its file names, so neither command re-derives the other's. And `drawn.graph.json` exists because this is where corrections are applied: excluding a node can empty out a whole drill-down section, and the renderer then draws no picture for it. A comment composed from the document that went *in* would announce a section that came out of nothing.
+Both matter to what comes next. The manifest is where `comment` gets its file names, so neither command re-derives the other's. And `drawn.graph.json` exists because this is where corrections are applied: excluding a node can empty out a whole drill-down section, and the renderer then draws no picture for it. A comment composed from the document that went _in_ would announce a section that came out of nothing.
 
 The SVGs carry no script and no external reference, and the same document renders to the same bytes every time. `--theme light` or `--theme dark` draws one half of the pair.
 
@@ -100,6 +102,34 @@ Turns a pull-request document into the map of the system once that pull request 
 
 The map is a snapshot, not a source of truth. Nothing reads it back into the pipeline: a committed map that overrode inference would be hand-maintained rot with merge conflicts attached. Commit it so a repository has something to read, to diff, and to hand an agent.
 
+### `canvas`
+
+```bash
+pr-lens canvas push
+```
+
+Puts the document on prlens.dev as a canvas: a page anyone with the link can read, and an SVG a README can embed.
+
+`push` sends the JSON document, never an SVG; the app draws it. The default is `.pr-lens/drawn.graph.json`, the document `render` drew, so what the page shows is what the diagrams show. The first push of a file mints a canvas and every push after that updates the same one, matched by the path it came from. `--canvas <id|name>` picks a different one and `--name` says what to call a new one; the document's title is the default. It prints three links:
+
+```
+✓ https://prlens.dev/c/{id} — rev 1 · 4 diagrams
+  edit link, keep it to yourself: https://prlens.dev/c/{id}#w=…
+  README embed: https://prlens.dev/c/{id}.svg
+```
+
+The view link is the one to share. The edit link is the same page with the write token in the fragment, and anyone holding it can push over your canvas, so it stays with you. The embed is the hero diagram as an SVG, for a README or a wiki.
+
+`pull` fetches the document back, by the view link or the bare id, into `.pr-lens/graph.json` unless `-o` says otherwise, and records the revision. Pull the edit link, the one ending in `#w=…`, and its token is recorded too: that is how a fresh checkout, or one that lost `.pr-lens/canvas.json`, gets the canvas back. A push carries the revision it last saw, and one that has been overtaken is refused rather than applied: pull, then push again.
+
+`rotate` mints a new write token and retires the old one. Use it when an edit link has leaked. The CLI saves the new token before it sends the request, so if the connection drops, the next command finishes the rotation instead of losing the token. The token lives in `.pr-lens/canvas.json`, keyed by canvas id, and git ignores it. Lose that file and the canvas is still readable by everyone; pushing to it again needs the token, which the edit link still carries.
+
+Registry writes take a lock at `.pr-lens/canvas.json.lock`. The CLI never removes another command's lock. If a command dies and leaves one behind, the error names its process id and you remove the file yourself.
+
+The CLI refuses to write the registry where git could commit it. If a checkout tracks `.pr-lens/canvas.json` or un-ignores `.pr-lens/`, the command fails with `CANVAS_REGISTRY_EXPOSED` and writes nothing.
+
+`--api` points at another PR Lens app, or set `PR_LENS_API_URL`.
+
 ## Corrections
 
 A repository's `.github/pr-lens.yml` is picked up automatically by `render` and applied at draw time: renames, exclusions, lane pins, groupings. It is an overlay: inference never writes back into it, so a correction keeps holding as the code moves and the model renames things between runs, and the document on disk stays the record of what was inferred.
@@ -120,7 +150,7 @@ A lane pin may name a lane the document never declared; the band is created and 
 
 ## Failures
 
-Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`. Misuse exits 2, everything else exits 1.
+Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`, and for `canvas`: `CANVAS_UNREGISTERED`, `CANVAS_UNKNOWN`, `CANVAS_CONFLICT`, `CANVAS_REJECTED`, `CANVAS_RATE_LIMITED`, `CANVAS_UNAVAILABLE`, `CANVAS_REGISTRY_EXPOSED`. Misuse exits 2, everything else exits 1.
 
 ---
 

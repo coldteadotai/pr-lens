@@ -1,0 +1,785 @@
+import { execFile } from "node:child_process";
+import { chmod, link, mkdir, mkdtemp, readFile, rm, stat, symlink, unlink, utimes, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { run } from "../src/cli.js";
+import type { Terminal } from "../src/terminal.js";
+
+const sh = promisify(execFile);
+
+const GOLDEN = new URL("../../schema/examples/postmark-refactor.graph.json", import.meta.url).pathname;
+const API = "https://canvas.test";
+const REGISTRY = ".pr-lens/canvas.json";
+
+let out: string[] = [];
+let err: string[] = [];
+const terminal: Terminal = { out: (line) => out.push(line), err: (line) => err.push(line) };
+
+const invoke = (...argv: string[]) => run(argv, terminal, {});
+
+/**
+ * The app, in memory: four routes, the same envelope and the same refusals.
+ * Every request is kept so a test can say what was sent.
+ */
+type Stored = { token: string; rev: number; document: unknown };
+type Seen = { method: string; path: string; headers: Headers; body: unknown };
+
+let canvases = new Map<string, Stored>();
+let seen: Seen[] = [];
+let minted = 0;
+let loseNextAnswer = false;
+
+const json = (status: number, body: unknown): Response =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+
+const refuse = (status: number, code: string, message: string, extra: Record<string, unknown> = {}) =>
+  json(status, { error: { code, message, ...extra } });
+
+const links = (id: string, token?: string) => ({
+  viewUrl: `${API}/c/${id}`,
+  embedUrl: `${API}/c/${id}.svg`,
+  ...(token === undefined ? {} : { editUrl: `${API}/c/${id}#w=${token}` }),
+});
+
+const tile = (id: string) => ({
+  id,
+  title: id,
+  lens: "architecture",
+  crumbs: ["overview"],
+  hero: id === "view:overview",
+  width: 800,
+  height: 600,
+  renders: { light: `${id}-light.svg`, dark: `${id}-dark.svg` },
+  images: { light: `${API}/i/${id}-light.svg`, dark: `${API}/i/${id}-dark.svg` },
+});
+
+const TILES = [tile("view:overview"), tile("view:new-batch-path")];
+
+const bearer = (headers: Headers): string | undefined =>
+  headers.get("authorization")?.replace(/^Bearer /, "");
+
+const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+  const url = new URL(input instanceof Request ? input.url : String(input));
+  const method = init?.method ?? "GET";
+  const headers = new Headers(init?.headers);
+  const body = typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
+  seen.push({ method, path: url.pathname, headers, body });
+
+  if (method === "POST" && url.pathname === "/api/canvas") {
+    minted += 1;
+    const id = String(minted).padStart(22, "0");
+    const token = `token-${minted}-a`.padEnd(22, "a");
+    canvases.set(id, { token, rev: 0, document: undefined });
+    return json(201, { id, writeToken: token, rev: 0, ...links(id, token) });
+  }
+
+  const [, , , id, action] = url.pathname.split("/");
+  const canvas = id === undefined ? undefined : canvases.get(id);
+  if (id === undefined || canvas === undefined) return refuse(404, "NOT_FOUND", "There is no canvas here");
+
+  if (method === "GET" && action === undefined) {
+    if (canvas.document === undefined) return refuse(404, "NOT_FOUND", "There is no canvas here");
+    return json(200, { id, rev: canvas.rev, ...links(id), document: canvas.document, tiles: TILES });
+  }
+
+  if (method === "POST" && action === "rotate") {
+    const next = typeof body === "object" && body !== null && "writeToken" in body ? body.writeToken : undefined;
+    if (typeof next !== "string" || !/^[A-Za-z0-9_-]{22}$/.test(next))
+      return refuse(400, "INVALID_REQUEST", "The body must carry the new writeToken");
+    if (bearer(headers) === canvas.token) canvas.token = next;
+    else if (next !== canvas.token) return refuse(404, "NOT_FOUND", "There is no canvas here");
+    if (loseNextAnswer) {
+      loseNextAnswer = false;
+      throw new TypeError("fetch failed");
+    }
+    return json(200, { id, editUrl: `${API}/c/${id}#w=${canvas.token}` });
+  }
+
+  if (bearer(headers) !== canvas.token) return refuse(404, "NOT_FOUND", "There is no canvas here");
+
+  if (method === "PUT" && action === undefined) {
+    if (headers.get("if-match") !== String(canvas.rev))
+      return refuse(409, "REVISION_MOVED", "The canvas has moved on since you pulled it", { rev: canvas.rev });
+    if (typeof body !== "object" || body === null || !("lanes" in body))
+      return refuse(422, "INVALID_DOCUMENT", "The document does not match the PR Lens contract", {
+        issues: [{ code: "INVALID_DOCUMENT", path: "lanes", message: "expected array, received undefined" }],
+      });
+    if ("title" in body && body.title === "Nothing to draw")
+      return refuse(422, "CANNOT_DRAW", "The document has nothing the canvas can draw");
+    canvas.rev += 1;
+    canvas.document = body;
+    return json(200, { id, rev: canvas.rev, ...links(id, canvas.token), tiles: TILES });
+  }
+
+  return refuse(404, "NOT_FOUND", "There is no canvas here");
+};
+
+const originalCwd = process.cwd();
+
+beforeEach(async () => {
+  out = [];
+  err = [];
+  canvases = new Map();
+  seen = [];
+  minted = 0;
+  loseNextAnswer = false;
+  vi.stubGlobal("fetch", fakeFetch);
+
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-canvas-"));
+  process.chdir(directory);
+  await writeFile("drawn.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+});
+
+afterEach(() => {
+  process.chdir(originalCwd);
+  vi.unstubAllGlobals();
+});
+
+const registry = async (): Promise<
+  Record<string, { name: string; source: string; api: string; writeToken?: string; pending?: string; rev: number }>
+> =>
+  JSON.parse(await readFile(REGISTRY, "utf8")).canvases;
+
+const FIRST = "1".padStart(22, "0");
+const TOKEN1 = "token-1-a".padEnd(22, "a");
+
+test("the first push mints a canvas, records it, and prints the three links", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+
+  expect(out).toEqual([
+    `✓ ${API}/c/${FIRST} — rev 1 · 2 diagrams`,
+    `  edit link, keep it to yourself: ${API}/c/${FIRST}#w=${TOKEN1}`,
+    `  README embed: ${API}/c/${FIRST}.svg`,
+  ]);
+
+  expect(await registry()).toEqual({
+    [FIRST]: {
+      name: "Batch broadcast sending through Postmark",
+      source: "drawn.graph.json",
+      api: API,
+      writeToken: TOKEN1,
+      rev: 1,
+    },
+  });
+
+  expect(seen.map((request) => request.method)).toEqual(["POST", "PUT"]);
+  expect(seen[1]?.headers.get("if-match")).toBe("0");
+  expect(seen[1]?.headers.get("user-agent")).toMatch(/^pr-lens-cli\//);
+});
+
+test("a second push of the same file reuses the canvas and sends the rev it last saw", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  seen = [];
+
+  expect(await invoke("canvas", "push", "./drawn.graph.json", "--api", API)).toBe(0);
+
+  expect(seen.map((request) => request.method)).toEqual(["PUT"]);
+  expect(seen[0]?.headers.get("if-match")).toBe("1");
+  expect((await registry())[FIRST]?.rev).toBe(2);
+  expect(canvases.size).toBe(1);
+});
+
+test("a rev the app has moved past is a conflict, and says what to do", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const canvas = canvases.get(FIRST);
+  if (canvas !== undefined) canvas.rev = 5;
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+
+  const reported = err.join("\n");
+  expect(reported).toContain("[CANVAS_CONFLICT]");
+  expect(reported).toContain("rev 5");
+  expect(reported).toContain("pr-lens canvas pull, then push again");
+});
+
+test("--canvas takes the name a canvas was minted under", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--name", "architecture", "--api", API)).toBe(0);
+  await writeFile("other.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+  seen = [];
+
+  expect(await invoke("canvas", "push", "other.graph.json", "--canvas", "architecture", "--api", API)).toBe(0);
+
+  expect(seen.map((request) => request.method)).toEqual(["PUT"]);
+  expect(seen[0]?.path).toBe(`/api/canvas/${FIRST}`);
+  expect((await registry())[FIRST]).toMatchObject({ name: "architecture", source: "other.graph.json", rev: 2 });
+});
+
+test("a name nobody minted is not a canvas this checkout knows", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", "nope", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_UNREGISTERED]");
+  expect(seen).toEqual([]);
+});
+
+test("pull writes the document and brings the recorded rev up to date", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const canvas = canvases.get(FIRST);
+  if (canvas !== undefined) canvas.rev = 3;
+  out = [];
+
+  expect(await invoke("canvas", "pull", "--api", API)).toBe(0);
+
+  expect(out).toEqual([`✓ .pr-lens/graph.json — rev 3 of ${API}/c/${FIRST}`]);
+  expect(JSON.parse(await readFile(".pr-lens/graph.json", "utf8"))).toEqual(
+    JSON.parse(await readFile(GOLDEN, "utf8")),
+  );
+  expect((await registry())[FIRST]?.rev).toBe(3);
+});
+
+test("pull takes the view link as it was shared, fragment included", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  seen = [];
+  out = [];
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#v=371,80,0.414`, "-o", "pulled.json")).toBe(0);
+
+  expect(seen[0]?.path).toBe(`/api/canvas/${FIRST}`);
+  expect(out).toEqual([`✓ pulled.json — rev 1 of ${API}/c/${FIRST}`]);
+  expect(JSON.parse(await readFile("pulled.json", "utf8"))).toHaveProperty("lanes");
+});
+
+test("rotate mints the next token here, and the old one stops opening the door", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  out = [];
+  seen = [];
+
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(0);
+
+  const next = (await registry())[FIRST]?.writeToken;
+  expect(next).toMatch(/^[A-Za-z0-9_-]{22}$/);
+  expect(next).not.toBe(TOKEN1);
+  expect((await registry())[FIRST]).not.toHaveProperty("pending");
+  expect(out).toEqual([
+    `✓ new edit link for ${API}/c/${FIRST}: ${API}/c/${FIRST}#w=${next}`,
+    "  the old edit link no longer works",
+  ]);
+  expect(seen[0]?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
+  expect(seen[0]?.body).toEqual({ writeToken: next });
+
+  // The app now knows only the new token, and the registry sends that one.
+  out = [];
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  expect(seen[0]?.headers.get("authorization")).toBe(`Bearer ${next}`);
+});
+
+test("a rotation whose answer was lost is finished by the next command", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  loseNextAnswer = true;
+
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("the rotation is not finished");
+
+  const pending = (await registry())[FIRST];
+  expect(pending?.writeToken).toBe(TOKEN1);
+  expect(pending?.pending).toMatch(/^[A-Za-z0-9_-]{22}$/);
+
+  err = [];
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  expect(seen.map((request) => [request.method, request.path.endsWith("/rotate")])).toEqual([
+    ["POST", true],
+    ["PUT", false],
+  ]);
+  const settled = (await registry())[FIRST];
+  expect(settled?.writeToken).toBe(pending?.pending);
+  expect(settled).not.toHaveProperty("pending");
+  expect(seen[1]?.headers.get("authorization")).toBe(`Bearer ${settled?.writeToken}`);
+});
+
+test("two commands changing the registry at once both keep their canvas", async () => {
+  await writeFile("other.json", await readFile(GOLDEN, "utf8"), "utf8");
+
+  const [first, second] = await Promise.all([
+    invoke("canvas", "push", "drawn.graph.json", "--api", API),
+    invoke("canvas", "push", "other.json", "--api", API),
+  ]);
+  expect([first, second]).toEqual([0, 0]);
+
+  const entries = await registry();
+  expect(Object.keys(entries)).toHaveLength(2);
+  expect(Object.values(entries).map((entry) => entry.source).sort()).toEqual(["drawn.graph.json", "other.json"]);
+});
+
+/** A pid nothing is running under: the largest Linux allows, which macOS never reaches. */
+const DEAD_PID = 4194304;
+
+test("a lock left behind by a command that is gone is reported, with the way out, never taken over", async () => {
+  const lock = `${REGISTRY}.lock`;
+  await mkdir(".pr-lens", { recursive: true });
+  await writeFile(lock, `${DEAD_PID}:deadbeef`, "utf8");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  const reported = err.join("\n");
+  expect(reported).toContain(`locked by pid ${DEAD_PID}, which is no longer running`);
+  expect(reported).toContain(`remove ${lock}`);
+  expect(await readFile(lock, "utf8")).toBe(`${DEAD_PID}:deadbeef`);
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
+});
+
+test("a lock with nobody written in it is reported the same way", async () => {
+  const lock = `${REGISTRY}.lock`;
+  await mkdir(".pr-lens", { recursive: true });
+  await writeFile(lock, "", "utf8");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("did not finish taking it");
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
+});
+
+test("a lock held by a command that is still running is waited for, however old, not removed", async () => {
+  const lock = `${REGISTRY}.lock`;
+  await mkdir(".pr-lens", { recursive: true });
+  await writeFile(lock, `${process.pid}:cafebabe`, "utf8");
+  const longAgo = new Date(Date.now() - 600_000);
+  await utimes(lock, longAgo, longAgo);
+
+  const pushing = invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  expect(await registry().catch(() => ({}))).toEqual({});
+  expect(await readFile(lock, "utf8")).toBe(`${process.pid}:cafebabe`);
+  await unlink(lock);
+
+  expect(await pushing).toBe(0);
+  expect(Object.keys(await registry())).toHaveLength(1);
+});
+
+test("a checkout git cannot read is not outside a repository", async () => {
+  await sh("git", ["init", "--quiet"], { cwd: process.cwd() });
+  await unlink(".git/HEAD");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
+});
+
+test("git failing for any reason but absence refuses to write the registry", async () => {
+  await sh("git", ["init", "--quiet"], { cwd: process.cwd() });
+  await writeFile(".git/config", "[core]\n\tthis is not a config\n", "utf8");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
+});
+
+test("the registry is refused a home git would commit", async () => {
+  await sh("git", ["init", "--quiet"], { cwd: process.cwd() });
+  await writeFile(".gitignore", "!.pr-lens/\n", "utf8");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
+  await expect(readFile(REGISTRY, "utf8")).rejects.toThrow();
+
+  // Ignoring the registry alone is not enough: it is staged through a
+  // sibling name, and a crash would leave the tokens there.
+  await writeFile(".gitignore", "!.pr-lens/\n.pr-lens/canvas.json\n", "utf8");
+  err = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
+});
+
+test("rotate prints the link the app answered with, not one guessed from --api", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", `${API}/`)).toBe(0);
+  out = [];
+
+  expect(await invoke("canvas", "rotate", "--api", `${API}/`)).toBe(0);
+  const next = (await registry())[FIRST]?.writeToken;
+  expect(out[0]).toBe(`✓ new edit link for ${API}/c/${FIRST}: ${API}/c/${FIRST}#w=${next}`);
+});
+
+test("a document the app would refuse is refused with its reasons", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+
+  // The CLI validates before it sends, so a document the fake would refuse
+  // never reaches it. Refuse the next push outright instead.
+  vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    if (init?.method !== "PUT") return fakeFetch(input, init);
+    return refuse(422, "INVALID_DOCUMENT", "The document does not match the PR Lens contract", {
+      issues: [
+        { code: "INVALID_DOCUMENT", path: "lanes", message: "expected array, received undefined" },
+        { code: "INVALID_DOCUMENT", path: "", message: "the document names no lens" },
+      ],
+    });
+  });
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  const reported = err.join("\n");
+  expect(reported).toContain("[CANVAS_REJECTED]");
+  expect(reported).toContain("The document does not match the PR Lens contract");
+  expect(reported).toContain("lanes: expected array, received undefined");
+  expect(reported).toContain("\nthe document names no lens");
+});
+
+test("an invalid local document fails before anything is sent", async () => {
+  const broken = JSON.parse(await readFile(GOLDEN, "utf8"));
+  delete broken.lanes;
+  await writeFile("broken.json", JSON.stringify(broken), "utf8");
+
+  expect(await invoke("canvas", "push", "broken.json", "--api", API)).toBe(1);
+
+  expect(err.join("\n")).toContain("[INVALID_DOCUMENT]");
+  expect(seen).toEqual([]);
+});
+
+test("pull with nothing registered says how to get a canvas", async () => {
+  expect(await invoke("canvas", "pull", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_UNREGISTERED]");
+  expect(seen).toEqual([]);
+});
+
+test("canvas --help and canvas push --help both print the usage", async () => {
+  expect(await invoke("canvas", "--help")).toBe(0);
+  expect(out.join("\n")).toContain("pr-lens canvas push");
+
+  out = [];
+  expect(await invoke("canvas", "push", "--help")).toBe(0);
+  expect(out.join("\n")).toContain("--canvas <id|name>");
+});
+
+test("a subcommand that is not one is a misuse", async () => {
+  expect(await invoke("canvas", "publish")).toBe(2);
+  const reported = err.join("\n");
+  expect(reported).toContain('unknown canvas subcommand "publish"');
+  expect(reported).toContain("pr-lens canvas <push | pull | rotate>");
+});
+
+test("the registry is the owner's alone, and replaced whole", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+
+  const mode = (await stat(REGISTRY)).mode & 0o777;
+  expect(mode.toString(8)).toBe("600");
+  await expect(stat(`${REGISTRY}.${process.pid}.tmp`)).rejects.toThrow();
+});
+
+test("a document the renderer refuses is a rejection with the app's own words", async () => {
+  const empty = JSON.parse(await readFile(GOLDEN, "utf8"));
+  empty.title = "Nothing to draw";
+  await writeFile("empty.json", JSON.stringify(empty), "utf8");
+
+  expect(await invoke("canvas", "push", "empty.json", "--api", API)).toBe(1);
+
+  const reported = err.join("\n");
+  expect(reported).toContain("[CANVAS_REJECTED]");
+  expect(reported).toContain("The document has nothing the canvas can draw");
+});
+
+test("pulling an edit link brings its token into a checkout that never had it", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const fresh = await mkdtemp(join(tmpdir(), "pr-lens-canvas-other-"));
+  process.chdir(fresh);
+  await writeFile("drawn.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+  out = [];
+  seen = [];
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  expect(out).toEqual([`✓ .pr-lens/graph.json — rev 1 of ${API}/c/${FIRST}`, "  the edit link's token is now in .pr-lens/canvas.json"]);
+  expect((await registry())[FIRST]).toEqual({
+    name: "Batch broadcast sending through Postmark",
+    source: ".pr-lens/graph.json",
+    api: API,
+    writeToken: TOKEN1,
+    rev: 1,
+  });
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(0);
+  expect(seen.at(-1)?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
+  expect((await registry())[FIRST]?.rev).toBe(2);
+});
+
+test("pulling an edit link that no longer opens the canvas keeps the token that does", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(0);
+  const current = (await registry())[FIRST]?.writeToken;
+  err = [];
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  expect(err.join("\n")).toContain("no longer opens");
+  expect((await registry())[FIRST]?.writeToken).toBe(current);
+});
+
+test("a link with something that is not a token after #w= is a misuse", async () => {
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=A`)).toBe(2);
+  expect(seen).toEqual([]);
+});
+
+test("rotate on a canvas pulled by its view link leaves nothing pending behind", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const fresh = await mkdtemp(join(tmpdir(), "pr-lens-canvas-other-"));
+  process.chdir(fresh);
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}`)).toBe(0);
+
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_UNREGISTERED]");
+  expect((await registry())[FIRST]).not.toHaveProperty("pending");
+
+  // The edit link arrives later; nothing retires it on the next push. (The
+  // pull itself proves the token with a rotation onto itself, which is not
+  // a rotation; the push after it must send none at all.)
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  await writeFile("drawn.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(0);
+  expect(seen.map((request) => [request.method, request.path.endsWith("/rotate")])).toEqual([["PUT", false]]);
+  expect(seen[0]?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
+});
+
+test("a proof made against one entry is not acted on once another command has changed it", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const other = "other-token".padEnd(22, "b");
+  const entries = await registry();
+
+  // The proof succeeds; then, before the pull writes, a rotate elsewhere
+  // lands a different token in the registry and on the app.
+  const proving = fakeFetch;
+  vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    const answer = await proving(input, init);
+    if (url.pathname.endsWith("/rotate")) {
+      await writeFile(REGISTRY, JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: other } } }), "utf8");
+      canvases.get(FIRST)!.token = other;
+    }
+    return answer;
+  });
+
+  err = [];
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  expect(err.join("\n")).toContain("changed while the edit link was being checked");
+  expect((await registry())[FIRST]?.writeToken).toBe(other);
+});
+
+test("a rotation the app has refused for good is dropped, not carried out by a later pen", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const gone = "gone".padEnd(22, "g");
+  const pending = "pending".padEnd(22, "p");
+  const current = "current".padEnd(22, "c");
+  const entries = await registry();
+  await writeFile(
+    REGISTRY,
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: gone, pending } } }),
+    "utf8",
+  );
+  canvases.get(FIRST)!.token = current;
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("the pending rotation was dropped");
+  expect((await registry())[FIRST]).not.toHaveProperty("pending");
+
+  seen = [];
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${current}`)).toBe(0);
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  expect(seen.map((request) => [request.method, request.path.endsWith("/rotate")])).toEqual([["PUT", false]]);
+  expect(canvases.get(FIRST)?.token).toBe(current);
+});
+
+test("importing a token drops a rotation that was pending for the old one", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const pending = "pending".padEnd(22, "p");
+  const current = "current".padEnd(22, "c");
+  const entries = await registry();
+  await writeFile(
+    REGISTRY,
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], pending } } }),
+    "utf8",
+  );
+  canvases.get(FIRST)!.token = current;
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${current}`)).toBe(0);
+  const entry = (await registry())[FIRST];
+  expect(entry?.writeToken).toBe(current);
+  expect(entry).not.toHaveProperty("pending");
+});
+
+test("an entry answers only for the app it was made against", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const pending = "pending".padEnd(22, "p");
+  const entries = await registry();
+  await writeFile(
+    REGISTRY,
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], api: "https://staging.test", pending } } }),
+    "utf8",
+  );
+  const before = (await registry())[FIRST];
+
+  // Neither push nor rotate here may act on it, and nothing changes.
+  err = [];
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("registered against https://staging.test");
+  expect(seen).toEqual([]);
+  err = [];
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("registered against https://staging.test");
+  expect((await registry())[FIRST]).toEqual(before);
+
+  // A pull of the same id from this app leaves that entry alone too, even
+  // with a token this app vouches for.
+  err = [];
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  expect(err.join("\n")).toContain("registered against another app");
+  expect((await registry())[FIRST]).toEqual(before);
+});
+
+test("a minted canvas whose token cannot be written down is handed to the terminal", async () => {
+  // The moment the app mints, the registry path becomes a directory: the
+  // write that follows the mint fails, and the mint has already happened.
+  const minting = fakeFetch;
+  vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    const answer = await minting(input, init);
+    if (init?.method === "POST") await mkdir(REGISTRY, { recursive: true });
+    return answer;
+  });
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  const reported = err.join("\n");
+  expect(reported).toContain("the canvas was minted and its token is not saved");
+  expect(reported).toContain(`${API}/c/${FIRST}#w=${TOKEN1}`);
+  expect(seen.map((request) => request.method)).toEqual(["POST"]);
+});
+
+test("an edit link for a canvas nobody has pushed to is registered, and the push then lands", async () => {
+  // The mint's answer was the only copy of the token, kept from the terminal.
+  const minting = fakeFetch;
+  vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    const answer = await minting(input, init);
+    if (init?.method === "POST") await mkdir(REGISTRY, { recursive: true });
+    return answer;
+  });
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  vi.stubGlobal("fetch", fakeFetch);
+  await rm(REGISTRY, { recursive: true });
+  out = [];
+  seen = [];
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  expect(out).toEqual([`✓ ${FIRST} has nothing pushed to it yet`, "  the edit link's token is now in .pr-lens/canvas.json"]);
+  expect((await registry())[FIRST]).toEqual({ name: FIRST, source: ".pr-lens/drawn.graph.json", api: API, writeToken: TOKEN1, rev: 0 });
+
+  seen = [];
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(0);
+  expect(seen.map((request) => request.method)).toEqual(["PUT"]);
+  expect(seen[0]?.headers.get("if-match")).toBe("0");
+  expect((await registry())[FIRST]?.rev).toBe(1);
+});
+
+test("pulling an unpushed canvas's own link again keeps a rotation that is pending on it", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const pending = "pending".padEnd(22, "p");
+  const entries = await registry();
+  await writeFile(REGISTRY, JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], rev: 0, pending } } }), "utf8");
+  canvases.get(FIRST)!.document = undefined;
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}#w=${TOKEN1}`)).toBe(0);
+  const entry = (await registry())[FIRST];
+  expect(entry?.writeToken).toBe(TOKEN1);
+  expect(entry?.pending).toBe(pending);
+});
+
+test("pull refuses the registry's names in a checkout that has no workspace yet", async () => {
+  for (const target of [REGISTRY, ".pr-lens/Canvas.json", `${REGISTRY}.lock`]) {
+    err = [];
+    expect(await invoke("canvas", "pull", `${API}/c/${FIRST}`, "-o", target)).toBe(2);
+    expect(err.join("\n")).toContain("write tokens live");
+  }
+  expect(seen).toEqual([]);
+  await expect(stat(".pr-lens")).rejects.toThrow();
+});
+
+test("a connection that dies after the headers is reported in the CLI's words too", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  vi.stubGlobal("fetch", async () => ({
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    text: async () => {
+      throw new TypeError("terminated: other side closed (10.0.0.7:443)");
+    },
+  }));
+  err = [];
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  const reported = err.join("\n");
+  expect(reported).toContain("[CANVAS_UNAVAILABLE]");
+  expect(reported).toContain("cut off");
+  expect(reported).not.toContain("10.0.0.7");
+});
+
+test("a connection that fails is reported in the CLI's words, not the runtime's", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  vi.stubGlobal("fetch", async () => {
+    throw new TypeError("fetch failed: connect ECONNREFUSED 127.0.0.1:1 (https://canvas.test/api/canvas?secret=1)");
+  });
+  err = [];
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  const reported = err.join("\n");
+  expect(reported).toContain("[CANVAS_UNAVAILABLE]");
+  expect(reported).toContain("did not answer");
+  expect(reported).not.toContain("ECONNREFUSED");
+  expect(reported).not.toContain("secret=1");
+});
+
+test("a filesystem that will not take the lock is a typed failure, not a crash", async () => {
+  await mkdir(".pr-lens", { recursive: true });
+  await chmod(".pr-lens", 0o500);
+  try {
+    // Whichever write the read-only directory refuses first, the workspace
+    // README or the lock, the answer is the typed file error, not a trace.
+    expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+    const reported = err.join("\n");
+    expect(reported).toContain("[UNREADABLE_FILE]");
+    expect(reported).toMatch(/cannot (write|take the lock)/);
+    expect(reported).not.toContain("    at ");
+  } finally {
+    await chmod(".pr-lens", 0o700);
+  }
+});
+
+test("pull will not write a document over the registry", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const entries = await registry();
+
+  for (const target of [REGISTRY, `./${REGISTRY}`, `${REGISTRY}.lock`, ".pr-lens/Canvas.json", ".pr-lens/CANVAS.JSON"]) {
+    err = [];
+    expect(await invoke("canvas", "pull", "-o", target, "--api", API)).toBe(2);
+    expect(err.join("\n")).toContain("write tokens live");
+  }
+  expect(await registry()).toEqual(entries);
+
+  // A hard link to the registry is the registry.
+  await link(REGISTRY, "alias.json");
+  err = [];
+  expect(await invoke("canvas", "pull", "-o", "alias.json", "--api", API)).toBe(2);
+  expect(await registry()).toEqual(entries);
+});
+
+test("pulling a view link records the revision, and push then asks for the edit link", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  const fresh = await mkdtemp(join(tmpdir(), "pr-lens-canvas-other-"));
+  process.chdir(fresh);
+  await writeFile("drawn.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+
+  expect(await invoke("canvas", "pull", `${API}/c/${FIRST}`)).toBe(0);
+  expect((await registry())[FIRST]).toEqual({
+    name: "Batch broadcast sending through Postmark",
+    source: ".pr-lens/graph.json",
+    api: API,
+    rev: 1,
+  });
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("pull its edit link");
+});
+
+test("a checkout whose .git is a dangling link is not outside a repository", async () => {
+  await symlink("nowhere", ".git");
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+  expect(err.join("\n")).toContain("[CANVAS_REGISTRY_EXPOSED]");
+  expect(seen).toEqual([]);
+});

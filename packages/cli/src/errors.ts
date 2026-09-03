@@ -14,7 +14,14 @@ export type CliErrorCode =
   | "MISSING_API_KEY"
   | "PROVIDER_FAILED"
   | "MODEL_OUTPUT_INVALID"
-  | "RENDER_FAILED";
+  | "RENDER_FAILED"
+  | "CANVAS_UNREGISTERED"
+  | "CANVAS_UNKNOWN"
+  | "CANVAS_CONFLICT"
+  | "CANVAS_REJECTED"
+  | "CANVAS_RATE_LIMITED"
+  | "CANVAS_UNAVAILABLE"
+  | "CANVAS_REGISTRY_EXPOSED";
 
 export class PrLensCliError extends Error {
   readonly code: CliErrorCode;
