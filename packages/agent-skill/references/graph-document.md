@@ -227,7 +227,7 @@ Labels 120 characters, summaries 2000, chip values 32. They are display fields: 
 ## Then validate
 
 ```bash
-npx @coldtea/pr-lens-cli validate .pr-lens/graph.json
+npx @coldtea/pr-lens-cli@latest validate .pr-lens/graph.json
 ```
 
 Every problem is reported at once, with a path into the document. Fix them all and run it again until it is clean.
