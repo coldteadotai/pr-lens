@@ -305,6 +305,12 @@ npx @coldtea/pr-lens-cli render .pr-lens/graph.json
 open .pr-lens/*-dark-*.svg    # macOS; the SVGs are self-contained, any browser reads them
 ```
 
+For a terminal-native view of the same evidence graph, project one view as Mermaid:
+
+```bash
+npx @coldtea/pr-lens-cli mermaid .pr-lens/graph.json --view overview
+```
+
 This is also the shape of reviewing an agent's work: while you read the diff, the agent that wrote it renders it. With the skill installed, "render this change with PR Lens and open the SVGs" gets you the diagram beside the diff, the same picture its pull request will carry, minutes earlier.
 
 </details>
@@ -316,8 +322,8 @@ This is also the shape of reviewing an agent's work: while you read the diff, th
 | Package                                        | What it is                                                                                           |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | [`packages/schema`](packages/schema)           | `@coldtea/pr-lens-schema`: the contract every other component speaks                                 |
-| [`packages/renderer`](packages/renderer)       | `@coldtea/pr-lens-renderer`: deterministic JSON graph → the animated, theme-paired SVGs on this page |
-| [`packages/cli`](packages/cli)                 | `@coldtea/pr-lens-cli`: read a diff with your own model key, render it, compose the comment          |
+| [`packages/renderer`](packages/renderer)       | `@coldtea/pr-lens-renderer`: deterministic graph projection to animated SVG or static Mermaid        |
+| [`packages/cli`](packages/cli)                 | `@coldtea/pr-lens-cli`: read a diff, project it for web or terminal, and compose the comment          |
 | [`packages/action`](packages/action)           | the GitHub Action: analyze, publish, post one static comment                                         |
 | [`packages/agent-skill`](packages/agent-skill) | `@coldtea/pr-lens-agent-skill`: teaches a coding agent to draw the change it just made               |
 

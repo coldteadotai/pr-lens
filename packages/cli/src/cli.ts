@@ -3,13 +3,14 @@ import { analyzeCommand, USAGE as ANALYZE_USAGE } from "./commands/analyze.js";
 import { canvasCommand, USAGE as CANVAS_USAGE } from "./commands/canvas.js";
 import { commentCommand, USAGE as COMMENT_USAGE } from "./commands/comment.js";
 import { exportCommand, USAGE as EXPORT_USAGE } from "./commands/export.js";
+import { mermaidCommand, USAGE as MERMAID_USAGE } from "./commands/mermaid.js";
 import { renderCommand, USAGE as RENDER_USAGE } from "./commands/render.js";
 import { USAGE as VALIDATE_USAGE, validateCommand } from "./commands/validate.js";
 import { formatError, PrLensCliError } from "./errors.js";
 import type { Terminal } from "./terminal.js";
 import { CLI_VERSION } from "./version.js";
 
-const COMMANDS = ["analyze", "render", "comment", "validate", "export", "canvas"] as const;
+const COMMANDS = ["analyze", "render", "mermaid", "comment", "validate", "export", "canvas"] as const;
 type CommandName = (typeof COMMANDS)[number];
 
 const isCommand = (value: string): value is CommandName =>
@@ -19,6 +20,7 @@ const HELP = `pr-lens — review what actually matters
 
   pr-lens analyze   --base <ref>            a diff, read by your own model, as a graph document
   pr-lens render    <graph.json>            that document, as light and dark SVGs
+  pr-lens mermaid   <graph.json>            one view, as Mermaid for a terminal
   pr-lens comment   --graph --manifest      the pull request comment, as markdown
   pr-lens validate  <file...>               any PR Lens document, checked against the contract
   pr-lens export    <graph.json>            the merged state, as a map worth committing
@@ -36,6 +38,8 @@ const usageFor = (command: CommandName): string => {
       return ANALYZE_USAGE;
     case "render":
       return RENDER_USAGE;
+    case "mermaid":
+      return MERMAID_USAGE;
     case "comment":
       return COMMENT_USAGE;
     case "validate":
@@ -60,6 +64,8 @@ const dispatch = (
       return analyzeCommand(args, terminal, env);
     case "render":
       return renderCommand(args, terminal);
+    case "mermaid":
+      return mermaidCommand(args, terminal);
     case "comment":
       return commentCommand(args, terminal);
     case "validate":

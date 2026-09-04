@@ -277,6 +277,7 @@ describe("the version in the manifest", () => {
     const pkg = parsed as { name: string; version: string };
     expect(RENDERER_NAME).toBe(pkg.name);
     expect(RENDERER_VERSION).toBe(pkg.version);
+    expect(RENDERER_VERSION).toBe("0.2.0");
   });
 });
 

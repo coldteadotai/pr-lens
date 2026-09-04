@@ -1,6 +1,6 @@
 # @coldtea/pr-lens-renderer
 
-A schema-valid PR Lens graph document in, a self-contained animated SVG out. No network, no filesystem, no clock: the same document renders to the same bytes on any machine, which is what lets a diagram be addressed by the hash of itself.
+A schema-valid PR Lens graph document in, either a self-contained animated SVG or static Mermaid out. No network, no filesystem, no clock: the same document and projection render to the same bytes on any machine.
 
 MIT © Coldtea AI.
 
@@ -10,7 +10,7 @@ pnpm add @coldtea/pr-lens-renderer
 
 ```ts
 import { parseGraphDoc } from "@coldtea/pr-lens-schema";
-import { render, renderAll } from "@coldtea/pr-lens-renderer";
+import { render, renderAll, renderMermaid } from "@coldtea/pr-lens-renderer";
 
 const doc = parseGraphDoc(json);
 
@@ -19,6 +19,9 @@ const { svg, width, height } = render(doc, { lens: "architecture", theme: "dark"
 
 // Every drill-down section, in both themes, plus the manifest a comment is built from.
 const { assets, manifest } = renderAll(doc, { config });
+
+// One terminal-friendly projection from the same graph.
+const mermaid = renderMermaid(doc, { lens: "data-flow", view: "send-pipeline" });
 ```
 
 ## Two lenses
@@ -26,6 +29,10 @@ const { assets, manifest } = renderAll(doc, { config });
 `architecture` draws lanes of cards with the change written into them: a coloured outline and a badge per delta, removed elements ghosted and struck through, edges tinted by their own delta, one hero edge with a glow, and a travelling pulse on anything the document marked `animated`.
 
 `data-flow` draws a flow as a sequence: participant columns, lifelines, activation bars, return arrows, self-messages, and the architecture lens's travelling pulse on every step the document marks `animated`. Those steps share one cycle and take it in turn: one dot crossing one arrow at a time, in the order the steps happen, a repeated step taking consecutive turns. A turn is spent entirely on its crossing, so the next arrow lights as the last dot lands.
+
+## Mermaid for terminals
+
+`renderMermaid` projects an architecture lens as a Mermaid flowchart and a data-flow lens as a Mermaid sequence diagram. View scope, lane order, message order, corrections and delta labels come from the same graph used by the SVG renderer. Animation is intentionally absent. Graph labels are escaped before they enter Mermaid syntax, and stable aliases keep the result deterministic.
 
 ## Rendering for a GitHub comment
 
@@ -82,7 +89,7 @@ Labels, subtitles and titles come from a model. They are escaped for XML at the 
 
 ## Refusals
 
-`PrLensRenderError` carries a `code` a caller can switch on: `UNKNOWN_VIEW`, `LENS_NOT_DECLARED`, `NOTHING_TO_RENDER`, `NO_FLOW_IN_SCOPE`, `TOO_MANY_ASSETS`. A document that parsed is otherwise safe to render: the renderer trusts `@coldtea/pr-lens-schema` and never re-validates it.
+`PrLensRenderError` carries a `code` a caller can switch on: `UNKNOWN_VIEW`, `VIEW_LENS_MISMATCH`, `LENS_NOT_DECLARED`, `NOTHING_TO_RENDER`, `NO_FLOW_IN_SCOPE`, `TOO_MANY_ASSETS`. A document that parsed is otherwise safe to render: the renderer trusts `@coldtea/pr-lens-schema` and never re-validates it.
 
 `TOO_MANY_ASSETS` cannot be reached by a parsed document: the contract caps a view tree at `MAX_VIEWS`, which is `MAX_RENDER_ASSETS` divided by the two themes a `<picture>` pair needs. A hand-built one can reach it, because that cap lives in a refinement and a refinement does not survive into the inferred type. The check is a postcondition on what `renderAll` is about to produce rather than a re-reading of what came in, because how many pictures a render makes depends on how many themes the caller asked for, which no document knows.
 

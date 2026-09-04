@@ -27,4 +27,6 @@ export {
 
 export { applyCorrections } from "./corrections.js";
 
+export { renderMermaid, type MermaidRenderOptions } from "./mermaid.js";
+
 export { findView, flattenViews, resolveScope, type ScopedGraph } from "./scope.js";

@@ -10,7 +10,7 @@ npx @coldtea/pr-lens-cli analyze --base origin/main
 
 ## Bring your own key
 
-Only `analyze` talks to a model; `render`, `comment`, `validate`, `export` and `canvas` never do. Its key is read from the environment, never from a flag: a flag lands in shell history and in the log of whatever CI runs it. The diff goes to the provider you name and nowhere else: there is no PR Lens service in this path.
+Only `analyze` talks to a model; `render`, `mermaid`, `comment`, `validate`, `export` and `canvas` never do. Its key is read from the environment, never from a flag: a flag lands in shell history and in the log of whatever CI runs it. The diff goes to the provider you name and nowhere else: there is no PR Lens service in this path.
 
 ```bash
 export GEMINI_API_KEY=…      # Gemini is the default, not a requirement
@@ -75,6 +75,16 @@ Both matter to what comes next. The manifest is where `comment` gets its file na
 
 The SVGs carry no script and no external reference, and the same document renders to the same bytes every time. `--theme light` or `--theme dark` draws one half of the pair.
 
+### `mermaid`
+
+```bash
+pr-lens mermaid .pr-lens/graph.json --view send-pipeline -o send-pipeline.mmd
+```
+
+Projects one selected view as Mermaid source for a terminal. A view supplies its own lens. For a document without views, or for a whole-document projection, use `--lens architecture` or `--lens data-flow` instead. If a document declares several lenses and neither option settles the choice, the command asks you to choose rather than guessing.
+
+This is a second projection of the same graph, not a second analysis path. It applies the same repository corrections as `render`, preserves graph and message order, escapes graph labels before putting them into Mermaid syntax, and produces the same bytes for the same input. It writes to stdout unless `--out` names a file.
+
 ### `comment`
 
 ```bash
@@ -132,7 +142,7 @@ The CLI refuses to write the registry where git could commit it. If a checkout t
 
 ## Corrections
 
-A repository's `.github/pr-lens.yml` is picked up automatically by `render` and applied at draw time: renames, exclusions, lane pins, groupings. It is an overlay: inference never writes back into it, so a correction keeps holding as the code moves and the model renames things between runs, and the document on disk stays the record of what was inferred.
+A repository's `.github/pr-lens.yml` is picked up automatically by `render` and `mermaid` and applied at projection time: renames, exclusions, lane pins, groupings. It is an overlay: inference never writes back into it, so a correction keeps holding as the code moves and the model renames things between runs, and the document on disk stays the record of what was inferred.
 
 ```yaml
 schemaVersion: 0.1.0
@@ -146,7 +156,7 @@ map:
 
 A lane pin may name a lane the document never declared; the band is created and takes the id for its label. And `render` reports any correction that changed nothing about what it drew. A config that has drifted, usually because the file a selector named has moved, otherwise fails silently and forever.
 
-`--config` points elsewhere and `--no-config` ignores it, on both `render` and `analyze`. `analyze` reads only `lenses` from it, since which lenses to fill is a question for extraction and the rest is a question for drawing.
+`--config` points elsewhere and `--no-config` ignores it on `render`, `mermaid` and `analyze`. `analyze` reads only `lenses` from it, since which lenses to fill is a question for extraction and the rest is a question for projection.
 
 ## Failures
 

@@ -5,6 +5,7 @@
  */
 export type RenderErrorCode =
   | "UNKNOWN_VIEW"
+  | "VIEW_LENS_MISMATCH"
   | "LENS_NOT_DECLARED"
   | "NOTHING_TO_RENDER"
   | "NO_FLOW_IN_SCOPE"

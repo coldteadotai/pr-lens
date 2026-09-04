@@ -10,6 +10,8 @@ import type { Terminal } from "../src/terminal.js";
 import { CLI_VERSION } from "../src/version.js";
 
 const GOLDEN = new URL("../../schema/examples/postmark-refactor.graph.json", import.meta.url).pathname;
+const MINIMAL = new URL("../../schema/examples/minimal.graph.json", import.meta.url).pathname;
+const CONFIG = new URL("../../schema/examples/pr-lens.config.json", import.meta.url).pathname;
 
 let out: string[] = [];
 let err: string[] = [];
@@ -30,6 +32,7 @@ test("running it with nothing to do is a misuse, and prints what it can do", asy
 test("--help is an answer, not a misuse", async () => {
   expect(await invoke("--help")).toBe(0);
   expect(out.join("\n")).toContain("pr-lens validate");
+  expect(out.join("\n")).toContain("pr-lens mermaid");
 });
 
 test("--version is the version stamped on documents", async () => {
@@ -45,6 +48,83 @@ test("an unknown command is a misuse", async () => {
 test("a command's --help prints that command's usage", async () => {
   expect(await invoke("analyze", "--help")).toBe(0);
   expect(out.join("\n")).toContain("--api-key-env");
+});
+
+test("mermaid writes one selected view for terminal rendering", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-mermaid-"));
+  const target = join(directory, "flow.mmd");
+
+  expect(
+    await invoke(
+      "mermaid",
+      GOLDEN,
+      "--view",
+      "send-pipeline-view",
+      "--out",
+      target,
+      "--no-config",
+    ),
+  ).toBe(0);
+
+  const diagram = await readFile(target, "utf8");
+  expect(diagram).toMatch(/^sequenceDiagram\n/);
+  expect(diagram).toContain("enqueue broadcast job (modified)");
+  expect(out.join("\n")).toContain(target);
+});
+
+test("mermaid requires a lens when a document has several and no view was selected", async () => {
+  expect(await invoke("mermaid", GOLDEN, "--no-config")).toBe(2);
+  expect(err.join("\n")).toContain("--lens is required");
+});
+
+test("mermaid infers a document's only lens and writes to stdout", async () => {
+  expect(await invoke("mermaid", MINIMAL, "--no-config")).toBe(0);
+  expect(out.join("\n")).toMatch(/^flowchart LR/);
+});
+
+test("mermaid applies repository corrections before projecting", async () => {
+  expect(
+    await invoke("mermaid", GOLDEN, "--view", "new-batch-path", "--config", CONFIG),
+  ).toBe(0);
+  expect(out.join("\n")).toContain("Broadcast sender (added)");
+});
+
+test("mermaid rejects an invalid lens", async () => {
+  expect(await invoke("mermaid", GOLDEN, "--lens", "security", "--no-config")).toBe(2);
+  expect(err.join("\n")).toContain("architecture or data-flow");
+});
+
+test("mermaid rejects an unknown view", async () => {
+  expect(await invoke("mermaid", GOLDEN, "--view", "missing", "--no-config")).toBe(1);
+  expect(err.join("\n")).toContain("UNKNOWN_VIEW");
+});
+
+test("mermaid rejects a lens that disagrees with its view", async () => {
+  expect(
+    await invoke(
+      "mermaid",
+      GOLDEN,
+      "--view",
+      "send-pipeline-view",
+      "--lens",
+      "architecture",
+      "--no-config",
+    ),
+  ).toBe(2);
+  expect(err.join("\n")).toContain("uses the 'data-flow' lens");
+});
+
+test("mermaid reports corrections that remove the whole graph", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-mermaid-config-"));
+  const config = join(directory, "pr-lens.config.json");
+  await writeFile(
+    config,
+    JSON.stringify({ schemaVersion: "0.1.0", map: { exclude: ["**", "id:postmark"] } }),
+    "utf8",
+  );
+
+  expect(await invoke("mermaid", GOLDEN, "--config", config)).toBe(1);
+  expect(err.join("\n")).toContain("removed every node");
 });
 
 test("a valid document validates, and says what it holds", async () => {
