@@ -171,9 +171,13 @@ The pull requests behind Hooks, Node fetch and Ingress, run back through PR Lens
 
 <br />
 
-## Make corrections
+## Configuration
 
-When a diagram calls something by the wrong name, the fix is a correction file. Editing the generated SVG only lasts until the next push. Commit `.github/pr-lens.yml` and every later render honours it:
+Use `.github/pr-lens.yml` to customize PR Lens. See the [configuration reference](packages/schema#repository-config) for settings, defaults, and examples.
+
+### Make corrections
+
+For CLI rendering, put map corrections in `.github/pr-lens.yml` rather than editing generated SVGs:
 
 ```yaml
 schemaVersion: 0.1.0

@@ -81,6 +81,14 @@ map:
 lenses: [architecture]
 ```
 
+## Hosted GitHub App comments
+
+The hosted App reads `github` settings from the PR's head commit. Other options apply to the CLI.
+
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `github.comment.collapsed` | `false` | Start diagrams and details closed. Drawing still runs automatically. |
+
 ## Check it
 
 ```bash

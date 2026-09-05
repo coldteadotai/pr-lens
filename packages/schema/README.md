@@ -91,6 +91,9 @@ A stored map describes a system rather than a change, so everything in it is `un
 schemaVersion: 0.1.0
 lenses: [architecture, data-flow]
 branding: true
+github:
+  comment:
+    collapsed: false
 map:
   rename:
     - match: functions/src/broadcast/sendBroadcastBulk.ts
@@ -106,6 +109,12 @@ map:
 ```
 
 A `match` beginning with `id:` addresses one node exactly; anything else is a path glob matched against a node's file paths, so a correction survives the model renaming the node between runs. Corrections are an overlay applied over fresh inference on every run. Inference never writes back into this file.
+
+The hosted App reads `github` settings from the PR's head commit. Other options apply to the CLI.
+
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `github.comment.collapsed` | `false` | Start diagrams and details closed. Drawing still runs automatically. |
 
 ## JSON Schema
 

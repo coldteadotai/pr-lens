@@ -28,5 +28,10 @@
       }
     ]
   },
-  "branding": true
+  "branding": true,
+  "github": {
+    "comment": {
+      "collapsed": false
+    }
+  }
 }
