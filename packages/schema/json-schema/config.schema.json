@@ -143,6 +143,25 @@
       "default": true,
       "description": "Show the 'Rendered by PR Lens' footer on comments.",
       "type": "boolean"
+    },
+    "github": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "comment": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "collapsed": {
+              "default": false,
+              "description": "Start the hosted App's diagrams and details in a closed disclosure. Drawing still runs automatically.",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": [

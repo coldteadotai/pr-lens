@@ -63,6 +63,18 @@ export const Config = z
       .boolean()
       .default(true)
       .describe("Show the 'Rendered by PR Lens' footer on comments."),
+    github: z
+      .strictObject({
+        comment: z
+          .strictObject({
+            collapsed: z
+              .boolean()
+              .default(false)
+              .describe("Start the hosted App's diagrams and details in a closed disclosure. Drawing still runs automatically."),
+          })
+          .prefault({}),
+      })
+      .prefault({}),
   })
   .describe("Repository configuration for PR Lens.");
 export type Config = z.infer<typeof Config>;
