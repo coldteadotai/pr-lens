@@ -6,10 +6,15 @@ import { join } from "node:path";
 import { beforeEach, expect, test } from "vitest";
 import { run } from "../src/cli.js";
 import { COMMENT_MARKER } from "../src/comment.js";
+import { GRAPH_DOCUMENT_JSON_SCHEMA } from "../src/skill-content.generated.js";
 import type { Terminal } from "../src/terminal.js";
 import { CLI_VERSION } from "../src/version.js";
 
 const GOLDEN = new URL("../../schema/examples/postmark-refactor.graph.json", import.meta.url).pathname;
+const CLI_INVOCATION = "npx @coldtea/pr-lens-cli@latest";
+
+const forBundledCli = (content: string): string =>
+  content.replaceAll(CLI_INVOCATION, "pr-lens");
 
 let out: string[] = [];
 let err: string[] = [];
@@ -30,11 +35,63 @@ test("running it with nothing to do is a misuse, and prints what it can do", asy
 test("--help is an answer, not a misuse", async () => {
   expect(await invoke("--help")).toBe(0);
   expect(out.join("\n")).toContain("pr-lens validate");
+  expect(out.join("\n")).toContain("diagram instructions for coding agents");
 });
 
 test("--version is the version stamped on documents", async () => {
   expect(await invoke("--version")).toBe(0);
   expect(out).toEqual([CLI_VERSION]);
+});
+
+test("skill prints the operating manual from the agent skill package", async () => {
+  const manual = await readFile(
+    new URL("../../agent-skill/SKILL.md", import.meta.url),
+    "utf8",
+  );
+
+  expect(await invoke("skill")).toBe(0);
+  expect(out).toEqual([forBundledCli(manual)]);
+  expect(out[0]).toContain("pr-lens render");
+  expect(out[0]).not.toContain(CLI_INVOCATION);
+});
+
+test("skill help makes its agent-facing output clear", async () => {
+  expect(await invoke("skill", "--help")).toBe(0);
+  expect(out.join("\n")).toContain("create, validate, render, and");
+  expect(out.join("\n")).toContain("share PR Lens diagrams");
+  expect(out.join("\n")).toContain("written to stdout");
+  expect(out.join("\n")).toContain("long, agent-facing document");
+  expect(out.join("\n")).toContain("Use pr-lens --help for a short command overview");
+});
+
+test("skill references prints the config, graph specification, and example", async () => {
+  const config = await readFile(
+    new URL("../../agent-skill/references/config.md", import.meta.url),
+    "utf8",
+  );
+  const graphDocument = await readFile(
+    new URL("../../agent-skill/references/graph-document.md", import.meta.url),
+    "utf8",
+  );
+  const exampleDocument = await readFile(
+    new URL("../../agent-skill/references/example.graph.json", import.meta.url),
+    "utf8",
+  );
+
+  expect(await invoke("skill", "references")).toBe(0);
+  expect(out).toHaveLength(1);
+  expect(out[0]).toContain(forBundledCli(config));
+  expect(out[0]).toContain(forBundledCli(graphDocument));
+  expect(out[0]).toContain(exampleDocument);
+});
+
+test("the embedded analysis schema matches the schema package", async () => {
+  const graphDocumentJsonSchema = await readFile(
+    new URL("../../schema/json-schema/graph-doc.schema.json", import.meta.url),
+    "utf8",
+  );
+
+  expect(GRAPH_DOCUMENT_JSON_SCHEMA).toBe(graphDocumentJsonSchema);
 });
 
 test("an unknown command is a misuse", async () => {
