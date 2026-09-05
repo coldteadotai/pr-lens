@@ -1,15 +1,16 @@
 import { assertNever } from "@coldtea/pr-lens-schema";
-import { analyzeCommand, USAGE as ANALYZE_USAGE } from "./commands/analyze.js";
-import { canvasCommand, USAGE as CANVAS_USAGE } from "./commands/canvas.js";
-import { commentCommand, USAGE as COMMENT_USAGE } from "./commands/comment.js";
-import { exportCommand, USAGE as EXPORT_USAGE } from "./commands/export.js";
-import { renderCommand, USAGE as RENDER_USAGE } from "./commands/render.js";
-import { USAGE as VALIDATE_USAGE, validateCommand } from "./commands/validate.js";
-import { formatError, PrLensCliError } from "./errors.js";
-import type { Terminal } from "./terminal.js";
 import { CLI_VERSION } from "./version.js";
+import type { Terminal } from "./terminal.js";
+import { formatError, PrLensCliError } from "./errors.js";
+import { skillCommand, USAGE as SKILL_USAGE } from "./commands/skill.js";
+import { exportCommand, USAGE as EXPORT_USAGE } from "./commands/export.js";
+import { canvasCommand, USAGE as CANVAS_USAGE } from "./commands/canvas.js";
+import { renderCommand, USAGE as RENDER_USAGE } from "./commands/render.js";
+import { analyzeCommand, USAGE as ANALYZE_USAGE } from "./commands/analyze.js";
+import { commentCommand, USAGE as COMMENT_USAGE } from "./commands/comment.js";
+import { USAGE as VALIDATE_USAGE, validateCommand } from "./commands/validate.js";
 
-const COMMANDS = ["analyze", "render", "comment", "validate", "export", "canvas"] as const;
+const COMMANDS = ["analyze", "render", "comment", "validate", "export", "canvas", "skill"] as const;
 type CommandName = (typeof COMMANDS)[number];
 
 const isCommand = (value: string): value is CommandName =>
@@ -23,6 +24,7 @@ const HELP = `pr-lens — review what actually matters
   pr-lens validate  <file...>               any PR Lens document, checked against the contract
   pr-lens export    <graph.json>            the merged state, as a map worth committing
   pr-lens canvas    push | pull | rotate    that document, kept on prlens.dev as a page and an embed
+  pr-lens skill                             diagram instructions for coding agents
 
   pr-lens <command> --help                  what a command takes
   pr-lens --version
@@ -44,6 +46,8 @@ const usageFor = (command: CommandName): string => {
       return EXPORT_USAGE;
     case "canvas":
       return CANVAS_USAGE;
+    case "skill":
+      return SKILL_USAGE;
     default:
       return assertNever(command, "Unhandled command");
   }
@@ -68,6 +72,8 @@ const dispatch = (
       return exportCommand(args, terminal);
     case "canvas":
       return canvasCommand(args, terminal, env);
+    case "skill":
+      return skillCommand(args, terminal);
     default:
       return assertNever(command, "Unhandled command");
   }

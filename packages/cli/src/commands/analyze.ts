@@ -1,14 +1,14 @@
 import { LENSES, type GraphDocInput, type Lens } from "@coldtea/pr-lens-schema";
-import { createRequire } from "node:module";
 import { dirname } from "node:path";
 import { parseOptions, readBoolean, readInt, readList, readString } from "../args.js";
 import { discoverConfig, loadConfig, type LoadedConfig } from "../config-file.js";
 import { PrLensCliError, usageError } from "../errors.js";
 import { extractGraph } from "../extract.js";
 import { collectDiff, mergeBase, parseRepoSlug, remoteSlug, repositoryRoot, resolveCommit } from "../git.js";
-import { readTextFile, writeJsonFile } from "../io.js";
+import { writeJsonFile } from "../io.js";
 import { buildExtractionPrompt, SYSTEM_PROMPT } from "../prompt.js";
 import { completeJson, isProviderId, PROVIDER_IDS, resolveProvider } from "../providers/index.js";
+import { GRAPH_DOCUMENT_JSON_SCHEMA } from "../skill-content.generated.js";
 import type { Terminal } from "../terminal.js";
 import { CLI_VERSION, GENERATOR_NAME } from "../version.js";
 import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
@@ -58,11 +58,6 @@ const readProviderId = (values: Record<string, unknown>) => {
     throw usageError(`unknown provider ${JSON.stringify(id)}`, `known providers: ${PROVIDER_IDS.join(", ")}`);
   return id;
 };
-
-const graphJsonSchema = (): Promise<string> =>
-  readTextFile(
-    createRequire(import.meta.url).resolve("@coldtea/pr-lens-schema/json-schema/graph-doc.schema.json"),
-  );
 
 export const analyzeCommand = async (
   args: readonly string[],
@@ -140,7 +135,7 @@ export const analyzeCommand = async (
     lenses,
   };
 
-  const user = buildExtractionPrompt(promptContext, await graphJsonSchema());
+  const user = buildExtractionPrompt(promptContext, GRAPH_DOCUMENT_JSON_SCHEMA);
   const provider = readBoolean(values["dry-run"])
     ? undefined
     : resolveProvider(
