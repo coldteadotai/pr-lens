@@ -5,38 +5,38 @@
 <defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mko-added" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#3fb950" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mko-modified" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#d29922" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mko-removed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#f85149" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker><marker id="mko-neutral" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#6e7681" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
 <rect x="0" y="0" width="1284" height="740" rx="12" fill="#0d1117"/>
 <rect x="0" y="0" width="1284" height="740" rx="12" fill="url(#dots)"/>
-<g><rect class="lanebox" x="16" y="44" width="404" height="680" rx="12"/>
-<text class="lanelabel" x="32" y="68">NEXT.JS · VERCEL</text>
-<rect class="lanebox" x="440" y="44" width="404" height="680" rx="12"/>
-<text class="lanelabel" x="456" y="68">CLOUD FUNCTIONS · FIREBASE</text>
-<rect class="lanebox" x="864" y="44" width="404" height="680" rx="12"/>
-<text class="lanelabel" x="880" y="68">EXTERNAL · POSTMARK</text></g>
-<g><path class="edge edge-neutral context" d="M218,154 L218,206" marker-end="url(#mk-neutral)"/>
-<path class="edge edge-neutral context" d="M404,232 L417,232 C424.18,232 430,237.82 430,245 L430,328 C430,335.18 435.82,341 443,341 L456,341" marker-end="url(#mk-neutral)"/>
-<path class="edge edge-neutral context" d="M642,372 L642,424" marker-end="url(#mk-neutral)"/>
-<path class="edge edge-neutral context" d="M642,486 L642,538" marker-end="url(#mk-neutral)"/>
-<path class="edge edge-neutral context" d="M828,564 L841,564 C848.18,564 854,569.82 854,577 L854,660 C854,667.18 859.82,673 867,673 L880,673" marker-end="url(#mk-neutral)"/></g>
-<g><g class="cardsh context"><rect class="card" x="32" y="92" width="372" height="62" rx="10"/>
+<g><g data-lane="web"><rect class="lanebox" x="16" y="44" width="404" height="680" rx="12"/>
+<text class="lanelabel" x="32" y="68">NEXT.JS · VERCEL</text></g>
+<g data-lane="functions"><rect class="lanebox" x="440" y="44" width="404" height="680" rx="12"/>
+<text class="lanelabel" x="456" y="68">CLOUD FUNCTIONS · FIREBASE</text></g>
+<g data-lane="external"><rect class="lanebox" x="864" y="44" width="404" height="680" rx="12"/>
+<text class="lanelabel" x="880" y="68">EXTERNAL · POSTMARK</text></g></g>
+<g><g data-edge="composer-to-queue" data-from="broadcast-composer" data-to="queue-route"><path class="edge edge-neutral context" d="M218,154 L218,206" marker-end="url(#mk-neutral)"/></g>
+<g data-edge="queue-to-firestore" data-from="queue-route" data-to="broadcast-queue"><path class="edge edge-neutral context" d="M404,232 L417,232 C424.18,232 430,237.82 430,245 L430,328 C430,335.18 435.82,341 443,341 L456,341" marker-end="url(#mk-neutral)"/></g>
+<g data-edge="firestore-to-process" data-from="broadcast-queue" data-to="process-broadcast"><path class="edge edge-neutral context" d="M642,372 L642,424" marker-end="url(#mk-neutral)"/></g>
+<g data-edge="process-to-single" data-from="process-broadcast" data-to="send-single-email"><path class="edge edge-neutral context" d="M642,486 L642,538" marker-end="url(#mk-neutral)"/></g>
+<g data-edge="single-to-postmark" data-from="send-single-email" data-to="postmark"><path class="edge edge-neutral context" d="M828,564 L841,564 C848.18,564 854,569.82 854,577 L854,660 C854,667.18 859.82,673 867,673 L880,673" marker-end="url(#mk-neutral)"/></g></g>
+<g><g class="cardsh context" data-node="broadcast-composer"><rect class="card" x="32" y="92" width="372" height="62" rx="10"/>
 <rect class="chip" x="46" y="110" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="52" y="117" width="14" height="12" rx="2"/>
 <path class="glyph-stroke" d="M56.5,117 v12"/></g>
 <text class="ntitle" x="82" y="119" font-size="13">Broadcast composer</text>
 <text class="nsub" x="82" y="137">app/broadcasts/new</text></g>
-<g class="cardsh context"><rect class="card" x="32" y="206" width="372" height="52" rx="10"/>
+<g class="cardsh context" data-node="queue-route"><rect class="card" x="32" y="206" width="372" height="52" rx="10"/>
 <rect class="chip" x="46" y="219" width="26" height="26" rx="7"/><g><path class="glyph" d="M52,226 L66,232 L52,238 Z"/></g>
 <text class="ntitle" x="82" y="237" font-size="13">POST /api/broadcasts/queue</text></g>
-<g class="cardsh context"><rect class="card" x="456" y="310" width="372" height="62" rx="10"/>
+<g class="cardsh context" data-node="broadcast-queue"><rect class="card" x="456" y="310" width="372" height="62" rx="10"/>
 <rect class="chip" x="470" y="328" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="483" cy="336.5" rx="6.5" ry="2.6"/>
 <path class="glyph-stroke" d="M476.5,336.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
 <text class="ntitle" x="506" y="337" font-size="13">broadcastQueue</text>
 <text class="nsub" x="506" y="355">Firestore collection</text></g>
-<g class="cardsh context"><rect class="card" x="456" y="424" width="372" height="62" rx="10"/>
+<g class="cardsh context" data-node="process-broadcast"><rect class="card" x="456" y="424" width="372" height="62" rx="10"/>
 <rect class="chip" x="470" y="442" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="459.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
 <text class="ntitle" x="506" y="451" font-size="13">processBroadcast</text>
 <text class="nsub" x="506" y="469">onWrite trigger</text></g>
-<g class="cardsh context"><rect class="card" x="456" y="538" width="372" height="52" rx="10"/>
+<g class="cardsh context" data-node="send-single-email"><rect class="card" x="456" y="538" width="372" height="52" rx="10"/>
 <rect class="chip" x="470" y="551" width="26" height="26" rx="7"/><g><text class="glyph" x="483" y="568.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
 <text class="ntitle" x="506" y="569" font-size="13">sendSingleEmail</text></g>
-<g class="cardsh context"><rect class="card" x="880" y="642" width="372" height="62" rx="10"/>
+<g class="cardsh context" data-node="postmark"><rect class="card" x="880" y="642" width="372" height="62" rx="10"/>
 <rect class="chip" x="894" y="660" width="26" height="26" rx="7"/><g><rect class="glyph-stroke" x="899" y="667" width="16" height="12" rx="2"/>
 <path class="glyph-stroke" d="M899,669 l8,6 8,-6"/></g>
 <text class="ntitle" x="930" y="669" font-size="13">Postmark</text>

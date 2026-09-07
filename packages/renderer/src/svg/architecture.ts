@@ -137,7 +137,7 @@ export const paintCard = (placed: PlacedNode): string => {
 
   return wrap(
     "g",
-    { class: groupClass },
+    { class: groupClass, "data-node": node.id },
     lines([
       tag("rect", {
         class: cardOutlineClass(node),
@@ -194,11 +194,15 @@ const paintEdge = (
     : "";
 
   return {
-    markup: lines([
-      glow,
-      tag("path", { class: classes.join(" "), d: path, "marker-end": markerFor(tone) }),
-      pulses(edge, path, palette),
-    ]),
+    markup: wrap(
+      "g",
+      { "data-edge": edge.id, "data-from": edge.from, "data-to": edge.to },
+      lines([
+        glow,
+        tag("path", { class: classes.join(" "), d: path, "marker-end": markerFor(tone) }),
+        pulses(edge, path, palette),
+      ]),
+    ),
     pill:
       label === undefined || edge.label === undefined
         ? ""
@@ -259,20 +263,24 @@ export const paintArchitecture = (
   }
 
   const lanes = layout.lanes.map(({ lane, box }) =>
-    lines([
-      tag("rect", {
-        class: "lanebox",
-        x: coord(box.x),
-        y: coord(box.y),
-        width: coord(box.width),
-        height: coord(box.height),
-        rx: LANE_RADIUS,
-      }),
-      textNode(
-        { class: "lanelabel", x: coord(box.x + LANE_PADDING_X), y: LANE_HEADER_BASELINE },
-        laneHeaderText(lane),
-      ),
-    ]),
+    wrap(
+      "g",
+      { "data-lane": lane.id },
+      lines([
+        tag("rect", {
+          class: "lanebox",
+          x: coord(box.x),
+          y: coord(box.y),
+          width: coord(box.width),
+          height: coord(box.height),
+          rx: LANE_RADIUS,
+        }),
+        textNode(
+          { class: "lanelabel", x: coord(box.x + LANE_PADDING_X), y: LANE_HEADER_BASELINE },
+          laneHeaderText(lane),
+        ),
+      ]),
+    ),
   );
 
   const canvas = canvasFor(

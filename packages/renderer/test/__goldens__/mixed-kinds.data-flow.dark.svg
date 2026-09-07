@@ -5,43 +5,43 @@
 <defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(110,118,129,.22)"/></pattern><marker id="mk-added" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="mko-added" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#3fb950" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-modified" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker><marker id="mko-modified" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#d29922" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-removed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f85149"/></marker><marker id="mko-removed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#f85149" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="mk-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6e7681"/></marker><marker id="mko-neutral" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#6e7681" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
 <rect x="0" y="0" width="666" height="457" rx="12" fill="#0d1117"/>
 <rect x="0" y="0" width="666" height="457" rx="12" fill="url(#dots)"/>
-<g transform="translate(12,10)"><g><rect class="lanebox" x="4" y="6" width="174" height="425" rx="12"/>
-<rect class="lanebox" x="234" y="6" width="174" height="425" rx="12"/>
-<rect class="lanebox" x="464" y="6" width="174" height="425" rx="12"/></g>
+<g transform="translate(12,10)"><g><g><rect class="lanebox" x="4" y="6" width="174" height="425" rx="12"/></g>
+<g><rect class="lanebox" x="234" y="6" width="174" height="425" rx="12"/></g>
+<g><rect class="lanebox" x="464" y="6" width="174" height="425" rx="12"/></g></g>
 <g><line class="lifeline" x1="91" y1="72" x2="91" y2="419"/>
 <line class="lifeline" x1="321" y1="72" x2="321" y2="419"/>
 <rect class="actbar" x="315" y="113" width="12" height="130" rx="4"/>
 <line class="lifeline" x1="551" y1="72" x2="551" y2="419"/>
 <rect class="actbar" x="545" y="281" width="12" height="38" rx="4"/>
 <rect class="actbar" x="545" y="395" width="12" height="12.67" rx="4"/></g>
-<g><g class="cardsh"><rect class="card card-modified" x="16" y="18" width="150" height="52" rx="10"/>
+<g><g class="cardsh" data-node="api"><rect class="card card-modified" x="16" y="18" width="150" height="52" rx="10"/>
 <rect class="chip" x="30" y="31" width="26" height="26" rx="7"/><g><path class="glyph" d="M36,38 L50,44 L36,50 Z"/></g>
 <text class="ntitle" x="66" y="49" font-size="13">checkout API</text>
 <g class="bdg bdg-modified"><rect x="92.38" y="10" width="66.62" height="16" rx="8"/><text x="125.69" y="21" text-anchor="middle">CHANGED</text></g></g>
-<g class="cardsh"><rect class="card card-modified" x="246" y="18" width="150" height="52" rx="10"/>
+<g class="cardsh" data-node="worker"><rect class="card card-modified" x="246" y="18" width="150" height="52" rx="10"/>
 <rect class="chip" x="260" y="31" width="26" height="26" rx="7"/><g><text class="glyph" x="273" y="48.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
 <text class="ntitle" x="296" y="49" font-size="13">order worker</text>
 <g class="bdg bdg-modified"><rect x="322.38" y="10" width="66.62" height="16" rx="8"/><text x="355.69" y="21" text-anchor="middle">CHANGED</text></g></g>
-<g class="cardsh context"><rect class="card" x="476" y="18" width="150" height="52" rx="10"/>
+<g class="cardsh context" data-node="store"><rect class="card" x="476" y="18" width="150" height="52" rx="10"/>
 <rect class="chip" x="490" y="31" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="503" cy="39.5" rx="6.5" ry="2.6"/>
 <path class="glyph-stroke" d="M496.5,39.5 v9 a6.5,2.6 0 0 0 13 0 v-9"/></g>
 <text class="ntitle" x="526" y="49" font-size="13">order store</text></g></g>
-<g><path class="msg edge-modified" d="M91,113 L310,113" marker-end="url(#mk-modified)"/>
-<circle r="2.6" fill="#d29922" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0;0.125;1" calcMode="linear" path="M91,113 L310,113"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0;0.01;0.115;0.125;1"/></circle>
-<path class="msg edge-added msg-strong" d="M327,151 L546,151" marker-end="url(#mko-added)"/>
-<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.125;0.25;1" calcMode="linear" path="M327,151 L546,151"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.125;0.135;0.24;0.25;1"/></circle>
-<path class="msg edge-neutral" d="M327,189 h52 a7,7 0 0 1 7,7 v6 a7,7 0 0 1 -7,7 h-47" marker-end="url(#mk-neutral)"/>
-<circle r="2.6" fill="#6e7681" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.25;0.375;1" calcMode="linear" path="M327,189 h52 a7,7 0 0 1 7,7 v6 a7,7 0 0 1 -7,7 h-47"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.25;0.26;0.365;0.375;1"/></circle>
-<path class="msg edge-modified msg-return" d="M315,243 L96,243" marker-end="url(#mk-modified)"/>
-<circle r="2.6" fill="#d29922" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.375;0.5;1" calcMode="linear" path="M315,243 L96,243"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.375;0.385;0.49;0.5;1"/></circle>
-<path class="msg edge-added msg-strong" d="M91,281 L540,281" marker-end="url(#mk-added)"/>
-<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.5;0.625;1" calcMode="linear" path="M91,281 L540,281"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.5;0.51;0.615;0.625;1"/></circle>
-<path class="msg edge-added msg-return msg-strong" d="M545,319 L96,319" marker-end="url(#mk-added)"/>
-<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.625;0.75;1" calcMode="linear" path="M545,319 L96,319"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.625;0.635;0.74;0.75;1"/></circle>
-<path class="msg edge-added msg-strong" d="M91,357 L316,357" marker-end="url(#mko-added)"/>
-<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.75;0.875;1" calcMode="linear" path="M91,357 L316,357"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.75;0.76;0.865;0.875;1"/></circle>
-<path class="msg edge-neutral" d="M91,395 L540,395" marker-end="url(#mk-neutral)"/>
-<circle r="2.6" fill="#6e7681" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.875;1;1" calcMode="linear" path="M91,395 L540,395"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.875;0.885;0.99;1;1"/></circle></g>
+<g><g data-message="place-order"><path class="msg edge-modified" d="M91,113 L310,113" marker-end="url(#mk-modified)"/>
+<circle r="2.6" fill="#d29922" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0;0.125;1" calcMode="linear" path="M91,113 L310,113"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0;0.01;0.115;0.125;1"/></circle></g>
+<g data-message="audit"><path class="msg edge-added msg-strong" d="M327,151 L546,151" marker-end="url(#mko-added)"/>
+<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.125;0.25;1" calcMode="linear" path="M327,151 L546,151"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.125;0.135;0.24;0.25;1"/></circle></g>
+<g data-message="validate"><path class="msg edge-neutral" d="M327,189 h52 a7,7 0 0 1 7,7 v6 a7,7 0 0 1 -7,7 h-47" marker-end="url(#mk-neutral)"/>
+<circle r="2.6" fill="#6e7681" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.25;0.375;1" calcMode="linear" path="M327,189 h52 a7,7 0 0 1 7,7 v6 a7,7 0 0 1 -7,7 h-47"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.25;0.26;0.365;0.375;1"/></circle></g>
+<g data-message="confirm"><path class="msg edge-modified msg-return" d="M315,243 L96,243" marker-end="url(#mk-modified)"/>
+<circle r="2.6" fill="#d29922" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.375;0.5;1" calcMode="linear" path="M315,243 L96,243"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.375;0.385;0.49;0.5;1"/></circle></g>
+<g data-message="persist"><path class="msg edge-added msg-strong" d="M91,281 L540,281" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.5;0.625;1" calcMode="linear" path="M91,281 L540,281"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.5;0.51;0.615;0.625;1"/></circle></g>
+<g data-message="ack"><path class="msg edge-added msg-return msg-strong" d="M545,319 L96,319" marker-end="url(#mk-added)"/>
+<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.625;0.75;1" calcMode="linear" path="M545,319 L96,319"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.625;0.635;0.74;0.75;1"/></circle></g>
+<g data-message="notify"><path class="msg edge-added msg-strong" d="M91,357 L316,357" marker-end="url(#mko-added)"/>
+<circle r="2.6" fill="#3fb950" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.75;0.875;1" calcMode="linear" path="M91,357 L316,357"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.75;0.76;0.865;0.875;1"/></circle></g>
+<g data-message="warm"><path class="msg edge-neutral" d="M91,395 L540,395" marker-end="url(#mk-neutral)"/>
+<circle r="2.6" fill="#6e7681" opacity="0"><animateMotion dur="11.2s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.875;1;1" calcMode="linear" path="M91,395 L540,395"/><animate attributeName="opacity" dur="11.2s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.875;0.885;0.99;1;1"/></circle></g></g>
 <g><g><rect class="lpill" x="167.32" y="105.5" width="66.37" height="15" rx="7.5"/><text class="ltext ltext-modified" x="200.5" y="116.5" text-anchor="middle">place order</text></g>
 <g><rect class="lpill" x="385.67" y="143.5" width="101.66" height="15" rx="7.5"/><text class="ltext ltext-added" x="436.5" y="154.5" text-anchor="middle">append audit event</text></g>
 <g><rect class="lpill" x="394" y="191.5" width="70.29" height="15" rx="7.5"/><text class="ltext" x="429.15" y="202.5" text-anchor="middle">validate cart</text></g>

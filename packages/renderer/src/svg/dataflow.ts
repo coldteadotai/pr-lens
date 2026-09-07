@@ -241,10 +241,14 @@ const paintMessage = (
     const activated = activeAt(placed.message.from, placed.y);
     const path = selfPath(placed.fromX, placed.y, activated);
     return {
-      line: lines([
-        tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
-        pulsesFor(placed, path, slotCount, palette),
-      ]),
+      line: wrap(
+        "g",
+        { "data-message": placed.message.id },
+        lines([
+          tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
+          pulsesFor(placed, path, slotCount, palette),
+        ]),
+      ),
       pill: paintLabelPill(placed.label, selfPillBox(placed, activated), tone),
     };
   }
@@ -253,10 +257,14 @@ const paintMessage = (
   const path = `M${coord(ends.start)},${coord(placed.y)} L${coord(ends.end)},${coord(placed.y)}`;
 
   return {
-    line: lines([
-      tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
-      pulsesFor(placed, path, slotCount, palette),
-    ]),
+    line: wrap(
+      "g",
+      { "data-message": placed.message.id },
+      lines([
+        tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
+        pulsesFor(placed, path, slotCount, palette),
+      ]),
+    ),
     pill: paintLabelPill(placed.label, pillBox(placed, ends), tone),
   };
 };
@@ -288,14 +296,18 @@ const paintFlow = (
 
   const bands = layout.participants.map((participant) => {
     const box = bandBox(participant.centreX, columnWidth, layout);
-    return tag("rect", {
-      class: "lanebox",
-      x: coord(box.x),
-      y: coord(box.y),
-      width: coord(box.width),
-      height: coord(box.height),
-      rx: LANE_RADIUS,
-    });
+    return wrap(
+      "g",
+      { "data-node": participant.id },
+      tag("rect", {
+        class: "lanebox",
+        x: coord(box.x),
+        y: coord(box.y),
+        width: coord(box.width),
+        height: coord(box.height),
+        rx: LANE_RADIUS,
+      }),
+    );
   });
 
   const columns = layout.participants.map((participant) =>
