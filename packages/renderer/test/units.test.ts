@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Config, GraphDoc } from "@coldtea/pr-lens-schema";
+import type { Config, GraphDoc, GraphNode } from "@coldtea/pr-lens-schema";
 import { parseConfig, parseGraphDoc } from "@coldtea/pr-lens-schema";
 import { minimalGraph, postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
@@ -18,6 +18,7 @@ import {
   resolveScope,
 } from "../src/index.js";
 import { matchesGlob } from "../src/glob.js";
+import { cardBadges } from "../src/layout/architecture.js";
 import { measure, truncate } from "../src/text.js";
 import { TITLE_SIZE_MIN, TITLE_SIZE_SMALL } from "../src/design.js";
 
@@ -113,6 +114,34 @@ describe("fitting a title to its card", () => {
 
     expect(svg).toContain("…");
     expect(titleSizes(svg)[0]).toBe(TITLE_SIZE_MIN);
+  });
+});
+
+describe("card badges", () => {
+  const node = (delta: GraphNode["delta"], badges: string[]): GraphNode => ({
+    id: "n0",
+    label: "sendBroadcastBulk",
+    kind: "function",
+    delta,
+    lane: "functions",
+    files: [],
+    badges,
+  });
+
+  it("does not repeat the delta badge when a producer badge already says it", () => {
+    expect(cardBadges(node("added", ["new"]))).toEqual(["NEW"]);
+  });
+
+  it("matches the delta badge case-insensitively", () => {
+    expect(cardBadges(node("modified", ["Changed"]))).toEqual(["CHANGED"]);
+  });
+
+  it("keeps a producer badge that only overlaps the delta badge in part", () => {
+    expect(cardBadges(node("added", ["new package"]))).toEqual(["new package", "NEW"]);
+  });
+
+  it("keeps every producer badge when none of them repeat the delta badge", () => {
+    expect(cardBadges(node("modified", ["+38 / -12"]))).toEqual(["+38 / -12", "CHANGED"]);
   });
 });
 

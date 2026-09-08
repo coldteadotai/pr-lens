@@ -60,10 +60,18 @@ const trackedWidth = (
 export const badgeWidth = (text: string): number =>
   trackedWidth(text, "sans-bold", BADGE_TEXT_SIZE, BADGE_TRACKING) + BADGE_PADDING_X * 2;
 
-/** Every badge a card carries, its own first and the delta badge last. */
+/**
+ * Every badge a card carries, its own first and the delta badge last.
+ *
+ * A producer badge that already says the same thing as the delta badge
+ * (e.g. "new" on a node whose delta is "added") is dropped so the card
+ * does not show it twice.
+ */
 export const cardBadges = (node: GraphNode): string[] => {
   const delta = deltaBadgeText(node.delta);
-  return delta === undefined ? [...node.badges] : [...node.badges, delta];
+  if (delta === undefined) return [...node.badges];
+  const own = node.badges.filter((text) => text.toLowerCase() !== delta.toLowerCase());
+  return [...own, delta];
 };
 
 export type PlacedNode = {
