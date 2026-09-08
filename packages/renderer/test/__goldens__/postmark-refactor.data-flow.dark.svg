@@ -18,7 +18,7 @@
 <g><g class="cardsh"><rect class="card card-modified" x="16" y="18" width="183" height="52" rx="10"/>
 <rect class="chip" x="30" y="31" width="26" height="26" rx="7"/><g><path class="glyph" d="M36,38 L50,44 L36,50 Z"/></g>
 <text class="ntitle" x="66" y="49" font-size="13">queue route</text>
-<g class="bdg bdg-neutral"><rect x="60.98" y="10" width="58.4" height="16" rx="8"/><text x="90.18" y="21" text-anchor="middle">+38 / -12</text></g>
+<g class="bdg bdg-added"><rect x="60.98" y="10" width="58.4" height="16" rx="8"/><text x="90.18" y="21" text-anchor="middle">+38 / -12</text></g>
 <g class="bdg bdg-modified"><rect x="125.38" y="10" width="66.62" height="16" rx="8"/><text x="158.69" y="21" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-modified" x="279" y="18" width="183" height="62" rx="10"/>
 <rect class="chip" x="293" y="36" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="306" cy="44.5" rx="6.5" ry="2.6"/>

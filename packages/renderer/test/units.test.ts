@@ -64,6 +64,50 @@ describe("truncation", () => {
   });
 });
 
+describe("diff-stat badge colour", () => {
+  const oneNode = (delta: GraphDoc["nodes"][number]["delta"], badge: string): GraphDoc =>
+    parseGraphDoc({
+      ...minimalGraph,
+      nodes: [
+        {
+          id: "n0",
+          label: "health-route",
+          kind: "route",
+          delta,
+          lane: "api",
+          files: [],
+          badges: [badge],
+        },
+      ],
+    });
+
+  /** The tone class the first badge matching `text` was painted in. */
+  const badgeTone = (svg: string, text: string): string | undefined => {
+    const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`class="bdg bdg-(\\w+)"[\\s\\S]*?>${escaped}<`).exec(svg)?.[1];
+  };
+
+  it("tones a diff-stat badge added when it added more lines than it removed", () => {
+    const { svg } = render(oneNode("modified", "+80 / -3"), { lens: "architecture", theme: "dark" });
+    expect(badgeTone(svg, "+80 / -3")).toBe("added");
+  });
+
+  it("tones a diff-stat badge removed when it removed more lines than it added", () => {
+    const { svg } = render(oneNode("modified", "+3 / -80"), { lens: "architecture", theme: "dark" });
+    expect(badgeTone(svg, "+3 / -80")).toBe("removed");
+  });
+
+  it("leaves a diff-stat badge neutral when it added and removed the same", () => {
+    const { svg } = render(oneNode("modified", "+5 / -5"), { lens: "architecture", theme: "dark" });
+    expect(badgeTone(svg, "+5 / -5")).toBe("neutral");
+  });
+
+  it("leaves a badge that is not a diff stat neutral", () => {
+    const { svg } = render(oneNode("modified", "wip"), { lens: "architecture", theme: "dark" });
+    expect(badgeTone(svg, "wip")).toBe("neutral");
+  });
+});
+
 describe("fitting a title to its card", () => {
   const pairedLane = (...labels: readonly string[]): GraphDoc =>
     parseGraphDoc({

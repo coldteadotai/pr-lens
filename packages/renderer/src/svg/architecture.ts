@@ -40,8 +40,22 @@ import { glyphGroup } from "./icons.js";
 import { lines, tag, textNode, wrap } from "./primitives.js";
 import { travellingPulses } from "./pulse.js";
 
-const badgeTone = (node: GraphNode, text: string): Tone =>
-  text === deltaBadgeText(node.delta) ? toneFor(node.delta) : "neutral";
+/** A line-count badge a producer writes itself, e.g. "+38 / -12". */
+const DIFF_STAT = /^\+(\d+)\s*\/\s*-(\d+)$/;
+
+const diffStatTone = (text: string): Tone | undefined => {
+  const stat = DIFF_STAT.exec(text);
+  if (stat === null) return undefined;
+  const added = Number(stat[1]);
+  const removed = Number(stat[2]);
+  if (added === removed) return undefined;
+  return added > removed ? "added" : "removed";
+};
+
+const badgeTone = (node: GraphNode, text: string): Tone => {
+  if (text === deltaBadgeText(node.delta)) return toneFor(node.delta);
+  return diffStatTone(text) ?? "neutral";
+};
 
 /** The badge row, laid left to right across the strip the layout reserved. */
 const paintBadges = (placed: PlacedNode): string => {

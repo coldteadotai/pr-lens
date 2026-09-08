@@ -37,7 +37,7 @@
 <g class="cardsh"><rect class="card card-modified" x="32" y="206" width="372" height="52" rx="10"/>
 <rect class="chip" x="46" y="219" width="26" height="26" rx="7"/><g><path class="glyph" d="M52,226 L66,232 L52,238 Z"/></g>
 <text class="ntitle" x="82" y="237" font-size="13">POST /api/broadcasts/queue</text>
-<g class="bdg bdg-neutral"><rect x="265.98" y="198" width="58.4" height="16" rx="8"/><text x="295.18" y="209" text-anchor="middle">+38 / -12</text></g>
+<g class="bdg bdg-added"><rect x="265.98" y="198" width="58.4" height="16" rx="8"/><text x="295.18" y="209" text-anchor="middle">+38 / -12</text></g>
 <g class="bdg bdg-modified"><rect x="330.38" y="198" width="66.62" height="16" rx="8"/><text x="363.69" y="209" text-anchor="middle">CHANGED</text></g></g>
 <g class="cardsh"><rect class="card card-modified" x="456" y="310" width="372" height="62" rx="10"/>
 <rect class="chip" x="470" y="328" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="483" cy="336.5" rx="6.5" ry="2.6"/>
