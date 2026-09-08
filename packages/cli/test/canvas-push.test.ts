@@ -18,7 +18,7 @@ test("the first push records a canvas and prints its links, access warning, and 
 
   expect(output.out).toEqual([
     `✓ ${API}/c/${FIRST} — rev 1 · 2 diagrams`,
-    "  unlisted: anyone you give the link can open it, no sign-in needed",
+    "  unlisted: anyone you share it with can open it, no sign-in needed",
     `  README embed: ${API}/c/${FIRST}.svg`,
     "  remove: pr-lens canvas delete",
   ]);

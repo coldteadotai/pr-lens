@@ -44,8 +44,8 @@ const isSubcommand = (value: string): value is Subcommand =>
 
 export const USAGE = `pr-lens canvas <push | pull | rotate | delete> [options]
 
-Keeps a graph document on the PR Lens app as a canvas: a page anyone with the
-link can read, and an SVG a README can embed. The write token lands in
+Keeps a graph document on the PR Lens app as a canvas: a page anyone you share
+it with can read, and an SVG a README can embed. The write token lands in
 ${REGISTRY_PATH}, which git ignores; the edit link carries the same token
 in its fragment, so share the view link and keep the edit link to yourself.
 
@@ -275,7 +275,7 @@ const push = async (
   terminal.out(
     `✓ ${pushed.viewUrl} — rev ${pushed.rev} · ${countDiagrams(pushed.tiles.length)}`,
   );
-  terminal.out("  unlisted: anyone you give the link can open it, no sign-in needed");
+  terminal.out("  unlisted: anyone you share it with can open it, no sign-in needed");
   terminal.out(`  README embed: ${pushed.embedUrl}`);
   terminal.out("  remove: pr-lens canvas delete");
 };
