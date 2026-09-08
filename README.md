@@ -389,7 +389,7 @@ Node 20.11+ and pnpm 10.
 
 Open an issue first and wait for one of us to approve it before you (or agents) write any code. A pull request with no approved issue behind it will be closed. Once your issue is approved, link it from the pull request.
 
-Commit under your own name only. No `Co-Authored-By` line for a model, no "Generated with" footer, no session link — use an agent if you like, but the commits are yours. Most tools add these unless you turn them off.
+Commit under your own name only. No `Co-Authored-By` line for a model, no "Generated with" footer, no session link — use an agent if you like (and we do too), but the commits are yours, full responsibility. Most tools add these unless you turn them off.
 
 <br />
 
