@@ -28,8 +28,32 @@ const SANS_ADVANCE: Readonly<Record<string, number>> = {
   y: 500, z: 500, "{": 334, "|": 260, "}": 334, "~": 584,
 };
 
-/** What a character outside the table is assumed to cost, in the same units. */
+/** What a narrow character outside the table is assumed to cost, in the same units. */
 const FALLBACK_ADVANCE = 600;
+
+/**
+ * East Asian Wide and Fullwidth glyphs occupy a full em. Measuring them at
+ * the narrow fallback puts every CJK label about 38% short of its real width,
+ * which is enough for an edge label's plate to stop covering its own text.
+ */
+const isWide = (character: string): boolean => {
+  const point = character.codePointAt(0) ?? 0;
+  return (
+    (point >= 0x1100 && point <= 0x115f) ||
+    (point >= 0x2e80 && point <= 0xa4cf) ||
+    (point >= 0xac00 && point <= 0xd7a3) ||
+    (point >= 0xf900 && point <= 0xfaff) ||
+    (point >= 0xfe30 && point <= 0xfe6f) ||
+    (point >= 0xff00 && point <= 0xff60) ||
+    (point >= 0xffe0 && point <= 0xffe6) ||
+    (point >= 0x20000 && point <= 0x3fffd)
+  );
+};
+
+const FULL_WIDTH_ADVANCE = 1000;
+
+const fallbackAdvance = (character: string): number =>
+  isWide(character) ? FULL_WIDTH_ADVANCE : FALLBACK_ADVANCE;
 
 /**
  * The bold face of the same family runs a little wider at every weight step.
@@ -43,9 +67,9 @@ const MONO_ADVANCE = 600;
 const advanceFor = (face: Face, character: string): number => {
   switch (face) {
     case "sans":
-      return SANS_ADVANCE[character] ?? FALLBACK_ADVANCE;
+      return SANS_ADVANCE[character] ?? fallbackAdvance(character);
     case "sans-bold":
-      return (SANS_ADVANCE[character] ?? FALLBACK_ADVANCE) * BOLD_WIDENING;
+      return (SANS_ADVANCE[character] ?? fallbackAdvance(character)) * BOLD_WIDENING;
     case "mono":
       return MONO_ADVANCE;
     default:

@@ -6,6 +6,7 @@ import {
 import { parseRenderManifest } from "@coldtea/pr-lens-schema";
 import { describe, expect, it } from "vitest";
 import { PrLensRenderError, render, renderAll, THEMES } from "../src/index.js";
+import { cjkGraph } from "./cjk.js";
 import { expectGolden } from "./goldens.js";
 
 describe("golden renders", () => {
@@ -42,6 +43,16 @@ describe("golden renders", () => {
   it("draws a single node", () => {
     const { svg } = render(minimalGraph, { lens: "architecture", theme: "light" });
     expectGolden("minimal.architecture.light.svg", svg);
+  });
+
+  it("draws full-width scripts at the width they take", () => {
+    const { svg } = render(cjkGraph, { lens: "architecture", theme: "dark" });
+    expectGolden("cjk.architecture.dark.svg", svg);
+  });
+
+  it("fits a plate to a full-width label", () => {
+    const { svg } = render(cjkGraph, { lens: "data-flow", theme: "dark" });
+    expectGolden("cjk.data-flow.dark.svg", svg);
   });
 });
 

@@ -42,6 +42,17 @@ describe("text measurement", () => {
   it("charges every monospace character the same", () => {
     expect(measure("iiii", "mono", 10)).toBe(measure("mmmm", "mono", 10));
   });
+
+  it("charges a full-width character a whole em", () => {
+    expect(measure("한", "sans", 10)).toBe(10);
+    expect(measure("字", "sans", 10)).toBe(10);
+  });
+
+  it("makes a CJK label wider than as many of the widest Latin letter", () => {
+    expect(measure("가나다라", "sans", 13)).toBeGreaterThan(
+      measure("mmmm", "sans", 13),
+    );
+  });
 });
 
 describe("truncation", () => {
