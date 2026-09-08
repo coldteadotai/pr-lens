@@ -110,14 +110,15 @@ The map is a snapshot, not a source of truth. Nothing reads it back into the pip
 pr-lens canvas push
 ```
 
-Puts the document on prlens.dev as a canvas: a page anyone with the link can read, and an SVG a README can embed.
+Puts the document on prlens.dev as a canvas: a page anyone you share it with can read, and an SVG a README can embed.
 
-`push` sends the JSON document, never an SVG; the app draws it. The default is `.pr-lens/drawn.graph.json`, the document `render` drew, so what the page shows is what the diagrams show. The first push of a file mints a canvas and every push after that updates the same one, matched by the path it came from. `--canvas <id|name>` picks a different one and `--name` says what to call a new one; the document's title is the default. It prints three links:
+`push` sends the JSON document, never an SVG; the app draws it. The default is `.pr-lens/drawn.graph.json`, the document `render` drew, so what the page shows is what the diagrams show. The first push of a file mints a canvas and every push after that updates the same one, matched by the path it came from. `--canvas <id|name>` picks a different one and `--name` says what to call a new one; the document's title is the default. It prints the view link, the embed, and the way to take it down again:
 
 ```
 ✓ https://prlens.dev/c/{id} — rev 1 · 4 diagrams
-  edit link, keep it to yourself: https://prlens.dev/c/{id}#w=…
+  unlisted: anyone you share it with can open it, no sign-in needed
   README embed: https://prlens.dev/c/{id}.svg
+  remove: pr-lens canvas delete
 ```
 
 The view link is the one to share. The edit link is the same page with the write token in the fragment, and anyone holding it can push over your canvas, so it stays with you. The embed is the hero diagram as an SVG, for a README or a wiki.
@@ -127,6 +128,10 @@ A canvas plays the document's walkthrough when it carries one. The app checks th
 `pull` fetches the document back, by the view link or the bare id, into `.pr-lens/graph.json` unless `-o` says otherwise, and records the revision. Pull the edit link, the one ending in `#w=…`, and its token is recorded too: that is how a fresh checkout, or one that lost `.pr-lens/canvas.json`, gets the canvas back. A push carries the revision it last saw, and one that has been overtaken is refused rather than applied: pull, then push again.
 
 `rotate` mints a new write token and retires the old one. Use it when an edit link has leaked. The CLI saves the new token before it sends the request, so if the connection drops, the next command finishes the rotation instead of losing the token. The token lives in `.pr-lens/canvas.json`, keyed by canvas id, and git ignores it. Lose that file and the canvas is still readable by everyone; pushing to it again needs the token, which the edit link still carries.
+
+`delete` removes the hosted canvas: the document, every revision of it, and the images drawn from it, at once and for good. It needs the write token, like `push`. The local graph and SVG files stay where they are.
+
+A canvas is a labelled map of a system, so before pushing one it is fair to ask where it goes. The short answer: it can be opened by anyone you share it with and nobody else, it is never listed or indexed, it is kept in the EU until you delete it, and nothing is done with it beyond drawing the page. The long answer, with every company that touches it and the region each runs in, is the [privacy policy](https://prlens.dev/privacy).
 
 Registry writes take a lock at `.pr-lens/canvas.json.lock`. The CLI never removes another command's lock. If a command dies and leaves one behind, the error names its process id and you remove the file yourself.
 
