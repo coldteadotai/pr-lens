@@ -94,9 +94,11 @@ const SEAM_BOTTOM = 0.44;
  * theme-blind, so every card and route lines up with itself across the seam
  * and the cut reads as one diagram lit two ways.
  *
- * Each half keeps its own stylesheet, dot pattern and arrowheads, so its ids
- * are suffixed and its rules scoped to its own group; without that the two
- * halves would share whichever definitions came first.
+ * Each half keeps its own dot pattern and arrowheads, so its ids are
+ * suffixed; without that the two halves would share whichever definitions
+ * came first. Every other rule already sits on the element it styles. The one
+ * inherited rule, the text face, lives on a render's root, which is cut away
+ * here, so it moves onto the half's own group.
  */
 export const splitThemes = (halves: Record<Theme, RenderedSvg>): string => {
   const { width, height } = halves.dark;
@@ -121,26 +123,15 @@ export const splitThemes = (halves: Record<Theme, RenderedSvg>): string => {
 const half = (diagram: RenderedSvg, theme: Theme): string => {
   const opening = diagram.svg.indexOf(">") + 1;
   const closing = diagram.svg.lastIndexOf("</svg>");
+  const face = diagram.svg.slice(0, opening).match(/ font-family="[^"]*"/)?.[0] ?? "";
   const body = diagram.svg
     .slice(opening, closing)
     .replace(/<title>[^<]*<\/title>\n?/, "")
     .replace(/<desc>[^<]*<\/desc>\n?/, "")
     .replace(/id="([^"]+)"/g, (_, id: string) => `id="${id}-${theme}"`)
-    .replace(/url\(#([^)]+)\)/g, (_, id: string) => `url(#${id}-${theme})`)
-    .replace(/<style>([^<]*)<\/style>/, (_, css: string) => `<style>${scoped(css, theme)}</style>`);
+    .replace(/url\(#([^)]+)\)/g, (_, id: string) => `url(#${id}-${theme})`);
 
-  return `<g id="${theme}" clip-path="url(#seam-${theme})">\n${body}\n</g>`;
+  return `<g id="${theme}" clip-path="url(#seam-${theme})"${face}>\n${body}\n</g>`;
 };
-
-const scoped = (css: string, theme: Theme): string =>
-  css
-    .split("}")
-    .filter((rule) => rule.trim() !== "")
-    .map((rule) => {
-      const brace = rule.indexOf("{");
-      const selectors = rule.slice(0, brace).split(",");
-      return `${selectors.map((selector) => `#${theme} ${selector.trim()}`).join(",")}{${rule.slice(brace + 1)}}`;
-    })
-    .join("");
 
 const round2 = (value: number): number => Math.round(value * 100) / 100;
