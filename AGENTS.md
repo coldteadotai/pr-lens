@@ -6,6 +6,7 @@ Hard rules for anyone (human or agent) working in this repo. Read fully before w
 
 - **No secrets in this repo, ever.** This repo needs no credentials. Do not read `~/Documents/dev/pr-lens-secrets/`.
 - **Verify before claiming done**: tests green, `pnpm build` + typecheck clean, and visual output verified in a real browser when the change affects rendered SVGs.
+- **No AI attribution in commits or pull requests.** No `Co-Authored-By` line for a model, no "Generated with" footer, no session link, no bot listed as an author. Whoever opened the pull request is the author of every commit in it. Coding agents add these by default: `.claude/settings.json` in this repo turns them off for Claude Code, and if you use another tool, find its switch before your first commit. A squash merge carries a co-author trailer over from the branch, so check the merge box too.
 - **Pass user-facing words through the humanizer before shipping them.** Anything a person reads — comments, captions, tips, README prose, share pages, cards, terminal output — goes through the [humanizer skill](https://github.com/blader/humanizer/blob/main/SKILL.md) first. Copy that reads as machine-written spends trust the diagrams then have to earn back.
 
 # General
