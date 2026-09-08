@@ -1,10 +1,9 @@
 import { assertNever } from "@coldtea/pr-lens-schema";
-import { parseOptions, readString } from "../args.js";
+
 import {
   fetchCanvas,
   mintCanvas,
   pushCanvas,
-  rotateCanvas,
   verifyWriteToken,
 } from "../canvas/api.js";
 import {
@@ -13,7 +12,7 @@ import {
   findCanvas,
   isCanvasId,
   mintWriteToken,
-  onlyCanvas,
+  selectCanvas,
   isReservedRegistryTarget,
   readRegistry,
   REGISTRY_PATH,
@@ -25,24 +24,25 @@ import {
   type CanvasRegistry,
   type Registered,
 } from "../canvas/registry.js";
-import { readGraphDoc } from "../document.js";
-import { PrLensCliError, usageError } from "../errors.js";
 import { writeJsonFile } from "../io.js";
+import { readGraphDoc } from "../document.js";
 import type { Terminal } from "../terminal.js";
 import { WORKSPACE_DIR } from "../workspace.js";
+import { deleteCommand } from "../canvas/delete.js";
+import { parseOptions, readString } from "../args.js";
+import { PrLensCliError, usageError } from "../errors.js";
+import { DEFAULT_API, API_ENV, readApi, requireSameApi, requireWriteToken, settleRotation, settlePendingRotation } from "../canvas/write.js";
 
-const DEFAULT_API = "https://prlens.dev";
-const API_ENV = "PR_LENS_API_URL";
 const DEFAULT_SOURCE = `${WORKSPACE_DIR}/drawn.graph.json`;
 const DEFAULT_OUT = `${WORKSPACE_DIR}/graph.json`;
 
-const SUBCOMMANDS = ["push", "pull", "rotate"] as const;
+const SUBCOMMANDS = ["push", "pull", "rotate", "delete"] as const;
 type Subcommand = (typeof SUBCOMMANDS)[number];
 
 const isSubcommand = (value: string): value is Subcommand =>
   SUBCOMMANDS.some((subcommand) => subcommand === value);
 
-export const USAGE = `pr-lens canvas <push | pull | rotate> [options]
+export const USAGE = `pr-lens canvas <push | pull | rotate | delete> [options]
 
 Keeps a graph document on the PR Lens app as a canvas: a page anyone with the
 link can read, and an SVG a README can embed. The write token lands in
@@ -61,20 +61,10 @@ in its fragment, so share the view link and keep the edit link to yourself.
   pr-lens canvas rotate                mint a new write token; the old edit link stops working
     --canvas <id|name>                 which canvas (default the checkout's only canvas)
 
-  --api <url>                          the PR Lens app (default $${API_ENV}, else ${DEFAULT_API})`;
+  pr-lens canvas delete                permanently delete the hosted canvas; keep local graph and SVG files
+    --canvas <id|name>                 which canvas (default the checkout's only canvas)
 
-const readApi = (
-  value: unknown,
-  env: Record<string, string | undefined>,
-): string => {
-  const api = readString(value, "api") ?? env[API_ENV] ?? DEFAULT_API;
-  try {
-    new URL(api);
-  } catch {
-    throw usageError(`--api needs a URL, got ${JSON.stringify(api)}`);
-  }
-  return api.replace(/\/+$/, "");
-};
+  --api <url>                          the PR Lens app (default $${API_ENV}, else ${DEFAULT_API})`;
 
 type CanvasRef = {
   id: string;
@@ -114,99 +104,8 @@ const readCanvasRef = (value: string): CanvasRef => {
   return { id, origin: url.origin, writeToken };
 };
 
-/** Another app's 404 says nothing about this entry, so it must not change it. */
-const requireSameApi = (api: string, { id, entry }: Registered): void => {
-  if (entry.api === api) return;
-  throw new PrLensCliError(
-    "CANVAS_UNREGISTERED",
-    `${id} is registered against ${entry.api}, not ${api}`,
-    `pass --api ${entry.api}, or push the document without --canvas to mint a canvas here`,
-  );
-};
-
-const requireWriteToken = ({ id, entry }: Registered): string => {
-  if (entry.writeToken !== undefined) return entry.writeToken;
-  throw new PrLensCliError(
-    "CANVAS_UNREGISTERED",
-    `this checkout can read ${id} but holds no write token for it`,
-    "pull its edit link, the one with #w= at the end, and the token comes with it",
-  );
-};
-
 const countDiagrams = (count: number): string =>
   `${count} ${count === 1 ? "diagram" : "diagrams"}`;
-
-const unfinishedRotation = (error: PrLensCliError): PrLensCliError =>
-  new PrLensCliError(
-    error.code,
-    `${error.message}; the rotation is not finished`,
-    [
-      error.details,
-      "run pr-lens canvas rotate again to finish it: the new token is kept until the app confirms it",
-    ]
-      .filter((line) => line !== undefined && line !== "")
-      .join("\n"),
-  );
-
-/** Asking again with the same pair is safe: the app answers "rotated" once the token is on record. */
-const settleRotation = async (
-  api: string,
-  { id, entry }: Registered,
-  nextToken: string,
-  terminal: Terminal,
-): Promise<{ registered: Registered; editUrl: string }> => {
-  const rotated = await rotateCanvas(
-    api,
-    id,
-    requireWriteToken({ id, entry }),
-    nextToken,
-  ).catch(async (error: unknown) => {
-    if (!(error instanceof PrLensCliError)) throw error;
-    if (error.code !== "CANVAS_UNKNOWN") throw unfinishedRotation(error);
-
-    // Final: a pending token that was current would have been answered
-    // "rotated". Drop it now, or a token imported later would carry it out.
-    await updateRegistry((registry) => {
-      const current = registry.canvases[id];
-      if (
-        current === undefined ||
-        current.pending !== nextToken ||
-        current.api !== api
-      )
-        return;
-      registry.canvases[id] = { ...current, pending: undefined };
-    }, terminal);
-    throw new PrLensCliError(
-      error.code,
-      `${error.message}; the pending rotation was dropped`,
-      error.details,
-    );
-  });
-
-  // A different token pending by now belongs to a later rotation.
-  await updateRegistry((registry) => {
-    const current = registry.canvases[id];
-    if (
-      current === undefined ||
-      current.pending !== nextToken ||
-      current.api !== api
-    )
-      return;
-    registry.canvases[id] = {
-      ...current,
-      writeToken: nextToken,
-      pending: undefined,
-    };
-  }, terminal);
-
-  return {
-    registered: {
-      id,
-      entry: { ...entry, writeToken: nextToken, pending: undefined },
-    },
-    editUrl: rotated.editUrl,
-  };
-};
 
 type Recorded = "imported" | "kept" | "overtaken" | "refused" | "elsewhere";
 
@@ -355,12 +254,7 @@ const push = async (
       return { id: minted.id, entry };
     }));
 
-  requireSameApi(api, registered);
-  const pending = registered.entry.pending;
-  const target =
-    pending === undefined
-      ? registered
-      : (await settleRotation(api, registered, pending, terminal)).registered;
+  const target = await settlePendingRotation(api, registered, terminal);
 
   const pushed = await pushCanvas(
     api,
@@ -381,8 +275,9 @@ const push = async (
   terminal.out(
     `✓ ${pushed.viewUrl} — rev ${pushed.rev} · ${countDiagrams(pushed.tiles.length)}`,
   );
-  terminal.out(`  edit link, keep it to yourself: ${pushed.editUrl}`);
+  terminal.out("  unlisted: anyone you give the link can open it, no sign-in needed");
   terminal.out(`  README embed: ${pushed.embedUrl}`);
+  terminal.out("  remove: pr-lens canvas delete");
 };
 
 const pull = async (
@@ -408,9 +303,7 @@ const pull = async (
     positional !== undefined
       ? readCanvasRef(positional)
       : {
-          ...(ref === undefined
-            ? onlyCanvas(registry)
-            : findCanvas(registry, ref)),
+          ...selectCanvas(registry, ref),
           origin: undefined,
           writeToken: undefined,
         };
@@ -487,8 +380,7 @@ const rotate = async (
   await ensureRegistryHome(terminal);
   const registry = await readRegistry();
   const ref = readString(values.canvas, "canvas");
-  const { id } =
-    ref === undefined ? onlyCanvas(registry) : findCanvas(registry, ref);
+  const { id } = selectCanvas(registry, ref);
 
   // Saved before the request, so a lost answer cannot lose it; chosen under
   // the lock, so two rotations at once finish the same one.
@@ -532,7 +424,7 @@ export const canvasCommand = async (
 ): Promise<void> => {
   const [name, ...rest] = args;
   if (name === undefined)
-    throw usageError("canvas needs a subcommand: push, pull or rotate");
+    throw usageError("canvas needs a subcommand: push, pull, rotate or delete");
   if (!isSubcommand(name))
     throw usageError(`unknown canvas subcommand ${JSON.stringify(name)}`);
 
@@ -541,6 +433,8 @@ export const canvasCommand = async (
       return push(rest, terminal, env);
     case "pull":
       return pull(rest, terminal, env);
+    case "delete":
+      return deleteCommand(rest, terminal, env);
     case "rotate":
       return rotate(rest, terminal, env);
     default:

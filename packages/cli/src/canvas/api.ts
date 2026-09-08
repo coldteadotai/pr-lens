@@ -1,11 +1,12 @@
+import { z } from "zod";
 import {
   assertNever,
   safeParseGraphDoc,
   type GraphDoc,
 } from "@coldtea/pr-lens-schema";
-import { z } from "zod";
-import { PrLensCliError } from "../errors.js";
+
 import { CLI_VERSION } from "../version.js";
+import { PrLensCliError } from "../errors.js";
 
 const REQUEST_TIMEOUT_MS = 60_000;
 
@@ -87,7 +88,7 @@ const Refusal = z.discriminatedUnion("code", [
 ]);
 
 type Request = {
-  method: "GET" | "POST" | "PUT";
+  method: "GET" | "POST" | "PUT" | "DELETE";
   path: string;
   /** Undefined when minting, so a 404 there is not blamed on a canvas. */
   canvas: string | undefined;
@@ -309,4 +310,15 @@ export const rotateCanvas = (
       body: { writeToken: nextToken },
     },
     Rotated,
+  );
+
+export const deleteCanvas = (
+  api: string,
+  id: string,
+  token: string,
+): Promise<{ id: string; deleted: true }> =>
+  call(
+    api,
+    { method: "DELETE", path: canvasPath(id), canvas: id, token },
+    z.object({ id: z.literal(id), deleted: z.literal(true) }),
   );

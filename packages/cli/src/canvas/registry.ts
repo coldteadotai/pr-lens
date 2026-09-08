@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
   access,
   link,
@@ -9,13 +10,11 @@ import {
   readFile,
   writeFile,
 } from "node:fs/promises";
-import { z } from "zod";
 import type { Stats } from "node:fs";
 import { randomBytes } from "node:crypto";
+import { assertNever } from "@coldtea/pr-lens-schema";
 import { setTimeout as sleep } from "node:timers/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
-
-import { assertNever } from "@coldtea/pr-lens-schema";
 
 import { git } from "../git.js";
 import type { Terminal } from "../terminal.js";
@@ -477,3 +476,9 @@ export const onlyCanvas = (registry: CanvasRegistry): Registered => {
 
   return only;
 };
+
+export const selectCanvas = (
+  registry: CanvasRegistry,
+  ref: string | undefined,
+): Registered =>
+  ref === undefined ? onlyCanvas(registry) : findCanvas(registry, ref);
