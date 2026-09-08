@@ -97,8 +97,7 @@ describe("mixed message kinds", () => {
 
   it("keeps a return dashed", () => {
     const { svg } = render(mixedKindsGraph, { lens: "data-flow", theme: "dark" });
-    expect(svg).toContain('class="msg edge-modified msg-return"');
-    expect(svg).toMatch(/\.msg-return\{stroke-dasharray/);
+    expect(svg).toMatch(/class="msg edge-modified msg-return"[^>]* stroke-dasharray="4 3"/);
   });
 });
 

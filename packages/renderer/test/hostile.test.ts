@@ -7,7 +7,7 @@ import {
 } from "@coldtea/pr-lens-schema";
 import { minimalGraph, postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
-import { render, renderAll, renderAssetFileName, renderAssetId } from "../src/index.js";
+import { render, renderAll, renderAssetFileName, renderAssetId, THEMES } from "../src/index.js";
 import { layoutArchitecture } from "../src/layout/architecture.js";
 
 const node = (id: string, lane: string, label = id): GraphNode => ({
@@ -474,5 +474,27 @@ describe("a view tree deeper than a manifest can describe", () => {
     expect(() => withViews(MAX_VIEWS + 1)).toThrowError(
       expect.objectContaining({ code: "INVALID_DOCUMENT" }),
     );
+  });
+});
+
+describe("nothing depends on a stylesheet", () => {
+  // The page GitHub opens when a reader clicks the image to zoom does not
+  // honour a <style> block or a style attribute, though it does run SMIL.
+  // Every colour, weight and dash therefore has to be an attribute of the
+  // element it belongs to, or the zoomed diagram is black cards and no text.
+  const documents = [minimalGraph, postmarkRefactorGraph].flatMap((doc) =>
+    THEMES.map((theme) => render(parseGraphDoc(doc), { lens: "architecture", theme }).svg),
+  );
+
+  it("writes no <style> element", () => {
+    for (const svg of documents) expect(svg).not.toContain("<style");
+  });
+
+  it("writes no style attribute", () => {
+    for (const svg of documents) expect(svg).not.toMatch(/ style="/);
+  });
+
+  it("names the text face on the root, where every text inherits it", () => {
+    for (const svg of documents) expect(svg).toMatch(/^<svg [^>]*font-family="/);
   });
 });

@@ -3,7 +3,7 @@ import { assertNever } from "@coldtea/pr-lens-schema";
 import type { Canvas } from "../bounds.js";
 import { coord } from "../geometry.js";
 import type { Palette } from "../theme.js";
-import { MONO_STACK, SANS_STACK } from "../text.js";
+import { SANS_STACK } from "../text.js";
 import { escapeXml, lines, tag, wrap } from "./primitives.js";
 
 /**
@@ -44,55 +44,6 @@ export const toneColour = (palette: Palette, tone: Tone): string => {
 };
 
 const TONES = ["added", "modified", "removed", "neutral"] as const satisfies readonly Tone[];
-
-const stylesheet = (palette: Palette): string =>
-  [
-    `text{font-family:${SANS_STACK}}`,
-    `.lanebox{fill:${palette.lane}}`,
-    `.lanelabel{font-size:10px;font-weight:700;letter-spacing:.12em;fill:${palette.muted}}`,
-    `.card{fill:${palette.card};stroke:${palette.cardBorder};stroke-width:1}`,
-    `.card-added{stroke:${palette.added};stroke-opacity:.55}`,
-    `.card-modified{stroke:${palette.modified};stroke-opacity:.5}`,
-    `.ghost{opacity:.55}`,
-    `.ghost .card{stroke:${palette.removed};stroke-dasharray:4 3;stroke-opacity:.6}`,
-    `.context{opacity:.82}`,
-    `.ntitle{font-weight:600;fill:${palette.foreground}}`,
-    `.strike{text-decoration:line-through}`,
-    `.nsub{font-size:9.5px;fill:${palette.muted};font-family:${MONO_STACK}}`,
-    `.chip{fill:${palette.chip}}`,
-    `.glyph{fill:${palette.muted}}`,
-    `.glyph-stroke{stroke:${palette.muted};stroke-width:1.4;fill:none}`,
-    `.bdg text{font-size:8.5px;font-weight:700;letter-spacing:.06em}`,
-    `.bdg rect{stroke-width:1}`,
-    `.bdg-added rect{fill:${palette.addedFill};stroke:${palette.addedBorder}}`,
-    `.bdg-added text{fill:${palette.addedText}}`,
-    `.bdg-modified rect{fill:${palette.modifiedFill};stroke:${palette.modifiedBorder}}`,
-    `.bdg-modified text{fill:${palette.modifiedText}}`,
-    `.bdg-removed rect{fill:${palette.removedFill};stroke:${palette.removedBorder}}`,
-    `.bdg-removed text{fill:${palette.removedText}}`,
-    `.bdg-neutral rect{fill:${palette.neutralFill};stroke:${palette.cardBorder}}`,
-    `.bdg-neutral text{fill:${palette.muted}}`,
-    `.edge{fill:none;stroke-width:1.5}`,
-    `.edge-added{stroke:${palette.added}}`,
-    `.edge-modified{stroke:${palette.modified}}`,
-    `.edge-removed{stroke:${palette.removed};stroke-dasharray:5 4;opacity:.7}`,
-    `.edge-neutral{stroke:${palette.edge}}`,
-    `.hero{stroke-width:2.25}`,
-    `.faded{opacity:.45}`,
-    `.glow{fill:none;stroke-width:7;opacity:.14}`,
-    `.msg-self{font-size:11px;fill:${palette.foreground}}`,
-    `.lpill{fill:${palette.pill};stroke:${palette.pillBorder};stroke-width:1}`,
-    `.ltext{font-size:9.5px;font-weight:600;fill:${palette.muted}}`,
-    `.ltext-added{fill:${palette.addedText}}`,
-    `.ltext-modified{fill:${palette.modifiedText}}`,
-    `.ltext-removed{fill:${palette.removedText}}`,
-    `.cardsh{filter:drop-shadow(0 1px 2px ${palette.shadow})}`,
-    `.lifeline{stroke:${palette.lifeline};stroke-width:1;stroke-dasharray:3 4}`,
-    `.actbar{fill:${palette.addedFill};stroke:${palette.addedBorder}}`,
-    `.msg{fill:none;stroke-width:1.5}`,
-    `.msg-return{stroke-dasharray:4 3;opacity:.8}`,
-    `.msg-strong{stroke-width:2.25}`,
-  ].join("");
 
 /**
  * Two arrowhead forms per tone, the classic sequence-diagram pair: a filled
@@ -151,6 +102,12 @@ const DOT_PITCH = 18;
  * where the page it lands in does not exist, and it is served as an image, so
  * script would not run even if it were there. Colours are literal for the
  * same reason — the theme is chosen by picking a file, not by asking the page.
+ *
+ * Nor is there a stylesheet. The page GitHub opens when a reader clicks the
+ * image to zoom does not honour one, and a diagram whose colours live in a
+ * <style> block turns into black cards with no text there. Every rule is
+ * written onto its element as a presentation attribute instead (see
+ * styles.ts); the one inherited rule, the text face, sits on the root.
  */
 export const svgDocument = (input: {
   width: number;
@@ -174,10 +131,10 @@ export const svgDocument = (input: {
 
   return lines([
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${coord(width)} ${coord(height)}" ` +
-      `width="${coord(width)}" height="${coord(height)}" role="img" aria-label="${escapeXml(title)}">`,
+      `width="${coord(width)}" height="${coord(height)}" role="img" aria-label="${escapeXml(title)}" ` +
+      `font-family="${escapeXml(SANS_STACK)}">`,
     wrap("title", {}, escapeXml(title)),
     description === undefined ? "" : wrap("desc", {}, escapeXml(description)),
-    wrap("style", {}, stylesheet(palette)),
     defs,
     tag("rect", { x: 0, y: 0, width: coord(width), height: coord(height), rx: 12, fill: palette.background }),
     tag("rect", { x: 0, y: 0, width: coord(width), height: coord(height), rx: 12, fill: "url(#dots)" }),

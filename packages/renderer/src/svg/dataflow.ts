@@ -36,6 +36,7 @@ import type { Palette } from "../theme.js";
 import { paintCard, paintLabelPill } from "./architecture.js";
 import { markerFor, openMarkerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
 import { lines, tag, wrap } from "./primitives.js";
+import { activationBar, laneBox, lifeline, messageLine } from "./styles.js";
 import { PULSE_RADIUS, TRAIN_RADIUS } from "./pulse.js";
 
 /** A ratio inside the animation cycle, written to a fixed number of places. */
@@ -242,10 +243,15 @@ const paintMessage = (
     const path = selfPath(placed.fromX, placed.y, activated);
     return {
       line: lines([
-        tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
+        tag("path", {
+          class: messageClasses(placed.message, tone),
+          d: path,
+          "marker-end": head,
+          ...messageLine(palette, tone, placed.message.kind, placed.message.delta),
+        }),
         pulsesFor(placed, path, slotCount, palette),
       ]),
-      pill: paintLabelPill(placed.label, selfPillBox(placed, activated), tone),
+      pill: paintLabelPill(placed.label, selfPillBox(placed, activated), tone, palette),
     };
   }
 
@@ -254,10 +260,15 @@ const paintMessage = (
 
   return {
     line: lines([
-      tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
+      tag("path", {
+        class: messageClasses(placed.message, tone),
+        d: path,
+        "marker-end": head,
+        ...messageLine(palette, tone, placed.message.kind, placed.message.delta),
+      }),
       pulsesFor(placed, path, slotCount, palette),
     ]),
-    pill: paintLabelPill(placed.label, pillBox(placed, ends), tone),
+    pill: paintLabelPill(placed.label, pillBox(placed, ends), tone, palette),
   };
 };
 
@@ -295,6 +306,7 @@ const paintFlow = (
       width: coord(box.width),
       height: coord(box.height),
       rx: LANE_RADIUS,
+      ...laneBox(palette),
     });
   });
 
@@ -306,6 +318,7 @@ const paintFlow = (
         y1: coord(layout.lifelineTop),
         x2: coord(participant.centreX),
         y2: coord(lifelineBottom),
+        ...lifeline(palette),
       }),
       ...participant.activations.map((bar) =>
         tag("rect", {
@@ -315,6 +328,7 @@ const paintFlow = (
           width: ACTIVATION_HALF_WIDTH * 2,
           height: coord(bar.bottom - bar.top),
           rx: 4,
+          ...activationBar(palette),
         }),
       ),
     ]),
@@ -328,7 +342,7 @@ const paintFlow = (
       titleSize: TITLE_SIZE,
       row: 0,
       laneIndex: index,
-    }),
+    }, palette),
   );
 
   const lineMarkup: string[] = [];
