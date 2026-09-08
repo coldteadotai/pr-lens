@@ -1,4 +1,5 @@
 import { assertNever } from "@coldtea/pr-lens-schema";
+
 import { CLI_VERSION } from "./version.js";
 import type { Terminal } from "./terminal.js";
 import { formatError, PrLensCliError } from "./errors.js";
@@ -23,7 +24,7 @@ const HELP = `pr-lens — review what actually matters
   pr-lens comment   --graph --manifest      the pull request comment, as markdown
   pr-lens validate  <file...>               any PR Lens document, checked against the contract
   pr-lens export    <graph.json>            the merged state, as a map worth committing
-  pr-lens canvas    push | pull | rotate    that document, kept on prlens.dev as a page and an embed
+  pr-lens canvas    push | pull | rotate | delete    that document, kept on prlens.dev as a page and an embed
   pr-lens skill                             diagram instructions for coding agents
 
   pr-lens <command> --help                  what a command takes
