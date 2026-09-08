@@ -24,7 +24,6 @@
 <rect class="chip" x="46" y="110" width="26" height="26" rx="7"/><g><text class="glyph" x="59" y="127.5" text-anchor="middle" style="font-size:14px;font-style:italic;font-family:Georgia,serif">ƒ</text></g>
 <text class="ntitle" x="82" y="119" font-size="13">sendBroadcastBulk</text>
 <text class="nsub" x="82" y="137">onWrite trigger</text>
-<g class="bdg bdg-neutral"><rect x="314.4" y="84" width="36.05" height="16" rx="8"/><text x="332.42" y="95" text-anchor="middle">new</text></g>
 <g class="bdg bdg-added"><rect x="356.45" y="84" width="40.55" height="16" rx="8"/><text x="376.73" y="95" text-anchor="middle">NEW</text></g></g>
 <g class="cardsh"><rect class="card card-modified" x="32" y="206" width="180" height="62" rx="10"/>
 <rect class="chip" x="46" y="224" width="26" height="26" rx="7"/><g><ellipse class="glyph-stroke" cx="59" cy="232.5" rx="6.5" ry="2.6"/>
