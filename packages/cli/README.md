@@ -137,7 +137,7 @@ Registry writes take a lock at `.pr-lens/canvas.json.lock`. The CLI never remove
 
 The CLI refuses to write the registry where git could commit it. If a checkout tracks `.pr-lens/canvas.json` or un-ignores `.pr-lens/`, the command fails with `CANVAS_REGISTRY_EXPOSED` and writes nothing.
 
-`--api` points at another PR Lens app, or set `PR_LENS_API_URL`.
+`--api` points at another PR Lens app, or set `PR_LENS_API_URL`. The protocol between the CLI and the app is five routes and one error envelope, written up in [the canvas API contract](https://github.com/coldteadotai/pr-lens/blob/main/docs/canvas-api.md) so a private server can answer it and documents stay on your network.
 
 ## Corrections
 
