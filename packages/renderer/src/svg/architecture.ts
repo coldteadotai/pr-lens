@@ -1,5 +1,35 @@
-import type { GraphEdge, GraphNode, LayoutHints } from "@coldtea/pr-lens-schema";
 import { assertNever } from "@coldtea/pr-lens-schema";
+import type { GraphEdge, GraphNode, LayoutHints } from "@coldtea/pr-lens-schema";
+import { truncate } from "../text.js";
+import { glyphGroup } from "./icons.js";
+import type { Palette } from "../theme.js";
+import { DIAGRAM_MARGIN } from "../design.js";
+import { travellingPulses } from "./pulse.js";
+import type { ScopedGraph } from "../scope.js";
+import { canvasFor, union } from "../bounds.js";
+import { coord, type Box } from "../geometry.js";
+import { placeLabelPills } from "../layout/labels.js";
+import { relieveCongestion } from "../layout/congestion.js";
+import { lines, tag, textNode, wrap } from "./primitives.js";
+import { curveBounds, type RoutedEdge } from "../layout/edges.js";
+import { atlasBoxes, emptyAtlas, type RenderAtlas } from "../atlas.js";
+import { markerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
+import {
+  badgeColours,
+  cardAttributes,
+  cardGroupAttributes,
+  edgeAttributes,
+  stylesFor,
+} from "./styles.js";
+import {
+  badgeRow,
+  badgeWidth,
+  cardBadges,
+  cardTextWidth,
+  deltaBadgeText,
+  laneHeaderText,
+  type PlacedNode,
+} from "../layout/architecture.js";
 import {
   BADGE_GAP,
   BADGE_HEIGHT,
@@ -16,35 +46,13 @@ import {
   LANE_RADIUS,
   SUBTITLE_SIZE,
 } from "../design.js";
-import { atlasBoxes, emptyAtlas, type RenderAtlas } from "../atlas.js";
-import { canvasFor, union } from "../bounds.js";
-import { DIAGRAM_MARGIN } from "../design.js";
-import { coord, type Box } from "../geometry.js";
-import {
-  badgeRow,
-  badgeWidth,
-  cardBadges,
-  cardTextWidth,
-  deltaBadgeText,
-  laneHeaderText,
-  type PlacedNode,
-} from "../layout/architecture.js";
-import { relieveCongestion } from "../layout/congestion.js";
-import { curveBounds, type RoutedEdge } from "../layout/edges.js";
-import { placeLabelPills } from "../layout/labels.js";
-import type { ScopedGraph } from "../scope.js";
-import { truncate } from "../text.js";
-import type { Palette } from "../theme.js";
-import { markerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
-import { glyphGroup } from "./icons.js";
-import { lines, tag, textNode, wrap } from "./primitives.js";
-import { travellingPulses } from "./pulse.js";
 
 const badgeTone = (node: GraphNode, text: string): Tone =>
   text === deltaBadgeText(node.delta) ? toneFor(node.delta) : "neutral";
 
 /** The badge row, laid left to right across the strip the layout reserved. */
-const paintBadges = (placed: PlacedNode): string => {
+const paintBadges = (placed: PlacedNode, palette: Palette): string => {
+  const styles = stylesFor(palette);
   const row = badgeRow(placed);
   if (row === undefined) return "";
 
@@ -52,6 +60,7 @@ const paintBadges = (placed: PlacedNode): string => {
   return lines(
     row.badges.map((text) => {
       const width = badgeWidth(text);
+      const colours = badgeColours(badgeTone(placed.node, text), palette);
       const painted = wrap(
         "g",
         { class: `bdg bdg-${badgeTone(placed.node, text)}` },
@@ -61,12 +70,17 @@ const paintBadges = (placed: PlacedNode): string => {
           width: coord(width),
           height: BADGE_HEIGHT,
           rx: BADGE_RADIUS,
+          fill: colours.fill,
+          stroke: colours.stroke,
+          "stroke-width": 1,
         }) +
           textNode(
             {
               x: coord(x + width / 2),
               y: coord(row.box.y + BADGE_HEIGHT / 2 + 3),
               "text-anchor": "middle",
+              ...styles.badgeText,
+              fill: colours.text,
             },
             text,
           ),
@@ -91,7 +105,8 @@ const cardOutlineClass = (node: GraphNode): string => {
   }
 };
 
-export const paintCard = (placed: PlacedNode): string => {
+export const paintCard = (placed: PlacedNode, palette: Palette): string => {
+  const styles = stylesFor(palette);
   const { node, box, showIcon, titleSize } = placed;
   const textX = box.x + CARD_PADDING_X + (showIcon ? ICON_CHIP_SIZE + ICON_CHIP_GAP : 0);
   const textWidth = cardTextWidth(box.width, showIcon);
@@ -106,11 +121,13 @@ export const paintCard = (placed: PlacedNode): string => {
         width: ICON_CHIP_SIZE,
         height: ICON_CHIP_SIZE,
         rx: ICON_CHIP_RADIUS,
+        ...styles.chip,
       }) +
       glyphGroup(
         node.kind,
         box.x + CARD_PADDING_X + ICON_CHIP_SIZE / 2,
         box.y + box.height / 2,
+        styles,
       )
     : "";
 
@@ -120,6 +137,8 @@ export const paintCard = (placed: PlacedNode): string => {
       x: coord(textX),
       y: coord(titleBaseline),
       "font-size": titleSize,
+      ...styles.title,
+      "text-decoration": node.delta === "removed" ? "line-through" : undefined,
     },
     truncate(node.label, "sans-bold", titleSize, textWidth),
   );
@@ -128,7 +147,7 @@ export const paintCard = (placed: PlacedNode): string => {
     node.subtitle === undefined
       ? ""
       : textNode(
-          { class: "nsub", x: coord(textX), y: coord(box.y + 45) },
+          { class: "nsub", x: coord(textX), y: coord(box.y + 45), ...styles.subtitle },
           truncate(node.subtitle, "mono", SUBTITLE_SIZE, textWidth),
         );
 
@@ -137,7 +156,7 @@ export const paintCard = (placed: PlacedNode): string => {
 
   return wrap(
     "g",
-    { class: groupClass },
+    { class: groupClass, ...cardGroupAttributes(node.delta, palette) },
     lines([
       tag("rect", {
         class: cardOutlineClass(node),
@@ -146,11 +165,12 @@ export const paintCard = (placed: PlacedNode): string => {
         width: coord(box.width),
         height: coord(box.height),
         rx: CARD_RADIUS,
+        ...cardAttributes(node.delta, palette),
       }),
       chip,
       title,
       subtitle,
-      paintBadges(placed),
+      paintBadges(placed, palette),
     ]),
   );
 };
@@ -181,6 +201,7 @@ const paintEdge = (
   label: Box | undefined,
 ): { markup: string; pill: string } => {
   const { edge, path } = routed;
+  const styles = stylesFor(palette);
   const tone = toneFor(edge.delta);
   const hero = edge.emphasis === "hero";
 
@@ -190,24 +211,25 @@ const paintEdge = (
   if (edge.delta === "unchanged") classes.push("context");
 
   const glow = hero
-    ? tag("path", { class: "glow", stroke: toneColour(palette, tone), d: path })
+    ? tag("path", { class: "glow", stroke: toneColour(palette, tone), d: path, ...styles.glow })
     : "";
 
   return {
     markup: lines([
       glow,
-      tag("path", { class: classes.join(" "), d: path, "marker-end": markerFor(tone) }),
+      tag("path", { class: classes.join(" "), d: path, "marker-end": markerFor(tone), ...edgeAttributes(edge, palette) }),
       pulses(edge, path, palette),
     ]),
     pill:
       label === undefined || edge.label === undefined
         ? ""
-        : paintLabelPill(edge.label, label, tone),
+        : paintLabelPill(edge.label, label, tone, palette),
   };
 };
 
-export const paintLabelPill = (text: string, box: Box, tone: Tone): string =>
-  wrap(
+export const paintLabelPill = (text: string, box: Box, tone: Tone, palette: Palette): string => {
+  const styles = stylesFor(palette);
+  return wrap(
     "g",
     {},
     tag("rect", {
@@ -217,6 +239,7 @@ export const paintLabelPill = (text: string, box: Box, tone: Tone): string =>
       width: coord(box.width),
       height: coord(box.height),
       rx: box.height / 2,
+      ...styles.pill,
     }) +
       textNode(
         {
@@ -224,10 +247,13 @@ export const paintLabelPill = (text: string, box: Box, tone: Tone): string =>
           x: coord(box.x + box.width / 2),
           y: coord(box.y + box.height / 2 + 3.5),
           "text-anchor": "middle",
+          ...styles.pillText,
+          fill: badgeColours(tone, palette).text,
         },
         text,
       ),
   );
+};
 
 export type ArchitecturePainting = {
   width: number;
@@ -242,6 +268,7 @@ export const paintArchitecture = (
   palette: Palette,
 ): ArchitecturePainting => {
   const { layout, routed } = relieveCongestion(graph, hints);
+  const styles = stylesFor(palette);
   const pills = placeLabelPills(routed);
 
   const drawn: Box[] = layout.nodes.flatMap((node) => {
@@ -267,9 +294,10 @@ export const paintArchitecture = (
         width: coord(box.width),
         height: coord(box.height),
         rx: LANE_RADIUS,
+        ...styles.lane,
       }),
       textNode(
-        { class: "lanelabel", x: coord(box.x + LANE_PADDING_X), y: LANE_HEADER_BASELINE },
+        { class: "lanelabel", x: coord(box.x + LANE_PADDING_X), y: LANE_HEADER_BASELINE, ...styles.laneLabel },
         laneHeaderText(lane),
       ),
     ]),
@@ -288,7 +316,7 @@ export const paintArchitecture = (
   const painted = lines([
     wrap("g", {}, lines(lanes)),
     wrap("g", {}, lines(edgeMarkup)),
-    wrap("g", {}, lines(layout.nodes.map(paintCard))),
+    wrap("g", {}, lines(layout.nodes.map((node) => paintCard(node, palette)))),
     wrap("g", {}, lines(pillMarkup)),
   ]);
 

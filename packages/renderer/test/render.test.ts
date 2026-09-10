@@ -59,6 +59,17 @@ describe("golden renders", () => {
 describe("the rendered document", () => {
   const { svg } = render(postmarkRefactorGraph, { lens: "architecture", theme: "dark" });
 
+  it.each(THEMES)("does not depend on CSS in either lens, %s", (theme) => {
+    const { assets } = renderAll({ ...postmarkRefactorGraph, views: [] }, { themes: [theme] });
+
+    for (const { svg: drawn } of assets) {
+      expect(drawn).not.toMatch(/<style\b|\sstyle\s*=/i);
+      expect(drawn).toMatch(/^<svg\b[^>]*\sfont-family="[^"]+"/);
+      expect(drawn).toMatch(/<rect class="card[^"]*"[^>]*\sfill="[^"]+"/);
+      expect(drawn).toMatch(/<text class="ntitle[^"]*"[^>]*\sfill="[^"]+"/);
+    }
+  });
+
   it("is self-contained", () => {
     expect(svg).not.toMatch(/<script/i);
     expect(svg).not.toMatch(/<image/i);
