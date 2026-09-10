@@ -28,10 +28,10 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
 4. **Render.**
 
    ```bash
-   npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme dark
+   npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme light
    ```
 
-   Render dark as the default theme unless explicitly requested. The SVGs, the manifest and `drawn.graph.json` land in `.pr-lens/`, which the CLI adds to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
+   Render light by default unless the user requests another theme. The SVGs, the manifest and `drawn.graph.json` land in `.pr-lens/`, which the CLI adds to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
 
    If the user asked for a diagram, an explanation or a picture of the architecture and nothing more, put it on a canvas and hand back the link:
 
@@ -50,12 +50,12 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
    ```markdown
    Moves bulk sending off the per-recipient trigger and onto a batch endpoint.
 
-   ![Architecture after this change: the queue route, the new bulk sender and the retired per-recipient path](.pr-lens/overview-dark-4f9bd6c1.svg)
+   ![Architecture after this change: the queue route, the new bulk sender and the retired per-recipient path](.pr-lens/overview-light-4f9bd6c1.svg)
    ```
 
    ```bash
    gh pr create --title "Batch broadcast sends" --body-file .pr-lens/body.md \
-     --attach .pr-lens/overview-dark-4f9bd6c1.svg
+     --attach .pr-lens/overview-light-4f9bd6c1.svg
    ```
 
    On a pull request that already exists, `gh pr edit <number>` with the same two flags puts the diagram in the description, and `gh pr comment <number>` puts it in a comment. Repeat `--attach` for each diagram the body references.

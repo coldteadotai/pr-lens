@@ -28,10 +28,10 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
 4. **Render.**
 
    ```bash
-   npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme dark
+   npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme light
    ```
 
-   Render dark as the default theme unless explicitly requested. The SVGs, the manifest and `drawn.graph.json` land in `.pr-lens/`, which the CLI adds to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
+   Render light by default unless the user requests dark theme. The SVGs, the manifest and `drawn.graph.json` land in `.pr-lens/`, which the CLI adds to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
 
    If the user asked for a diagram, an explanation or a picture of the architecture and nothing more, put it on a canvas and hand back the link:
 
@@ -50,12 +50,12 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
    ```markdown
    Moves bulk sending off the per-recipient trigger and onto a batch endpoint.
 
-   ![Architecture after this change: the queue route, the new bulk sender and the retired per-recipient path](.pr-lens/overview-dark-4f9bd6c1.svg)
+   ![Architecture after this change: the queue route, the new bulk sender and the retired per-recipient path](.pr-lens/overview-light-4f9bd6c1.svg)
    ```
 
    ```bash
    gh pr create --title "Batch broadcast sends" --body-file .pr-lens/body.md \
-     --attach .pr-lens/overview-dark-4f9bd6c1.svg
+     --attach .pr-lens/overview-light-4f9bd6c1.svg
    ```
 
    On a pull request that already exists, `gh pr edit <number>` with the same two flags puts the diagram in the description, and `gh pr comment <number>` puts it in a comment. Repeat `--attach` for each diagram the body references.
@@ -144,11 +144,11 @@ Write every word for a smart twelve-year-old: short common words, one idea per l
 
 The same three steps, written well and written badly. Heading first, then the body after the slash:
 
-| Write this | Not this |
-| -------- | -------- |
+| Write this                                                                                                  | Not this                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Route now queues the job instead of sending / The API call finishes at once. A worker sends the mail later. | Broadcast fan-out moves behind the queue / The API route now enqueues broadcast jobs for asynchronous batch processing instead of sending emails inline. |
-| Postmark now gets 500 emails per call / One call per batch instead of one call per person. | Batched delivery replaces single sends / The worker leverages the shared library to send emails in chunks of 500 via Postmark's batch endpoint. |
-| processBroadcast and sendSingleEmail removed / sendBroadcastBulk does their job for whole batches. | Single send functions are retired / sendBroadcastBulk replaces processBroadcast and sendSingleEmail to handle bulk deliveries in chunks. |
+| Postmark now gets 500 emails per call / One call per batch instead of one call per person.                  | Batched delivery replaces single sends / The worker leverages the shared library to send emails in chunks of 500 via Postmark's batch endpoint.          |
+| processBroadcast and sendSingleEmail removed / sendBroadcastBulk does their job for whole batches.          | Single send functions are retired / sendBroadcastBulk replaces processBroadcast and sendSingleEmail to handle bulk deliveries in chunks.                 |
 
 Keep consecutive steps on the same stage together. Every change of stage flies the camera across the canvas, so a tour that alternates between two diagrams spends its time travelling.
 
@@ -165,12 +165,12 @@ The field arrived with contract 0.1.1. A CLI older than 0.4.0 does not know it a
 
 Read `references/graph-document.md` before writing. The four failures that account for nearly everything:
 
-| Code                         | What you did                                                         |
-| ---------------------------- | -------------------------------------------------------------------- |
+| Code                         | What you did                                                                      |
+| ---------------------------- | --------------------------------------------------------------------------------- |
 | `BROKEN_REFERENCE`           | an edge, a flow step, a view or a walkthrough step names an id you never declared |
-| `INVALID_DOCUMENT`           | an invented field; the schemas are strict, unknown keys are rejected |
-| `DUPLICATE_ID`               | two nodes, edges or views sharing an id                              |
-| `UNSUPPORTED_SCHEMA_VERSION` | `schemaVersion` is not the contract version installed                |
+| `INVALID_DOCUMENT`           | an invented field; the schemas are strict, unknown keys are rejected              |
+| `DUPLICATE_ID`               | two nodes, edges or views sharing an id                                           |
+| `UNSUPPORTED_SCHEMA_VERSION` | `schemaVersion` is not the contract version installed                             |
 
 Six rules cannot be expressed in JSON Schema and are checked only by the parser, so structured output alone does not make a document valid: referential integrity, a line range that ends before it starts, a `self` message whose endpoints disagree, a patch whose two commits are the same, more views than a render manifest could describe, and a walkthrough step focusing flow steps the diagram on its stage does not draw. Always validate.
 
