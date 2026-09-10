@@ -1,6 +1,8 @@
+import { SANS_STACK } from "../../packages/renderer/src/text.js";
 import type { GraphDoc } from "../../packages/schema/src/index.js";
-import { parseGraphDoc, SCHEMA_VERSION } from "../../packages/schema/src/index.js";
+import { escapeXml } from "../../packages/renderer/src/svg/primitives.js";
 import type { RenderedSvg, Theme } from "../../packages/renderer/src/index.js";
+import { parseGraphDoc, SCHEMA_VERSION } from "../../packages/schema/src/index.js";
 
 /**
  * The README's proof that a render reads in both themes: one small change,
@@ -94,9 +96,8 @@ const SEAM_BOTTOM = 0.44;
  * theme-blind, so every card and route lines up with itself across the seam
  * and the cut reads as one diagram lit two ways.
  *
- * Each half keeps its own stylesheet, dot pattern and arrowheads, so its ids
- * are suffixed and its rules scoped to its own group; without that the two
- * halves would share whichever definitions came first.
+ * Each half keeps its own dot pattern and arrowheads, so its ids are suffixed
+ * to keep the two themes from sharing whichever definitions came first.
  */
 export const splitThemes = (halves: Record<Theme, RenderedSvg>): string => {
   const { width, height } = halves.dark;
@@ -126,21 +127,10 @@ const half = (diagram: RenderedSvg, theme: Theme): string => {
     .replace(/<title>[^<]*<\/title>\n?/, "")
     .replace(/<desc>[^<]*<\/desc>\n?/, "")
     .replace(/id="([^"]+)"/g, (_, id: string) => `id="${id}-${theme}"`)
-    .replace(/url\(#([^)]+)\)/g, (_, id: string) => `url(#${id}-${theme})`)
-    .replace(/<style>([^<]*)<\/style>/, (_, css: string) => `<style>${scoped(css, theme)}</style>`);
+    .replace(/url\(#([^)]+)\)/g, (_, id: string) => `url(#${id}-${theme})`);
 
-  return `<g id="${theme}" clip-path="url(#seam-${theme})">\n${body}\n</g>`;
+  // The input root is removed above, so its inherited font belongs on this group.
+  return `<g id="${theme}" clip-path="url(#seam-${theme})" font-family="${escapeXml(SANS_STACK)}">\n${body}\n</g>`;
 };
-
-const scoped = (css: string, theme: Theme): string =>
-  css
-    .split("}")
-    .filter((rule) => rule.trim() !== "")
-    .map((rule) => {
-      const brace = rule.indexOf("{");
-      const selectors = rule.slice(0, brace).split(",");
-      return `${selectors.map((selector) => `#${theme} ${selector.trim()}`).join(",")}{${rule.slice(brace + 1)}}`;
-    })
-    .join("");
 
 const round2 = (value: number): number => Math.round(value * 100) / 100;

@@ -95,10 +95,15 @@ describe("mixed message kinds", () => {
     expect(svg).toContain('keyTimes="0;0;1;1"');
   });
 
-  it("keeps a return dashed", () => {
-    const { svg } = render(mixedKindsGraph, { lens: "data-flow", theme: "dark" });
-    expect(svg).toContain('class="msg edge-modified msg-return"');
-    expect(svg).toMatch(/\.msg-return\{stroke-dasharray/);
+  it.each(["modified", "removed"] as const)("keeps a %s return dashed", (delta) => {
+    const doc = parseGraphDoc({
+      ...mixedKindsGraph,
+      flows: [{ ...flow, messages: flow.messages.map((message) => ({ ...message, delta })) }],
+    });
+    const { svg } = render(doc, { lens: "data-flow", theme: "dark" });
+    const returned = svg.match(new RegExp(`<path class="msg edge-${delta} msg-return"[^>]*>`))?.[0];
+    expect(returned).toContain('stroke-dasharray="4 3"');
+    expect(returned).toContain('opacity="0.8"');
   });
 });
 

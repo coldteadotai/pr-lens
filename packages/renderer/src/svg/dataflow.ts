@@ -1,5 +1,16 @@
-import type { Flow, FlowMessage, GraphNode, MessageKind } from "@coldtea/pr-lens-schema";
 import { assertNever } from "@coldtea/pr-lens-schema";
+import type { Flow, FlowMessage, GraphNode, MessageKind } from "@coldtea/pr-lens-schema";
+import { measure } from "../text.js";
+import { coord } from "../geometry.js";
+import type { Box } from "../geometry.js";
+import type { Palette } from "../theme.js";
+import { lines, tag, wrap } from "./primitives.js";
+import { PULSE_RADIUS, TRAIN_RADIUS } from "./pulse.js";
+import { messageAttributes, stylesFor } from "./styles.js";
+import { paintCard, paintLabelPill } from "./architecture.js";
+import { atlasBoxes, emptyAtlas, type RenderAtlas } from "../atlas.js";
+import { canvasFor, covering, union, type Canvas } from "../bounds.js";
+import { markerFor, openMarkerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
 import {
   DIAGRAM_MARGIN,
   FLOW_CYCLE_MAX,
@@ -12,11 +23,6 @@ import {
   PILL_TEXT_SIZE,
   TITLE_SIZE,
 } from "../design.js";
-import { atlasBoxes, emptyAtlas, type RenderAtlas } from "../atlas.js";
-import { canvasFor, covering, union, type Canvas } from "../bounds.js";
-import type { Box } from "../geometry.js";
-import { measure } from "../text.js";
-import { coord } from "../geometry.js";
 import {
   ACTIVATION_HALF_WIDTH,
   FLOW_BAND_PAD_X,
@@ -32,11 +38,6 @@ import {
   type FlowLayout,
   type PlacedMessage,
 } from "../layout/dataflow.js";
-import type { Palette } from "../theme.js";
-import { paintCard, paintLabelPill } from "./architecture.js";
-import { markerFor, openMarkerFor, shifted, toneColour, toneFor, type Tone } from "./document.js";
-import { lines, tag, wrap } from "./primitives.js";
-import { PULSE_RADIUS, TRAIN_RADIUS } from "./pulse.js";
 
 /** A ratio inside the animation cycle, written to a fixed number of places. */
 const ratio = (value: number): string => String(Math.round(value * 10000) / 10000);
@@ -236,16 +237,17 @@ const paintMessage = (
   const tone = toneFor(placed.message.delta);
   const direction = travelDirection(placed.message.kind, placed.fromX, placed.toX);
   const head = headFor(placed.message.kind, tone);
+  const attributes = messageAttributes(placed.message, palette);
 
   if (direction === 0) {
     const activated = activeAt(placed.message.from, placed.y);
     const path = selfPath(placed.fromX, placed.y, activated);
     return {
       line: lines([
-        tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
+        tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head, ...attributes }),
         pulsesFor(placed, path, slotCount, palette),
       ]),
-      pill: paintLabelPill(placed.label, selfPillBox(placed, activated), tone),
+      pill: paintLabelPill(placed.label, selfPillBox(placed, activated), tone, palette),
     };
   }
 
@@ -254,10 +256,10 @@ const paintMessage = (
 
   return {
     line: lines([
-      tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head }),
+      tag("path", { class: messageClasses(placed.message, tone), d: path, "marker-end": head, ...attributes }),
       pulsesFor(placed, path, slotCount, palette),
     ]),
-    pill: paintLabelPill(placed.label, pillBox(placed, ends), tone),
+    pill: paintLabelPill(placed.label, pillBox(placed, ends), tone, palette),
   };
 };
 
@@ -283,6 +285,7 @@ const paintFlow = (
   palette: Palette,
 ): string => {
   const activeAt = activationLookup(layout);
+  const styles = stylesFor(palette);
 
   const lifelineBottom = layout.top + layout.height;
 
@@ -295,6 +298,7 @@ const paintFlow = (
       width: coord(box.width),
       height: coord(box.height),
       rx: LANE_RADIUS,
+      ...styles.lane,
     });
   });
 
@@ -306,6 +310,7 @@ const paintFlow = (
         y1: coord(layout.lifelineTop),
         x2: coord(participant.centreX),
         y2: coord(lifelineBottom),
+        ...styles.lifeline,
       }),
       ...participant.activations.map((bar) =>
         tag("rect", {
@@ -315,20 +320,24 @@ const paintFlow = (
           width: ACTIVATION_HALF_WIDTH * 2,
           height: coord(bar.bottom - bar.top),
           rx: 4,
+          ...styles.activation,
         }),
       ),
     ]),
   );
 
   const cards = layout.participants.map((participant, index) =>
-    paintCard({
-      node: participant.node,
-      box: participant.card,
-      showIcon: true,
-      titleSize: TITLE_SIZE,
-      row: 0,
-      laneIndex: index,
-    }),
+    paintCard(
+      {
+        node: participant.node,
+        box: participant.card,
+        showIcon: true,
+        titleSize: TITLE_SIZE,
+        row: 0,
+        laneIndex: index,
+      },
+      palette,
+    ),
   );
 
   const lineMarkup: string[] = [];
