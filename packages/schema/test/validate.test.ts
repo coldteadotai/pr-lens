@@ -7,14 +7,7 @@ import { MAX_RENDER_ASSETS, MAX_VIEWS, THEMES } from "../src/primitives.js";
 import { postmarkRefactorManifestInput } from "../src/examples/postmark-refactor.js";
 import { safeParseConfig, safeParseGraphDoc, safeParseRenderManifest } from "../src/validate.js";
 import { SCHEMA_VERSION } from "../src/version.js";
-
-const clone = (doc: GraphDocInput): GraphDocInput => structuredClone(doc);
-
-const expectRejected = (input: unknown) => {
-  const result = safeParseGraphDoc(input);
-  if (result.ok) throw new Error("expected the document to be rejected");
-  return result.error;
-};
+import { clone, expectRejected } from "./helpers.js";
 
 describe("graph document validation", () => {
   it("accepts the goldens", () => {

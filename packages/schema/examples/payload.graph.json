@@ -2,7 +2,7 @@
   "schemaVersion": "0.2.0",
   "kind": "graph",
   "generatedAt": "2026-08-19T18:24:00.000Z",
-  "title": "Batch broadcast sending through Postmark",
+  "title": "Batch broadcast sending through Postmark, with sample traffic",
   "summary": "Broadcast delivery moves from one Postmark request per recipient to batched requests of 500, with suppression filtering pulled in front of the send and the payload builder extracted into a shared library.",
   "lenses": [
     "architecture",
@@ -394,7 +394,45 @@
           "kind": "async",
           "delta": "modified",
           "animated": true,
-          "files": []
+          "files": [],
+          "payload": {
+            "request": {
+              "type": "BroadcastJob",
+              "shape": "{\n  campaignId: string;\n  listId: string;\n  subject: string;\n  htmlBody: string;\n  textBody?: string;\n  scheduledFor: string; // ISO 8601\n  status: \"queued\" | \"sending\" | \"sent\";\n  batchSize: number;\n  recipientCount: number;\n}",
+              "sample": {
+                "campaignId": "cmp_0001",
+                "listId": "lst_weekly",
+                "subject": "The batching issue, fixed",
+                "htmlBody": "<html>…",
+                "textBody": "…",
+                "scheduledFor": "2026-09-12T09:00:00Z",
+                "status": "queued",
+                "batchSize": 500,
+                "recipientCount": 1984
+              },
+              "before": {
+                "campaignId": "cmp_0001",
+                "listId": "lst_weekly",
+                "subject": "The batching issue, fixed",
+                "htmlBody": "<html>…",
+                "textBody": "…",
+                "scheduledFor": "2026-09-12T09:00:00Z",
+                "status": "queued"
+              },
+              "source": {
+                "path": "tests/fixtures/broadcast-job.json"
+              },
+              "changedPaths": []
+            },
+            "response": {
+              "type": "WriteResult",
+              "shape": "{ writeTime: Timestamp }",
+              "sample": {
+                "writeTime": "2026-09-12T08:59:58.301Z"
+              },
+              "changedPaths": []
+            }
+          }
         },
         {
           "id": "trigger",
@@ -404,7 +442,35 @@
           "kind": "async",
           "delta": "added",
           "animated": true,
-          "files": []
+          "files": [],
+          "payload": {
+            "request": {
+              "type": "Change<BroadcastJob>",
+              "shape": "{ before: BroadcastJob | null; after: BroadcastJob; params: { jobId: string } }",
+              "sample": {
+                "before": null,
+                "after": {
+                  "campaignId": "cmp_0001",
+                  "status": "queued",
+                  "batchSize": 500,
+                  "recipientCount": 1984
+                },
+                "params": {
+                  "jobId": "job_0001"
+                }
+              },
+              "source": {
+                "path": "functions/src/broadcast/sendBroadcastBulk.test.ts",
+                "startLine": 12,
+                "endLine": 40
+              },
+              "changedPaths": []
+            },
+            "response": {
+              "type": "void",
+              "changedPaths": []
+            }
+          }
         },
         {
           "id": "suppressions-request",
@@ -414,7 +480,37 @@
           "kind": "sync",
           "delta": "added",
           "animated": true,
-          "files": []
+          "files": [],
+          "payload": {
+            "request": {
+              "type": "SuppressionQuery",
+              "shape": "{ SuppressionReason?: \"HardBounce\" | \"SpamComplaint\" | \"ManualSuppression\"; Origin?: string; EmailAddress?: string }",
+              "sample": {
+                "SuppressionReason": "HardBounce",
+                "Origin": "Recipient"
+              },
+              "source": {
+                "path": "packages/broadcast-lib/src/postmark.ts",
+                "startLine": 40
+              },
+              "changedPaths": []
+            },
+            "response": {
+              "type": "SuppressionDump[312]",
+              "shape": "{ Suppressions: Suppression[] }\nSuppression = { EmailAddress: string; SuppressionReason: string; Origin: string; CreatedAt: string }",
+              "sample": {
+                "Suppressions": [
+                  {
+                    "EmailAddress": "bounced@example.com",
+                    "SuppressionReason": "HardBounce",
+                    "Origin": "Recipient",
+                    "CreatedAt": "2026-08-30T11:14:02Z"
+                  }
+                ]
+              },
+              "changedPaths": []
+            }
+          }
         },
         {
           "id": "suppressions-response",
@@ -437,7 +533,76 @@
           "animated": true,
           "repeat": 4,
           "note": "One request per 500 recipients; four for this 2,000-recipient broadcast.",
-          "files": []
+          "files": [],
+          "payload": {
+            "request": {
+              "type": "EmailBatch[500]",
+              "shape": "EmailBatch = Email[]  // max 500\nEmail = {\n  From: string; To: string; Subject: string;\n  HtmlBody: string; TextBody?: string; Tag?: string;\n  MessageStream: \"broadcast\";\n  TrackOpens: boolean;\n  Headers: { Name: string; Value: string }[];\n  Metadata: { campaignId: string; batchId: string; listId: string };\n}",
+              "sample": [
+                {
+                  "From": "news@example.com",
+                  "To": "ada@example.com",
+                  "Subject": "The batching issue, fixed",
+                  "HtmlBody": "<!doctype html><html><body>…",
+                  "TextBody": "…",
+                  "Tag": "broadcast-2026-09",
+                  "MessageStream": "broadcast",
+                  "TrackOpens": true,
+                  "Headers": [
+                    {
+                      "Name": "List-Unsubscribe",
+                      "Value": "<https://example.com/u/…>"
+                    }
+                  ],
+                  "Metadata": {
+                    "campaignId": "cmp_0001",
+                    "batchId": "b_0001",
+                    "listId": "lst_0001"
+                  }
+                }
+              ],
+              "before": [
+                {
+                  "From": "news@example.com",
+                  "To": "ada@example.com",
+                  "Cc": "ops@example.com",
+                  "Subject": "The batching issue, fixed",
+                  "HtmlBody": "<!doctype html><html><body>…",
+                  "TextBody": "…",
+                  "Tag": "weekly",
+                  "TrackOpens": true,
+                  "Headers": [
+                    {
+                      "Name": "List-Unsubscribe",
+                      "Value": "<https://example.com/u/…>"
+                    }
+                  ],
+                  "Metadata": {
+                    "campaignId": "cmp_0001",
+                    "listId": "lst_0001"
+                  }
+                }
+              ],
+              "source": {
+                "path": "tests/fixtures/postmark-batch.json"
+              },
+              "changedPaths": []
+            },
+            "response": {
+              "type": "BatchResult[500]",
+              "shape": "BatchResult = SendResult[]  // one per Email, same order\nSendResult = { ErrorCode: number; Message: string; To: string; SubmittedAt: string; MessageID: string }",
+              "sample": [
+                {
+                  "ErrorCode": 0,
+                  "Message": "OK",
+                  "To": "ada@example.com",
+                  "SubmittedAt": "2026-09-12T09:00:04.112Z",
+                  "MessageID": "b7fa5c1e-…"
+                }
+              ],
+              "changedPaths": []
+            }
+          }
         },
         {
           "id": "batch-results",
@@ -447,7 +612,26 @@
           "kind": "return",
           "delta": "added",
           "animated": true,
-          "files": []
+          "files": [],
+          "payload": {
+            "response": {
+              "type": "BatchResult[500]",
+              "shape": "SendResult[]",
+              "sample": [
+                {
+                  "ErrorCode": 0,
+                  "Message": "OK",
+                  "To": "ada@example.com",
+                  "SubmittedAt": "2026-09-12T09:00:04.112Z",
+                  "MessageID": "b7fa5c1e-…"
+                }
+              ],
+              "source": {
+                "path": "tests/fixtures/postmark-batch.json"
+              },
+              "changedPaths": []
+            }
+          }
         },
         {
           "id": "write-results",
@@ -457,7 +641,57 @@
           "kind": "async",
           "delta": "added",
           "animated": true,
-          "files": []
+          "files": [],
+          "payload": {
+            "request": {
+              "type": "JobResult",
+              "shape": "{ status: \"sent\" | \"partial\"; sentCount: number; failedCount: number; batches: number; results: SendResult[]; finishedAt: string }",
+              "sample": {
+                "status": "sent",
+                "sentCount": 1984,
+                "failedCount": 0,
+                "results": [
+                  {
+                    "ErrorCode": 0,
+                    "Message": "OK",
+                    "To": "ada@example.com",
+                    "SubmittedAt": "2026-09-12T09:00:04.112Z",
+                    "MessageID": "b7fa5c1e-…"
+                  }
+                ],
+                "finishedAt": "2026-09-12T09:00:19Z",
+                "batches": 4
+              },
+              "before": {
+                "status": "sent",
+                "sentCount": 1984,
+                "failedCount": 0,
+                "results": [
+                  {
+                    "ErrorCode": 0,
+                    "Message": "OK",
+                    "To": "ada@example.com",
+                    "SubmittedAt": "2026-09-12T09:00:04.112Z",
+                    "MessageID": "b7fa5c1e-…"
+                  }
+                ],
+                "finishedAt": "2026-09-12T09:00:19Z"
+              },
+              "source": {
+                "path": "functions/src/broadcast/sendBroadcastBulk.ts",
+                "startLine": 88,
+                "endLine": 120
+              },
+              "changedPaths": []
+            },
+            "response": {
+              "type": "WriteResult",
+              "sample": {
+                "writeTime": "2026-09-12T09:00:19.402Z"
+              },
+              "changedPaths": []
+            }
+          }
         }
       ]
     }

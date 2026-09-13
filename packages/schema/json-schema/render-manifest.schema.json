@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/coldteadotai/pr-lens/main/packages/schema/json-schema/render-manifest.schema.json",
   "title": "PR Lens render manifest",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "object",
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^0\\.1\\.\\d+$",
-      "description": "Contract version the document targets. Current: 0.1.1."
+      "pattern": "^0\\.(1|2)\\.\\d+$",
+      "description": "Contract version the document targets. Current: 0.2.0."
     },
     "kind": {
       "type": "string",
