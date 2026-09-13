@@ -1,12 +1,20 @@
 import { z } from "zod";
 import {
   Beat,
+  byteLength,
   Delta,
   FileRef,
   Id,
+  jsonDepth,
+  JsonPath,
+  JsonValue,
   Label,
   Lens,
   Line,
+  MAX_CHANGED_PATHS,
+  MAX_PAYLOAD_DEPTH,
+  MAX_SAMPLE_BYTES,
+  MAX_SHAPE_BYTES,
   SchemaVersionField,
   Sha,
   Summary,
@@ -119,6 +127,74 @@ export type GraphEdge = z.infer<typeof GraphEdge>;
 export const MessageKind = z.enum(["sync", "async", "return", "self"]);
 export type MessageKind = z.infer<typeof MessageKind>;
 
+/** A root string is either JSON text, which belongs here as the value it spells, or a scalar nobody learns a shape from. */
+const Sample = JsonValue.superRefine((value, context) => {
+  if (typeof value === "string") {
+    context.addIssue({ code: "custom", message: "must be an inline JSON value, not a string" });
+    return;
+  }
+  if (byteLength(JSON.stringify(value)) > MAX_SAMPLE_BYTES)
+    context.addIssue({
+      code: "custom",
+      message: `must be at most ${MAX_SAMPLE_BYTES} bytes when serialised`,
+    });
+  if (jsonDepth(value) > MAX_PAYLOAD_DEPTH)
+    context.addIssue({
+      code: "custom",
+      message: `must be at most ${MAX_PAYLOAD_DEPTH} levels deep`,
+    });
+});
+
+/**
+ * The JSON Schema cannot see the refine, so `not` restates it. It sits on the
+ * wrapper because metadata on the recursive value makes the emitter inline
+ * the whole union beside its `$ref`.
+ */
+const sampleField = (description: string) =>
+  Sample.optional().meta({ description, not: { type: "string" } });
+
+/** `changedPaths` is per side because each side has its own before and after. */
+export const PayloadSide = z
+  .strictObject({
+    type: Label.describe("Type name a reader would recognise, e.g. EmailBatch[500]. `void` for a side that carries nothing."),
+    shape: z
+      .string()
+      .min(1)
+      .refine((text) => byteLength(text) <= MAX_SHAPE_BYTES, {
+        message: `must be at most ${MAX_SHAPE_BYTES} bytes`,
+      })
+      .optional()
+      .describe("Type signature as text, taken from the code's own types."),
+    sample: sampleField("One exemplar instance after the change, as a JSON value."),
+    before: sampleField("The same exemplar before the change, when it differs, as a JSON value."),
+    source: FileRef.optional().describe("Fixture or type the shape and sample were taken from."),
+    changedPaths: z
+      .array(JsonPath)
+      .max(MAX_CHANGED_PATHS)
+      .default([])
+      .describe("Paths that differ between before and sample. Derived when the document is stored, not authored."),
+  })
+  .meta({ dependentRequired: { before: ["sample"] } })
+  .refine((side) => side.before === undefined || side.sample !== undefined, {
+    message: "before needs a sample to differ from",
+    path: ["before"],
+  })
+  .describe("What travels on one side of a flow step.");
+export type PayloadSide = z.infer<typeof PayloadSide>;
+
+export const Payload = z
+  .strictObject({
+    request: PayloadSide.optional().describe("What the step carries from `from` to `to`."),
+    response: PayloadSide.optional().describe("What comes back, when something does."),
+  })
+  .meta({ anyOf: [{ required: ["request"] }, { required: ["response"] }] })
+  .refine((payload) => payload.request !== undefined || payload.response !== undefined, {
+    message: "a payload carries at least one side",
+  })
+  .describe("Sample traffic for one flow step.");
+export type Payload = z.infer<typeof Payload>;
+export type PayloadInput = z.input<typeof Payload>;
+
 /**
  * Order is the array position. An explicit step number would let a producer
  * emit a document whose animation order disagrees with its own message list.
@@ -140,6 +216,7 @@ export const FlowMessage = z
       .describe("Times the step occurs per run, e.g. 4 batched requests."),
     note: Summary.optional().describe("Aside rendered beside the step in the drill-down."),
     files: z.array(FileRef).max(32).default([]),
+    payload: Payload.optional().describe("Sample traffic, for a step that moves data."),
   })
   .refine((message) => (message.kind === "self") === (message.from === message.to), {
     message: "kind 'self' and from === to must agree",

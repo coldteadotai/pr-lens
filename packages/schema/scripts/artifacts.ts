@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Config } from "../src/config.js";
 import { GraphDoc, View } from "../src/graph.js";
+import { JsonValue } from "../src/primitives.js";
 import { RenderManifest } from "../src/manifest.js";
 import { PatchDoc } from "../src/patch.js";
 import { SCHEMA_VERSION } from "../src/version.js";
@@ -9,9 +10,11 @@ import { goldenDocuments } from "../src/examples/index.js";
 const BASE_ID =
   "https://raw.githubusercontent.com/coldteadotai/pr-lens/main/packages/schema/json-schema";
 
-// The drill-down tree is recursive, so it lands in $defs; without an id it
-// would be published under a generated name that changes with the schema.
+// The drill-down tree and a JSON value are recursive, so they land in $defs;
+// without an id each would be published under a generated name that changes
+// with the schema.
 z.globalRegistry.add(View, { id: "View" });
+z.globalRegistry.add(JsonValue, { id: "JsonValue" });
 
 const documents = [
   { file: "graph-doc.schema.json", title: "PR Lens graph document", schema: GraphDoc },

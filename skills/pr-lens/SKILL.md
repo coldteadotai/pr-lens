@@ -31,7 +31,7 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
    npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme light
    ```
 
-   Render light by default unless the user requests dark theme. The SVGs, the manifest and `drawn.graph.json` land in `.pr-lens/`, which the CLI adds to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
+   Render light by default unless the user requests another theme. The SVGs, the manifest and `drawn.graph.json` land in `.pr-lens/`, which the CLI adds to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
 
    If the user asked for a diagram, an explanation or a picture of the architecture and nothing more, put it on a canvas and hand back the link:
 
@@ -144,11 +144,11 @@ Write every word for a smart twelve-year-old: short common words, one idea per l
 
 The same three steps, written well and written badly. Heading first, then the body after the slash:
 
-| Write this                                                                                                  | Not this                                                                                                                                                 |
-| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Write this | Not this |
+| -------- | -------- |
 | Route now queues the job instead of sending / The API call finishes at once. A worker sends the mail later. | Broadcast fan-out moves behind the queue / The API route now enqueues broadcast jobs for asynchronous batch processing instead of sending emails inline. |
-| Postmark now gets 500 emails per call / One call per batch instead of one call per person.                  | Batched delivery replaces single sends / The worker leverages the shared library to send emails in chunks of 500 via Postmark's batch endpoint.          |
-| processBroadcast and sendSingleEmail removed / sendBroadcastBulk does their job for whole batches.          | Single send functions are retired / sendBroadcastBulk replaces processBroadcast and sendSingleEmail to handle bulk deliveries in chunks.                 |
+| Postmark now gets 500 emails per call / One call per batch instead of one call per person. | Batched delivery replaces single sends / The worker leverages the shared library to send emails in chunks of 500 via Postmark's batch endpoint. |
+| processBroadcast and sendSingleEmail removed / sendBroadcastBulk does their job for whole batches. | Single send functions are retired / sendBroadcastBulk replaces processBroadcast and sendSingleEmail to handle bulk deliveries in chunks. |
 
 Keep consecutive steps on the same stage together. Every change of stage flies the camera across the canvas, so a tour that alternates between two diagrams spends its time travelling.
 
@@ -161,25 +161,86 @@ The validator checks:
 
 The field arrived with contract 0.1.1. A CLI older than 0.4.0 does not know it and rejects the whole document as an invented field, so validate with a current one.
 
+## Sample traffic on a flow step
+
+A flow step can say what travels on it. Add `payload` to a step that moves data: a request body, a job record, a query, a result. Leave it off a step that only signals, such as a trigger with nothing attached.
+
+```json
+{
+  "id": "batch-post",
+  "from": "send-broadcast-bulk",
+  "to": "postmark",
+  "label": "POST /email/batch",
+  "kind": "sync",
+  "delta": "added",
+  "repeat": 4,
+  "payload": {
+    "request": {
+      "type": "EmailBatch[500]",
+      "shape": "Email[]  // max 500\nEmail = { From: string; To: string; Subject: string; HtmlBody: string; MessageStream: \"broadcast\"; Metadata: { campaignId: string; batchId: string } }",
+      "sample": [
+        {
+          "From": "news@example.com",
+          "To": "ada@example.com",
+          "Subject": "The batching issue, fixed",
+          "HtmlBody": "<!doctype html><html><body>…",
+          "MessageStream": "broadcast",
+          "Metadata": { "campaignId": "cmp_0001", "batchId": "b_0001" }
+        }
+      ],
+      "before": [
+        {
+          "From": "news@example.com",
+          "To": "ada@example.com",
+          "Subject": "The batching issue, fixed",
+          "HtmlBody": "<!doctype html><html><body>…",
+          "Metadata": { "campaignId": "cmp_0001" }
+        }
+      ],
+      "source": { "path": "tests/fixtures/postmark-batch.json" }
+    },
+    "response": {
+      "type": "BatchResult[500]",
+      "shape": "SendResult[]  // one per Email, same order",
+      "sample": [{ "ErrorCode": 0, "Message": "OK", "To": "ada@example.com", "MessageID": "b7fa5c1e-…" }]
+    }
+  }
+}
+```
+
+A payload has a `request` side, a `response` side, or both. Each side has:
+
+- `type`: the name a reader of the code would recognise. Put the count in it when the step carries a collection: `EmailBatch[500]`, not `EmailBatch`. Write `{ "type": "void" }` for a side that carries nothing, such as the answer to a fire and forget call.
+- `shape`: the type signature as text, taken from the code's own types. Up to 2048 bytes.
+- `sample`: one exemplar instance after the change, written inline as JSON. It is a JSON value, not a JSON string: `"sample": [{ "To": "ada@example.com" }]`, never `"sample": "[{\"To\": ...}]"`. A string here is rejected. Every key once, one element in any array, long strings cut with an ellipsis. At most 8 levels deep and 4096 bytes once serialised; a sample over either cap is refused whole, never trimmed.
+- `before`: the same exemplar as it was before the change, when it differs. Same rules as `sample`, and it needs a `sample` to differ from.
+- `source`: the fixture or type the shape and sample came from, as a file reference. It becomes the permalink.
+
+Placeholders only. `ada@example.com`, `cmp_0001`, `job_0001`. Never a value lifted from a fixture that could be a real person, a real address or a secret, even a test one.
+
+Do not write `changedPaths`. The paths that differ between `before` and `sample` are worked out when the document is stored. A list you write is discarded.
+
+The field arrived with contract 0.2.0. A CLI built before it rejects the whole document as an invented field, so validate with a current one.
+
 ## What the validator will catch
 
 Read `references/graph-document.md` before writing. The four failures that account for nearly everything:
 
-| Code                         | What you did                                                                      |
-| ---------------------------- | --------------------------------------------------------------------------------- |
+| Code                         | What you did                                                         |
+| ---------------------------- | -------------------------------------------------------------------- |
 | `BROKEN_REFERENCE`           | an edge, a flow step, a view or a walkthrough step names an id you never declared |
-| `INVALID_DOCUMENT`           | an invented field; the schemas are strict, unknown keys are rejected              |
-| `DUPLICATE_ID`               | two nodes, edges or views sharing an id                                           |
-| `UNSUPPORTED_SCHEMA_VERSION` | `schemaVersion` is not the contract version installed                             |
+| `INVALID_DOCUMENT`           | an invented field; the schemas are strict, unknown keys are rejected |
+| `DUPLICATE_ID`               | two nodes, edges or views sharing an id                              |
+| `UNSUPPORTED_SCHEMA_VERSION` | `schemaVersion` is not the contract version installed                |
 
-Six rules cannot be expressed in JSON Schema and are checked only by the parser, so structured output alone does not make a document valid: referential integrity, a line range that ends before it starts, a `self` message whose endpoints disagree, a patch whose two commits are the same, more views than a render manifest could describe, and a walkthrough step focusing flow steps the diagram on its stage does not draw. Always validate.
+Seven rules cannot be expressed in JSON Schema and are checked only by the parser, so structured output alone does not make a document valid: referential integrity, a line range that ends before it starts, a `self` message whose endpoints disagree, a patch whose two commits are the same, more views than a render manifest could describe, a walkthrough step focusing flow steps the diagram on its stage does not draw, and sample traffic past its depth or byte caps. Always validate.
 
 ## Fixing a map instead of writing one
 
 When someone says the diagram is wrong (a node is misnamed, a folder should not be on it, something sits in the wrong lane), do not edit the generated document. It is regenerated on every run. Write the correction into `.github/pr-lens.yml`, which is an overlay applied over fresh inference every time:
 
 ```yaml
-schemaVersion: 0.1.1
+schemaVersion: 0.2.0
 map:
   rename:
     - match: functions/src/broadcast/sendBroadcastBulk.ts

@@ -165,3 +165,64 @@ export const FileRef = z
   })
   .describe("A file (and optional line range) backing an element.");
 export type FileRef = z.infer<typeof FileRef>;
+
+/**
+ * Spelled out rather than `z.json()`: that one publishes its recursion under
+ * a generated `$defs` name even when registered under an id.
+ */
+export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+
+export const JsonValue: z.ZodType<JsonValue> = z
+  .lazy(() =>
+    z.union([
+      z.null(),
+      z.boolean(),
+      z.number(),
+      z.string(),
+      z.array(JsonValue),
+      z.record(z.string(), JsonValue),
+    ]),
+  )
+  .describe("Any JSON value.");
+
+/** Counted by hand: the build compiles with no node or DOM types, so there is no TextEncoder. */
+export const byteLength = (text: string): number => {
+  let bytes = 0;
+  for (const character of text) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    bytes += codePoint < 0x80 ? 1 : codePoint < 0x800 ? 2 : codePoint < 0x10000 ? 3 : 4;
+  }
+  return bytes;
+};
+
+/** A scalar is 0, `{}` or `[]` is 1, `{ a: [] }` is 2. */
+export const jsonDepth = (value: JsonValue): number => {
+  if (value === null || typeof value !== "object") return 0;
+  let deepest = 0;
+  for (const child of Array.isArray(value) ? value : Object.values(value))
+    deepest = Math.max(deepest, jsonDepth(child));
+  return 1 + deepest;
+};
+
+/** A value cannot be cut mid-string, so these caps refuse rather than truncate. */
+export const MAX_PAYLOAD_DEPTH = 8;
+export const MAX_SHAPE_BYTES = 2_048;
+export const MAX_SAMPLE_BYTES = 4_096;
+export const MAX_CHANGED_PATHS = 64;
+
+/** `Metadata.batchId`, `[0].Cc`, or `headers["Content-Type"]` for a key an identifier cannot spell. */
+const IDENTIFIER = "[A-Za-z_$][\\w$]*";
+const QUOTED_KEY = '\\["(?:[^"\\\\]|\\\\.)+"\\]';
+const FIRST_SEGMENT = `(?:${IDENTIFIER}|\\[\\d+\\]|${QUOTED_KEY})`;
+const NEXT_SEGMENT = `(?:\\.${IDENTIFIER}|\\[\\d+\\]|${QUOTED_KEY})`;
+
+export const JsonPath = z
+  .string()
+  .min(1)
+  .max(200)
+  .regex(
+    new RegExp(`^${FIRST_SEGMENT}${NEXT_SEGMENT}*$`),
+    'must be a path into a JSON value, e.g. Metadata.batchId, [0].Cc or headers["Content-Type"]',
+  )
+  .describe("A path into a sample: dotted keys, [n] indexes and bracket-quoted keys.");
+export type JsonPath = z.infer<typeof JsonPath>;

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "0.1.1",
+  "schemaVersion": "0.2.0",
   "kind": "patch",
   "generatedAt": "2026-08-19T18:31:00.000Z",
   "summary": "Fold the batch send path into the baseline map and retire the single-send path.",

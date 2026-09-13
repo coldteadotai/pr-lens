@@ -3,7 +3,7 @@
 The generated document is regenerated on every run, so editing it is pointless. Corrections live in `.github/pr-lens.yml`, an overlay applied over fresh inference every time. Inference never writes back into this file, which is why a correction keeps holding as the code moves.
 
 ```yaml
-schemaVersion: 0.1.1          # required
+schemaVersion: 0.2.0          # required
 lenses: [architecture, data-flow]
 branding: true
 map:

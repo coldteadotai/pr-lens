@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/coldteadotai/pr-lens/main/packages/schema/json-schema/graph-doc.schema.json",
   "title": "PR Lens graph document",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "object",
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "pattern": "^0\\.1\\.\\d+$",
-      "description": "Contract version the document targets. Current: 0.1.1."
+      "pattern": "^0\\.(1|2)\\.\\d+$",
+      "description": "Contract version the document targets. Current: 0.2.0."
     },
     "kind": {
       "type": "string",
@@ -700,6 +700,215 @@
                     },
                     "description": "A file (and optional line range) backing an element."
                   }
+                },
+                "payload": {
+                  "description": "Sample traffic, for a step that moves data.",
+                  "type": "object",
+                  "properties": {
+                    "request": {
+                      "description": "What the step carries from `from` to `to`.",
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120,
+                          "description": "Type name a reader would recognise, e.g. EmailBatch[500]. `void` for a side that carries nothing."
+                        },
+                        "shape": {
+                          "description": "Type signature as text, taken from the code's own types.",
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "sample": {
+                          "description": "One exemplar instance after the change, as a JSON value.",
+                          "not": {
+                            "type": "string"
+                          },
+                          "$ref": "#/$defs/JsonValue"
+                        },
+                        "before": {
+                          "description": "The same exemplar before the change, when it differs, as a JSON value.",
+                          "not": {
+                            "type": "string"
+                          },
+                          "$ref": "#/$defs/JsonValue"
+                        },
+                        "source": {
+                          "description": "Fixture or type the shape and sample were taken from.",
+                          "type": "object",
+                          "properties": {
+                            "path": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 1024,
+                              "pattern": "^(?!\\/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
+                              "description": "Repository-relative path, POSIX separators."
+                            },
+                            "startLine": {
+                              "description": "1-based first line.",
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            "endLine": {
+                              "description": "1-based last line, inclusive.",
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            "revision": {
+                              "description": "Which side of the diff the lines refer to. Defaults to head.",
+                              "type": "string",
+                              "enum": [
+                                "head",
+                                "base"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "path"
+                          ],
+                          "additionalProperties": false,
+                          "dependentRequired": {
+                            "endLine": [
+                              "startLine"
+                            ]
+                          }
+                        },
+                        "changedPaths": {
+                          "default": [],
+                          "description": "Paths that differ between before and sample. Derived when the document is stored, not authored.",
+                          "maxItems": 64,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^(?:[A-Za-z_$][\\w$]*|\\[\\d+\\]|\\[\"(?:[^\"\\\\]|\\\\.)+\"\\])(?:\\.[A-Za-z_$][\\w$]*|\\[\\d+\\]|\\[\"(?:[^\"\\\\]|\\\\.)+\"\\])*$",
+                            "description": "A path into a sample: dotted keys, [n] indexes and bracket-quoted keys."
+                          }
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ],
+                      "additionalProperties": false,
+                      "dependentRequired": {
+                        "before": [
+                          "sample"
+                        ]
+                      }
+                    },
+                    "response": {
+                      "description": "What comes back, when something does.",
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120,
+                          "description": "Type name a reader would recognise, e.g. EmailBatch[500]. `void` for a side that carries nothing."
+                        },
+                        "shape": {
+                          "description": "Type signature as text, taken from the code's own types.",
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "sample": {
+                          "description": "One exemplar instance after the change, as a JSON value.",
+                          "not": {
+                            "type": "string"
+                          },
+                          "$ref": "#/$defs/JsonValue"
+                        },
+                        "before": {
+                          "description": "The same exemplar before the change, when it differs, as a JSON value.",
+                          "not": {
+                            "type": "string"
+                          },
+                          "$ref": "#/$defs/JsonValue"
+                        },
+                        "source": {
+                          "description": "Fixture or type the shape and sample were taken from.",
+                          "type": "object",
+                          "properties": {
+                            "path": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 1024,
+                              "pattern": "^(?!\\/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
+                              "description": "Repository-relative path, POSIX separators."
+                            },
+                            "startLine": {
+                              "description": "1-based first line.",
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            "endLine": {
+                              "description": "1-based last line, inclusive.",
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            "revision": {
+                              "description": "Which side of the diff the lines refer to. Defaults to head.",
+                              "type": "string",
+                              "enum": [
+                                "head",
+                                "base"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "path"
+                          ],
+                          "additionalProperties": false,
+                          "dependentRequired": {
+                            "endLine": [
+                              "startLine"
+                            ]
+                          }
+                        },
+                        "changedPaths": {
+                          "default": [],
+                          "description": "Paths that differ between before and sample. Derived when the document is stored, not authored.",
+                          "maxItems": 64,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^(?:[A-Za-z_$][\\w$]*|\\[\\d+\\]|\\[\"(?:[^\"\\\\]|\\\\.)+\"\\])(?:\\.[A-Za-z_$][\\w$]*|\\[\\d+\\]|\\[\"(?:[^\"\\\\]|\\\\.)+\"\\])*$",
+                            "description": "A path into a sample: dotted keys, [n] indexes and bracket-quoted keys."
+                          }
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ],
+                      "additionalProperties": false,
+                      "dependentRequired": {
+                        "before": [
+                          "sample"
+                        ]
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "anyOf": [
+                    {
+                      "required": [
+                        "request"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "response"
+                      ]
+                    }
+                  ]
                 }
               },
               "required": [
@@ -1072,6 +1281,37 @@
   "additionalProperties": false,
   "description": "A PR Lens graph document.",
   "$defs": {
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        }
+      ]
+    },
     "View": {
       "type": "object",
       "properties": {

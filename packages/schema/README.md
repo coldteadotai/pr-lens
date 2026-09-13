@@ -93,7 +93,7 @@ Every node, edge and flow step declares how it relates to the base commit: `adde
 Parsing runs four things in one pass, and reports every problem it finds rather than only the first:
 
 1. **Structure**: types, lengths, enums, no unknown keys, and file paths that can actually become a diff permalink (repository-relative, POSIX, no `..` segment).
-2. **Contract version**: below `1.0.0` an exact `major.minor` match; from `1.0.0` on, the same major and a minor no newer than this package's.
+2. **Contract version**: the same major, and a minor from the first the contract shipped (`0.1`) up to this package's own. A newer minor is refused, since it may carry a field this parser would take for an invented one.
 3. **Referential integrity**: every node sits in a declared lane, every edge joins declared nodes, every flow step runs between declared participants, every drill-down view and layout hint names elements that exist, every walkthrough step stages a diagram the document has and focuses elements it has, and a document carrying flows declares the `data-flow` lens.
 4. **That a render could describe the document**: see below.
 
@@ -169,16 +169,17 @@ The hosted App reads `github` settings from the PR's head commit. Other options 
 
 They describe **what an author may write**: a field with a default is one you may leave out. Rules are carried across wherever JSON Schema can state them: the supported contract versions, the repository-relative path rule, `endLine` requiring `startLine`, an asset needing a `url` or a `path`, a `selection` view having to select something.
 
-Exactly six rules cannot be stated in JSON Schema and stay the parser's job, each of them a comparison the shape alone cannot make:
+Exactly seven rules cannot be stated in JSON Schema and stay the parser's job, each of them a comparison the shape alone cannot make:
 
 1. referential integrity between elements,
 2. a line range that ends before it starts,
 3. the agreement between a self message's endpoints,
 4. a patch whose two commits are the same,
 5. more views than a render manifest could describe,
-6. a walkthrough step focusing flow steps the diagram on its stage does not draw.
+6. a walkthrough step focusing flow steps the diagram on its stage does not draw,
+7. sample traffic on a flow step deeper than 8 levels or over 4096 bytes once serialised (and a `shape` over 2048 bytes: JSON Schema counts characters, not bytes).
 
-The tests run a table of documents through both representations and assert the same verdict, accept and reject alike, including a case per divergence above, so they stay deliberate and cannot quietly grow a seventh.
+The tests run a table of documents through both representations and assert the same verdict, accept and reject alike, including a case per divergence above, so they stay deliberate and cannot quietly grow an eighth.
 
 ## Goldens
 
@@ -192,11 +193,14 @@ They tell one story: a real refactor that moved broadcast sending from one Postm
 
 - **`postmark-refactor.graph.json`** is the canonical document: the pull request itself, across three lanes, exercising all four delta states, a hero edge, a seven-step data flow with returns and a repeated batch step, a nested drill-down tree, and a six-step walkthrough that stages both a view and a flow. Downstream renderer goldens are measured against it.
 - **`broadcast-baseline.graph.json`** is the stored map of that subsystem as `main` stood before the change, and **`broadcast-baseline.patch.json`** carries it to the merged state, the transition `applyPatchDoc` performs.
+- **`payload.graph.json`** is the pull-request document with sample traffic on six of its seven flow steps: both sides on the batch call, a `before` that differs from its `sample`, a `void` response, and one step left bare.
 - **`postmark-refactor.render-manifest.json`** is what rendering the pull-request document produces, **`pr-lens.config.json`** a repository's corrections, and **`minimal.graph.json`** the smallest document that validates.
 
 ## Versioning
 
-`SCHEMA_VERSION` is the contract version, and it moves independently of this package's version. A release that changes no contract, a documentation fix or another patch, ships a new package version and leaves `SCHEMA_VERSION` where it stands, so a document written against the older string keeps parsing. While the contract is below `1.0.0`, a minor bump may break: parsers accept only their exact `major.minor`. From `1.0.0` on, minor releases only add optional fields or widen an enum, and a parser accepts any minor at or below its own.
+`SCHEMA_VERSION` is the contract version, and it moves independently of this package's version. A release that changes no contract, a documentation fix or another patch, ships a new package version and leaves `SCHEMA_VERSION` where it stands, so a document written against the older string keeps parsing. A minor release only adds optional fields or widens an enum, and a parser accepts every minor from `0.1` up to its own: a document stored against `0.1.1` still opens on a `0.2.0` parser, and a `0.3.0` document is refused by one until the package that reads it ships. A major release may remove or retype a field.
+
+Contract `0.2.0` added `payload` on a flow step: sample traffic, as JSON values, for a step that moves data.
 
 ---
 

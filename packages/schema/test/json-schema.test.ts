@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { broadcastBaselinePatchInput } from "../src/examples/baseline.js";
 import { minimalGraphInput } from "../src/examples/minimal.js";
+import { goldenDocuments } from "../src/examples/index.js";
+import { payloadGraphInput } from "../src/examples/payload.js";
 import {
   exampleConfigInput,
   postmarkRefactorGraphInput,
@@ -19,6 +21,7 @@ import {
   safeParsePatchDoc,
   safeParseRenderManifest,
 } from "../src/validate.js";
+import { withBatchPayload } from "./helpers.js";
 
 const packageRoot = join(import.meta.dirname, "..");
 const JsonObject = z.record(z.string(), z.unknown());
@@ -55,6 +58,7 @@ const divergences = [
   "a patch whose two commits are the same",
   "more views than a render manifest could describe",
   "a step focusing flow steps the diagram on its stage does not draw",
+  "sample traffic past its depth or byte caps",
 ] as const;
 
 const withoutKey = (document: object, key: string): object =>
@@ -145,6 +149,84 @@ const parityCases: ParityCase[] = [
     document: {
       ...minimalGraphInput,
       views: [{ id: "empty", title: "Empty", lens: "architecture", scope: { kind: "selection" } }],
+    },
+    accepted: false,
+  },
+  {
+    name: "the reference document with sample traffic on its flow",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: payloadGraphInput,
+    accepted: true,
+  },
+  {
+    name: "a payload with a side that carries nothing",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withBatchPayload({ response: { type: "void" } }).doc,
+    accepted: true,
+  },
+  {
+    name: "a payload with neither side",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withBatchPayload({}).doc,
+    accepted: false,
+  },
+  {
+    name: "a before with no sample to differ from",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withBatchPayload({ request: { type: "Email", before: { To: "ada@example.com" } } }).doc,
+    accepted: false,
+  },
+  {
+    name: "JSON text where a request sample belongs",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withBatchPayload({
+      request: { type: "Email", sample: JSON.stringify({ To: "ada@example.com" }) },
+    }).doc,
+    accepted: false,
+  },
+  {
+    name: "JSON text where a response before belongs",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withBatchPayload({
+      response: { type: "Email", sample: { To: "ada@example.com" }, before: JSON.stringify({ To: "ada@example.com" }) },
+    }).doc,
+    accepted: false,
+  },
+  {
+    name: "a sample whose strings sit inside the value",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withBatchPayload({
+      request: { type: "Email", sample: { To: "ada@example.com", tags: ["one"] }, before: ["one"] },
+    }).doc,
+    accepted: true,
+  },
+  {
+    name: "a patch adding a flow whose step carries JSON text as a sample",
+    schema: "patch-doc.schema.json",
+    parse: safeParsePatchDoc,
+    document: {
+      ...broadcastBaselinePatchInput,
+      ops: [
+        {
+          op: "add_flow",
+          flow: {
+            ...payloadGraphInput.flows![0]!,
+            messages: [
+              {
+                ...payloadGraphInput.flows![0]!.messages[4]!,
+                payload: { request: { type: "Email", sample: "{}" } },
+              },
+            ],
+          },
+        },
+      ],
     },
     accepted: false,
   },
@@ -351,6 +433,16 @@ const parityCases: ParityCase[] = [
     acceptedByJsonSchema: true,
   },
   {
+    name: `${divergences[6]}, which only the parser can catch`,
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withBatchPayload({
+      request: { type: "Deep", sample: { a: { b: { c: { d: { e: { f: { g: { h: { i: 1 } } } } } } } } } },
+    }).doc,
+    accepted: false,
+    acceptedByJsonSchema: true,
+  },
+  {
     name: "a patch that does not say which map it targets",
     schema: "patch-doc.schema.json",
     parse: safeParsePatchDoc,
@@ -387,11 +479,9 @@ describe("exported JSON Schemas", () => {
     );
   });
 
-  it.each([
-    "postmark-refactor.graph.json",
-    "broadcast-baseline.graph.json",
-    "minimal.graph.json",
-  ])("accepts the published %s", async (golden) => {
+  it.each(Object.keys(goldenDocuments).filter((file) => file.endsWith(".graph.json")))(
+    "accepts the published %s",
+    async (golden) => {
     const validate = await loadValidator("graph-doc.schema.json");
     const document = JsonObject.parse(
       JSON.parse(await readFile(join(packageRoot, "examples", golden), "utf8")),
