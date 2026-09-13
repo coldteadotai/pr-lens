@@ -163,7 +163,9 @@ The field arrived with contract 0.1.1. A CLI older than 0.4.0 does not know it a
 
 ## Sample traffic on a flow step
 
-A flow step can say what travels on it. Add `payload` to a step that moves data: a request body, a job record, a query, a result. Leave it off a step that only signals, such as a trigger with nothing attached.
+A flow step can carry a `payload`: what travels on it. Only the canvas draws it, in the rail that opens when a reader clicks a step. Nothing in an SVG or a pull request comment changes. Write it when the document is going to a canvas (step 4, `canvas push`) and leave it out otherwise. Six payloads on the reference document add half its length again, so this is not a field to fill by default.
+
+On a canvas document, add it to a step that moves data: a request body, a job record, a query, a result. Leave it off a step that only signals, such as a trigger with nothing attached.
 
 ```json
 {
@@ -212,11 +214,11 @@ A payload has a `request` side, a `response` side, or both. Each side has:
 
 - `type`: the name a reader of the code would recognise. Put the count in it when the step carries a collection: `EmailBatch[500]`, not `EmailBatch`. Write `{ "type": "void" }` for a side that carries nothing, such as the answer to a fire and forget call.
 - `shape`: the type signature as text, taken from the code's own types. Up to 2048 bytes.
-- `sample`: one exemplar instance after the change, written inline as JSON. It is a JSON value, not a JSON string: `"sample": [{ "To": "ada@example.com" }]`, never `"sample": "[{\"To\": ...}]"`. A string here is rejected. Every key once, one element in any array, long strings cut with an ellipsis. At most 8 levels deep and 4096 bytes once serialised; a sample over either cap is refused whole, never trimmed.
+- `sample`: one exemplar instance after the change, written inline as JSON. It is a JSON value, not a JSON string: `"sample": [{ "To": "ada@example.com" }]`, never `"sample": "[{\"To\": ...}]"`. A string here is rejected. Every key once, one element in any array, long strings cut with an ellipsis. At most 8 levels deep and 4096 bytes once serialised. The parser refuses a sample over either cap rather than trimming it.
 - `before`: the same exemplar as it was before the change, when it differs. Same rules as `sample`, and it needs a `sample` to differ from.
 - `source`: the fixture or type the shape and sample came from, as a file reference. It becomes the permalink.
 
-Placeholders only. `ada@example.com`, `cmp_0001`, `job_0001`. Never a value lifted from a fixture that could be a real person, a real address or a secret, even a test one.
+Use placeholder values: `ada@example.com`, `cmp_0001`. Never copy a value from a fixture that could belong to a real person or unlock something, even in test data.
 
 Do not write `changedPaths`. The paths that differ between `before` and `sample` are worked out when the document is stored. A list you write is discarded.
 

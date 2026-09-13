@@ -114,7 +114,7 @@ Up to 16, for the data-flow lens.
 - `kind` is `sync`, `async`, `return` or `self`. `self` requires `from === to`, and no other kind may have them equal.
 - Both endpoints must be participants of that flow, not merely nodes of the document.
 - `repeat` says a step happens more than once per run, e.g. 4 batched requests.
-- `payload` says what travels on the step. Optional, and only for a step that moves data.
+- `payload`: what travels on the step. Optional. Only a canvas draws it, so leave it out of a document that is not going to one.
 
 ### Sample traffic
 
@@ -142,11 +142,11 @@ Up to 16, for the data-flow lens.
 - A payload has `request`, `response` or both. One with neither is rejected.
 - `type` is required on a side: a name a reader of the code would know, with the count in it for a collection (`EmailBatch[500]`). `void` for a side that carries nothing.
 - `shape` is the type signature as text, up to 2048 bytes.
-- `sample` and `before` are JSON values written inline, not JSON strings. A string where a value belongs is rejected. Each is at most 8 levels deep and 4096 bytes once serialised. Over a cap, the value is refused whole; nothing is truncated.
+- `sample` and `before` are JSON values written inline, not JSON strings. A string where a value belongs is rejected. Each is at most 8 levels deep and 4096 bytes once serialised. The parser refuses a value over either cap rather than truncating it.
 - `before` needs a `sample` to differ from.
 - `source` is a file reference, the fixture or type the side was taken from.
 - `changedPaths` is filled in when the document is stored, from `before` and `sample`. Do not write it. Up to 64 paths of the form `Metadata.batchId`, `[0].Cc` or `headers["Content-Type"]`.
-- Placeholders only in samples: `ada@example.com`, `cmp_0001`. Never a value that could belong to a real person or unlock anything.
+- Use placeholder values in samples: `ada@example.com`, `cmp_0001`. Never one that could belong to a real person or unlock anything.
 
 ## Stats
 
