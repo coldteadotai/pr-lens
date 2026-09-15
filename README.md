@@ -81,6 +81,19 @@ The ordered pipeline of the change as an animated sequence: one dot crosses one 
 <tr>
 <td width="46%" valign="middle">
 
+### See the payload on every data flow
+
+Click any arrow and the payload opens beside the graph: request and response, each as a declared shape or a sample body. New keys land green, dropped ones red, the same colours the graph uses.
+
+</td>
+<td width="54%" valign="middle">
+<img alt="Clicking the enqueue broadcast job arrow: a side panel opens with the request body, its added keys green and a dropped key red, then the Response tab and the declared shape" src="docs/showcase/welcome.payload.gif">
+</td>
+</tr>
+
+<tr>
+<td width="46%" valign="middle">
+
 ### Drill down without leaving the page
 
 The comment nests `<details>` sections, each carrying its own diagram scoped to one part of the change: the whole blast radius on top, then the new path, then what was retired.
