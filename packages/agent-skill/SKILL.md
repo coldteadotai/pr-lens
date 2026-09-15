@@ -11,11 +11,13 @@ The diff or code is represented as one JSON document (lanes, nodes, edges, order
 
 ## Operating manual
 
+Decide where the diagram lands before you write it: a canvas, or an SVG and a pull request comment. Only a canvas draws `payload`, the sample request and response on a flow step. A late decision costs another pass through steps 2 and 3.
+
 1. **Read the diff.** When asked to represent a code change: `git diff --find-renames <base>...<head>`. The base is the merge base, not the tip of the base branch.
 
    If not expressing a code diff, read the code to be visually represented
 
-2. **Write the document** to `.pr-lens/graph.json`, following `references/graph-document.md`. `references/example.graph.json` is valid reference with three lanes, all four delta states, a hero edge, a seven-step flow, a nested drill-down tree and a six-step walkthrough. Read it before you write your first one. It is quicker than reading the reference.
+2. **Write the document** to `.pr-lens/graph.json`, following `references/graph-document.md`. `references/example.graph.json` is valid reference with three lanes, all four delta states, a hero edge, a seven-step flow, a nested drill-down tree and a six-step walkthrough. Read it before you write your first one. It is quicker than reading the reference. If it is going to a canvas, give every flow step (`messages`) that moves data a `payload` as you write it. "Sample traffic on a flow step" below says what goes in one. Only a flow step carries one. Flows need the `data-flow` lens, so an architecture view draws none.
 
 3. **Validate, and fix**
 
