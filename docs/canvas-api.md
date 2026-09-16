@@ -1,5 +1,7 @@
 # The canvas API
 
+This documents the protocol underneath the canvas page. Mostly the shape of /api/canvas — the three methods, request and response bodies, auth header, revision-conflict semantics as a stable contract. So you can implement a private store and set PR_LENS_API_URL at it to self host your own canvas.
+
 `pr-lens canvas` keeps a graph document on a server as a canvas. By default that server is prlens.dev. It does not have to be: `--api <url>` or `PR_LENS_API_URL` points the CLI at any server that speaks the protocol below, and a document pushed there never touches prlens.dev.
 
 This page is that protocol. It is written for someone implementing a private store, so the CLI's `push`, `pull`, `rotate` and `delete` work against it. It covers what travels over the wire and nothing behind it: how the hosted app stores revisions, draws pictures or meters traffic is its own business, and a private server is free to do all of that differently or not at all.
@@ -273,4 +275,4 @@ curl -s -X DELETE "$API/api/canvas/$ID" -H "authorization: Bearer $NEXT"
 
 ## What this page leaves out
 
-On purpose: how the hosted app stores revisions and pictures, how it hashes and turns over tokens on its side, its rate limit numbers, what its canvas page does with a document, and how it plays a walkthrough. None of it crosses the wire or is needed to answer the CLI, and all of it may change without notice. If you find yourself needing one of them to make the CLI work, that is a gap in this page: open an issue.
+How the page hashes and turns over tokens, its rate limit numbers etc. None of this should be needed to answer the CLI. If you find yourself needing one of them to make the CLI work, that is a gap in this page: please open an issue and we'll prioritize

@@ -406,6 +406,10 @@ Commit under your own name only. No `Co-Authored-By` line for a model, no "Gener
 
 <br />
 
+## Self-hosting the canvas
+
+Please start here [docs/canvas-api.md](docs/canvas-api.md)
+
 ## Why we built this
 
 [Reducing the cognitive load of reviewing PRs](https://www.coldtea.ai/blog/reducing-cognitive-load-ai-generated-prs)
