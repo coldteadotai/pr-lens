@@ -31,7 +31,9 @@
   "branding": true,
   "github": {
     "comment": {
-      "collapsed": false
-    }
+      "collapsed": false,
+      "notice": true
+    },
+    "draw": "auto"
   }
 }

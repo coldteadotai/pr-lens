@@ -88,6 +88,8 @@ The hosted App reads `github` settings from the PR's head commit. Other options 
 | Setting | Default | Effect |
 | --- | --- | --- |
 | `github.comment.collapsed` | `false` | Start diagrams and details closed. Drawing still runs automatically. |
+| `github.draw` | `auto` | `on-demand` leaves a pull request undrawn, with a short notice, until someone comments `@pr-lens draw`. |
+| `github.comment.notice` | `true` | `false` drops that notice, so an on-demand repository hears nothing until someone asks. |
 
 ## Check it
 

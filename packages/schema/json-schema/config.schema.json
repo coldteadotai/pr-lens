@@ -11,20 +11,14 @@
       "description": "Declared explicitly so a repository's corrections keep their meaning across contract versions."
     },
     "lenses": {
-      "default": [
-        "architecture",
-        "data-flow"
-      ],
+      "default": ["architecture", "data-flow"],
       "description": "Lenses to render for this repository.",
       "minItems": 1,
       "maxItems": 8,
       "type": "array",
       "items": {
         "type": "string",
-        "enum": [
-          "architecture",
-          "data-flow"
-        ],
+        "enum": ["architecture", "data-flow"],
         "description": "Rendering lens."
       }
     },
@@ -58,10 +52,7 @@
                 "description": "Short display label."
               }
             },
-            "required": [
-              "match",
-              "to"
-            ],
+            "required": ["match", "to"],
             "additionalProperties": false
           }
         },
@@ -99,10 +90,7 @@
                 "description": "Stable identifier, unique within its collection in a document."
               }
             },
-            "required": [
-              "match",
-              "lane"
-            ],
+            "required": ["match", "lane"],
             "additionalProperties": false
           }
         },
@@ -128,10 +116,7 @@
                 "description": "Stable identifier, unique within its collection in a document."
               }
             },
-            "required": [
-              "match",
-              "group"
-            ],
+            "required": ["match", "group"],
             "additionalProperties": false
           }
         }
@@ -156,17 +141,26 @@
               "default": false,
               "description": "Start the hosted App's diagrams and details in a closed disclosure. Drawing still runs automatically.",
               "type": "boolean"
+            },
+            "notice": {
+              "default": true,
+              "description": "Leave a short note on a pull request the hosted App does not draw because drawing is on request. `false` keeps it silent until asked.",
+              "type": "boolean"
             }
           },
           "additionalProperties": false
+        },
+        "draw": {
+          "default": "auto",
+          "description": "When the hosted App draws: every push, or only after someone comments `@pr-lens draw` on the pull request.",
+          "type": "string",
+          "enum": ["auto", "on-demand"]
         }
       },
       "additionalProperties": false
     }
   },
-  "required": [
-    "schemaVersion"
-  ],
+  "required": ["schemaVersion"],
   "additionalProperties": false,
   "description": "Repository configuration for PR Lens."
 }
