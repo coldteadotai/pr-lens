@@ -1,0 +1,1000 @@
+{
+  "version": 1,
+  "compiledAt": "2026-09-19T00:00:00.000Z",
+  "compiledBy": "claude",
+  "sources": [
+    {
+      "path": "AGENTS.md",
+      "sha": "2ffcf3bddf19c8a7053aa757da094bc6ff3fc323d1e6bd7fb3ad96d6fa11a5d1",
+      "scope": "**/*"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha": "d4bbffd5374e4d5654d45971aeaddb019da577bfb64e9d1581cb2c5fa434b8cb",
+      "scope": "**/*"
+    }
+  ],
+  "rules": [
+    {
+      "id": "no-secrets",
+      "text": "No secrets in this repo, ever. This repo needs no credentials.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 7
+      },
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add a literal credential: an API key, token, password, private key, connection string with a password, or a .env-style KEY=value line holding a real-looking secret value?",
+          "criteria": {
+            "true": "const token = \"ghp_a8F3kL9...\" or GEMINI_API_KEY=AIzaSy... in a committed file",
+            "false": "reading process.env.GITHUB_TOKEN, or a placeholder like <your-token> in docs"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 20,
+        "median": 0.02,
+        "min": 0.02,
+        "max": 0.03,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "verify-before-done",
+      "text": "Verify before claiming done: tests green, `pnpm build` + typecheck clean, and visual output verified in a real browser when the change affects rendered SVGs.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 8
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "about the process before finishing, not the code"
+      },
+      "status": "active"
+    },
+    {
+      "id": "no-ai-attribution",
+      "text": "No AI attribution in commits or pull requests. No `Co-Authored-By` line for a model, no \"Generated with\" footer, no session link, no bot listed as an author.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 9
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "about commit and pull request metadata, not the code diff"
+      },
+      "status": "active"
+    },
+    {
+      "id": "humanize-user-facing-words",
+      "text": "Pass user-facing words through the humanizer before shipping them.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 10
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "a workflow step; the judge cannot tell whether the humanizer ran"
+      },
+      "status": "active"
+    },
+    {
+      "id": "state-assumptions",
+      "text": "State your assumptions explicitly. If uncertain, ask.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 24
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "about the conversation, not the code"
+      },
+      "status": "active"
+    },
+    {
+      "id": "present-interpretations",
+      "text": "If multiple interpretations exist, present them - don't pick silently.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 25
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "about the conversation, not the code"
+      },
+      "status": "active"
+    },
+    {
+      "id": "suggest-simpler-approach",
+      "text": "If a simpler approach exists, say so. Push back when warranted.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 26
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "about the conversation, not the code"
+      },
+      "status": "active"
+    },
+    {
+      "id": "stop-when-unclear",
+      "text": "If something is unclear, stop. Name what's confusing. Ask.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 27
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "about the conversation, not the code"
+      },
+      "status": "active"
+    },
+    {
+      "id": "minimum-code",
+      "text": "Minimum code that solves the problem. Nothing speculative. If you write 200 lines and it could be 50, rewrite it.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 31
+      },
+      "when": "turn",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "score",
+          "instructions": "Compared with the shortest reasonable implementation of what this change does, how much longer is the added code?",
+          "criteria": [
+            "about as short as it can be",
+            "somewhat longer than needed",
+            "about twice as long as needed",
+            "several times longer than needed"
+          ],
+          "violatingFrom": 2
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 8,
+        "median": 0.02,
+        "min": 0.01,
+        "max": 0.18,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "scope-creep",
+      "text": "No features beyond what was asked. Every changed line should trace directly to the user's request.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 33
+      },
+      "when": "turn",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add functionality, files, options, or exports that go beyond the single task the rest of the change is doing?",
+          "criteria": {
+            "true": "a bug fix in one function that also adds a new CLI flag and a new helper module nobody asked for",
+            "false": "every added line serves the one change being made"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 8,
+        "median": 0.04,
+        "min": 0.03,
+        "max": 0.08,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "no-single-use-abstraction",
+      "text": "No abstractions for single-use code.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 34
+      },
+      "when": "turn",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change introduce a new function, class, generic, or module that is called from exactly one place in the whole diff and wraps only a few lines?",
+          "criteria": {
+            "true": "a new `buildHeaderText(opts)` helper used once, three lines long",
+            "false": "a helper called from two or more sites, or a single-caller function that isolates a large or testable block"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 8,
+        "median": 0.03,
+        "min": 0.02,
+        "max": 0.03,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "no-unrequested-configurability",
+      "text": "No \"flexibility\" or \"configurability\" that wasn't requested.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 35
+      },
+      "when": "turn",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add an option, parameter, config field, env var, or plugin point whose only value in the diff is its default, so nothing in the change ever varies it?",
+          "criteria": {
+            "true": "an `options.separator = \",\"` parameter every caller leaves at the default",
+            "false": "a parameter that at least two call sites pass differently"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 8,
+        "median": 0.03,
+        "min": 0.02,
+        "max": 0.16,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "no-impossible-error-handling",
+      "text": "No error handling for impossible scenarios.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 36
+      },
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add a try/catch, null check, or fallback branch guarding a value the types or the immediately preceding code already guarantee cannot fail or be missing?",
+          "criteria": {
+            "true": "`if (!items) return []` right after `const items = list.filter(...)`, or try/catch around a pure arithmetic expression",
+            "false": "a guard on a value from I/O, parsing, or an optional field"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 20,
+        "median": 0.025,
+        "min": 0.01,
+        "max": 0.21,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "no-adjacent-improvements",
+      "text": "Don't \"improve\" adjacent code, comments, or formatting.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 47
+      },
+      "when": "turn",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change reformat, reword comments in, rename, or reorder code whose behavior the change does not otherwise touch?",
+          "criteria": {
+            "true": "a fix to one function plus re-indented or re-quoted lines in a neighbouring function",
+            "false": "all modified lines belong to the logic being changed"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 8,
+        "median": 0.045,
+        "min": 0.03,
+        "max": 0.58,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "preserve-blank-lines",
+      "text": "Preserve intentional blank lines between methods and logical blocks. Do not compact whitespace to reduce line count or satisfy a file-size target.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 48
+      },
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change delete blank lines that separated functions, methods, or logical blocks while leaving the surrounding code otherwise the same?",
+          "criteria": {
+            "true": "a hunk whose removed lines are only empty lines between two functions",
+            "false": "blank lines removed together with the code block they used to separate"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 20,
+        "median": 0.025,
+        "min": 0.02,
+        "max": 0.07,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "no-unbroken-refactor",
+      "text": "Don't refactor things that aren't broken.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 49
+      },
+      "when": "turn",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change restructure existing working code (extracting, inlining, renaming, converting patterns) without that restructuring being needed for the behavior change the diff makes?",
+          "criteria": {
+            "true": "converting an existing for-loop to reduce() in a function the change did not otherwise need to touch",
+            "false": "restructuring only where the new behavior required it"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 8,
+        "median": 0.03,
+        "min": 0.02,
+        "max": 0.04,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "match-existing-style",
+      "text": "Match existing style, even if you'd do it differently.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 50
+      },
+      "check": {
+        "type": "deferred",
+        "reason": "needs the surrounding files to know what the existing style is"
+      },
+      "status": "active"
+    },
+    {
+      "id": "dont-delete-unrelated-dead-code",
+      "text": "If you notice unrelated dead code, mention it - don't delete it. Don't remove pre-existing dead code unless asked.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 51
+      },
+      "when": "turn",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change delete pre-existing functions, exports, branches, or files that none of the other changes in the diff depend on removing?",
+          "criteria": {
+            "true": "removing an unused legacy helper while fixing an unrelated bug elsewhere",
+            "false": "removing a function because the change replaced its only caller"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 8,
+        "median": 0.03,
+        "min": 0.03,
+        "max": 0.05,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "remove-own-orphans",
+      "text": "Remove imports/variables/functions that YOUR changes made unused.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 55
+      },
+      "when": "turn",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change remove the last use of an import, variable, parameter, or function and leave that declaration in place?",
+          "criteria": {
+            "true": "the only call to `formatLabel` is deleted but its import stays at the top of the file",
+            "false": "every declaration whose last use was removed is removed too"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 8,
+        "median": 0.03,
+        "min": 0.02,
+        "max": 0.05,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "verifiable-goals",
+      "text": "Transform tasks into verifiable goals: \"Fix the bug\" → \"Write a test that reproduces it, then make it pass\".",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 64
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "about how the agent plans and verifies work, not the code"
+      },
+      "status": "active"
+    },
+    {
+      "id": "state-plan",
+      "text": "For multi-step tasks, state a brief plan.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 70
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "about the conversation, not the code"
+      },
+      "status": "active"
+    },
+    {
+      "id": "comment-volume",
+      "text": "Default to no comment. Every comment must earn its place: if you can't name what it tells the reader that the code doesn't, drop it.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 82
+      },
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "score",
+          "instructions": "How many of the comments added in this change tell the reader nothing the adjacent code does not already say?",
+          "criteria": [
+            "no such comments",
+            "one or two",
+            "several, or a multi-line block",
+            "most added lines carry such a comment"
+          ],
+          "violatingFrom": 2
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 20,
+        "median": 0.05,
+        "min": 0,
+        "max": 0.2,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "no-narrating-comment",
+      "text": "Don't narrate what the code does — the reader sees the `map`, the `switch`, the names. Delete comments that restate the adjacent line.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 84
+      },
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Among the added lines, is there at least one comment whose content a reader could reconstruct from the code directly below or beside it?",
+          "criteria": {
+            "true": "// loop over the nodes  above  for (const node of nodes) {",
+            "false": "// GitHub strips <style> inside <defs>; keep it at the root  above  svg.appendChild(style)"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 20,
+        "median": 0.32,
+        "min": 0.09,
+        "max": 0.85,
+        "fired": 1,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "clarify-code-not-comment",
+      "text": "If code needs a comment to be understood, first make the code clearer (rename, extract). Comment only what better code can't express.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 86
+      },
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add a comment that explains what a cryptic name, magic number, or dense expression means, where a descriptive name or extracted function would have made the comment unnecessary?",
+          "criteria": {
+            "true": "// 86400 is seconds per day  above  const t = n * 86400",
+            "false": "const SECONDS_PER_DAY = 86400, or a comment giving a reason rather than a translation"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 20,
+        "median": 0.03,
+        "min": 0.01,
+        "max": 0.28,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "no-if-chain-over-variants",
+      "text": "Closed sets use an exhaustive `switch` + `assertNever`. Never use if/else-if chains for mutually-exclusive variants.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 94
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add an if / else-if chain that compares the same discriminant field (type, kind, status, or an enum value) against two or more literal variants?",
+          "criteria": {
+            "true": "if (node.kind === \"file\") {...} else if (node.kind === \"dir\") {...}",
+            "false": "switch (node.kind) { case \"file\": ... case \"dir\": ... default: return assertNever(node) }"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 11,
+        "median": 0.04,
+        "min": 0.03,
+        "max": 0.13,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "switch-ends-with-assert-never",
+      "text": "`switch` on the discriminant and end with `default: return assertNever(value)` so adding a variant fails to compile until every consumer handles it.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 94
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add a switch over a union discriminant or enum whose default branch is missing, or whose default does something other than return or throw assertNever(value)?",
+          "criteria": {
+            "true": "switch (kind) { case \"a\": ...; case \"b\": ...; }  with no default, or default: return null",
+            "false": "switch (kind) { ...; default: return assertNever(kind) }"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 11,
+        "median": 0.03,
+        "min": 0.03,
+        "max": 0.09,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "derive-closed-decision-type",
+      "text": "When behavior depends on several related status checks, derive one closed decision/status type and switch over that — don't scatter conditionals through a method.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 94
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add a function body with three or more separate conditionals on related boolean or status flags (isCached, hasDiff, wasSkipped, and so on) that together pick one of several outcomes?",
+          "criteria": {
+            "true": "if (cached) {...} ... if (!cached && stale) {...} ... if (stale && failed) {...} spread across one method",
+            "false": "const decision = decide({ cached, stale, failed }); switch (decision.type) { ... }"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 11,
+        "median": 0.02,
+        "min": 0.02,
+        "max": 0.05,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "assert-never-single-definition",
+      "text": "Define `assertNever` once in the schema package's utils and import it everywhere.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 94
+      },
+      "scope": [
+        "packages/renderer/**/*.ts",
+        "packages/cli/**/*.ts",
+        "packages/action/**/*.ts",
+        "packages/agent-skill/**/*.ts"
+      ],
+      "check": {
+        "type": "lint",
+        "how": "no-restricted-syntax: a declaration of assertNever outside packages/schema",
+        "pattern": "^\\s*(export\\s+)?(const|function)\\s+assertNever\\b"
+      },
+      "status": "active"
+    },
+    {
+      "id": "no-interface",
+      "text": "Use `type`, not `interface`.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 105
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "check": {
+        "type": "lint",
+        "how": "@typescript-eslint/consistent-type-definitions",
+        "pattern": "^\\s*(export\\s+)?(declare\\s+)?interface\\s+[A-Za-z_$]"
+      },
+      "status": "active"
+    },
+    {
+      "id": "discriminated-union-for-state",
+      "text": "Discriminated unions for state — every multi-shape value carries a `type`/`kind` discriminant. No optional-field soup where one shape is meant.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 106
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add an object type with two or more optional fields that are only ever populated together in distinct situations (success vs error, loaded vs pending), instead of a union whose members carry a type or kind literal?",
+          "criteria": {
+            "true": "type Result = { data?: Graph; error?: string; pending?: boolean }",
+            "false": "type Result = { type: \"ok\"; data: Graph } | { type: \"error\"; message: string }"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 11,
+        "median": 0.14,
+        "min": 0.03,
+        "max": 0.33,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "no-type-cast",
+      "text": "No type casting. `as` is a bug until proven otherwise — narrow with `typeof`/discriminants/schema parsing instead. (`as const` and zod `.parse()` outputs are fine.)",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 107
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "check": {
+        "type": "lint",
+        "how": "@typescript-eslint/consistent-type-assertions with assertionStyle never, allowing as const",
+        "pattern": "[)\\]\\w\"'`]\\s+as\\s+(?!const\\b)[A-Za-z_$({\\[]"
+      },
+      "status": "active"
+    },
+    {
+      "id": "typed-domain-errors",
+      "text": "Expected failures use typed domain errors with a stable machine-readable `code` (SCREAMING_SNAKE_CASE) callers can switch on exhaustively.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 108
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change signal an expected, recoverable failure (not found, invalid input, rate limited, unsupported) by throwing or returning a plain `new Error(string)`, a bare string, or null, rather than a typed error carrying a SCREAMING_SNAKE_CASE code?",
+          "criteria": {
+            "true": "throw new Error(\"PR not found\")",
+            "false": "throw new PrLensError({ code: \"PR_NOT_FOUND\", message: \"PR not found\" }), or an invariant that truly cannot happen"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 11,
+        "median": 0.1,
+        "min": 0.04,
+        "max": 0.69,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "concise-error-messages",
+      "text": "Concise messages, no terminal punctuation.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 108
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add an error message string that ends with a period, exclamation mark, or ellipsis, or that runs on for more than one short sentence?",
+          "criteria": {
+            "true": "message: \"The diagram could not be rendered because the graph was empty.\"",
+            "false": "message: \"Graph is empty\""
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 11,
+        "median": 0.07,
+        "min": 0.03,
+        "max": 0.36,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "single-id-format-owner",
+      "text": "Deterministic ID/key formats have a single owner: one named creation function per format (content-hash keys, R2 paths, comment markers). Never inline-format the same ID in two places.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 109
+      },
+      "check": {
+        "type": "deferred",
+        "reason": "needs the rest of the repo to know whether a creation function for the format already exists"
+      },
+      "status": "active"
+    },
+    {
+      "id": "zod-parse-at-boundary",
+      "text": "Schema-first boundaries: anything crossing a process/API boundary is zod-parsed at the edge.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 110
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change accept data from outside the process (JSON.parse output, an HTTP body or response, env vars, CLI args, a file read) and use it as typed without a zod schema parse, or validate it by hand with typeof / in / property checks?",
+          "criteria": {
+            "true": "const body = JSON.parse(raw); if (typeof body.id !== \"string\") throw ...; use(body)",
+            "false": "const body = RequestSchema.parse(JSON.parse(raw))"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 11,
+        "median": 0.1,
+        "min": 0.05,
+        "max": 0.2,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "no-internal-revalidation",
+      "text": "Internal code trusts parsed types, never re-validates ad hoc.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 110
+      },
+      "scope": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change add typeof, Array.isArray, or presence checks on a value whose static type already guarantees that shape because it came from an earlier schema parse or a typed parameter?",
+          "criteria": {
+            "true": "function draw(graph: Graph) { if (!Array.isArray(graph.nodes)) throw ... }",
+            "false": "checks on an unknown or any value at the boundary itself"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 11,
+        "median": 0.06,
+        "min": 0.04,
+        "max": 0.36,
+        "fired": 0,
+        "verdict": "decisive"
+      }
+    },
+    {
+      "id": "renderer-no-io",
+      "text": "`packages/renderer` (pure function, no I/O).",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 114
+      },
+      "scope": [
+        "packages/renderer/src/**/*.ts"
+      ],
+      "check": {
+        "type": "lint",
+        "how": "no-restricted-imports for node built-ins plus no-restricted-globals for fetch, process, console, scoped to the renderer",
+        "pattern": "(from\\s+[\"'](node:)?(fs|fs/promises|path|child_process|os|http|https|net)[\"']|\\bfetch\\s*\\(|process\\.env\\b|console\\.(log|error|warn)\\s*\\()"
+      },
+      "status": "active"
+    },
+    {
+      "id": "renderer-no-time-or-random",
+      "text": "The renderer must be deterministic: same graph in → byte-identical SVG out. Treat any nondeterminism (Date, random) as a bug.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 115
+      },
+      "scope": [
+        "packages/renderer/src/**/*.ts"
+      ],
+      "check": {
+        "type": "lint",
+        "how": "no-restricted-syntax on Math.random, Date, performance.now, and crypto random calls, scoped to the renderer",
+        "pattern": "(Math\\.random\\s*\\(|new\\s+Date\\s*\\(|Date\\.now\\s*\\(|performance\\.now\\s*\\(|crypto\\.randomUUID|randomBytes)"
+      },
+      "status": "active"
+    },
+    {
+      "id": "renderer-no-iteration-order-dependence",
+      "text": "The renderer must be deterministic: same graph in → byte-identical SVG out. Treat any nondeterminism (object iteration order) as a bug.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 115
+      },
+      "scope": [
+        "packages/renderer/src/**/*.ts"
+      ],
+      "when": "edit",
+      "check": {
+        "type": "model",
+        "question": {
+          "type": "boolean",
+          "instructions": "Does this change emit output, assign ids, or choose positions by iterating Object.keys / Object.entries / for-in / a Set or Map built from input, without sorting first by a stable key?",
+          "criteria": {
+            "true": "for (const [id, node] of Object.entries(graph.nodes)) svg += draw(node)",
+            "false": "for (const node of [...nodes].sort((a, b) => a.id.localeCompare(b.id))) svg += draw(node)"
+          }
+        }
+      },
+      "status": "active",
+      "calibration": {
+        "at": "2026-09-19T11:52:48.902Z",
+        "hunks": 0,
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "fired": 0,
+        "verdict": "skipped"
+      }
+    },
+    {
+      "id": "svg-github-safe",
+      "text": "Rendered SVGs must remain GitHub-safe: SMIL/CSS animation only, no scripts, no external resources, self-contained.",
+      "source": {
+        "path": "AGENTS.md",
+        "line": 116
+      },
+      "scope": [
+        "packages/renderer/src/**/*.ts"
+      ],
+      "check": {
+        "type": "lint",
+        "how": "no-restricted-syntax on string literals containing <script, <foreignObject, on*= handlers, external http(s) references, @import, @font-face in renderer source",
+        "pattern": "(<script\\b|<foreignObject\\b|\\bon(load|click|mouseover|begin|end)=|(xlink:)?href=[\"']?https?://|url\\(\\s*[\"']?https?://|@import\\b|@font-face\\b)"
+      },
+      "status": "active"
+    }
+  ]
+}
