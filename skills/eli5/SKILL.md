@@ -13,7 +13,7 @@ You write one graph document. Its views are the growing pictures, its walkthroug
 
 ## What you need
 
-The PR Lens skill, installed beside this one. If `pr-lens/SKILL.md` is not there: `npx skills add coldteadotai/pr-lens --skill pr-lens`. Read its SKILL.md and `references/graph-document.md` before your first document. Its rules hold here except where this page marks an **Override**.
+The PR Lens skill, installed beside this one from the same repo. If `pr-lens/SKILL.md` is not there, stop and ask the person to install it; or ask confirmation to install it. Read its SKILL.md and `references/graph-document.md` before your first document. Its rules hold here except where this page marks an **Override**.
 
 ## Operating manual
 
