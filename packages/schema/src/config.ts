@@ -12,7 +12,9 @@ export const Selector = z
   .string()
   .min(1)
   .max(256)
-  .describe("`id:<node-id>` for an exact node, otherwise a repository-relative path glob.");
+  .describe(
+    "`id:<node-id>` for an exact node, otherwise a repository-relative path glob.",
+  );
 export type Selector = z.infer<typeof Selector>;
 
 /**
@@ -31,7 +33,9 @@ export const MapCorrections = z
       .array(Selector)
       .max(128)
       .default([])
-      .describe("Drop matching nodes, and any edge or flow step that touched them."),
+      .describe(
+        "Drop matching nodes, and any edge or flow step that touched them.",
+      ),
     lane: z
       .array(z.strictObject({ match: Selector, lane: Id }))
       .max(128)
@@ -58,7 +62,12 @@ export const Config = z
       .max(8)
       .default(["architecture", "data-flow"])
       .describe("Lenses to render for this repository."),
-    map: MapCorrections.default({ rename: [], exclude: [], lane: [], group: [] }),
+    map: MapCorrections.default({
+      rename: [],
+      exclude: [],
+      lane: [],
+      group: [],
+    }),
     branding: z
       .boolean()
       .default(true)
@@ -70,9 +79,23 @@ export const Config = z
             collapsed: z
               .boolean()
               .default(false)
-              .describe("Start the hosted App's diagrams and details in a closed disclosure. Drawing still runs automatically."),
+              .describe(
+                "Start the hosted App's diagrams and details in a closed disclosure. Drawing still runs automatically.",
+              ),
+            notice: z
+              .boolean()
+              .default(true)
+              .describe(
+                "Leave a short note on a pull request the hosted App does not draw because drawing is on request. `false` keeps it silent until asked.",
+              ),
           })
           .prefault({}),
+        draw: z
+          .enum(["auto", "on-demand"])
+          .default("auto")
+          .describe(
+            "When the hosted App draws: every push, or only after someone comments `@pr-lens draw` on the pull request.",
+          ),
       })
       .prefault({}),
   })

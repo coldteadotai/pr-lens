@@ -156,9 +156,23 @@
               "default": false,
               "description": "Start the hosted App's diagrams and details in a closed disclosure. Drawing still runs automatically.",
               "type": "boolean"
+            },
+            "notice": {
+              "default": true,
+              "description": "Leave a short note on a pull request the hosted App does not draw because drawing is on request. `false` keeps it silent until asked.",
+              "type": "boolean"
             }
           },
           "additionalProperties": false
+        },
+        "draw": {
+          "default": "auto",
+          "description": "When the hosted App draws: every push, or only after someone comments `@pr-lens draw` on the pull request.",
+          "type": "string",
+          "enum": [
+            "auto",
+            "on-demand"
+          ]
         }
       },
       "additionalProperties": false

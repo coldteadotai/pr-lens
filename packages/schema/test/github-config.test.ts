@@ -33,3 +33,46 @@ describe("GitHub comment config", () => {
     expect(validate(input)).toBe(false);
   });
 });
+
+describe("GitHub notice switch", () => {
+  it("leaves the notice on unless told otherwise", () => {
+    const input = { schemaVersion: SCHEMA_VERSION, github: { comment: { collapsed: true } } };
+    expect(Config.parse(input).github.comment.notice).toBe(true);
+    expect(validate(input)).toBe(true);
+  });
+
+  it("accepts false in Zod and the published JSON Schema", () => {
+    const input = { schemaVersion: SCHEMA_VERSION, github: { draw: "on-demand", comment: { notice: false } } };
+    expect(Config.parse(input).github.comment.notice).toBe(false);
+    expect(validate(input)).toBe(true);
+  });
+
+  it.each(["false", 0, null])("rejects a non-boolean notice: %j", (notice) => {
+    const input = { schemaVersion: SCHEMA_VERSION, github: { comment: { notice } } };
+    expect(Config.safeParse(input).success).toBe(false);
+    expect(validate(input)).toBe(false);
+  });
+});
+
+describe("GitHub draw mode", () => {
+  it.each([{}, { github: {} }, { github: { comment: { collapsed: true } } }])(
+    "draws every push unless told otherwise: %j",
+    (fields) => {
+      const input = { schemaVersion: SCHEMA_VERSION, ...fields };
+      expect(Config.parse(input).github.draw).toBe("auto");
+      expect(validate(input)).toBe(true);
+    },
+  );
+
+  it("accepts on-demand in Zod and the published JSON Schema", () => {
+    const input = { schemaVersion: SCHEMA_VERSION, github: { draw: "on-demand" } };
+    expect(Config.parse(input).github.draw).toBe("on-demand");
+    expect(validate(input)).toBe(true);
+  });
+
+  it.each(["manual", "on_demand", true, null, ["on-demand"]])("rejects a draw mode it does not know: %j", (draw) => {
+    const input = { schemaVersion: SCHEMA_VERSION, github: { draw } };
+    expect(Config.safeParse(input).success).toBe(false);
+    expect(validate(input)).toBe(false);
+  });
+});
