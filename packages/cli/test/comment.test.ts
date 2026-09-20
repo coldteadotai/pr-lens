@@ -1,7 +1,7 @@
-import { parseRenderManifest, type RenderManifestInput } from "@coldtea/pr-lens-schema";
+import { parseGraphDoc, parseRenderManifest, type RenderManifestInput } from "@coldtea/pr-lens-schema";
 import { minimalGraph, postmarkRefactorGraph, postmarkRefactorManifest } from "@coldtea/pr-lens-schema/examples";
 import { expect, test } from "vitest";
-import { COMMENT_MARKER, composeComment } from "../src/comment.js";
+import { COMMENT_MARKER, commentMarker, composeComment } from "../src/comment.js";
 
 const localManifest = (assets: RenderManifestInput["assets"]) =>
   parseRenderManifest({
@@ -208,4 +208,153 @@ test("the drill-down tree keeps its nesting and its open sections", () => {
 
   expect(body).toContain("<details open>");
   expect(body).toContain("<summary><b>The new batch path</b></summary>");
+});
+
+test("omitting the target composes exactly what github got before it existed", () => {
+  const options = {
+    graph: postmarkRefactorGraph,
+    manifest: postmarkRefactorManifest,
+    assetBaseUrl: undefined,
+    branding: true,
+  };
+
+  expect(composeComment(options)).toBe(composeComment({ ...options, target: "github" }));
+});
+
+test("gitlab never receives a picture element, only the light image", () => {
+  const body = composeComment({
+    graph: minimalGraph,
+    manifest: localManifest([
+      asset({}),
+      asset({ id: "architecture-dark", theme: "dark", path: "architecture-dark.svg" }),
+    ]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+    target: "gitlab",
+  });
+
+  expect(body).not.toContain("<picture>");
+  expect(body).not.toContain("prefers-color-scheme");
+  expect(body).toContain('src="https://example.com/a/architecture-light.svg"');
+  expect(body.split("\n")[0]).toBe(COMMENT_MARKER);
+});
+
+test("gitlab reference sigils in model prose are disarmed like mentions", () => {
+  const body = composeComment({
+    graph: { ...minimalGraph, summary: "see !42 and ~bug and %v1 and $9 and &epic1" },
+    manifest: localManifest([asset({})]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+    target: "gitlab",
+  });
+
+  expect(body).toContain("!&#8203;42");
+  expect(body).toContain("~&#8203;bug");
+  expect(body).toContain("%&#8203;v1");
+  expect(body).toContain("$&#8203;9");
+  expect(body).toContain("&amp;&#8203;epic1");
+});
+
+test("gitlab quoted references are disarmed too, entity and all", () => {
+  const body = composeComment({
+    graph: { ...minimalGraph, summary: 'apply ~"multi word" then %"v1.0 beta" and &"big epic"' },
+    manifest: localManifest([asset({})]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+    target: "gitlab",
+  });
+
+  expect(body).toContain("~&#8203;&quot;multi word&quot;");
+  expect(body).toContain("%&#8203;&quot;v1.0 beta&quot;");
+  expect(body).toContain("&amp;&#8203;&quot;big epic&quot;");
+});
+
+test("bitbucket gets a markdown-native marker, since an HTML comment could show", () => {
+  expect(commentMarker("bitbucket")).toBe("[pr-lens]: #pr-lens");
+  expect(commentMarker("github")).toBe(COMMENT_MARKER);
+  expect(commentMarker("gitlab")).toBe(COMMENT_MARKER);
+});
+
+test("a bitbucket comment carries no HTML at all", () => {
+  const body = composeComment({
+    graph: postmarkRefactorGraph,
+    manifest: postmarkRefactorManifest,
+    assetBaseUrl: undefined,
+    branding: true,
+    target: "bitbucket",
+  });
+
+  expect(body.split("\n")[0]).toBe("[pr-lens]: #pr-lens");
+  expect(body).not.toMatch(/<[a-z]/i);
+  expect(body).toContain("**");
+  expect(body).toContain("Rendered by [PR Lens]");
+});
+
+// With no HTML to hide inside, safety on bitbucket means the payload's own
+// markdown syntax arrives backslashed and its dangerous form never survives.
+test.each([
+  ["a disguised link", "[Security update](https://attacker.example/phish)", "\\[Security update\\]", "](https://attacker.example"],
+  ["an image", "![](https://attacker.example/tracker.png)", "\\!\\[\\]", "](https://attacker.example"],
+  ["a code fence", "```\nrm -rf /\n```", "\\`\\`\\`", "\n```"],
+  ["a heading", "# Not our heading", "\\# Not our heading", "\n# Not our heading"],
+  ["a raw HTML tag", '<a href="https://attacker.example">click</a>', "<\u200Ba href=", '<a href="https://attacker.example"'],
+])("%s in a title is escaped on the bitbucket surface", (_what, payload, escaped, survivingForm) => {
+  const body = composeComment({
+    graph: { ...minimalGraph, title: payload },
+    manifest: localManifest([asset({})]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+    target: "bitbucket",
+  });
+
+  expect(body).toContain(escaped);
+  expect(body).not.toContain(survivingForm);
+});
+
+test("python-markdown specialties are disarmed: wikilinks, footnotes, strikethrough, mentions", () => {
+  const body = composeComment({
+    graph: {
+      ...minimalGraph,
+      summary: "see [[wiki]] and [^note] and ~~gone~~ and @ohansemmanuel and #12",
+    },
+    manifest: localManifest([asset({})]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+    target: "bitbucket",
+  });
+
+  expect(body).toContain("\\[\\[wiki\\]\\]");
+  expect(body).toContain("\\[^note\\]");
+  expect(body).toContain("~\u200B~gone~\u200B~");
+  expect(body).toContain("@\u200Bohansemmanuel");
+  expect(body).not.toContain("@ohansemmanuel");
+});
+
+test("a body past the forge's limit sheds trailing sections, never the headline", () => {
+  const view = (index: number) => ({
+    id: `v${index}`,
+    title: `Section ${index}`,
+    lens: "architecture" as const,
+    summary: "x".repeat(1_900),
+    scope: { kind: "all" as const },
+    defaultOpen: false,
+    children: [],
+  });
+
+  const graph = parseGraphDoc({
+    ...minimalGraph,
+    views: Array.from({ length: 20 }, (_, index) => view(index)),
+  });
+
+  const body = composeComment({
+    graph,
+    manifest: localManifest([asset({})]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+    target: "bitbucket",
+  });
+
+  expect(body.length).toBeLessThanOrEqual(32_768);
+  expect(body).toContain(minimalGraph.title);
+  expect(body).toContain("did not fit this comment");
 });

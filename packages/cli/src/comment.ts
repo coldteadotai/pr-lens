@@ -1,4 +1,4 @@
-import { assertNever } from "@coldtea/pr-lens-schema";
+import { assertNever, surfaceFor, type MarkdownDialect, type Provider } from "@coldtea/pr-lens-schema";
 import type { GraphDoc, Lens, RenderAsset, RenderManifest, View } from "@coldtea/pr-lens-schema";
 import { PrLensCliError } from "./errors.js";
 
@@ -9,6 +9,25 @@ import { PrLensCliError } from "./errors.js";
  */
 export const COMMENT_MARKER = "<!-- pr-lens -->";
 
+/**
+ * Bitbucket renders no HTML, and an HTML comment there risks appearing as
+ * text. A link-reference definition is the markdown-native invisible line:
+ * consumed by the renderer, still greppable in the source.
+ */
+const BITBUCKET_COMMENT_MARKER = "[pr-lens]: #pr-lens";
+
+export const commentMarker = (target: Provider): string => {
+  switch (target) {
+    case "github":
+    case "gitlab":
+      return COMMENT_MARKER;
+    case "bitbucket":
+      return BITBUCKET_COMMENT_MARKER;
+    default:
+      return assertNever(target, "Unhandled provider");
+  }
+};
+
 const PROJECT_URL = "https://github.com/coldteadotai/pr-lens";
 const COLDTEA_URL = "https://coldtea.ai";
 
@@ -18,6 +37,8 @@ export type CommentOptions = {
   /** Prefix for assets the manifest records as local paths, e.g. a raw content URL. */
   assetBaseUrl: string | undefined;
   branding: boolean;
+  /** Which forge will render the comment. Defaults to GitHub, today's output. */
+  target?: Provider;
 };
 
 const escape = (value: string): string =>
@@ -28,22 +49,64 @@ const escape = (value: string): string =>
     .replaceAll('"', "&quot;");
 
 /**
+ * Which characters, at the start of a rendered word, a forge turns into a
+ * notification or a cross-link after markdown has run. GitHub reads @ and #;
+ * GitLab additionally reads ! (merge requests), ~ (labels), % (milestones),
+ * $ (snippets) and & (epics). The guard is a zero-width space after the
+ * sigil, so a diff's say-so never pages a person or links an issue.
+ */
+const sigilsFor = (dialect: Exclude<MarkdownDialect, "python-markdown">): RegExp => {
+  switch (dialect) {
+    case "gfm":
+      return /([@#])(?=[\w-])/g;
+    // The lookahead runs on the escaped string, so a quoted reference like
+    // ~"multi word" appears as ~&quot;… — matched as the entity.
+    case "glfm":
+      return /([@#!~%$])(?=[\w-]|&quot;)/g;
+    default:
+      return assertNever(dialect, "Unhandled dialect");
+  }
+};
+
+/**
  * Model-authored prose, rendered as the words it is.
  *
  * Every string in the document was written by a model reading a diff, and a
  * pull request can carry whatever text an author likes into that diff. So
- * none of it may reach GitHub as markup: escaping the HTML is only half the
- * job, because markdown would still turn `[Security update](http://…)` into a
- * link that looks like ours. Each string therefore lands inside an HTML
- * element — inside one, markdown is not parsed at all — on a single line, so
- * a blank line cannot end the block and let the rest through.
+ * none of it may reach the forge as markup: escaping the HTML is only half
+ * the job, because markdown would still turn `[Security update](http://…)`
+ * into a link that looks like ours. Each string therefore lands inside an
+ * HTML element — inside one, markdown is not parsed at all — on a single
+ * line, so a blank line cannot end the block and let the rest through.
  *
- * The zero-width space after an @ or a # is the last piece: those are matched
- * after markdown, on the rendered text, and would otherwise notify a person
- * or cross-link an issue on the say-so of a diff.
+ * The zero-width space after a reference sigil is the last piece: those are
+ * matched after markdown, on the rendered text, and would otherwise notify a
+ * person or cross-link an issue on the say-so of a diff. GitLab's & becomes
+ * &amp; during escaping, so its guard runs on the entity.
  */
-const text = (value: string): string =>
-  escape(value.replace(/\s+/g, " ").trim()).replace(/([@#])(?=[\w-])/g, "$1&#8203;");
+const text = (value: string, dialect: Exclude<MarkdownDialect, "python-markdown">): string => {
+  const guarded = escape(value.replace(/\s+/g, " ").trim()).replace(sigilsFor(dialect), "$1&#8203;");
+  return dialect === "glfm" ? guarded.replace(/&amp;(?=[\w-]|&quot;)/g, "&amp;&#8203;") : guarded;
+};
+
+/**
+ * The same job for a forge that renders no HTML: there is no element to hide
+ * inside, so every character Python-Markdown can act on is backslash-escaped
+ * instead — its documented escapable set. What that set cannot cover is
+ * broken with a zero-width space instead: doubled tildes (strikethrough via
+ * the del extension), reference sigils, and an opening `<`, which is not
+ * escapable and would otherwise hand a raw tag to whatever HTML subset the
+ * forge's renderer lets through. An entity would risk rendering as text on
+ * a forge that escapes ampersands, so the space is the literal character.
+ */
+const proseMd = (value: string): string =>
+  value
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[\\`*_{}[\]()>#+\-.!]/g, "\\$&")
+    .replace(/~~/g, "~\u200B~")
+    .replace(/<(?=[A-Za-z/!?])/g, "<\u200B")
+    .replace(/([@#])(?=[\w-])/g, "$1\u200B");
 
 const href = (asset: RenderAsset, assetBaseUrl: string | undefined): string => {
   if (asset.url !== undefined) return asset.url;
@@ -56,6 +119,10 @@ const href = (asset: RenderAsset, assetBaseUrl: string | undefined): string => {
 
   return `${assetBaseUrl.replace(/\/+$/, "")}/${asset.path.replace(/^\/+/, "")}`;
 };
+
+/** A bare markdown destination: the characters that would end or nest it are percent-encoded. */
+const hrefMd = (asset: RenderAsset, assetBaseUrl: string | undefined): string =>
+  href(asset, assetBaseUrl).replace(/[<>() ]/g, (found) => `%${found.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
 
 type ThemePair = { light: RenderAsset | undefined; dark: RenderAsset | undefined };
 
@@ -71,22 +138,29 @@ const pairsByLens = (assets: readonly RenderAsset[]): Map<Lens, ThemePair> => {
 /**
  * A `<picture>` is what makes one comment readable in both GitHub themes: the
  * dark source is swapped in by the browser, with the light asset as the `img`
- * every other reader — email, mobile, an old client — falls back to.
+ * every other reader — email, mobile, an old client — falls back to. GitLab
+ * strips `picture` and `source`, so there the light asset stands alone rather
+ * than trusting a sanitizer to unwrap gracefully.
  *
  * The whole thing is a link to the image itself, because a comment column is
  * about 830 pixels wide and a diagram of a system with several lanes is
  * several times that. It arrives scaled to fit, which is right for scanning,
  * and one click gives a reader the size the labels were drawn at.
  */
-const picture = (pair: ThemePair, alt: string, assetBaseUrl: string | undefined): string => {
+const picture = (
+  pair: ThemePair,
+  alt: string,
+  assetBaseUrl: string | undefined,
+  surface: HtmlSurface,
+): string => {
   const fallback = pair.light ?? pair.dark;
   if (fallback === undefined) return "";
 
   const source = escape(href(fallback, assetBaseUrl));
-  const image = `<img alt="${text(alt)}" src="${source}" width="${fallback.width}">`;
+  const image = `<img alt="${text(alt, surface.dialect)}" src="${source}" width="${fallback.width}">`;
 
   const shown =
-    pair.dark === undefined || pair.light === undefined
+    !surface.themePair || pair.dark === undefined || pair.light === undefined
       ? image
       : [
           "<picture>",
@@ -109,11 +183,11 @@ const lensLabel = (lens: Lens): string => {
   }
 };
 
-const statsLine = (graph: GraphDoc): string => {
+const statChips = (graph: GraphDoc): string[] => {
   const { stats } = graph;
-  if (stats === undefined) return "";
+  if (stats === undefined) return [];
 
-  const chips = [
+  return [
     stats.filesChanged === undefined
       ? undefined
       : `${stats.filesChanged} ${stats.filesChanged === 1 ? "file" : "files"}`,
@@ -121,27 +195,32 @@ const statsLine = (graph: GraphDoc): string => {
     stats.deletions === undefined ? undefined : `−${stats.deletions}`,
     ...stats.chips.map((chip) => `${chip.label} ${chip.value}`),
   ].filter((chip): chip is string => chip !== undefined);
+};
 
-  return `<p>${chips.map((chip) => `<code>${text(chip)}</code>`).join(" · ")}</p>`;
+const statsLine = (graph: GraphDoc, surface: HtmlSurface): string => {
+  const chips = statChips(graph);
+  if (chips.length === 0) return "";
+  return `<p>${chips.map((chip) => `<code>${text(chip, surface.dialect)}</code>`).join(" · ")}</p>`;
 };
 
 const viewSection = (
   view: View,
   assets: Map<string, RenderAsset[]>,
   assetBaseUrl: string | undefined,
+  surface: HtmlSurface,
 ): string => {
   const own = assets.get(view.id) ?? [];
   const pair = pairsByLens(own).get(view.lens);
 
   const body = [
-    view.summary === undefined ? "" : `<p>${text(view.summary)}</p>`,
-    pair === undefined ? "" : picture(pair, view.title, assetBaseUrl),
-    ...view.children.map((child) => viewSection(child, assets, assetBaseUrl)),
+    view.summary === undefined ? "" : `<p>${text(view.summary, surface.dialect)}</p>`,
+    pair === undefined ? "" : picture(pair, view.title, assetBaseUrl, surface),
+    ...view.children.map((child) => viewSection(child, assets, assetBaseUrl, surface)),
   ].filter((part) => part !== "");
 
   return [
     `<details${view.defaultOpen ? " open" : ""}>`,
-    `<summary><b>${text(view.title)}</b></summary>`,
+    `<summary><b>${text(view.title, surface.dialect)}</b></summary>`,
     "",
     ...body.flatMap((part) => [part, ""]),
     "</details>",
@@ -160,31 +239,133 @@ const byView = (manifest: RenderManifest): Map<string, RenderAsset[]> => {
   return grouped;
 };
 
-export const composeComment = (options: CommentOptions): string => {
+/** The two HTML-rendering surfaces differ only in theme pairing and sigils. */
+type HtmlSurface = { dialect: Exclude<MarkdownDialect, "python-markdown">; themePair: boolean };
+
+const composeHtml = (
+  options: CommentOptions,
+  surface: HtmlSurface,
+  marker: string,
+  keptViews: number,
+): string => {
   const { graph, manifest, assetBaseUrl, branding } = options;
   const assets = byView(manifest);
   const roots = pairsByLens(assets.get(ROOT) ?? []);
 
   const diagrams = graph.lenses.flatMap((lens) => {
     const pair = roots.get(lens);
-    return pair === undefined ? [] : [picture(pair, `${graph.title} — ${lensLabel(lens)}`, assetBaseUrl)];
+    return pair === undefined
+      ? []
+      : [picture(pair, `${graph.title} — ${lensLabel(lens)}`, assetBaseUrl, surface)];
   });
 
+  const omitted = graph.views.length - keptViews;
   const footer = branding
     ? `<sub>◈ Rendered by <a href="${PROJECT_URL}">PR Lens</a> · from the team behind <a href="${COLDTEA_URL}">Coldtea</a></sub>`
     : "";
 
   return [
-    COMMENT_MARKER,
-    `<h3>${text(graph.title)}</h3>`,
-    graph.summary === undefined ? "" : `<p>${text(graph.summary)}</p>`,
-    statsLine(graph),
+    marker,
+    `<h3>${text(graph.title, surface.dialect)}</h3>`,
+    graph.summary === undefined ? "" : `<p>${text(graph.summary, surface.dialect)}</p>`,
+    statsLine(graph, surface),
     ...diagrams,
-    ...graph.views.map((view) => viewSection(view, assets, assetBaseUrl)),
+    ...graph.views.slice(0, keptViews).map((view) => viewSection(view, assets, assetBaseUrl, surface)),
+    omitted === 0
+      ? ""
+      : `<sub>${omitted} drill-down ${omitted === 1 ? "section" : "sections"} did not fit this comment.</sub>`,
     footer === "" ? "" : "---",
     footer,
   ]
     .filter((block) => block !== "")
     .join("\n\n")
     .concat("\n");
+};
+
+const diagramMd = (pair: ThemePair, alt: string, assetBaseUrl: string | undefined): string => {
+  // Light stands in for both themes: with no HTML there is no theme pairing.
+  const shown = pair.light ?? pair.dark;
+  if (shown === undefined) return "";
+
+  const source = hrefMd(shown, assetBaseUrl);
+  return `[![${proseMd(alt)}](${source})](${source})`;
+};
+
+/** The drill-down tree flattened: with no collapsible to nest in, order carries the hierarchy. */
+const viewSectionsMd = (
+  views: readonly View[],
+  assets: Map<string, RenderAsset[]>,
+  assetBaseUrl: string | undefined,
+): string[] =>
+  views.flatMap((view) => {
+    const pair = pairsByLens(assets.get(view.id) ?? []).get(view.lens);
+    return [
+      `**${proseMd(view.title)}**`,
+      ...(view.summary === undefined ? [] : [proseMd(view.summary)]),
+      ...(pair === undefined ? [] : [diagramMd(pair, view.title, assetBaseUrl)]),
+      ...viewSectionsMd(view.children, assets, assetBaseUrl),
+    ];
+  });
+
+const composeMarkdown = (options: CommentOptions, marker: string, keptViews: number): string => {
+  const { graph, manifest, assetBaseUrl, branding } = options;
+  const assets = byView(manifest);
+  const roots = pairsByLens(assets.get(ROOT) ?? []);
+
+  const diagrams = graph.lenses.flatMap((lens) => {
+    const pair = roots.get(lens);
+    return pair === undefined ? [] : [diagramMd(pair, `${graph.title} — ${lensLabel(lens)}`, assetBaseUrl)];
+  });
+
+  const chips = statChips(graph);
+  const omitted = graph.views.length - keptViews;
+
+  return [
+    marker,
+    `### ${proseMd(graph.title)}`,
+    graph.summary === undefined ? "" : proseMd(graph.summary),
+    chips.length === 0 ? "" : chips.map((chip) => proseMd(chip)).join(" · "),
+    ...diagrams,
+    ...viewSectionsMd(graph.views.slice(0, keptViews), assets, assetBaseUrl),
+    omitted === 0
+      ? ""
+      : `*${omitted} drill-down ${omitted === 1 ? "section" : "sections"} did not fit this comment.*`,
+    branding
+      ? `*Rendered by [PR Lens](${PROJECT_URL}) · from the team behind [Coldtea](${COLDTEA_URL})*`
+      : "",
+  ]
+    .filter((block) => block !== "")
+    .join("\n\n")
+    .concat("\n");
+};
+
+export const composeComment = (options: CommentOptions): string => {
+  const target = options.target ?? "github";
+  const surface = surfaceFor(target);
+  const marker = commentMarker(target);
+
+  const compose = (keptViews: number): string => {
+    switch (surface.dialect) {
+      case "gfm":
+      case "glfm":
+        return composeHtml(
+          options,
+          { dialect: surface.dialect, themePair: surface.themePair },
+          marker,
+          keptViews,
+        );
+      case "python-markdown":
+        return composeMarkdown(options, marker, keptViews);
+      default:
+        return assertNever(surface.dialect, "Unhandled dialect");
+    }
+  };
+
+  // A body over the forge's limit would be rejected outright, so trailing
+  // drill-down sections are shed until it fits: the headline, the numbers and
+  // the root diagrams are worth more than the deepest view.
+  for (let keptViews = options.graph.views.length; ; keptViews -= 1) {
+    const body = compose(keptViews);
+    if (body.length <= surface.maxChars || keptViews === 0) return body;
+  }
 };
