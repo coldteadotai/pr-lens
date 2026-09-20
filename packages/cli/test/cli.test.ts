@@ -173,6 +173,16 @@ test("a missing required flag prints the reason and then the usage", async () =>
   expect(reported).toContain("pr-lens analyze");
 });
 
+test("a non-GitHub forge refuses --repo-slug, whose host it cannot know", async () => {
+  expect(await invoke("analyze", "--base", "main", "--forge", "gitlab", "--repo-slug", "a/b")).toBe(2);
+  expect(err.join("\n")).toContain("--forge gitlab cannot be combined with --repo-slug");
+});
+
+test("an unknown forge is a misuse naming the known ones", async () => {
+  expect(await invoke("analyze", "--base", "main", "--forge", "gitea")).toBe(2);
+  expect(err.join("\n")).toContain("known forges: github, gitlab, bitbucket");
+});
+
 test("an unknown flag is a misuse rather than a stack trace", async () => {
   expect(await invoke("validate", "--depth", "2")).toBe(2);
   expect(err.join("\n")).toContain("[USAGE]");
