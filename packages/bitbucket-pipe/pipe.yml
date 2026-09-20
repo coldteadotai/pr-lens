@@ -1,0 +1,29 @@
+name: PR Lens
+image: coldtea/pr-lens-pipe:0.1.0
+description: Draw a pull request as architecture and data-flow diagrams, posted as one comment on the pull request, using your own model key.
+repository: https://github.com/coldteadotai/pr-lens
+maintainer: Coldtea AI
+vendor: Coldtea AI
+tags:
+  - code-review
+  - pull-request
+  - diagram
+variables:
+  - name: MODEL_PROVIDER
+    default: gemini
+  - name: MODEL
+    default: ""
+  - name: BASE_URL
+    default: ""
+  - name: LENS
+    default: ""
+  - name: BRANDING
+    default: "true"
+  - name: COMMENT
+    default: "true"
+  - name: CLI_VERSION
+    default: "0.6.1"
+  - name: API_KEY_VARIABLE
+    default: GEMINI_API_KEY
+  - name: TOKEN_VARIABLE
+    default: PR_LENS_TOKEN
