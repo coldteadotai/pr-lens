@@ -9,6 +9,7 @@ import { writeJsonFile } from "../io.js";
 import { buildExtractionPrompt, SYSTEM_PROMPT } from "../prompt.js";
 import { completeJson, isProviderId, PROVIDER_IDS, resolveProvider } from "../providers/index.js";
 import { GRAPH_DOCUMENT_JSON_SCHEMA } from "../skill-content.generated.js";
+import { triageDiff, truncatePatch, TRIAGE_MODEL } from "../triage.js";
 import type { Terminal } from "../terminal.js";
 import { CLI_VERSION, GENERATOR_NAME } from "../version.js";
 import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
@@ -37,6 +38,9 @@ environment, and the diff goes straight to the provider you name.
   --repo-slug <owner/name>  override the slug read from the git remote
   --remote <name>           remote to read the slug from (default origin)
   --max-diff-bytes <n>      truncate the diff sent to the model (default ${DEFAULT_MAX_DIFF_BYTES})
+  --triage                  drop files no diagram would draw before the model reads the diff,
+                            judged per file by ${TRIAGE_MODEL} via the Vercel AI Gateway
+                            (sends the diff there too; needs AI_GATEWAY_API_KEY)
   --max-output-tokens <n>   room for the answer (default ${DEFAULT_MAX_OUTPUT_TOKENS})
   --dry-run                 report what would be sent, and send nothing
   -o, --out <file>          where to write the document (default ${DEFAULT_OUT})`;
@@ -80,6 +84,7 @@ export const analyzeCommand = async (
     remote: { type: "string" },
     "max-diff-bytes": { type: "string" },
     "max-output-tokens": { type: "string" },
+    triage: { type: "boolean" },
     "dry-run": { type: "boolean" },
     out: { type: "string", short: "o" },
   });
@@ -115,10 +120,22 @@ export const analyzeCommand = async (
   const requestedLenses = readLenses(values);
   const lenses = requestedLenses ?? configured?.config.lenses ?? [...LENSES];
 
+  const dryRun = readBoolean(values["dry-run"]);
+  const triage = readBoolean(values.triage) && !dryRun;
+  if (triage && env.AI_GATEWAY_API_KEY === undefined)
+    throw new PrLensCliError(
+      "MISSING_API_KEY",
+      "--triage asks the Vercel AI Gateway, and AI_GATEWAY_API_KEY is not set",
+      "export AI_GATEWAY_API_KEY with a gateway key, or drop --triage",
+    );
+
   const headCommit = await resolveCommit(repo, head);
   const baseCommit = await resolveCommit(repo, base);
   const comparedAgainst = await mergeBase(repo, baseCommit.sha, headCommit.sha);
-  const diff = await collectDiff(repo, comparedAgainst, headCommit.sha, maxDiffBytes);
+
+  // Triage judges the whole change, so it reads a far larger raw diff than the
+  // model budget; the byte cut is applied after the noise is gone, not before.
+  const diff = await collectDiff(repo, comparedAgainst, headCommit.sha, triage ? maxDiffBytes * 8 : maxDiffBytes);
 
   if (diff.files.length === 0)
     throw new PrLensCliError(
@@ -127,16 +144,28 @@ export const analyzeCommand = async (
       "there is nothing to draw",
     );
 
+  let promptDiff = diff;
+  if (triage) {
+    terminal.err(`triage: asking ${TRIAGE_MODEL} about ${diff.files.length} files…`);
+    const triaged = await triageDiff(diff);
+    promptDiff = truncatePatch(triaged.diff, maxDiffBytes);
+    terminal.err(
+      `triage: kept ${triaged.kept.length}/${diff.files.length} files, patch ${Buffer.byteLength(diff.patch, "utf8")} → ${Buffer.byteLength(promptDiff.patch, "utf8")} bytes, ${triaged.tookMs}ms`,
+    );
+    if (triaged.dropped.length > 0)
+      terminal.err(`triage: dropped ${triaged.dropped.map((file) => file.path).join(", ")}`);
+  }
+
   const promptContext = {
     repo: { owner: slug.owner, name: slug.name },
     base: { sha: comparedAgainst, ref: baseCommit.ref },
     head: { sha: headCommit.sha, ref: headCommit.ref },
-    diff,
+    diff: promptDiff,
     lenses,
   };
 
   const user = buildExtractionPrompt(promptContext, GRAPH_DOCUMENT_JSON_SCHEMA);
-  const provider = readBoolean(values["dry-run"])
+  const provider = dryRun
     ? undefined
     : resolveProvider(
         {
@@ -149,7 +178,7 @@ export const analyzeCommand = async (
       );
 
   terminal.err(
-    `${diff.files.length} files, +${diff.additions} -${diff.deletions}, ${Buffer.byteLength(diff.patch, "utf8")} bytes of diff${diff.truncatedAt === undefined ? "" : " (truncated)"}`,
+    `${promptDiff.files.length} files, +${diff.additions} -${diff.deletions}, ${Buffer.byteLength(promptDiff.patch, "utf8")} bytes of diff${promptDiff.truncatedAt === undefined ? "" : " (truncated)"}`,
   );
   terminal.err(`prompt: ${Buffer.byteLength(user, "utf8")} bytes`);
 
