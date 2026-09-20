@@ -71,6 +71,15 @@ export {
 
 export { Config, MapCorrections, Selector, type ConfigInput } from "./config.js";
 
+export {
+  Provider,
+  PROVIDERS,
+  RepoRef,
+  surfaceFor,
+  type CommentSurface,
+  type MarkdownDialect,
+} from "./provider.js";
+
 export { RenderAsset, RenderManifest, type RenderManifestInput } from "./manifest.js";
 
 export {
