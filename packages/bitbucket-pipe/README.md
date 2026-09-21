@@ -58,6 +58,14 @@ collapsible sections or theme pairs: headline, numbers, one diagram per lens
 — the neutral render, which reads for a light-mode and a dark-mode reader
 alike — and the drill-down views in order.
 
+It also files a Code Insights report on the commit, so the pull request's
+**Reports** tab records that PR Lens ran and links to the drawing — a surface
+that survives a collapsed comment thread. The report carries no
+`report_type` and no annotations: Bitbucket's types are SECURITY, COVERAGE,
+TEST and BUG, and a diagram is none of them, while annotations render as
+findings against lines. If Bitbucket refuses the report the run carries on;
+the comment is the product.
+
 Bitbucket does not run pull-request pipelines for forks, so the pipe only
 ever sees same-repository pull requests.
 

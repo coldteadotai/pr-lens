@@ -229,4 +229,64 @@ else
     "${API}/pullrequests/${BITBUCKET_PR_ID}/comments" > /dev/null
 fi
 
+# A Code Insights report, so the pull request's Reports tab records that PR
+# Lens ran and links to the drawing. The comment is the product; this is a
+# second surface that survives a collapsed comment thread and shows up where
+# a reviewer looks for what ran on a commit.
+#
+# Deliberately no `report_type`. Bitbucket's values are SECURITY, COVERAGE,
+# TEST and BUG, and a diagram is none of them — claiming one would file this
+# under a heading it does not belong to. For the same reason there are no
+# annotations: those render as findings against lines, and PR Lens does not
+# produce findings.
+#
+# Fail-soft throughout. This is the secondary surface; a Bitbucket that
+# refuses it must not fail a run whose comment was posted.
+report_insight() {
+  local link nodes edges
+  link="$(node -e '
+    const fs = require("node:fs");
+    const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    const asset = manifest.assets.find((candidate) => candidate.url !== undefined);
+    process.stdout.write(asset === undefined ? "" : asset.url);
+  ' "${WORK}/assets/published.manifest.json" 2>/dev/null)" || return 0
+  [ -n "${link}" ] || return 0
+
+  nodes="$(node -e '
+    const fs = require("node:fs");
+    const graph = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    process.stdout.write(String((graph.nodes ?? []).length));
+  ' "${WORK}/assets/drawn.graph.json" 2>/dev/null)" || return 0
+  edges="$(node -e '
+    const fs = require("node:fs");
+    const graph = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    process.stdout.write(String((graph.edges ?? []).length));
+  ' "${WORK}/assets/drawn.graph.json" 2>/dev/null)" || return 0
+
+  node -e '
+    const [link, nodes, edges] = process.argv.slice(1);
+    process.stdout.write(JSON.stringify({
+      title: "PR Lens",
+      details: "Architecture and data flow, drawn from this change.",
+      reporter: "PR Lens",
+      link,
+      result: "PASSED",
+      data: [
+        { title: "Components drawn", type: "NUMBER", value: Number(nodes) },
+        { title: "Relationships drawn", type: "NUMBER", value: Number(edges) },
+        { title: "Diagram", type: "LINK", value: { text: "Open", href: link } },
+      ],
+    }));
+  ' "${link}" "${nodes}" "${edges}" > "${WORK}/report.json" || return 0
+
+  if api -X PUT --header "Content-Type: application/json" --data "@${WORK}/report.json" \
+    "${API}/commit/${BITBUCKET_COMMIT}/reports/pr-lens" > /dev/null 2>&1; then
+    echo "✓ the PR Lens report is on commit ${BITBUCKET_COMMIT}"
+  else
+    echo "note: Bitbucket would not take the Code Insights report; the comment is posted"
+  fi
+}
+
+report_insight
+
 echo "✓ the PR Lens comment is on pull request #${BITBUCKET_PR_ID}"

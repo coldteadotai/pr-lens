@@ -40,6 +40,8 @@ const runScript = async (options: {
   userFails?: boolean;
   /** The identityless PUT is refused — the marker was somebody else's. */
   putFails?: boolean;
+  /** Bitbucket will not take the Code Insights report; the run must survive it. */
+  refuseReports?: boolean;
 }) => {
   const root = await mkdtemp(join(tmpdir(), "pr-lens-pipe-"));
   const bin = join(root, "bin");
@@ -53,6 +55,7 @@ const runScript = async (options: {
   const mergeBaseCalls = join(root, "merge-base-calls");
   const comments = join(root, "comments.json");
   const posted = join(root, "posted.json");
+  const reported = join(root, "reported.json");
   await writeFile(curlLog, "", "utf8");
   await writeFile(gitLog, "", "utf8");
   await writeFile(headCalls, "", "utf8");
@@ -78,6 +81,11 @@ const runScript = async (options: {
       '  *"/2.0/user"*)',
       '    if [ -n "${STUB_USER_FAILS}" ]; then exit 22; fi',
       '    printf "{\\"uuid\\":\\"%s\\"}" "${STUB_BOT_UUID}"',
+      "    ;;",
+      '  *"/reports/"*)',
+      '    if [ -n "${STUB_REFUSE_REPORTS}" ]; then exit 22; fi',
+      '    cp "${data#@}" "${STUB_REPORTED}"',
+      '    printf "{}"',
       "    ;;",
       '  *"/comments?"*) cat "${STUB_COMMENTS}" ;;',
       '  *"/comments"*)',
@@ -149,6 +157,8 @@ const runScript = async (options: {
       STUB_MERGE_BASE_FAILURES: String(options.mergeBaseFailures ?? 0),
       STUB_COMMENTS: comments,
       STUB_POSTED: posted,
+      STUB_REPORTED: reported,
+      STUB_REFUSE_REPORTS: options.refuseReports ? "1" : "",
       STUB_BOT_UUID: BOT_UUID,
       STUB_USER_FAILS: options.userFails ? "1" : "",
       STUB_PUT_FAILS: options.putFails ? "1" : "",
@@ -172,7 +182,10 @@ const runScript = async (options: {
   const log = await readFile(curlLog, "utf8");
   const git = await readFile(gitLog, "utf8");
   const body = await readFile(posted, "utf8").catch(() => undefined);
-  return { result, log, git, body };
+  const report = await readFile(reported, "utf8")
+    .then((raw) => JSON.parse(raw) as Record<string, unknown>)
+    .catch(() => undefined);
+  return { result, log, git, body, report };
 };
 
 const failed = (result: unknown): result is { code: number; stderr: string } =>
@@ -220,7 +233,7 @@ test("a first run publishes the render and creates the comment", async () => {
 
   expect(log.match(/--form/g)).toHaveLength(1);
   expect(log).toContain("-X POST");
-  expect(log).not.toContain("-X PUT");
+  expect(log).not.toMatch(/-X PUT[^\n]*\/comments/);
 
   // The posted body was composed from the patched manifest: Downloads URLs,
   // and the content wrapped the Bitbucket way.
@@ -280,5 +293,37 @@ test("a run overtaken between the publish and the write stops at the gate", asyn
   expect(failed(result)).toBe(false);
   expect(log.match(/--form/g)).toHaveLength(1);
   expect(log).not.toContain("-X POST");
-  expect(log).not.toContain("-X PUT");
+  expect(log).not.toMatch(/-X PUT[^\n]*\/comments/);
+});
+
+test("files a Code Insights report beside the comment, linking the diagram", async () => {
+  const { result, log } = await runScript({});
+
+  expect(failed(result)).toBe(false);
+  expect(log).toContain(`/commit/${HEAD}/reports/pr-lens`);
+  expect(log).toContain("-X PUT");
+});
+
+test("the report claims no report_type, because a diagram is not one of them", async () => {
+  // Bitbucket's values are SECURITY, COVERAGE, TEST and BUG. Filing a drawing
+  // under one of those puts it in somebody's defect tooling under a heading
+  // it does not belong to — and annotations would render it as findings
+  // against lines, which PR Lens does not produce.
+  const { report } = await runScript({});
+
+  expect(report).toBeDefined();
+  expect(report).not.toHaveProperty("report_type");
+  expect(report).not.toHaveProperty("annotations");
+  expect(report).toMatchObject({ reporter: "PR Lens", result: "PASSED" });
+  expect(String(report?.link)).toContain("bitbucket.org/acme/rocket/downloads/");
+});
+
+test("a refused report leaves the run — and the comment — alone", async () => {
+  // The comment is the product; the report is a second surface. A Bitbucket
+  // that will not take it must not fail a run that posted the comment.
+  const { result, body } = await runScript({ refuseReports: true });
+
+  expect(failed(result)).toBe(false);
+  // The comment still went out, which is the thing that matters.
+  expect(body).toContain(MARKER);
 });
