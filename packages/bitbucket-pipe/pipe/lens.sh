@@ -279,11 +279,19 @@ report_insight() {
     }));
   ' "${link}" "${nodes}" "${edges}" > "${WORK}/report.json" || return 0
 
-  if api -X PUT --header "Content-Type: application/json" --data "@${WORK}/report.json" \
-    "${API}/commit/${BITBUCKET_COMMIT}/reports/pr-lens" > /dev/null 2>&1; then
+  # The refusal is printed rather than swallowed. `report_type` is omitted
+  # deliberately — Bitbucket's four values all assert something about the
+  # code and a diagram asserts none of them — but that is a judgement made
+  # without a live API to check it against, so if Bitbucket does require the
+  # field this is where anyone finds out, rather than from a customer
+  # noticing nothing appears.
+  if api --show-error -X PUT --header "Content-Type: application/json" \
+    --data "@${WORK}/report.json" \
+    "${API}/commit/${BITBUCKET_COMMIT}/reports/pr-lens" > "${WORK}/report-response" 2> "${WORK}/report-error"; then
     echo "✓ the PR Lens report is on commit ${BITBUCKET_COMMIT}"
   else
-    echo "note: Bitbucket would not take the Code Insights report; the comment is posted"
+    echo "note: Bitbucket would not take the Code Insights report; the comment is posted."
+    echo "note: $(tr -d '\n' < "${WORK}/report-error" | head -c 400)"
   fi
 }
 
