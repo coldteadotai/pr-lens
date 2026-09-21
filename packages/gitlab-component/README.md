@@ -2,7 +2,8 @@
 
 Draws a merge request as architecture and data-flow diagrams, posted as one
 comment on the merge request itself — the same diagrams the
-[GitHub Action](../action) posts, from your own CI with your own model key.
+[GitHub Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action)
+posts, from your own CI with your own model key.
 
 ## Setup
 
