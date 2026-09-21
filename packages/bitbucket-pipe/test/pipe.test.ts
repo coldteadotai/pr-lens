@@ -109,3 +109,23 @@ test("the image the metadata names is the image the Dockerfile builds for", () =
   expect(dockerfile).toContain("COPY pipe/lens.sh /lens.sh");
   expect(dockerfile).toContain('ENTRYPOINT ["bash", "/lens.sh"]');
 });
+
+test("the image bakes the CLI at the version the metadata pins", () => {
+  // A pipe that fetched the CLI per run would execute whatever the registry
+  // served that minute inside a pipeline holding the customer's variables.
+  const baked = /ARG CLI_VERSION=(\d+\.\d+\.\d+)/.exec(dockerfile);
+  expect(baked?.[1], "Dockerfile does not pin a CLI version to bake").toBeDefined();
+  expect(dockerfile).toContain('npm install -g "@coldtea/pr-lens-cli@${CLI_VERSION}"');
+  expect(dockerfile).toContain("ENV PR_LENS_BAKED_CLI_VERSION=${CLI_VERSION}");
+
+  // And it is the version the pipe's own default asks for, or every run would
+  // silently take the npx path the baking exists to avoid.
+  const declared = pipe.variables.find((variable) => variable.name === "CLI_VERSION");
+  expect(declared?.default).toBe(baked?.[1]);
+});
+
+test("the script prefers the baked CLI and keeps npx only as the override path", () => {
+  expect(script).toContain("command -v pr-lens");
+  expect(script).toContain('pr-lens "$@"');
+  expect(script).toContain('npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}"');
+});

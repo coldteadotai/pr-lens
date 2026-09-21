@@ -129,8 +129,11 @@ test("every input the job forwards is an input the spec declares", () => {
 test("every PR_LENS variable the script reads is one the job provides", () => {
   const provided = new Set(Object.keys(job.variables));
   const used = new Set([...script.matchAll(/\bPR_LENS_[A-Z_]+/g)].map((match) => match[0]));
-  // PR_LENS_API_KEY is set by the script itself.
+  // PR_LENS_API_KEY is set by the script itself. PR_LENS_BAKED_CLI_VERSION
+  // comes from the image, and is absent on a plain node image on purpose —
+  // that absence is what sends the run down the npx path.
   used.delete("PR_LENS_API_KEY");
+  used.delete("PR_LENS_BAKED_CLI_VERSION");
   for (const name of used) {
     expect(provided, name).toContain(name);
   }
@@ -146,4 +149,24 @@ test("secrets are named by variable, never taken as values", () => {
   expect(inputs).toContain("token_variable");
   expect(inputs).not.toContain("api_key");
   expect(inputs).not.toContain("token");
+});
+
+test("the component ships an image with the CLI baked in, at the version it defaults to", async () => {
+  const dockerfile = await read("Dockerfile");
+  const baked = /ARG CLI_VERSION=(\d+\.\d+\.\d+)/.exec(dockerfile);
+
+  expect(baked?.[1], "Dockerfile does not pin a CLI version to bake").toBeDefined();
+  expect(baked?.[1]).toBe(String(spec.spec.inputs.cli_version?.default));
+  expect(dockerfile).toContain("ENV PR_LENS_BAKED_CLI_VERSION=${CLI_VERSION}");
+  // GitLab runs the job's own script; an entrypoint would fight it. Matched
+  // as a directive, since the file explains in prose why there is none.
+  expect(dockerfile).not.toMatch(/^ENTRYPOINT/m);
+});
+
+test("the script prefers a baked CLI and keeps npx for a version the image lacks", () => {
+  // The default image is a plain node, where nothing is baked — so the npx
+  // path has to stay, and the guard has to tolerate the variable being unset.
+  expect(script).toContain('[ -n "${PR_LENS_BAKED_CLI_VERSION:-}" ]');
+  expect(script).toContain("command -v pr-lens");
+  expect(script).toContain('npx --yes "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}"');
 });

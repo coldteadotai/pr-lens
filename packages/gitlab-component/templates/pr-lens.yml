@@ -174,6 +174,18 @@ spec:
       mkdir -p "${WORK}"
 
       cli() {
+        # The CLI baked into the image, when it is the version asked for. Fetching
+        # and executing fresh code on every run puts whatever the registry served
+        # that minute inside a pipeline that holds the customer's variables, and
+        # bills them the install. npx stays as the path for a run that pins a
+        # different version than the image carries.
+        if [ -n "${PR_LENS_BAKED_CLI_VERSION:-}" ] \
+          && [ "${PR_LENS_CLI_VERSION}" = "${PR_LENS_BAKED_CLI_VERSION}" ] \
+          && command -v pr-lens > /dev/null 2>&1; then
+          pr-lens "$@"
+          return
+        fi
+
         npx --yes "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}" "$@"
       }
 
