@@ -129,3 +129,22 @@ test("the script prefers the baked CLI and keeps npx only as the override path",
   expect(script).toContain('pr-lens "$@"');
   expect(script).toContain('npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}"');
 });
+
+test("the image tag the metadata pins is this package's own version", async () => {
+  // A pipe published at one version while its metadata names another is a
+  // pipe whose consumers pin a tag that does not carry what the release
+  // notes describe.
+  const manifest = JSON.parse(await read("package.json"));
+  expect(pipe.image).toBe(`coldtea/pr-lens-pipe:${manifest.version}`);
+});
+
+test("the changelog documents the version that is about to ship", async () => {
+  const changelog = await read("CHANGELOG.md");
+  const manifest = JSON.parse(await read("package.json"));
+  // Either the current version has an entry, or there is an Unreleased
+  // section describing what a bump would carry. A changelog with neither is
+  // a package whose consumers cannot tell whether to take an upgrade.
+  expect(
+    changelog.includes("## Unreleased") || changelog.includes(`## ${manifest.version}`),
+  ).toBe(true);
+});

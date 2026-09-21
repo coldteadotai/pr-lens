@@ -1,0 +1,55 @@
+# What the gitlab.com mirror runs. Not used by this monorepo, which has no CI
+# of its own — it lives here so the release procedure is version-controlled
+# beside the component it releases rather than existing only in the mirror.
+#
+# A component is only in the CI/CD catalog if a tagged commit was released
+# with the `release` keyword. Without this job the component still works for
+# anyone who knows its path, and appears to nobody — which is the whole
+# reason to ship a component rather than a snippet to copy.
+#
+# The mirror must also, per GitLab's requirements: keep `README.md` and
+# `templates/` at its own root (not under packages/), carry a project
+# description, and have the CI/CD Catalog project toggle enabled under
+# Settings → General → Visibility, project features, permissions.
+
+stages:
+  - test
+  - release
+
+# The template embeds scripts/lens.sh verbatim, and a mirror that drifted from
+# the monorepo would publish a component whose script is not the one this
+# repository tests. Cheap to check, and the only thing the mirror can get
+# wrong on its own.
+verify-template:
+  stage: test
+  image: node:20
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - node -e "
+      const fs = require('node:fs');
+      const template = fs.readFileSync('templates/pr-lens.yml', 'utf8');
+      const script = fs.readFileSync('scripts/lens.sh', 'utf8');
+      const embedded = template
+        .split('\n---\n')[1]
+        .split('  script:\n    - |\n')[1]
+        .split('\n')
+        .map((line) => line.replace(/^      /, ''))
+        .join('\n');
+      if (embedded !== script) {
+        console.error('templates/pr-lens.yml does not embed scripts/lens.sh verbatim');
+        process.exit(1);
+      }
+      console.log('template and script agree');
+      "
+
+create-release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  script: echo "Creating release $CI_COMMIT_TAG"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    description: "Release $CI_COMMIT_TAG of components in $CI_PROJECT_PATH"

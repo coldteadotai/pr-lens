@@ -170,3 +170,20 @@ test("the script prefers a baked CLI and keeps npx for a version the image lacks
   expect(script).toContain("command -v pr-lens");
   expect(script).toContain('npx --yes "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}"');
 });
+
+test("the release job the catalog requires is version-controlled beside the component", async () => {
+  // Without a release on a tagged commit the component is in no catalog, and
+  // is findable only by someone who already knows its path.
+  const ci = await read(".gitlab-ci.yml");
+  expect(ci).toContain("release:");
+  expect(ci).toContain("tag_name: $CI_COMMIT_TAG");
+  expect(ci).toContain('if: $CI_COMMIT_TAG');
+});
+
+test("the changelog documents the version that is about to ship", async () => {
+  const changelog = await read("CHANGELOG.md");
+  const manifest = JSON.parse(await read("package.json"));
+  expect(
+    changelog.includes("## Unreleased") || changelog.includes(`## ${manifest.version}`),
+  ).toBe(true);
+});
