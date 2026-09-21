@@ -1,13 +1,23 @@
 name: PR Lens
 image: coldtea/pr-lens-pipe:0.1.0
+# One of Atlassian's fixed set, spelled as they spell it. Required: the
+# listing refuses a pipe without it.
+category: Code quality
 description: Draw a pull request as architecture and data-flow diagrams, posted as one comment on the pull request, using your own model key.
 repository: https://github.com/coldteadotai/pr-lens
-maintainer: Coldtea AI
-vendor: Coldtea AI
+# Objects, not strings. A string here parses as YAML and fails validation.
+maintainer:
+  name: Coldtea AI
+  website: https://www.coldtea.ai
+vendor:
+  name: Coldtea AI
+  website: https://www.coldtea.ai
 tags:
   - code-review
   - pull-request
   - diagram
+  - architecture
+  - documentation
 variables:
   - name: MODEL_PROVIDER
     default: gemini

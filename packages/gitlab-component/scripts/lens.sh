@@ -41,6 +41,9 @@ git cat-file -e "${CI_MERGE_REQUEST_DIFF_BASE_SHA}^{commit}" 2>/dev/null \
 HEAD_SHA="${CI_MERGE_REQUEST_SOURCE_BRANCH_SHA:-${CI_COMMIT_SHA}}"
 
 WORK="${PR_LENS_WORK:-$(mktemp -d)}"
+# The variable may name a path that does not exist yet: the component
+# points it inside the project so artifacts: can collect the render.
+mkdir -p "${WORK}"
 
 cli() {
   npx --yes "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}" "$@"

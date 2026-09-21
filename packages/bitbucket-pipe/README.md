@@ -1,15 +1,66 @@
-# PR Lens for Bitbucket Pipelines
+# Bitbucket Pipelines Pipe: PR Lens
 
 Draws a pull request as architecture and data-flow diagrams, posted as one
 comment on the pull request itself — the same diagrams the
 [GitHub Action](../action) and the [GitLab component](../gitlab-component)
 post, from your own CI with your own model key.
 
+## YAML Definition
+
+Add the pipe under `pull-requests:`:
+
+```yaml
+clone:
+  depth: full # the diff needs the history back to the merge base
+
+pipelines:
+  pull-requests:
+    "**":
+      - step:
+          name: PR Lens
+          script:
+            - pipe: coldtea/pr-lens-pipe:0.1.0
+              variables:
+                MODEL_PROVIDER: "gemini"
+```
+
+## Variables
+
+| Variable           | Usage                                                         |
+| ------------------ | ------------------------------------------------------------- |
+| MODEL_PROVIDER     | `gemini`, `openai`, or `openai-compatible` (needs `BASE_URL`). Default: `gemini` |
+| MODEL              | Model to ask; required for `openai-compatible`                |
+| BASE_URL           | Provider endpoint, for a compatible or self-hosted server     |
+| LENS               | Comma-separated lenses to render. Default: both               |
+| BRANDING           | The "Rendered by PR Lens" footer. Default: `"true"`           |
+| COMMENT            | Set `"false"` to render without commenting. Default: `"true"` |
+| CLI_VERSION        | Version of `@coldtea/pr-lens-cli` to run                      |
+| API_KEY_VARIABLE   | Name of the variable holding the model key. Default: `GEMINI_API_KEY` |
+| TOKEN_VARIABLE     | Name of the variable holding the access token. Default: `PR_LENS_TOKEN` |
+
+The key and the token are named by variable, never passed as values, so
+neither ever appears in a pipeline definition or a step log.
+
+## Details
+
+Pipelines hands the step a clone with the destination already merged into
+the source branch, and no destination-commit variable — so the pipe fetches
+the destination and lets the diff run from their merge base, which is
+exactly the pull request's effective change. It renders the SVGs, publishes
+them to the repository's **Downloads** (content-hash filenames, so an
+identical render overwrites itself), and keeps exactly one sticky comment
+per pull request, updated in place on every push. A run whose commit is no
+longer the pull request's head stands down instead of overwriting a newer
+drawing.
+
 Bitbucket renders comments as plain Markdown, so the comment arrives without
 collapsible sections or theme pairs: headline, numbers, one diagram per lens,
 and the drill-down views in order.
 
-## Setup
+Bitbucket does not run pull-request pipelines for forks, so the pipe only
+ever sees same-repository pull requests.
+
+## Prerequisites
 
 Two secured repository variables (Repository settings → Pipelines →
 Repository variables):
@@ -23,52 +74,52 @@ Repository variables):
   provides no token of its own for the Bitbucket API, and app passwords are
   retired.
 
-Then add the pipe under `pull-requests:`:
+`clone: depth: full` is required: the diff is measured from the merge base,
+and a shallow clone does not reach it.
+
+## Examples
+
+### Basic
 
 ```yaml
-clone:
-  depth: full # the diff needs the history back to the merge base
-
-pipelines:
-  pull-requests:
-    "**":
-      - step:
-          name: PR Lens
-          script:
-            - pipe: coldtea/pr-lens-pipe:0.1.0
+script:
+  - pipe: coldtea/pr-lens-pipe:0.1.0
 ```
 
-Bitbucket does not run pull-request pipelines for forks, so the pipe only
-ever sees same-repository pull requests.
+### A different provider
 
-## What a run does
+```yaml
+script:
+  - pipe: coldtea/pr-lens-pipe:0.1.0
+    variables:
+      MODEL_PROVIDER: "openai-compatible"
+      MODEL: "your-model-name"
+      BASE_URL: "https://your-endpoint/v1"
+      API_KEY_VARIABLE: "YOUR_KEY_VARIABLE"
+```
 
-Pipelines hands the step a clone with the destination already merged into
-the source branch, and no destination-commit variable — so the pipe fetches
-the destination and lets the diff run from their merge base, which is
-exactly the pull request's effective change. It renders the SVGs, publishes
-them to the repository's **Downloads** (content-hash filenames, so an
-identical render overwrites itself), and keeps exactly one sticky comment
-per pull request, updated in place on every push. A run whose commit is no
-longer the pull request's head stands down instead of overwriting a newer
-drawing.
+### Render without commenting
 
-## Variables
+```yaml
+script:
+  - pipe: coldtea/pr-lens-pipe:0.1.0
+    variables:
+      COMMENT: "false"
+```
 
-| Variable           | Default          | What it does                                                  |
-| ------------------ | ---------------- | ------------------------------------------------------------- |
-| `MODEL_PROVIDER`   | `gemini`         | `gemini`, `openai`, or `openai-compatible` (needs `BASE_URL`) |
-| `MODEL`            |                  | Model to ask; required for `openai-compatible`                |
-| `BASE_URL`         |                  | Provider endpoint, for a compatible or self-hosted server     |
-| `LENS`             | both             | Comma-separated lenses to render                              |
-| `BRANDING`         | `"true"`         | The "Rendered by PR Lens" footer                              |
-| `COMMENT`          | `"true"`         | Set `"false"` to render without commenting                    |
-| `CLI_VERSION`      | current          | Version of `@coldtea/pr-lens-cli` to run                      |
-| `API_KEY_VARIABLE` | `GEMINI_API_KEY` | Name of the variable holding the model key                    |
-| `TOKEN_VARIABLE`   | `PR_LENS_TOKEN`  | Name of the variable holding the access token                 |
+### One lens only
 
-The key and token are named by variable, never passed as values, so neither
-ever appears in a pipeline definition or a step log.
+```yaml
+script:
+  - pipe: coldtea/pr-lens-pipe:0.1.0
+    variables:
+      LENS: "architecture"
+```
+
+## Support
+
+Open an issue at
+[github.com/coldteadotai/pr-lens](https://github.com/coldteadotai/pr-lens/issues).
 
 ## Publishing (maintainers)
 

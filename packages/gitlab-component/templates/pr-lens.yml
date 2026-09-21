@@ -1,51 +1,120 @@
 spec:
   inputs:
+    job_name:
+      default: pr-lens
+      type: string
+      regex: ^[a-z][a-z0-9-]*$
+      description: Name of the job this creates. Rename it to include the component twice in one pipeline.
     stage:
       default: test
+      type: string
       description: Pipeline stage the job runs in.
     image:
       default: node:20
+      type: string
       description: Job image. Needs node, git, curl and bash.
+    allow_failure:
+      default: true
+      type: boolean
+      description: Keep the pipeline green when PR Lens fails. On by default — a commentary tool has no business blocking a merge.
+    timeout:
+      default: 15 minutes
+      type: string
+      description: Job timeout. Well under a project default on purpose, so a hung model call cannot bill an hour of CI minutes.
+    interruptible:
+      default: true
+      type: boolean
+      description: Cancel this job when a newer commit supersedes the pipeline, rather than drawing a SHA nobody is looking at.
     provider:
       default: gemini
-      description: gemini, openai, or openai-compatible for anything else speaking /chat/completions (which then needs base_url).
+      type: string
+      options:
+        - gemini
+        - openai
+        - openai-compatible
+      description: Which API to ask. openai-compatible is anything else speaking /chat/completions, which then needs base_url.
     model:
       default: ""
+      type: string
       description: Model to ask. Required when provider is openai-compatible, since the endpoint decides which names exist.
     base_url:
       default: ""
+      type: string
       description: Provider endpoint, for a compatible or self-hosted server.
     lens:
       default: ""
+      type: string
       description: Comma-separated lenses to render. Defaults to both.
     branding:
       default: "true"
-      description: Show the "Rendered by PR Lens" footer.
+      type: string
+      options:
+        - "true"
+        - "false"
+      description: Show the "Rendered by PR Lens" footer. A string rather than a boolean so an existing pipeline keeps working.
     comment:
       default: "true"
+      type: string
+      options:
+        - "true"
+        - "false"
       description: Post the comment. Set "false" to render without commenting.
     cli_version:
       default: "0.6.1"
+      type: string
+      regex: ^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$
       description: Version of @coldtea/pr-lens-cli to run.
     api_key_variable:
       default: GEMINI_API_KEY
+      type: string
+      regex: ^[A-Za-z_][A-Za-z0-9_]*$
       description: Name of the CI/CD variable holding the model key. The key itself never appears in the pipeline definition.
     token_variable:
       default: PR_LENS_TOKEN
+      type: string
+      regex: ^[A-Za-z_][A-Za-z0-9_]*$
       description: Name of the CI/CD variable holding a project access token with the api scope. CI_JOB_TOKEN cannot post notes, so commenting needs one.
 ---
 # The job only runs in merge request pipelines — and those exist only when the
 # consuming .gitlab-ci.yml triggers them itself (workflow or job rules on
 # $CI_PIPELINE_SOURCE == "merge_request_event"); rules inside an included
 # component do not satisfy that requirement.
-pr-lens:
+"$[[ inputs.job_name ]]":
   stage: $[[ inputs.stage ]]
   image: $[[ inputs.image ]]
+  # PR Lens draws a picture; it does not judge the code. A failure here is
+  # not a reason to hold a merge, so the pipeline stays green unless the
+  # consumer asks otherwise.
+  allow_failure: $[[ inputs.allow_failure ]]
+  timeout: $[[ inputs.timeout ]]
+  # A superseded pipeline's diagram describes a commit nobody is looking at,
+  # and drawing it anyway spends the consumer's minutes and model budget.
+  interruptible: $[[ inputs.interruptible ]]
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  # Transient classes only. A real analysis failure must never be retried:
+  # it would spend the model call a second time to fail the same way.
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - api_failure
+      - scheduler_failure
+      - runner_unsupported
+  # Keeps the render downloadable from the job even when the comment could
+  # not be posted, which is the case where seeing the output matters most.
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - .pr-lens/
   variables:
     # The diff is between two commits, so both must be in the clone.
     GIT_DEPTH: "0"
+    # Inside the project so artifacts: can reach it; the script defaults to a
+    # temp dir when this is unset, which is what the tests use.
+    PR_LENS_WORK: "$CI_PROJECT_DIR/.pr-lens"
     PR_LENS_MODEL_PROVIDER: $[[ inputs.provider ]]
     PR_LENS_MODEL: $[[ inputs.model ]]
     PR_LENS_BASE_URL: $[[ inputs.base_url ]]
@@ -100,6 +169,9 @@ pr-lens:
       HEAD_SHA="${CI_MERGE_REQUEST_SOURCE_BRANCH_SHA:-${CI_COMMIT_SHA}}"
 
       WORK="${PR_LENS_WORK:-$(mktemp -d)}"
+      # The variable may name a path that does not exist yet: the component
+      # points it inside the project so artifacts: can collect the render.
+      mkdir -p "${WORK}"
 
       cli() {
         npx --yes "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}" "$@"

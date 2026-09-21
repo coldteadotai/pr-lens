@@ -56,7 +56,25 @@ overwriting a newer drawing.
 | `cli_version`      | current          | Version of `@coldtea/pr-lens-cli` to run                   |
 | `api_key_variable` | `GEMINI_API_KEY` | Name of the variable holding the model key                 |
 | `token_variable`   | `PR_LENS_TOKEN`  | Name of the variable holding the access token              |
+| `job_name`         | `pr-lens`        | Name of the job, so the component can appear twice in one pipeline |
 | `stage` / `image`  | `test` / `node:20` | Where and on what the job runs                           |
+| `allow_failure`    | `true`           | Keep the pipeline green when PR Lens fails                 |
+| `timeout`          | `15 minutes`     | Job timeout, deliberately under a project default          |
+| `interruptible`    | `true`           | Cancel the job when a newer commit supersedes the pipeline |
+
+Every input is typed, and the ones with a closed set of values declare it —
+so `provider: maybe` or a malformed `cli_version` is refused when the
+pipeline is created rather than failing part-way through the job.
+
+**A PR Lens failure does not fail your pipeline.** `allow_failure` defaults
+to `true`: this draws a picture, it does not judge the code, and a model
+outage is no reason to hold a merge. Set it to `false` if you want the
+opposite. The job also retries only transient runner and API failures —
+never a real analysis failure, which would just spend the model call again.
+
+The render is saved as a job artifact under `.pr-lens/`, kept for a week,
+so the diagrams are downloadable even on a run where the comment could not
+be posted.
 
 The key and token are named by variable, never passed as values, so neither
 ever appears in a pipeline definition or a job log.
