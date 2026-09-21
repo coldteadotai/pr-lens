@@ -125,6 +125,29 @@ script:
       LENS: "architecture"
 ```
 
+### Without the pipe
+
+A pipe is a Docker image, so using one means the image has been published. The
+same script runs as an ordinary step, which needs nothing published at all:
+copy [`pipe/lens.sh`](pipe/lens.sh) into your repository and run it.
+
+```yaml
+- step:
+    name: PR Lens
+    image: node:20
+    script:
+      - bash ./ci/pr-lens.sh
+```
+
+Every variable in the table above defaults inside the script, so a step needs
+only the same two repository variables the pipe does — `GEMINI_API_KEY` and
+`PR_LENS_TOKEN`. Set any other by exporting it before the call.
+
+This is the same script the pipe runs, and the same shape the
+[GitHub Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action)
+uses. What you give up is discovery: a pipe appears in Atlassian's listing and
+is one line to adopt, where a copied script is yours to update.
+
 ## Support
 
 Open an issue at
