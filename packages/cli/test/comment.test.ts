@@ -221,7 +221,7 @@ test("omitting the target composes exactly what github got before it existed", (
   expect(composeComment(options)).toBe(composeComment({ ...options, target: "github" }));
 });
 
-test("gitlab never receives a picture element, only the light image", () => {
+test("gitlab never receives a picture element, only one image", () => {
   const body = composeComment({
     graph: minimalGraph,
     manifest: localManifest([
@@ -357,4 +357,85 @@ test("a body past the forge's limit sheds trailing sections, never the headline"
   expect(body.length).toBeLessThanOrEqual(32_768);
   expect(body).toContain(minimalGraph.title);
   expect(body).toContain("did not fit this comment");
+});
+
+/**
+ * A single-image surface used to be handed the light render, which put a
+ * glaring white rectangle in front of every dark-mode reader on GitLab and
+ * Bitbucket. The neutral render exists for exactly this, and these pin that
+ * each forge is offered the asset made for it.
+ */
+const neutralAsset = asset({
+  id: "architecture-neutral",
+  theme: "neutral",
+  path: "architecture-neutral.svg",
+});
+
+const allThree = () =>
+  localManifest([
+    asset({}),
+    asset({ id: "architecture-dark", theme: "dark", path: "architecture-dark.svg" }),
+    neutralAsset,
+  ]);
+
+test("GitLab gets the neutral render, not a half of the pair", () => {
+  const body = composeComment({
+    graph: minimalGraph,
+    manifest: allThree(),
+    assetBaseUrl: "https://gitlab.com/o/r/-/raw/pr-lens",
+    branding: true,
+    target: "gitlab",
+  });
+
+  expect(body).toContain("architecture-neutral.svg");
+  expect(body).not.toContain("architecture-light.svg");
+  // GitLab strips picture/source, so shipping one would be shipping nothing.
+  expect(body).not.toContain("<picture>");
+});
+
+test("Bitbucket gets the neutral render through a markdown image", () => {
+  const body = composeComment({
+    graph: minimalGraph,
+    manifest: allThree(),
+    assetBaseUrl: "https://bitbucket.org/o/r/downloads",
+    branding: true,
+    target: "bitbucket",
+  });
+
+  expect(body).toContain("architecture-neutral.svg");
+  expect(body).not.toContain("architecture-light.svg");
+  expect(body).not.toContain("<img");
+});
+
+test("GitHub still pairs light and dark, and ignores a neutral render it does not need", () => {
+  const body = composeComment({
+    graph: minimalGraph,
+    manifest: allThree(),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+    target: "github",
+  });
+
+  expect(body).toContain('<source media="(prefers-color-scheme: dark)"');
+  expect(body).toContain("architecture-light.svg");
+  expect(body).toContain("architecture-dark.svg");
+  expect(body).not.toContain("architecture-neutral.svg");
+});
+
+test("a single-image surface still shows something when only the pair was rendered", () => {
+  // An older manifest, or one rendered --theme light by hand. A diagram tuned
+  // for the wrong ground beats no diagram, but it is the fallback.
+  const body = composeComment({
+    graph: minimalGraph,
+    manifest: localManifest([
+      asset({}),
+      asset({ id: "architecture-dark", theme: "dark", path: "architecture-dark.svg" }),
+    ]),
+    assetBaseUrl: "https://gitlab.com/o/r/-/raw/pr-lens",
+    branding: true,
+    target: "gitlab",
+  });
+
+  expect(body).toContain("architecture-light.svg");
+  expect(body).not.toContain("<picture>");
 });

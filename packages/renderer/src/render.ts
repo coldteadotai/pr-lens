@@ -5,7 +5,7 @@ import { applyCorrections } from "./corrections.js";
 import { PrLensRenderError } from "./errors.js";
 import { buildManifest, contentHash, renderAssetFileName, renderAssetId } from "./manifest.js";
 import { findView, flattenViews, resolveScope, type ScopedGraph } from "./scope.js";
-import { paletteFor, THEMES, type Theme } from "./theme.js";
+import { paletteFor, THEME_PAIR, type Theme } from "./theme.js";
 import { paintArchitecture } from "./svg/architecture.js";
 import { paintDataFlow } from "./svg/dataflow.js";
 import { svgDocument } from "./svg/document.js";
@@ -124,7 +124,7 @@ const requireView = (views: readonly View[], id: string): View => {
 
 export type RenderAllOptions = {
   config?: Config;
-  /** Which halves of the theme pair to produce. Both, by default. */
+  /** Which themes to produce. The `<picture>` pair, by default; `['neutral']` for a single-image surface. */
   themes?: readonly Theme[];
 };
 
@@ -144,7 +144,7 @@ export type RenderAllResult = {
  */
 export const renderAll = (doc: GraphDoc, options: RenderAllOptions = {}): RenderAllResult => {
   const prepared = prepare(doc, options.config);
-  const themes = options.themes ?? THEMES;
+  const themes = options.themes ?? THEME_PAIR;
 
   const targets: { lens: Lens; view: View | undefined }[] =
     prepared.views.length > 0

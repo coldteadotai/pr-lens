@@ -82,9 +82,9 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
    glab mr create --title "Batch broadcast sends" --description "$(cat .pr-lens/body.md)"
    ```
 
-   An uploaded image loads for every reader of the merge request, which a raw file URL on a private project does not. The trade is that the attachment URL is the permission: it is unguessable, and whoever holds it can see the diagram, member or not. Say so if you are pointing this at a private project. GitLab strips `<picture>`, so reference the light SVG on its own rather than a theme pair.
+   An uploaded image loads for every reader of the merge request, which a raw file URL on a private project does not. The trade is that the attachment URL is the permission: it is unguessable, and whoever holds it can see the diagram, member or not. Say so if you are pointing this at a private project. GitLab strips `<picture>`, so render with `--theme neutral` and reference that one SVG rather than a theme pair — the neutral render carries its own ground and reads for a light-mode and a dark-mode reader alike, which a half of the pair does not.
 
-   **Bitbucket.** Comments and descriptions are plain Markdown there: no HTML, no collapsible sections, no theme pairs. Publish the SVGs somewhere durable — the repository's Downloads, or a canvas — and reference them as ordinary Markdown images.
+   **Bitbucket.** Comments and descriptions are plain Markdown there: no HTML, no collapsible sections, no theme pairs — so render with `--theme neutral` here too. Publish the SVGs somewhere durable — the repository's Downloads, or a canvas — and reference them as ordinary Markdown images.
 
    When `--attach` is not an option on any forge, publish the SVGs somewhere durable and let the CLI compose the comment instead:
 
@@ -97,7 +97,7 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
 
    `--graph` takes `drawn.graph.json`, not the document you wrote, because corrections change what the diagrams show and the CLI refuses a document its manifest does not describe. `--asset-base-url` is where you published the SVGs; leave it out and the markdown points at local paths no reader can fetch. The markdown goes to stdout; posting it is your business.
 
-   Add `--target gitlab` or `--target bitbucket` when the comment is not for GitHub. The composer writes what that forge renders: GitHub gets `<picture>` theme pairs and collapsible drill-downs, GitLab gets the same HTML without the theme pair, Bitbucket gets plain Markdown with the views flattened. The wrong target is a comment full of tags shown as text.
+   Add `--target gitlab` or `--target bitbucket` when the comment is not for GitHub. The composer writes what that forge renders: GitHub gets `<picture>` theme pairs and collapsible drill-downs, GitLab gets the same HTML carrying the single neutral render, Bitbucket gets plain Markdown with the views flattened. The wrong target is a comment full of tags shown as text.
 
 If you would rather not author the document yourself, `npx @coldtea/pr-lens-cli@latest analyze --base <ref>` does steps 1 and 2 by asking a provider — Gemini, OpenAI, or any endpoint speaking `/chat/completions` — with a key of your own. That is the only path here that needs one.
 

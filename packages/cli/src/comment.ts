@@ -1,4 +1,10 @@
-import { assertNever, surfaceFor, type MarkdownDialect, type Provider } from "@coldtea/pr-lens-schema";
+import {
+  assertNever,
+  surfaceFor,
+  type CommentSurface,
+  type MarkdownDialect,
+  type Provider,
+} from "@coldtea/pr-lens-schema";
 import type { GraphDoc, Lens, RenderAsset, RenderManifest, View } from "@coldtea/pr-lens-schema";
 import { PrLensCliError } from "./errors.js";
 
@@ -124,23 +130,44 @@ const href = (asset: RenderAsset, assetBaseUrl: string | undefined): string => {
 const hrefMd = (asset: RenderAsset, assetBaseUrl: string | undefined): string =>
   href(asset, assetBaseUrl).replace(/[<>() ]/g, (found) => `%${found.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
 
-type ThemePair = { light: RenderAsset | undefined; dark: RenderAsset | undefined };
+type ThemePair = {
+  light: RenderAsset | undefined;
+  dark: RenderAsset | undefined;
+  neutral: RenderAsset | undefined;
+};
+
+const EMPTY_PAIR: ThemePair = { light: undefined, dark: undefined, neutral: undefined };
 
 const pairsByLens = (assets: readonly RenderAsset[]): Map<Lens, ThemePair> => {
   const pairs = new Map<Lens, ThemePair>();
   for (const asset of assets) {
-    const pair = pairs.get(asset.lens) ?? { light: undefined, dark: undefined };
+    const pair = pairs.get(asset.lens) ?? EMPTY_PAIR;
     pairs.set(asset.lens, { ...pair, [asset.theme]: asset });
   }
   return pairs;
 };
 
 /**
+ * The one asset a single-image surface shows.
+ *
+ * `neutral` first, because it is the render made for exactly this and reads
+ * on a light page and a dark one alike. Falling back to a half of the pair is
+ * for a manifest rendered before neutral existed, or one rendered `--theme
+ * light` by hand: better a diagram tuned for the wrong ground than no
+ * diagram, but it is a fallback and not the intent.
+ */
+const single = (pair: ThemePair): RenderAsset | undefined =>
+  pair.neutral ?? pair.light ?? pair.dark;
+
+/**
  * A `<picture>` is what makes one comment readable in both GitHub themes: the
  * dark source is swapped in by the browser, with the light asset as the `img`
- * every other reader — email, mobile, an old client — falls back to. GitLab
- * strips `picture` and `source`, so there the light asset stands alone rather
- * than trusting a sanitizer to unwrap gracefully.
+ * every other reader — email, mobile, an old client — falls back to.
+ *
+ * GitLab strips `picture` and `source`, so there one image stands alone
+ * rather than trusting a sanitizer to unwrap gracefully — and that image is
+ * the neutral render, which reads on either ground, instead of a half of the
+ * pair that reads well on one.
  *
  * The whole thing is a link to the image itself, because a comment column is
  * about 830 pixels wide and a diagram of a system with several lanes is
@@ -153,14 +180,17 @@ const picture = (
   assetBaseUrl: string | undefined,
   surface: HtmlSurface,
 ): string => {
-  const fallback = pair.light ?? pair.dark;
-  if (fallback === undefined) return "";
+  // A paired surface shows the light half as the `img` every non-swapping
+  // client falls back to; a single-image surface shows the neutral render.
+  const paired = surface.themeStrategy === "pair" && pair.light !== undefined && pair.dark !== undefined;
+  const shownAsset = paired ? pair.light : single(pair);
+  if (shownAsset === undefined) return "";
 
-  const source = escape(href(fallback, assetBaseUrl));
-  const image = `<img alt="${text(alt, surface.dialect)}" src="${source}" width="${fallback.width}">`;
+  const source = escape(href(shownAsset, assetBaseUrl));
+  const image = `<img alt="${text(alt, surface.dialect)}" src="${source}" width="${shownAsset.width}">`;
 
   const shown =
-    !surface.themePair || pair.dark === undefined || pair.light === undefined
+    !paired || pair.dark === undefined
       ? image
       : [
           "<picture>",
@@ -240,7 +270,10 @@ const byView = (manifest: RenderManifest): Map<string, RenderAsset[]> => {
 };
 
 /** The two HTML-rendering surfaces differ only in theme pairing and sigils. */
-type HtmlSurface = { dialect: Exclude<MarkdownDialect, "python-markdown">; themePair: boolean };
+type HtmlSurface = {
+  dialect: Exclude<MarkdownDialect, "python-markdown">;
+  themeStrategy: CommentSurface["themeStrategy"];
+};
 
 const composeHtml = (
   options: CommentOptions,
@@ -283,8 +316,9 @@ const composeHtml = (
 };
 
 const diagramMd = (pair: ThemePair, alt: string, assetBaseUrl: string | undefined): string => {
-  // Light stands in for both themes: with no HTML there is no theme pairing.
-  const shown = pair.light ?? pair.dark;
+  // With no HTML there is no theme pairing at all, so the neutral render is
+  // the only one that serves a reader whichever theme they are in.
+  const shown = single(pair);
   if (shown === undefined) return "";
 
   const source = hrefMd(shown, assetBaseUrl);
@@ -350,7 +384,7 @@ export const composeComment = (options: CommentOptions): string => {
       case "glfm":
         return composeHtml(
           options,
-          { dialect: surface.dialect, themePair: surface.themePair },
+          { dialect: surface.dialect, themeStrategy: surface.themeStrategy },
           marker,
           keptViews,
         );

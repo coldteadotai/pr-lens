@@ -65,7 +65,7 @@ describe("surfaceFor", () => {
   it("gives GitHub the full surface", () => {
     expect(surfaceFor("github")).toEqual({
       html: true,
-      themePair: true,
+      themeStrategy: "pair",
       collapsibles: true,
       checkboxes: true,
       dialect: "gfm",
@@ -76,7 +76,7 @@ describe("surfaceFor", () => {
   it("gives GitLab HTML without theme pairs, and no checkboxes until the spike proves them", () => {
     expect(surfaceFor("gitlab")).toEqual({
       html: true,
-      themePair: false,
+      themeStrategy: "neutral",
       collapsibles: true,
       checkboxes: false,
       dialect: "glfm",
@@ -87,7 +87,7 @@ describe("surfaceFor", () => {
   it("gives Bitbucket the pure-Markdown surface", () => {
     expect(surfaceFor("bitbucket")).toEqual({
       html: false,
-      themePair: false,
+      themeStrategy: "neutral",
       collapsibles: false,
       checkboxes: false,
       dialect: "python-markdown",

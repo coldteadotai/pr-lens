@@ -23,6 +23,7 @@ export {
   MAX_VIEWS,
   Theme,
   THEMES,
+  THEME_PAIR,
   SchemaVersionField,
   Sha,
   Summary,

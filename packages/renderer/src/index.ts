@@ -16,7 +16,7 @@ export { PrLensRenderError, type RenderErrorCode } from "./errors.js";
 
 export type { Box } from "./geometry.js";
 
-export { paletteFor, THEMES, type Palette, type Theme } from "./theme.js";
+export { paletteFor, THEMES, THEME_PAIR, type Palette, type Theme } from "./theme.js";
 
 export {
   buildManifest,

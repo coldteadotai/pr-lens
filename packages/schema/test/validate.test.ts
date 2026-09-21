@@ -3,7 +3,7 @@ import { postmarkRefactorGraphInput } from "../src/examples/postmark-refactor.js
 import { minimalGraphInput } from "../src/examples/minimal.js";
 import type { GraphDocInput } from "../src/graph.js";
 import type { ViewInput } from "../src/graph.js";
-import { MAX_RENDER_ASSETS, MAX_VIEWS, THEMES } from "../src/primitives.js";
+import { MAX_RENDER_ASSETS, MAX_VIEWS, THEMES, THEME_PAIR } from "../src/primitives.js";
 import { postmarkRefactorManifestInput } from "../src/examples/postmark-refactor.js";
 import { safeParseConfig, safeParseGraphDoc, safeParseRenderManifest } from "../src/validate.js";
 import { SCHEMA_VERSION } from "../src/version.js";
@@ -356,8 +356,17 @@ const nestedViews = (count: number): ViewInput[] => {
 };
 
 describe("the drill-down tree and the render it implies", () => {
-  it("is one rule: every view fits a manifest at every theme", () => {
-    expect(MAX_VIEWS * THEMES.length).toBe(MAX_RENDER_ASSETS);
+  it("is one rule: every view fits a manifest at every paired theme", () => {
+    expect(MAX_VIEWS * THEME_PAIR.length).toBe(MAX_RENDER_ASSETS);
+  });
+
+  it("bounds the budget on the pair, because neutral replaces it rather than joining it", () => {
+    // Binding this to the size of the whole enum would shrink the view cap
+    // every time a theme is added, even one no render asks for alongside the
+    // others — and 256/3 is not a whole number of views.
+    expect(THEME_PAIR.length).toBe(2);
+    expect(THEMES).toContain("neutral");
+    expect(THEME_PAIR as readonly string[]).not.toContain("neutral");
   });
 
   it("accepts a tree a render can describe", () => {

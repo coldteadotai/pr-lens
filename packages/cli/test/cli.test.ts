@@ -220,7 +220,7 @@ test("--theme draws one half of the pair, and nothing else", async () => {
 
 test("a theme that is not a theme is a misuse", async () => {
   expect(await invoke("render", GOLDEN, "--theme", "sepia")).toBe(2);
-  expect(err.join("\n")).toContain("--theme takes light, dark or both");
+  expect(err.join("\n")).toContain("--theme takes light, dark, both or neutral");
 });
 
 const CORRECTIONS = `schemaVersion: 0.1.0

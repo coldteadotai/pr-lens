@@ -54,8 +54,9 @@ longer the pull request's head stands down instead of overwriting a newer
 drawing.
 
 Bitbucket renders comments as plain Markdown, so the comment arrives without
-collapsible sections or theme pairs: headline, numbers, one diagram per lens,
-and the drill-down views in order.
+collapsible sections or theme pairs: headline, numbers, one diagram per lens
+— the neutral render, which reads for a light-mode and a dark-mode reader
+alike — and the drill-down views in order.
 
 Bitbucket does not run pull-request pipelines for forks, so the pipe only
 ever sees same-repository pull requests.

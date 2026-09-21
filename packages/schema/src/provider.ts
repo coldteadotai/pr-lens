@@ -63,8 +63,17 @@ export type MarkdownDialect = "gfm" | "glfm" | "python-markdown";
 export type CommentSurface = {
   /** Raw HTML survives sanitization. Bitbucket renders none. */
   html: boolean;
-  /** `<picture>` theme pairs work. GitLab strips `picture`/`source`. */
-  themePair: boolean;
+  /**
+   * Which render a comment should carry.
+   *
+   * `pair` ships both halves in a `<picture>` and lets the client choose.
+   * `neutral` ships the one self-contained render, for a surface that shows a
+   * single image — GitLab strips `picture`/`source`, and Bitbucket renders no
+   * HTML at all. Handing such a surface a half of the pair means one of the
+   * two themes reads badly, which for a product whose entire output is the
+   * image is not a small thing.
+   */
+  themeStrategy: "pair" | "neutral";
   /** `<details>` renders as a collapsible section. */
   collapsibles: boolean;
   /** Task-list boxes are toggleable AND the toggle reaches a webhook. */
@@ -86,7 +95,7 @@ export const surfaceFor = (provider: Provider): CommentSurface => {
     case "github":
       return {
         html: true,
-        themePair: true,
+        themeStrategy: "pair",
         collapsibles: true,
         checkboxes: true,
         dialect: "gfm",
@@ -95,7 +104,7 @@ export const surfaceFor = (provider: Provider): CommentSurface => {
     case "gitlab":
       return {
         html: true,
-        themePair: false,
+        themeStrategy: "neutral",
         collapsibles: true,
         checkboxes: false,
         dialect: "glfm",
@@ -104,7 +113,7 @@ export const surfaceFor = (provider: Provider): CommentSurface => {
     case "bitbucket":
       return {
         html: false,
-        themePair: false,
+        themeStrategy: "neutral",
         collapsibles: false,
         checkboxes: false,
         dialect: "python-markdown",

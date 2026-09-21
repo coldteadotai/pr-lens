@@ -17,7 +17,8 @@ const doc = parseGraphDoc(json);
 // One diagram.
 const { svg, width, height } = render(doc, { lens: "architecture", theme: "dark" });
 
-// Every drill-down section, in both themes, plus the manifest a comment is built from.
+// Every drill-down section, in the light/dark pair, plus the manifest a comment
+// is built from. Pass themes: ["neutral"] for a surface that shows one image.
 const { assets, manifest } = renderAll(doc, { config });
 ```
 
