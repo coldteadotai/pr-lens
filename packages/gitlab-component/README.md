@@ -77,22 +77,12 @@ The render is saved as a job artifact under `.pr-lens/`, kept for a week,
 so the diagrams are downloadable even on a run where the comment could not
 be posted.
 
-**Skip the per-run download.** On the default `node:20` image the CLI is
-fetched at job time, which means every pipeline executes whatever the npm
-registry served that minute, inside a job that holds your CI/CD variables,
-with the install billed to your minutes. Point `image` at the published
-image instead and the CLI is already there:
-
-```yaml
-include:
-  - component: gitlab.com/coldteadotai/pr-lens/pr-lens@0.1.0
-    inputs:
-      image: coldtea/pr-lens-ci:0.6.1
-```
-
-The job detects the baked CLI and uses it; `npx` stays as the path for a run
-that pins a `cli_version` the image does not carry. The image is built from
-this package's `Dockerfile`.
+The CLI is fetched from npm at the pinned version on each run, which is what
+the [GitHub Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action)
+does too. There is no image to point `image` at: one existed briefly, and it
+bought a marginal saving at the price of a CLI version pinned by hand in two
+places that had to be bumped in lockstep. If the per-run fetch is worth
+removing, it is worth removing for all three forges at once.
 
 The key and token are named by variable, never passed as values, so neither
 ever appears in a pipeline definition or a job log.

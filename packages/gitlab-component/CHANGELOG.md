@@ -35,8 +35,9 @@ pipeline within one.
 - Renders `--theme neutral`: GitLab shows one image and cannot swap on the
   reader's theme, and the light render was a glaring rectangle for every
   dark-mode reader.
-- Ships a `Dockerfile` for an image with the CLI baked in. Point `image` at it
-  and a pipeline no longer downloads and executes the CLI at job time.
+- Fetches the CLI from npm on each run, as the GitHub Action does. An
+  image with the CLI baked in was removed before release: it saved a fetch
+  and cost a version pinned by hand in two places.
 
 `branding` and `comment` stay strings rather than becoming booleans, so a
 pipeline passing `"true"` keeps working.

@@ -174,18 +174,13 @@ spec:
       mkdir -p "${WORK}"
 
       cli() {
-        # The CLI baked into the image, when it is the version asked for. Fetching
-        # and executing fresh code on every run puts whatever the registry served
-        # that minute inside a pipeline that holds the customer's variables, and
-        # bills them the install. npx stays as the path for a run that pins a
-        # different version than the image carries.
-        if [ -n "${PR_LENS_BAKED_CLI_VERSION:-}" ] \
-          && [ "${PR_LENS_CLI_VERSION}" = "${PR_LENS_BAKED_CLI_VERSION}" ] \
-          && command -v pr-lens > /dev/null 2>&1; then
-          pr-lens "$@"
-          return
-        fi
-
+        # The same fetch the GitHub Action makes on every run. There was a baked-CLI
+        # branch here, and an image to go with it, to avoid executing whatever the
+        # registry served that minute inside a job holding the customer's variables.
+        # That risk is real, but it is one the GitHub path already lives with — and
+        # the image bought it at the price of a version pinned by hand in two places,
+        # which is a trap that has already sprung once. Fixing it properly means
+        # pinning an integrity hash for all three forges, not shipping one image.
         npx --yes "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}" "$@"
       }
 
