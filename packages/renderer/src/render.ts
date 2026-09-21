@@ -122,10 +122,25 @@ const requireView = (views: readonly View[], id: string): View => {
   return view;
 };
 
+/**
+ * What a render may be asked for: the `<picture>` pair, one half of it, or
+ * the single self-contained render.
+ *
+ * Not `readonly Theme[]`, which would admit all three at once — three assets
+ * per view against a view cap derived from two, so a document that validates
+ * could produce a manifest that does not. The contract's promise is that if
+ * it parses, it renders; this is the boundary that keeps it true.
+ */
+export type RenderThemes =
+  | readonly ["light", "dark"]
+  | readonly ["light"]
+  | readonly ["dark"]
+  | readonly ["neutral"];
+
 export type RenderAllOptions = {
   config?: Config;
-  /** Which themes to produce. The `<picture>` pair, by default; `['neutral']` for a single-image surface. */
-  themes?: readonly Theme[];
+  /** The `<picture>` pair by default; `['neutral']` for a single-image surface. */
+  themes?: RenderThemes;
 };
 
 export type RenderedAsset = RenderedSvg & { asset: RenderAsset };

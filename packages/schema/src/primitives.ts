@@ -117,12 +117,18 @@ export const THEME_PAIR = ["light", "dark"] as const satisfies readonly Theme[];
  * place — raise the budget, or add a theme, and the other end moves with it
  * instead of every surface rediscovering the arithmetic.
  *
- * The cap is deliberately the worst case, every theme rendered, rather than
- * what some particular render would emit. A renderer asked for one theme
- * could describe twice as many views, but then whether a document is
- * renderable would depend on how it was asked to be rendered, and the promise
- * this package exists to make — if it parses, it renders — would need a
- * second rule at a second boundary to stay true.
+ * The cap is deliberately the worst case any target asks for — the pair —
+ * rather than what some particular render would emit. A renderer asked for
+ * one theme could describe twice as many views, but then whether a document
+ * is renderable would depend on how it was asked to be rendered, and the
+ * promise this package exists to make — if it parses, it renders — would
+ * need a second rule at a second boundary to stay true.
+ *
+ * The worst case is the pair rather than the whole enum because `neutral`
+ * replaces the pair and never joins it: a surface shows the two halves or
+ * the one self-contained render. `RenderThemes` in the renderer is what
+ * keeps that true at the boundary, so a caller cannot ask for all three and
+ * emit three assets per view against a budget that assumed two.
  */
 export const MAX_RENDER_ASSETS = 256;
 

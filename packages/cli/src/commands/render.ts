@@ -3,7 +3,7 @@ import {
   PrLensRenderError,
   renderAll,
   THEME_PAIR,
-  type Theme,
+  type RenderThemes,
 } from "@coldtea/pr-lens-renderer";
 import { safeParseGraphDoc, type Config, type GraphDoc } from "@coldtea/pr-lens-schema";
 import { join } from "node:path";
@@ -44,7 +44,7 @@ with no sections gets one diagram per lens it declares.
       --config <file>  corrections to draw with (default the repository's, if any)
       --no-config      ignore the repository's corrections`;
 
-const readThemes = (value: unknown): readonly Theme[] => {
+const readThemes = (value: unknown): RenderThemes => {
   const theme = readString(value, "theme") ?? "both";
   switch (theme) {
     case "light":

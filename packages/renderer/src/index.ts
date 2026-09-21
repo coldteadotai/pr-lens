@@ -4,6 +4,7 @@ export {
   render,
   renderAll,
   type RenderAllOptions,
+  type RenderThemes,
   type RenderAllResult,
   type RenderedAsset,
   type RenderedSvg,

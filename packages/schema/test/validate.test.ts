@@ -421,3 +421,20 @@ describe("config validation", () => {
     expect(result.ok).toBe(false);
   });
 });
+
+/**
+ * The renderer's `RenderThemes` is what keeps this arithmetic true: it admits
+ * the pair, one half of it, or the single neutral, and never all three. A
+ * caller able to ask for three would emit three assets per view against a
+ * cap derived from two, so a document that validates could produce a
+ * manifest that does not — and the promise this package makes is that if it
+ * parses, it renders.
+ */
+describe("the view cap's assumption", () => {
+  it("holds because no render asks for more themes than the pair", () => {
+    expect(MAX_VIEWS * THEME_PAIR.length).toBe(MAX_RENDER_ASSETS);
+    expect(MAX_VIEWS).toBe(Math.floor(MAX_VIEWS));
+    // Three themes exist, and a render never asks for all of them at once.
+    expect(THEMES.length).toBeGreaterThan(THEME_PAIR.length);
+  });
+});
