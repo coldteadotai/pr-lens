@@ -17,5 +17,7 @@ test("a subcommand that is not one is a misuse", async () => {
   expect(await invoke("canvas", "publish")).toBe(2);
   const reported = output.err.join("\n");
   expect(reported).toContain('unknown canvas subcommand "publish"');
-  expect(reported).toContain("pr-lens canvas <push | pull | rotate | delete>");
+  expect(reported).toContain(
+    "pr-lens canvas <list | push | pull | rotate | delete>",
+  );
 });

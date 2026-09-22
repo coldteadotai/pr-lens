@@ -30,25 +30,28 @@ import { readGraphDoc } from "../document.js";
 import type { Terminal } from "../terminal.js";
 import { WORKSPACE_DIR } from "../workspace.js";
 import { deleteCommand } from "../canvas/delete.js";
-import { parseOptions, readString } from "../args.js";
+import { parseOptions, readBoolean, readString } from "../args.js";
 import { PrLensCliError, usageError } from "../errors.js";
 import { DEFAULT_API, API_ENV, readApi, requireSameApi, requireWriteToken, settleRotation, settlePendingRotation } from "../canvas/write.js";
 
 const DEFAULT_SOURCE = `${WORKSPACE_DIR}/drawn.graph.json`;
 const DEFAULT_OUT = `${WORKSPACE_DIR}/graph.json`;
 
-const SUBCOMMANDS = ["push", "pull", "rotate", "delete"] as const;
+const SUBCOMMANDS = ["list", "push", "pull", "rotate", "delete"] as const;
 type Subcommand = (typeof SUBCOMMANDS)[number];
 
 const isSubcommand = (value: string): value is Subcommand =>
   SUBCOMMANDS.some((subcommand) => subcommand === value);
 
-export const USAGE = `pr-lens canvas <push | pull | rotate | delete> [options]
+export const USAGE = `pr-lens canvas <list | push | pull | rotate | delete> [options]
 
 Keeps a graph document on the PR Lens app as a canvas: a page anyone you share
 it with can read, and an SVG a README can embed. The write token lands in
 ${REGISTRY_PATH}, which git ignores; the edit link carries the same token
 in its fragment, so share the view link and keep the edit link to yourself.
+
+  pr-lens canvas list                  every canvas this checkout knows
+    --json                             the same listing, for scripts
 
   pr-lens canvas push [graph.json]     send the document (default ${DEFAULT_SOURCE})
     --canvas <id|name>                 which canvas (default the one this document
@@ -420,6 +423,87 @@ const rotate = async (
   terminal.out("  the old edit link no longer works");
 };
 
+type Listed = {
+  id: string;
+  name: string;
+  api: string;
+  rev: number;
+  /**
+   * A canvas pulled by its view link stays readable here and never becomes
+   * writable: the app keeps only a hash, so no one can hand the token back.
+   */
+  editHere: boolean;
+};
+
+/**
+ * Copied field by field rather than spread, because the entry these come from
+ * carries the write token and the pending one, and neither may leave here.
+ */
+const listed = (registry: CanvasRegistry): Listed[] =>
+  Object.entries(registry.canvases)
+    .map(([id, entry]) => ({
+      id,
+      name: entry.name,
+      api: entry.api,
+      rev: entry.rev,
+      editHere: entry.writeToken !== undefined,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+
+const HEADINGS = ["ID", "NAME", "REV", "EDIT HERE"] as const;
+
+const row = (cells: readonly string[], widths: readonly number[]): string =>
+  `  ${cells.map((cell, column) => cell.padEnd(widths[column] ?? 0)).join("  ")}`.trimEnd();
+
+const tally = (canvases: readonly Listed[]): string => {
+  const count = `${canvases.length} ${canvases.length === 1 ? "canvas" : "canvases"}`;
+  const readOnly = canvases.filter((canvas) => !canvas.editHere).length;
+  return readOnly === 0
+    ? count
+    : `${count} · ${readOnly} this checkout cannot edit`;
+};
+
+const list = async (
+  args: readonly string[],
+  terminal: Terminal,
+): Promise<void> => {
+  const { values, positionals } = parseOptions(args, {
+    json: { type: "boolean" },
+  });
+  if (positionals.length > 0)
+    throw usageError(
+      `list takes no positional arguments, got ${positionals.join(" ")}`,
+    );
+
+  const canvases = listed(await readRegistry());
+
+  if (readBoolean(values.json)) {
+    terminal.out(JSON.stringify({ canvases }, null, 2));
+    return;
+  }
+
+  if (canvases.length === 0) {
+    terminal.out(`no canvases in ${REGISTRY_PATH} yet`);
+    terminal.out("  pr-lens canvas push mints one");
+    return;
+  }
+
+  const rows = canvases.map((canvas) => [
+    canvas.id,
+    canvas.name,
+    String(canvas.rev),
+    canvas.editHere ? "yes" : "no",
+  ]);
+  const widths = HEADINGS.map((heading, column) =>
+    Math.max(heading.length, ...rows.map((cells) => cells[column]?.length ?? 0)),
+  );
+
+  terminal.out(row(HEADINGS, widths));
+  for (const cells of rows) terminal.out(row(cells, widths));
+  terminal.out("");
+  terminal.out(`  ${tally(canvases)}`);
+};
+
 export const canvasCommand = async (
   args: readonly string[],
   terminal: Terminal,
@@ -427,11 +511,15 @@ export const canvasCommand = async (
 ): Promise<void> => {
   const [name, ...rest] = args;
   if (name === undefined)
-    throw usageError("canvas needs a subcommand: push, pull, rotate or delete");
+    throw usageError(
+      "canvas needs a subcommand: list, push, pull, rotate or delete",
+    );
   if (!isSubcommand(name))
     throw usageError(`unknown canvas subcommand ${JSON.stringify(name)}`);
 
   switch (name) {
+    case "list":
+      return list(rest, terminal);
     case "push":
       return push(rest, terminal, env);
     case "pull":
