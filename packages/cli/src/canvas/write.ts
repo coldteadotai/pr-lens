@@ -7,11 +7,22 @@ import { updateRegistry, type Registered } from "./registry.js";
 export const DEFAULT_API = "https://prlens.dev";
 export const API_ENV = "PR_LENS_API_URL";
 
+/**
+ * Truthiness rather than `??` on the environment, deliberately.
+ *
+ * A workflow has no way to leave an `env` key out conditionally, so the one
+ * with nothing to say sets it to the empty string — and `?? DEFAULT_API`
+ * would read that blank as an address and fail on it instead of falling
+ * through. `PR_LENS_TOKEN` is read the same way and for the same reason.
+ *
+ * The flag keeps `??`: `--api ""` was typed by somebody, and telling them it
+ * is not a URL beats quietly using a different store than the one they named.
+ */
 export const readApi = (
   value: unknown,
   env: Record<string, string | undefined>,
 ): string => {
-  const api = readString(value, "api") ?? env[API_ENV] ?? DEFAULT_API;
+  const api = readString(value, "api") ?? (env[API_ENV] || DEFAULT_API);
   try {
     new URL(api);
   } catch {
