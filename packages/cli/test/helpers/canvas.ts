@@ -31,7 +31,19 @@ export const setupCanvasTest = () => {
     err: (line) => output.err.push(line),
   };
   const fetchMock = vi.fn<typeof fetch>();
-  const invoke = (...argv: string[]) => run(argv, terminal, {});
+  /** A config home inside the temp directory, so no test writes to the real one. */
+  let env: Record<string, string | undefined> = {};
+  const invoke = (...argv: string[]) => run(argv, terminal, env);
+  /** Takes the store explicitly: ids are kept one per origin. */
+  const installId = async (api: string): Promise<string | undefined> => {
+    const home = env.XDG_CONFIG_HOME;
+    if (home === undefined) return undefined;
+    const file = `${encodeURIComponent(new URL(api).origin)}.json`;
+    return readFile(join(home, "pr-lens", "installs", file), "utf8").then(
+      (text) => JSON.parse(text).installId,
+      () => undefined,
+    );
+  };
   const registry = async (): Promise<Record<string, RegistryEntry>> =>
     JSON.parse(await readFile(REGISTRY, "utf8")).canvases;
   const createCheckout = () => mkdtemp(join(directory, "checkout-"));
@@ -39,6 +51,7 @@ export const setupCanvasTest = () => {
   beforeEach(async () => {
     directory = await mkdtemp(join(tmpdir(), "pr-lens-canvas-"));
     process.chdir(directory);
+    env = { XDG_CONFIG_HOME: join(directory, "config") };
     output.out = [];
     output.err = [];
     fetchMock.mockReset();
@@ -52,5 +65,5 @@ export const setupCanvasTest = () => {
     await rm(directory, { recursive: true, force: true });
   });
 
-  return { output, fetchMock, invoke, registry, createCheckout };
+  return { output, fetchMock, invoke, registry, createCheckout, installId, env: () => env };
 };

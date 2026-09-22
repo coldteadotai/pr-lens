@@ -9,7 +9,7 @@ import {
   setupCanvasAppTest,
 } from "./helpers/canvas-app.js";
 
-const { output, app, invoke, registry, fakeFetch } = setupCanvasAppTest();
+const { output, app, invoke, registry, fakeFetch, fetchMock } = setupCanvasAppTest();
 
 test("the first push records a canvas and prints its links, access warning, and remove hint", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(
@@ -257,4 +257,39 @@ test("a connection that fails is reported in the CLI's words, not the runtime's"
   expect(reported).toContain("did not answer");
   expect(reported).not.toContain("ECONNREFUSED");
   expect(reported).not.toContain("secret=1");
+});
+
+test("a redirect is refused, and names the address it points at", async () => {
+  fetchMock.mockImplementation(
+    async () =>
+      new Response(null, {
+        status: 301,
+        headers: { location: "https://prlens.dev/api/canvas" },
+      }),
+  );
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(
+    1,
+  );
+
+  expect(output.err.join("\n")).toContain("answered 301");
+  // Without the address the person has nothing to act on.
+  expect(output.err.join("\n")).toContain("https://prlens.dev/api/canvas");
+  expect(output.err.join("\n")).toContain("--api");
+});
+
+test("a redirect carrying terminal escapes cannot write them to the screen", async () => {
+  fetchMock.mockImplementation(
+    async () =>
+      new Response(null, {
+        status: 302,
+        headers: { location: "https://evil.test/\u001b[2Kwiped" },
+      }),
+  );
+
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+
+  // Content from a server we have just declined to follow.
+  expect(output.err.join("\n")).not.toContain("\u001b");
+  expect(output.err.join("\n")).toContain("https://evil.test/[2Kwiped");
 });

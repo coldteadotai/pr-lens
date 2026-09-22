@@ -93,6 +93,8 @@ type Request = {
   /** Undefined when minting, so a 404 there is not blamed on a canvas. */
   canvas: string | undefined;
   token?: string;
+  /** Names the machine that minted, so signing in later can claim what it pushed. */
+  install?: string;
   ifMatch?: number;
   body?: unknown;
 };
@@ -111,6 +113,29 @@ const unavailable = (
       : `${hostOf(api)} answered ${status}`,
     details,
   );
+
+/** Content from a server we have just declined to follow, so: printable, and short. */
+const LOCATION_SHOWN = 200;
+
+/**
+ * A hop is refused rather than followed, so the address it named is the one
+ * thing worth printing — typing `http://` where a store answers on `https://`
+ * is an ordinary mistake, and without this it dead-ends on a bare status.
+ */
+const redirected = (api: string, response: Response): PrLensCliError => {
+  const location = response.headers
+    .get("location")
+    ?.replace(/[^\x20-\x7e]/g, "")
+    .slice(0, LOCATION_SHOWN);
+
+  return unavailable(
+    api,
+    response.status,
+    location === undefined || location === ""
+      ? "the canvas API answers at the address it is given, and this one redirects"
+      : `the canvas API answers at the address it is given; this one points at ${location} — pass that as --api`,
+  );
+};
 
 const parseJson = (text: string): unknown => {
   try {
@@ -191,6 +216,9 @@ const call = async <T>(
   if (request.token !== undefined)
     headers.authorization = `Bearer ${request.token}`;
 
+  if (request.install !== undefined)
+    headers["x-pr-lens-install"] = request.install;
+
   if (request.ifMatch !== undefined)
     headers["if-match"] = String(request.ifMatch);
 
@@ -200,6 +228,12 @@ const call = async <T>(
     method: request.method,
     headers,
     body: request.body === undefined ? undefined : JSON.stringify(request.body),
+    // Never followed. The runtime strips `authorization` when a redirect
+    // crosses origins but forwards everything else, so a hop would hand the
+    // install id — which names this machine to an account — to whatever host
+    // answered. Every route here replies directly, so a 3xx is a surprise
+    // worth reporting rather than obeying.
+    redirect: "manual",
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   }).catch(() => {
     // The runtime's message names addresses and internals; keep it out.
@@ -209,6 +243,10 @@ const call = async <T>(
       "check the address and the connection, then try again",
     );
   });
+
+  // Before the refusal dispatch, so a hop is never read as an error envelope.
+  if (response.status >= 300 && response.status < 400)
+    throw redirected(api, response);
 
   // A body can fail after the headers arrived.
   const text = await response.text().catch(() => {
@@ -234,8 +272,16 @@ const call = async <T>(
 
 const canvasPath = (id: string): string => `/api/canvas/${id}`;
 
-export const mintCanvas = (api: string): Promise<Minted> =>
-  call(api, { method: "POST", path: "/api/canvas", canvas: undefined }, Minted);
+/** A store that does not know the header ignores it, so an unattributed mint is the old behaviour. */
+export const mintCanvas = (
+  api: string,
+  install: string | undefined,
+): Promise<Minted> =>
+  call(
+    api,
+    { method: "POST", path: "/api/canvas", canvas: undefined, install },
+    Minted,
+  );
 
 export const fetchCanvas = async (
   api: string,

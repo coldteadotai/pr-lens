@@ -18,6 +18,7 @@ This is version 1 of the contract. Changes to it are additive: a field may be ad
 - Requests and answers are JSON. The CLI sends `accept: application/json`, a `user-agent` of `pr-lens-cli/<version>`, and `content-type: application/json` whenever it sends a body.
 - The CLI gives a request 60 seconds. A server that draws on push should draw within that.
 - Answers should carry `Cache-Control: no-store`, so that nothing between the CLI and the server keeps a document under an address that is meant to stay secret.
+- The CLI does not follow redirects. Every route answers directly, and a 3xx is reported as the server being unavailable — so a store must serve the API at the base URL it was given rather than bouncing to another host.
 
 ### Ids and tokens
 
@@ -69,6 +70,14 @@ POST /api/canvas
 ```
 
 No body, no authentication. Creates an empty canvas and hands out its write token, in plaintext, this once.
+
+The CLI may send one optional header:
+
+```
+X-PR-Lens-Install: prl_i_...
+```
+
+It names the machine that minted, so that a person signing in later can be given the canvases that machine pushed. A server that ignores it behaves exactly as this page describes, and the CLI neither notices nor complains — mints carrying no install id stay anonymous, which is what happens before anyone signs in. The value is 128 random bits as base64url behind a `prl_i_` prefix, and the CLI keeps one per origin, so a private store is never told the id used anywhere else.
 
 ```json
 {

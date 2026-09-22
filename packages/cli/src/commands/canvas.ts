@@ -25,6 +25,7 @@ import {
   type Registered,
 } from "../canvas/registry.js";
 import { writeJsonFile } from "../io.js";
+import { readInstallId } from "../install.js";
 import { readGraphDoc } from "../document.js";
 import type { Terminal } from "../terminal.js";
 import { WORKSPACE_DIR } from "../workspace.js";
@@ -224,7 +225,9 @@ const push = async (
         ref === undefined ? findBySource(current, source) : undefined;
       if (meanwhile !== undefined) return meanwhile;
 
-      const minted = await mintCanvas(api);
+      // Read here rather than above: a push onto a canvas this checkout
+      // already knows never mints, and so never needs to name the machine.
+      const minted = await mintCanvas(api, await readInstallId(env, api));
       const entry: CanvasEntry = {
         name: readString(values.name, "name") ?? document.title,
         source: sourceKey(source),
