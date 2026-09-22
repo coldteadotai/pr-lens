@@ -26,6 +26,20 @@ const read = async (name: string) =>
 const action = Action.parse(parse(await read("action.yml")));
 const source = await read("action.yml");
 
+const script = (name: string) =>
+  readFile(new URL(`../scripts/${name}`, import.meta.url), "utf8");
+
+const CLI = "@coldtea/pr-lens-cli";
+
+/** A step runs the CLI directly, or through the one script it hands off to. */
+const runsTheCli = async (step: z.infer<typeof Step>): Promise<boolean> => {
+  const body = step.run ?? "";
+  if (body.includes(CLI)) return true;
+
+  const handoff = body.match(/scripts\/([a-z-]+\.sh)/)?.[1];
+  return handoff === undefined ? false : (await script(handoff)).includes(CLI);
+};
+
 const references = (pattern: RegExp): string[] =>
   [...source.matchAll(pattern)].flatMap((match) => (match[1] === undefined ? [] : [match[1]]));
 
@@ -100,4 +114,37 @@ test("the workflow the README hands out serialises runs of the same pull request
 test("the CLI version the action runs is the CLI version in this repository", async () => {
   const cli: unknown = JSON.parse(await read("../cli/package.json"));
   expect(cli).toMatchObject({ version: action.inputs["cli-version"]?.default });
+});
+
+test("every step that runs the CLI is handed the account token", async () => {
+  const running = [];
+  for (const step of action.runs.steps) {
+    if (await runsTheCli(step)) running.push(step);
+  }
+  expect(running.length, "no step in this action runs the CLI").toBeGreaterThan(0);
+
+  for (const step of running) {
+    expect(
+      step.env?.PR_LENS_TOKEN,
+      `${step.name ?? "a step"} runs the CLI with no token in its environment`,
+    ).toBe("${{ inputs.token }}");
+  }
+});
+
+// The token names an account; a workflow that never gives one keeps drawing
+// anonymously. So nothing may read it outside the environment it is handed in:
+// a flag or a guard would make the run behave differently for want of one, and
+// would also spell a secret onto a command line.
+test("a run without the token is the run there was before", async () => {
+  expect(action.inputs["token"]?.required).not.toBe(true);
+  expect(action.inputs["token"]?.default).toBe("");
+
+  for (const step of action.runs.steps) {
+    expect(step.run ?? "", `${step.name ?? "a step"} reads the token`).not.toContain(
+      "PR_LENS_TOKEN",
+    );
+  }
+  for (const name of new Set(references(/scripts\/([a-z-]+\.sh)/g))) {
+    expect(await script(name), `${name} reads the token`).not.toContain("PR_LENS_TOKEN");
+  }
 });
