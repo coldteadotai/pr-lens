@@ -12,18 +12,19 @@
  * One id per store, not one per machine. The id is what links a machine to an
  * account, so whoever holds it can have this machine's canvases attributed to
  * them; sending the same one to every `--api` would hand that to a private
- * store, or to a host someone was talked into passing. Account credentials
- * will be kept per origin for the same reason.
+ * store, or to a host someone was talked into passing. The account credential
+ * beside it is kept per origin for the same reason.
  *
  * A file is made by exclusive create and then left alone, so two first runs
  * settle without a lock: the loser reads the winner's id instead of minting a
  * second machine. The one exception is repair, below, which has a ceiling.
  */
-import { join, dirname } from "node:path";
+import { dirname } from "node:path";
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 
-const DIRECTORY = "pr-lens";
+import { originPath } from "./config-home.js";
+
 const INSTALLS = "installs";
 
 /** The same 128 random bits the app's ids use, behind a prefix that names the kind. */
@@ -31,45 +32,10 @@ const PREFIX = "prl_i_";
 
 const INSTALL_ID = /^prl_i_[A-Za-z0-9_-]{22}$/;
 
-/**
- * Read from the environment the caller was given rather than the process, so
- * that a test never writes to the real home directory, and so a run with
- * nothing set is a run without an install id rather than a guess.
- */
-const configHome = (env: Record<string, string | undefined>): string | undefined => {
-  const xdg = env.XDG_CONFIG_HOME;
-  if (xdg) return xdg;
-
-  const home = env.HOME || env.USERPROFILE;
-  return home ? join(home, ".config") : undefined;
-};
-
-/**
- * Percent-encoded, so one file name can hold an origin and still be a file
- * name. Only the two schemes the API speaks: every other scheme has an origin
- * of the literal "null", which would file unrelated stores together in the one
- * function whose whole job is that stores never share.
- */
-const fileFor = (api: string): string | undefined => {
-  try {
-    const { protocol, origin } = new URL(api);
-    if (protocol !== "http:" && protocol !== "https:") return undefined;
-    return `${encodeURIComponent(origin)}.json`;
-  } catch {
-    return undefined;
-  }
-};
-
 export const installPath = (
   env: Record<string, string | undefined>,
   api: string,
-): string | undefined => {
-  const home = configHome(env);
-  const file = fileFor(api);
-  return home === undefined || file === undefined
-    ? undefined
-    : join(home, DIRECTORY, INSTALLS, file);
-};
+): string | undefined => originPath(env, INSTALLS, api);
 
 /** Pure, so that "these bytes say nothing usable" is answerable without a read. */
 const idIn = (text: string): string | undefined => {
@@ -91,6 +57,15 @@ const idIn = (text: string): string | undefined => {
 /** Anything unreadable is treated as absent: a machine with no id still pushes. */
 const storedId = (path: string): Promise<string | undefined> =>
   readFile(path, "utf8").then(idIn, () => undefined);
+
+/** The id this machine already has, for callers with no business minting one. */
+export const readStoredInstallId = async (
+  env: Record<string, string | undefined>,
+  api: string,
+): Promise<string | undefined> => {
+  const path = installPath(env, api);
+  return path === undefined ? undefined : storedId(path);
+};
 
 const write = async (path: string): Promise<string> => {
   const minted = `${PREFIX}${randomBytes(16).toString("base64url")}`;

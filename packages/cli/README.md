@@ -139,6 +139,30 @@ The CLI refuses to write the registry where git could commit it. If a checkout t
 
 `--api` points at another PR Lens app, or set `PR_LENS_API_URL`. The protocol between the CLI and the app is five routes and one error envelope, written up in [the canvas API contract](https://github.com/coldteadotai/pr-lens/blob/main/docs/canvas-api.md) so a private server can answer it and documents stay on your network.
 
+### `auth`
+
+```bash
+pr-lens auth login
+```
+
+Signs this machine in, so the canvases it pushes are yours rather than unlisted pages only a link reaches. Nothing else needs it: `push`, `pull` and `render` all work signed out, and always will.
+
+It prints a code and opens the browser. The code is there to be checked against the one the page shows, not typed — it travels in the link:
+
+```
+  Code WDJB-MJHT · opening https://prlens.dev/device?code=WDJB-MJHT
+  Check the page shows the same code, then approve. The code lasts 15 minutes.
+  Waiting for it…
+```
+
+Approving links this machine to your account, and that link is the claim: every canvas the machine has already pushed becomes yours, and so does every one it pushes next. `--no-browser` prints the link instead of opening one, which is what a machine reached over SSH wants.
+
+`status` says which app this machine is signed in to, and asks the app whether the sign-in still opens anything. `--json` is the same answer for scripts. Neither prints the token. An app that cannot be reached is reported as one that could not be asked, not as a sign-in that has gone bad.
+
+`logout` forgets the sign-in kept on this machine. The machine stays linked, so the canvases it pushed stay yours; removing it from the account is done in the app's settings, and a removed machine cannot be linked again.
+
+The sign-in lives in `~/.config/pr-lens/auth/`, one file per app and readable by you alone, so one machine can be signed in to prlens.dev and to a private store at the same time. `PR_LENS_TOKEN` overrides it, which is how CI signs in without a browser — [the Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action) takes it as `token`.
+
 ## Corrections
 
 A repository's `.github/pr-lens.yml` is picked up automatically by `render` and applied at draw time: renames, exclusions, lane pins, groupings. It is an overlay: inference never writes back into it, so a correction keeps holding as the code moves and the model renames things between runs, and the document on disk stays the record of what was inferred.
@@ -159,7 +183,7 @@ A lane pin may name a lane the document never declared; the band is created and 
 
 ## Failures
 
-Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`, and for `canvas`: `CANVAS_UNREGISTERED`, `CANVAS_UNKNOWN`, `CANVAS_CONFLICT`, `CANVAS_REJECTED`, `CANVAS_RATE_LIMITED`, `CANVAS_UNAVAILABLE`, `CANVAS_REGISTRY_EXPOSED`. Misuse exits 2, everything else exits 1.
+Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`, and for `canvas`: `CANVAS_UNREGISTERED`, `CANVAS_UNKNOWN`, `CANVAS_CONFLICT`, `CANVAS_REJECTED`, `CANVAS_RATE_LIMITED`, `CANVAS_UNAVAILABLE`, `CANVAS_REGISTRY_EXPOSED`, and for `auth`: `AUTH_REQUIRED`, `MACHINE_REVOKED`, `APP_UNAVAILABLE`. Misuse exits 2, everything else exits 1.
 
 ---
 
