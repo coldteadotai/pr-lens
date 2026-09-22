@@ -32,6 +32,18 @@ The id is the read capability. Anyone who has it can fetch the canvas. The write
 
 The hosted app stores only a hash of the token and compares in constant time, so a copy of its index is not a copy of every token. A private server should do the same.
 
+### The account credential
+
+The [ownership routes](#ownership) take a third secret, and it is not a capability on any one canvas: it says who is asking. The hosted app's account tokens are 128 random bits as base64url behind a prefix naming the kind, and they travel in the header.
+
+```
+Authorization: Bearer prl_u_xK9mQw2vRt7yLp4nBc6sZe
+```
+
+The CLI keeps one per origin, so a private store is never sent the credential for another one. `$PR_LENS_TOKEN` overrides the stored one, which is how CI signs in without a browser — and it is read for truthiness rather than presence, because a workflow with nothing to say sets it to the empty string.
+
+A store with no accounts serves none of these routes, and the CLI carries on without them: everything under [Routes](#routes) works signed out, which is the property that matters most here. Nothing a person can do with a canvas has ever needed an account, and nothing here changes that.
+
 ### Errors
 
 Every refusal is a JSON envelope with a code the client switches on, a sentence for the person, and sometimes one more field:
@@ -56,6 +68,13 @@ Every refusal is a JSON envelope with a code the client switches on, a sentence 
 | `DELETION_INCOMPLETE` | 409    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
 | `RATE_LIMITED`        | 429    | `retryAt`: ISO 8601 timestamp        | `CANVAS_RATE_LIMITED`, naming the time             |
 | `TOO_LARGE`           | 413    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
+| `UNAUTHENTICATED`     | 401    |                                      | `AUTH_REQUIRED`, telling the user to sign in       |
+| `ALREADY_OWNED`       | 409    |                                      | `CANVAS_OWNED`, naming the canvas                  |
+| `NOT_OWNER`           | 403    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
+| `INSTALL_REVOKED`     | 403    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
+| `MACHINE_LINKED`      | 409    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
+
+The last three are in the table because one vocabulary owns every code and its status, and not because a route on this page raises them. `NOT_OWNER` is reserved for a caller who already knows the thing is real — it came out of their own listing — so everywhere else "exists, and is not yours" stays `NOT_FOUND`, including on the [re-grant route](#a-fresh-write-token-for-an-owner) where it would have fitted. `INSTALL_REVOKED` and `MACHINE_LINKED` belong to the machine-linking route the CLI signs in through, which this page does not cover. A private store that never sends any of the three is understood in full.
 
 The message is shown to the person who ran the command, so write it for them. An unknown code, or a refusal without the envelope, is reported as the server being unavailable, so a private server that only ever answers with these codes is understood in full.
 
@@ -205,6 +224,109 @@ Status 200. A wrong token or unknown id is `NOT_FOUND`. A deletion that started 
 
 Nothing in the CLI fetches these addresses. What `/c/{id}` and `/c/{id}.svg` serve is up to the server. On the hosted app they are the canvas page and the hero diagram as an SVG.
 
+## Ownership
+
+Three optional routes, and the only ones on this page that ask who you are. They exist so a person can see every canvas they own from a machine that never pushed it, and take a canvas onto their account from a machine they no longer have.
+
+A store that serves none of them is a complete store: `push`, `pull`, `rotate` and `delete` never ask, `pr-lens canvas list` reads the local registry, and only `canvas list --remote` and `canvas claim` need anything here.
+
+### Everything an account owns
+
+```
+GET /api/canvases
+Authorization: Bearer {accountToken}
+```
+
+```json
+{
+  "canvases": [
+    {
+      "id": "Qk3vZp9xLm2aRt8yWn4bCg",
+      "rev": 3,
+      "createdAt": "2026-02-11T09:14:02.000Z",
+      "lastWriteAt": "2026-03-02T16:40:55.000Z",
+      "viewUrl": "https://lens.example.com/c/Qk3vZp9xLm2aRt8yWn4bCg",
+      "embedUrl": "https://lens.example.com/c/Qk3vZp9xLm2aRt8yWn4bCg.svg",
+      "preview": {
+        "type": "drawn",
+        "title": "Auth flow rewrite",
+        "delta": { "added": 4, "changed": 2, "removed": 1 }
+      }
+    }
+  ]
+}
+```
+
+Status 200, and `UNAUTHENTICATED` when there is no account behind the credential. No write tokens: only their hashes were ever stored, so a machine can own a canvas here and still not be able to edit it. That is exactly what `canvas list --remote` reports — it merges this answer over the local registry, and the `EDIT HERE` column comes from the registry alone.
+
+`preview` is what a listing can say about a canvas without opening it, and it has three shapes:
+
+| `type`       | Carries          | Means                                                            |
+| ------------ | ---------------- | ---------------------------------------------------------------- |
+| `drawn`      | `title`, `delta` | A revision that reads. `title` is the document's                 |
+| `not_drawn`  |                  | Minted, never pushed to. `rev` is 0                              |
+| `unreadable` |                  | The revision would not read. Not an empty canvas                 |
+
+`unreadable` is a failed read and nothing more. A store that answered `not_drawn` for one would be telling a person their work is gone because a bucket had a bad minute, so the two stay apart. The CLI shows a canvas with no `title` under its id, which is what the local listing already does for one nobody named.
+
+Order is the server's business; the CLI sorts by name and then by id. Anything else in the answer is ignored — the CLI reads `id`, `rev` and the preview's `title`.
+
+### Claiming a canvas
+
+```
+POST /api/canvas/{id}/claim
+Authorization: Bearer {accountToken}
+```
+
+```json
+{ "writeToken": "uH7sKd2pXw9qLz4mNc6vTe", "nextWriteToken": "Ab3dEf5gHi7jKl9mNo1pQr" }
+```
+
+Takes a canvas onto the account, on the strength of its write token, and retires that token in the same step. Both write tokens are in the body because the header is carrying the account credential.
+
+The rotation is the point rather than housekeeping. A write token sits in the fragment of every edit link ever shared, so if possession alone granted ownership and the token survived, every link ever pasted into a chat would be a standing offer of the canvas. Whoever claims walks away with a token nobody else has seen.
+
+The checks happen in this order, and the first to fail is the answer:
+
+1. No account behind the credential: `UNAUTHENTICATED`.
+2. Body above the size limit: `TOO_LARGE`. Not JSON, or missing either token: `INVALID_REQUEST`.
+3. `nextWriteToken` not 22 characters of base64url: `INVALID_REQUEST`.
+4. No such canvas, or neither token is the one on record: `NOT_FOUND`. Possession is checked before ownership, so a canvas that is somebody else's cannot be told from one that never existed.
+5. Already owned by another account: `ALREADY_OWNED`. The caller has shown the write token by this point, so they know the canvas is real and naming the case gives nothing away.
+
+```json
+{
+  "id": "Qk3vZp9xLm2aRt8yWn4bCg",
+  "editUrl": "https://lens.example.com/c/Qk3vZp9xLm2aRt8yWn4bCg#w=Ab3dEf5gHi7jKl9mNo1pQr"
+}
+```
+
+Status 200. Ownership is written first and write-once, so two claims racing cannot both win; the swap follows.
+
+Asking again with the same pair is answered 200 again, which is how a claim whose answer was lost is finished — the same replay rule [rotate](#rotate) has, and the reason the caller brings the next token rather than being handed one.
+
+An owner asking again with a *different* next token is not refused by the app: it rotates. First claim wins, and after that a claim only ever finishes itself. The CLI will not make that call — `canvas claim` asks `/api/canvases` first and stops if the canvas is already yours, so running the command twice is never a surprise rotation — but a store implementing this should know the route leaves that decision to its caller.
+
+### A fresh write token for an owner
+
+```
+POST /api/canvas/{id}/write-token
+Authorization: Bearer {accountToken}
+```
+
+```json
+{ "writeToken": "Ab3dEf5gHi7jKl9mNo1pQr" }
+```
+
+For an owner who no longer has a write token at all. Only a hash was ever kept, so the old one cannot be handed back: this replaces it, and any edit link still in circulation stops working. Ownership is the whole proof, which is why nothing in the body proves anything.
+
+- No account behind the credential: `UNAUTHENTICATED`.
+- A body that is not JSON, or a `writeToken` that is not 22 characters of base64url: `INVALID_REQUEST`.
+- An unknown id, a canvas nobody owns, or one owned by somebody else: `NOT_FOUND`, all three. `NOT_OWNER` exists and is deliberately not used here — this route would otherwise answer which ids are real to anyone with an account.
+- Otherwise 200, with the same `{ id, editUrl }` claim answers.
+
+The CLI does not call this route yet.
+
 ## Tiles
 
 A tile is one picture the server drew from the document. `fetch` and `push` both answer with the list, in the order the canvas shows them.
@@ -247,7 +369,7 @@ The revision check is the only conflict handling there is. Two writers holding t
 
 ## The smallest server that works
 
-To run the CLI end to end, a server needs the five routes above, the error envelope, and a store keyed by id holding a token hash, a revision counter and the last document. It can answer `tiles: []`, skip drawing, skip rate limiting and serve nothing at `/c/{id}`. Everything the CLI writes to disk, the document at `.pr-lens/graph.json` and the registry at `.pr-lens/canvas.json`, works the same against it as against prlens.dev.
+To run the CLI end to end, a server needs the five routes above, the error envelope, and a store keyed by id holding a token hash, a revision counter and the last document. The [ownership routes](#ownership) are not among them: without accounts there is nobody to own anything, and everything but `canvas list --remote` and `canvas claim` works the same. It can answer `tiles: []`, skip drawing, skip rate limiting and serve nothing at `/c/{id}`. Everything the CLI writes to disk, the document at `.pr-lens/graph.json` and the registry at `.pr-lens/canvas.json`, works the same against it as against prlens.dev.
 
 A walk through the whole lifecycle with curl, against a server at `$API`:
 

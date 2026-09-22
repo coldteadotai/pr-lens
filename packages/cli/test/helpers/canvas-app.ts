@@ -7,14 +7,27 @@ import { API, setupCanvasTest } from "./canvas.js";
 export const FIRST = "1".padStart(22, "0");
 export const TOKEN1 = "token-1-a".padEnd(22, "a");
 
-type Stored = { token: string; rev: number; document: unknown };
+/** The shape the app's account tokens have, so the fake can tell one from a write token. */
+export const ACCOUNT = `prl_u_${"account".padEnd(22, "a")}`;
+
+type Stored = {
+  token: string;
+  rev: number;
+  document: unknown;
+  /** The account this canvas belongs to, if anybody has claimed it. */
+  owner?: string;
+  /** A revision the store cannot read back, which is not a canvas with nothing in it. */
+  unreadable?: boolean;
+};
 type Seen = { method: string; path: string; headers: Headers; body: unknown };
 
 type Route =
   | { type: "mint" }
+  | { type: "list" }
   | { type: "read"; id: string; canvas: Stored }
   | { type: "push"; id: string; canvas: Stored }
   | { type: "rotate"; id: string; canvas: Stored }
+  | { type: "claim"; id: string; canvas: Stored }
   | { type: "unknown" };
 
 const resolveRoute = (
@@ -23,6 +36,7 @@ const resolveRoute = (
   canvases: ReadonlyMap<string, Stored>,
 ): Route => {
   if (method === "POST" && path === "/api/canvas") return { type: "mint" };
+  if (method === "GET" && path === "/api/canvases") return { type: "list" };
 
   const [, , , id, action] = path.split("/");
   const canvas = id === undefined ? undefined : canvases.get(id);
@@ -40,7 +54,9 @@ const resolveRoute = (
     case "POST":
       return action === "rotate"
         ? { type: "rotate", id, canvas }
-        : { type: "unknown" };
+        : action === "claim"
+          ? { type: "claim", id, canvas }
+          : { type: "unknown" };
     default:
       return { type: "unknown" };
   }
@@ -84,6 +100,30 @@ const TILES = [tile("view:overview"), tile("view:new-batch-path")];
 
 const bearer = (headers: Headers): string | undefined =>
   headers.get("authorization")?.replace(/^Bearer /, "");
+
+/** Account tokens carry a prefix, so the fake can tell one from a write token. */
+const accountOf = (headers: Headers): string | undefined => {
+  const token = bearer(headers);
+  return token !== undefined && token.startsWith("prl_u_") ? token : undefined;
+};
+
+const TOKEN_SHAPE = /^[A-Za-z0-9_-]{22}$/;
+
+const title = (document: unknown): string | undefined =>
+  typeof document === "object" && document !== null && "title" in document
+    ? String(document.title)
+    : undefined;
+
+/** What the listing says about a canvas without opening it. */
+const preview = (canvas: Stored) => {
+  if (canvas.unreadable) return { type: "unreadable" };
+  if (canvas.document === undefined) return { type: "not_drawn" };
+  return {
+    type: "drawn",
+    title: title(canvas.document) ?? "Untitled",
+    delta: { added: 1, changed: 0, removed: 0 },
+  };
+};
 
 export const setupCanvasAppTest = () => {
   const context = setupCanvasTest();
@@ -152,6 +192,70 @@ export const setupCanvasAppTest = () => {
         }
         return json(200, { id, editUrl: `${API}/c/${id}#w=${canvas.token}` });
       }
+      case "list": {
+        const account = accountOf(headers);
+        if (account === undefined)
+          return refuse(401, "UNAUTHENTICATED", "Sign in to see what you own");
+
+        return json(200, {
+          canvases: [...app.canvases]
+            .filter(([, canvas]) => canvas.owner === account)
+            .map(([id, canvas]) => ({
+              id,
+              rev: canvas.rev,
+              createdAt: "2026-01-01T00:00:00.000Z",
+              lastWriteAt: "2026-01-01T00:00:00.000Z",
+              ...links(id),
+              preview: preview(canvas),
+            })),
+        });
+      }
+      case "claim": {
+        const { id, canvas } = route;
+        const account = accountOf(headers);
+        if (account === undefined)
+          return refuse(401, "UNAUTHENTICATED", "Sign in to see what you own");
+
+        const asked =
+          typeof body === "object" && body !== null ? body : undefined;
+        const token =
+          asked !== undefined && "writeToken" in asked ? asked.writeToken : undefined;
+        const next =
+          asked !== undefined && "nextWriteToken" in asked
+            ? asked.nextWriteToken
+            : undefined;
+        if (
+          typeof token !== "string" ||
+          typeof next !== "string" ||
+          !TOKEN_SHAPE.test(next)
+        )
+          return refuse(
+            400,
+            "INVALID_REQUEST",
+            "The body must carry the writeToken and a nextWriteToken",
+          );
+
+        // Possession before ownership, so a canvas that is not yours cannot be
+        // told from one that was never there. The next token counts as
+        // possession: that is what finishes a claim whose answer was lost.
+        if (token !== canvas.token && next !== canvas.token)
+          return refuse(404, "NOT_FOUND", "There is no canvas here");
+
+        if (canvas.owner !== undefined && canvas.owner !== account)
+          return refuse(
+            409,
+            "ALREADY_OWNED",
+            "This canvas already belongs to another account",
+          );
+
+        canvas.owner = account;
+        canvas.token = next;
+        if (app.loseNextAnswer) {
+          app.loseNextAnswer = false;
+          throw new TypeError("fetch failed");
+        }
+        return json(200, { id, editUrl: `${API}/c/${id}#w=${canvas.token}` });
+      }
       case "push": {
         const { id, canvas } = route;
         if (bearer(headers) !== canvas.token)
@@ -201,6 +305,20 @@ export const setupCanvasAppTest = () => {
     }
   };
 
+  /** A canvas on the app that this checkout never pushed: no token over here. */
+  const place = (
+    id: string,
+    canvas: Partial<Stored> & { owner?: string } = {},
+  ): void => {
+    app.canvases.set(id, {
+      token: `token-${id.slice(-1)}-x`.padEnd(22, "x"),
+      rev: 1,
+      document: { title: `Canvas ${id.slice(-1)}` },
+      owner: ACCOUNT,
+      ...canvas,
+    });
+  };
+
   beforeEach(() => {
     app.canvases.clear();
     app.seen = [];
@@ -209,5 +327,5 @@ export const setupCanvasAppTest = () => {
     context.fetchMock.mockImplementation(fakeFetch);
   });
 
-  return { ...context, app, fakeFetch };
+  return { ...context, app, fakeFetch, place };
 };

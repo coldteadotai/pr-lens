@@ -18,6 +18,7 @@
  */
 import { dirname } from "node:path";
 import { mkdir, readFile, rm } from "node:fs/promises";
+import { assertNever } from "@coldtea/pr-lens-schema";
 
 import { PrLensCliError } from "./errors.js";
 import { writeSecretJsonFile } from "./io.js";
@@ -129,6 +130,47 @@ export const readToken = async (
 
   const stored = await readCredential(env, api);
   return stored.type === "credential" ? stored.credential.token : undefined;
+};
+
+/**
+ * The token to send when the command cannot go on without one.
+ *
+ * `readToken` answers undefined on every failure, which is right for a push:
+ * it has never needed an account and must not start. A command that is about
+ * the account has to tell the three answers apart instead — a credential file
+ * that will not open is not somebody who is signed out, and telling them to
+ * sign in again would be advice about a file this CLI never read.
+ */
+export const requireToken = async (
+  env: Record<string, string | undefined>,
+  api: string,
+): Promise<string> => {
+  const given = env[TOKEN_ENV];
+  if (given) return given;
+
+  const host = new URL(api).host;
+  const stored = await readCredential(env, api);
+  switch (stored.type) {
+    case "credential":
+      return stored.credential.token;
+    case "unreadable":
+      throw new PrLensCliError(
+        "UNREADABLE_FILE",
+        `the sign-in for ${host} cannot be read`,
+        [
+          `${stored.path}: ${stored.why}`,
+          "pr-lens auth logout clears it, and then auth login writes a fresh one",
+        ].join("\n"),
+      );
+    case "none":
+      throw new PrLensCliError(
+        "AUTH_REQUIRED",
+        `not signed in to ${host}`,
+        "pr-lens auth login",
+      );
+    default:
+      return assertNever(stored, "Unhandled credential read");
+  }
 };
 
 export const writeCredential = async (

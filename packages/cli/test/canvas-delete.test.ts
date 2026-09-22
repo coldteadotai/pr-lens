@@ -140,5 +140,5 @@ test("exposes delete in canvas and top-level help", async () => {
   await run("canvas", "--help");
   await run("--help");
   expect(output.out.join("\n")).toContain("pr-lens canvas delete");
-  expect(output.out.join("\n")).toContain("push | pull | rotate | delete");
+  expect(output.out.join("\n")).toContain("push | pull | claim | rotate | delete");
 });
