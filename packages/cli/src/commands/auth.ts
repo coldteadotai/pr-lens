@@ -17,8 +17,10 @@ import {
 } from "../auth.js";
 import {
   checkSignIn,
+  endSession,
   pollSignIn,
   startSignIn,
+  whoAmI,
   type MachineState,
   type StartedSignIn,
 } from "../account.js";
@@ -241,7 +243,13 @@ const login = async (
   const token = await waitForApproval(api, started);
   await writeCredential(env, api, token, new Date().toISOString());
 
-  terminal.out(`✓ Signed in to ${hostOf(api)}`);
+  // Asked after the credential is on disk, never before: the sign-in has
+  // happened, and a greeting that could not be fetched must not make it look
+  // as though it had not.
+  const who = await whoAmI(api, token);
+  terminal.out(
+    who === undefined ? `✓ Signed in to ${hostOf(api)}` : `✓ Signed in to ${hostOf(api)} as ${who}`,
+  );
   terminal.out(
     "  This machine is linked, so every canvas it has pushed is yours, and so is every one it pushes next.",
   );
@@ -480,6 +488,15 @@ const logout = async (
     );
 
   const api = readApi(values.api, env);
+
+  // Ended at the app first, then forgotten here whatever it answered. A
+  // store that cannot be reached must not keep somebody signed in on a
+  // laptop they are holding — so the local half is unconditional, and the
+  // remote half only decides what the last line says.
+  const stored = await readCredential(env, api);
+  const ended =
+    stored.type === "credential" ? await endSession(api, stored.credential.token) : undefined;
+
   const forgotten = await forgetCredential(env, api);
 
   const host = hostOf(api);
@@ -491,6 +508,10 @@ const logout = async (
   }
 
   terminal.out(`✓ Signed out of ${host}`);
+  if (ended !== undefined && typeof ended !== "string")
+    terminal.out(
+      `  ${host} could not be told, so the token is forgotten here and stays live there until it is used: ${ended.why}`,
+    );
   terminal.out(
     "  The machine stays linked, so the canvases it pushed stay yours. Remove it in the app's settings to cut it off.",
   );

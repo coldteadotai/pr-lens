@@ -49,7 +49,7 @@ const parseJson = (text: string): unknown => {
 const send = async (
   api: string,
   path: string,
-  init: { method: "GET" | "POST"; token?: string; body?: unknown },
+  init: { method: "GET" | "POST" | "DELETE"; token?: string; body?: unknown },
 ): Promise<Answer> => {
   const headers: Record<string, string> = {
     accept: "application/json",
@@ -269,4 +269,53 @@ export const checkSignIn = async (
     type: "live",
     machine: machine === undefined ? "unlinked" : machine.revoked ? "revoked" : "linked",
   };
+};
+
+const Account = z.object({ email: z.string().min(3) });
+
+/**
+ * The address this token signs in as, for the one line `auth login` could not
+ * print without it.
+ *
+ * `undefined` for every failure, including a store that has never heard of
+ * accounts: the sign-in has already happened by the time this is asked, and a
+ * name is a nicety. Refusing to report a successful sign-in because the
+ * greeting could not be fetched would be the tail wagging the dog.
+ */
+export const whoAmI = async (api: string, token: string): Promise<string | undefined> => {
+  try {
+    const answer = await send(api, "/api/account", { method: "GET", token });
+    const account = Account.safeParse(answer.body);
+    return answer.status === 200 && account.success ? account.data.email : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export type SignOut = "ended" | "already" | { type: "unreachable"; why: string };
+
+/**
+ * Ends this session at the app, and nothing else.
+ *
+ * Deliberately not `DELETE /api/machines/{id}`, which is the only other
+ * revoke and is permanent: that one shuts the install id out forever, so
+ * signing out would cost the machine its ability to sign back in. This ends
+ * the credential and leaves the machine linked.
+ *
+ * Unreachable is its own answer and not a failure to report, because the
+ * caller must forget the token locally either way — somebody signing out of
+ * a laptop they are holding cannot be made to wait on a store being up.
+ */
+export const endSession = async (api: string, token: string): Promise<SignOut> => {
+  try {
+    const answer = await send(api, "/api/session", { method: "DELETE", token });
+    if (answer.status === 200) return "ended";
+    // A store with no such route, or one that turned the token down: either
+    // way there is nothing live at the far end to end.
+    if (answer.status === 404 || answer.status === 401) return "already";
+    return { type: "unreachable", why: `${hostOf(api)} answered ${answer.status}` };
+  } catch (error) {
+    if (!(error instanceof PrLensCliError)) throw error;
+    return { type: "unreachable", why: error.message };
+  }
 };

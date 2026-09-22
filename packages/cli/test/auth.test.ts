@@ -28,6 +28,8 @@ const app = {
   polls: [] as Poll[],
   code: { status: 200, body: undefined as unknown },
   machines: { status: 200, list: [] as { id: string; revoked: boolean }[] },
+  account: { status: 200, email: "favour@coldtea.ai" },
+  session: { status: 200 },
   offline: false,
   seen: [] as Seen[],
 };
@@ -60,6 +62,8 @@ const useApp = (): void => {
   app.polls = [{ type: "token" }];
   app.code = { status: 200, body: undefined };
   app.machines = { status: 200, list: [] };
+  app.account = { status: 200, email: "favour@coldtea.ai" };
+  app.session = { status: 200 };
   app.offline = false;
   app.seen = [];
 
@@ -91,6 +95,14 @@ const useApp = (): void => {
           : json(app.machines.status, {
               error: { code: "UNAUTHENTICATED", message: "Sign in to see what you own" },
             });
+      case "/api/account":
+        return app.account.status === 200
+          ? json(200, { email: app.account.email, createdAt: "2026-09-22T00:00:00.000Z", identities: [] })
+          : json(app.account.status, { error: { code: "NOT_FOUND", message: "no" } });
+      case "/api/session":
+        return app.session.status === 200
+          ? json(200, { signedOut: true })
+          : json(app.session.status, { error: { code: "NOT_FOUND", message: "no" } });
       default:
         return json(404, { error: { code: "NOT_FOUND", message: "no" } });
     }
@@ -430,4 +442,57 @@ test("slow_down backs off by five seconds, however small a floor the app names",
   expect(nextInterval(0, 0)).toBe(5);
   expect(nextInterval(5, 60)).toBe(60);
   expect(nextInterval(5, undefined)).toBe(10);
+});
+
+test("login names the address it signed in as", async () => {
+  useApp();
+  expect(await login()).toBe(0);
+  expect(output.out.join("\n")).toContain("✓ Signed in to canvas.test as favour@coldtea.ai");
+});
+
+test("an app that cannot say who you are still signs you in", async () => {
+  useApp();
+  // The credential is already on disk by the time the greeting is fetched, so
+  // a store too old to answer must cost the name and nothing else.
+  app.account = { status: 404, email: "" };
+
+  expect(await login()).toBe(0);
+  expect(output.out.join("\n")).toContain("✓ Signed in to canvas.test");
+  expect(output.out.join("\n")).not.toContain(" as ");
+});
+
+test("logout ends the session at the app before forgetting it here", async () => {
+  useApp();
+  expect(await login()).toBe(0);
+  app.seen = [];
+
+  expect(await invoke("auth", "logout", "--api", API)).toBe(0);
+
+  const ended = app.seen.find((seen) => seen.path === "/api/session");
+  expect(ended?.method).toBe("DELETE");
+  // The token it is ending is the one it holds, not a fresh sign-in.
+  expect(ended?.headers.get("authorization")).toBe(`Bearer ${TOKEN}`);
+  expect(output.out.join("\n")).toContain("✓ Signed out of canvas.test");
+});
+
+test("an unreachable app does not keep somebody signed in on their own laptop", async () => {
+  useApp();
+  expect(await login()).toBe(0);
+  app.offline = true;
+
+  expect(await invoke("auth", "logout", "--api", API)).toBe(0);
+
+  // Forgotten locally regardless, and told plainly that the far end does not
+  // know yet — the one thing worse than this message is silently keeping the
+  // credential because a server was down.
+  expect(output.out.join("\n")).toContain("✓ Signed out of canvas.test");
+  expect(output.out.join("\n")).toContain("could not be told");
+  // Forgotten here is the half that must hold: status now reports no sign-in,
+  // and exits non-zero saying so, the way it does for a machine that never
+  // signed in at all.
+  app.offline = false;
+  expect(await invoke("auth", "status", "--api", API)).toBe(1);
+  expect(`${output.out.join("\n")}\n${output.err.join("\n")}`).toContain(
+    "not signed in to canvas.test",
+  );
 });
