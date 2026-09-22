@@ -2,9 +2,12 @@ import { assertNever } from "@coldtea/pr-lens-schema";
 
 import {
   fetchCanvas,
+  listOwnedCanvases,
   mintCanvas,
   pushCanvas,
   verifyWriteToken,
+  type CanvasPreview,
+  type OwnedCanvas,
 } from "../canvas/api.js";
 import {
   ensureRegistryHome,
@@ -29,6 +32,8 @@ import { readInstallId } from "../install.js";
 import { readGraphDoc } from "../document.js";
 import type { Terminal } from "../terminal.js";
 import { WORKSPACE_DIR } from "../workspace.js";
+import { requireToken } from "../auth.js";
+import { claimCommand } from "../canvas/claim.js";
 import { deleteCommand } from "../canvas/delete.js";
 import { parseOptions, readBoolean, readString } from "../args.js";
 import { PrLensCliError, usageError } from "../errors.js";
@@ -37,13 +42,20 @@ import { DEFAULT_API, API_ENV, readApi, requireSameApi, requireWriteToken, settl
 const DEFAULT_SOURCE = `${WORKSPACE_DIR}/drawn.graph.json`;
 const DEFAULT_OUT = `${WORKSPACE_DIR}/graph.json`;
 
-const SUBCOMMANDS = ["list", "push", "pull", "rotate", "delete"] as const;
+const SUBCOMMANDS = [
+  "list",
+  "push",
+  "pull",
+  "claim",
+  "rotate",
+  "delete",
+] as const;
 type Subcommand = (typeof SUBCOMMANDS)[number];
 
 const isSubcommand = (value: string): value is Subcommand =>
   SUBCOMMANDS.some((subcommand) => subcommand === value);
 
-export const USAGE = `pr-lens canvas <list | push | pull | rotate | delete> [options]
+export const USAGE = `pr-lens canvas <list | push | pull | claim | rotate | delete> [options]
 
 Keeps a graph document on the PR Lens app as a canvas: a page anyone you share
 it with can read, and an SVG a README can embed. The write token lands in
@@ -51,6 +63,8 @@ ${REGISTRY_PATH}, which git ignores; the edit link carries the same token
 in its fragment, so share the view link and keep the edit link to yourself.
 
   pr-lens canvas list                  every canvas this checkout knows
+    --remote                           add every canvas the signed-in account owns
+    --api <url>                        only the canvases at that app
     --json                             the same listing, for scripts
 
   pr-lens canvas push [graph.json]     send the document (default ${DEFAULT_SOURCE})
@@ -61,6 +75,10 @@ in its fragment, so share the view link and keep the edit link to yourself.
   pr-lens canvas pull [url|id]         fetch the document (default the checkout's only canvas)
     --canvas <id|name>                 which canvas, when no url or id is given
     -o, --out <file>                   where to write it (default ${DEFAULT_OUT})
+
+  pr-lens canvas claim <id|name>       take a canvas onto the account this machine
+                                       is signed in to, proving it with the write
+                                       token; that token is retired in the same step
 
   pr-lens canvas rotate                mint a new write token; the old edit link stops working
     --canvas <id|name>                 which canvas (default the checkout's only canvas)
@@ -435,6 +453,9 @@ type Listed = {
   editHere: boolean;
 };
 
+const byNameThenId = (a: Listed, b: Listed): number =>
+  a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
+
 /**
  * Copied field by field rather than spread, because the entry these come from
  * carries the write token and the pending one, and neither may leave here.
@@ -448,7 +469,57 @@ const listed = (registry: CanvasRegistry): Listed[] =>
       rev: entry.rev,
       editHere: entry.writeToken !== undefined,
     }))
-    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    .sort(byNameThenId);
+
+/**
+ * A canvas the app has no name for is shown under its id, which is what the
+ * local listing does for one that was never named. `unreadable` is one of
+ * those and is not an empty canvas: a revision that would not open is still
+ * the account's, and showing nothing for it would read as gone.
+ */
+const previewName = (preview: CanvasPreview): string | undefined => {
+  switch (preview.type) {
+    case "drawn":
+      return preview.title;
+    case "not_drawn":
+    case "unreadable":
+      return undefined;
+    default:
+      return assertNever(preview, "Unhandled canvas preview");
+  }
+};
+
+/**
+ * The account's canvases over this checkout's.
+ *
+ * The app is the authority on what exists and what it is called; the registry
+ * is the only thing that can say whether the write token is here, since the
+ * app keeps only a hash of it. A canvas this checkout knows at another app is
+ * left alone: the same id there would be a different canvas.
+ */
+const merged = (
+  local: readonly Listed[],
+  api: string,
+  owned: readonly OwnedCanvas[],
+): Listed[] => {
+  const rows = new Map(
+    local.map((canvas) => [`${canvas.api}\n${canvas.id}`, canvas]),
+  );
+
+  for (const canvas of owned) {
+    const key = `${api}\n${canvas.id}`;
+    const here = rows.get(key);
+    rows.set(key, {
+      id: canvas.id,
+      name: previewName(canvas.preview) ?? here?.name ?? canvas.id,
+      api,
+      rev: canvas.rev,
+      editHere: here?.editHere ?? false,
+    });
+  }
+
+  return [...rows.values()].sort(byNameThenId);
+};
 
 const HEADINGS = ["ID", "NAME", "REV", "EDIT HERE"] as const;
 
@@ -466,16 +537,39 @@ const tally = (canvases: readonly Listed[]): string => {
 const list = async (
   args: readonly string[],
   terminal: Terminal,
+  env: Record<string, string | undefined>,
 ): Promise<void> => {
   const { values, positionals } = parseOptions(args, {
     json: { type: "boolean" },
+    remote: { type: "boolean" },
+    api: { type: "string" },
   });
   if (positionals.length > 0)
     throw usageError(
       `list takes no positional arguments, got ${positionals.join(" ")}`,
     );
 
-  const canvases = listed(await readRegistry());
+  const remote = readBoolean(values.remote);
+
+  // The flag narrows the listing to one app; the environment names the app to
+  // ask and nothing more. Reading the environment as a filter would quietly
+  // drop every canvas this checkout keeps somewhere else from a listing that
+  // has never left the machine — and reading it at all here would let a
+  // malformed $PR_LENS_API_URL fail a listing that never leaves it.
+  const narrowed = readString(values.api, "api") !== undefined;
+  const api = readApi(values.api, remote || narrowed ? env : {});
+
+  const local = listed(await readRegistry()).filter(
+    (canvas) => !narrowed || canvas.api === api,
+  );
+
+  const canvases = remote
+    ? merged(
+        local,
+        api,
+        await listOwnedCanvases(api, await requireToken(env, api)),
+      )
+    : local;
 
   if (readBoolean(values.json)) {
     terminal.out(JSON.stringify({ canvases }, null, 2));
@@ -483,7 +577,11 @@ const list = async (
   }
 
   if (canvases.length === 0) {
-    terminal.out(`no canvases in ${REGISTRY_PATH} yet`);
+    terminal.out(
+      remote
+        ? `no canvases at ${new URL(api).host} for this account, and none in ${REGISTRY_PATH}`
+        : `no canvases in ${REGISTRY_PATH} yet`,
+    );
     terminal.out("  pr-lens canvas push mints one");
     return;
   }
@@ -512,18 +610,20 @@ export const canvasCommand = async (
   const [name, ...rest] = args;
   if (name === undefined)
     throw usageError(
-      "canvas needs a subcommand: list, push, pull, rotate or delete",
+      "canvas needs a subcommand: list, push, pull, claim, rotate or delete",
     );
   if (!isSubcommand(name))
     throw usageError(`unknown canvas subcommand ${JSON.stringify(name)}`);
 
   switch (name) {
     case "list":
-      return list(rest, terminal);
+      return list(rest, terminal, env);
     case "push":
       return push(rest, terminal, env);
     case "pull":
       return pull(rest, terminal, env);
+    case "claim":
+      return claimCommand(rest, terminal, env);
     case "delete":
       return deleteCommand(rest, terminal, env);
     case "rotate":

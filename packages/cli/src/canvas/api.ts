@@ -85,6 +85,8 @@ const Refusal = z.discriminatedUnion("code", [
     retryAt: z.string(),
   }),
   z.object({ code: z.literal("TOO_LARGE"), message: z.string() }),
+  z.object({ code: z.literal("UNAUTHENTICATED"), message: z.string() }),
+  z.object({ code: z.literal("ALREADY_OWNED"), message: z.string() }),
 ]);
 
 type Request = {
@@ -194,6 +196,22 @@ const refusal = (
         "CANVAS_RATE_LIMITED",
         `${hostOf(api)} is rate limiting this client until ${error.retryAt}`,
         error.message,
+      );
+    case "UNAUTHENTICATED":
+      return new PrLensCliError(
+        "AUTH_REQUIRED",
+        `${hostOf(api)} did not accept this sign-in`,
+        [error.message, "pr-lens auth login signs this machine in again"].join(
+          "\n",
+        ),
+      );
+    case "ALREADY_OWNED":
+      // The caller has already shown the write token, so they know the canvas
+      // is real; naming the case gives nothing away that they did not bring.
+      return new PrLensCliError(
+        "CANVAS_OWNED",
+        `${request.canvas ?? "that canvas"} belongs to another account on ${hostOf(api)}`,
+        "the first claim wins, and somebody else's landed first",
       );
     case "INVALID_REQUEST":
     case "TOO_LARGE":
@@ -367,4 +385,71 @@ export const deleteCanvas = (
     api,
     { method: "DELETE", path: canvasPath(id), canvas: id, token },
     z.object({ id: z.literal(id), deleted: z.literal(true) }),
+  );
+
+/**
+ * What a listing can say about a canvas without opening it. Three answers,
+ * held apart: nothing pushed yet, and a revision that would not read, are not
+ * the same thing, and neither is a name the account can show.
+ */
+const Preview = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("drawn"), title: z.string().min(1) }),
+  z.object({ type: z.literal("not_drawn") }),
+  z.object({ type: z.literal("unreadable") }),
+]);
+
+const Owned = z.object({
+  id: z.string(),
+  rev: z.number().int(),
+  preview: Preview,
+});
+
+const Owning = z.object({ canvases: z.array(Owned) });
+
+export type CanvasPreview = z.infer<typeof Preview>;
+export type OwnedCanvas = z.infer<typeof Owned>;
+
+/**
+ * Every canvas the account owns, across every machine it has linked.
+ *
+ * No write tokens: the app keeps only their hashes, so a machine that owns a
+ * canvas and never pushed it can read it here and still not edit it. A store
+ * with no accounts does not serve this route at all, and its 404 is reported
+ * as the store being unavailable rather than as a missing canvas.
+ */
+export const listOwnedCanvases = (
+  api: string,
+  token: string,
+): Promise<OwnedCanvas[]> =>
+  call(
+    api,
+    { method: "GET", path: "/api/canvases", canvas: undefined, token },
+    Owning,
+  ).then(({ canvases }) => canvases);
+
+/**
+ * Takes a canvas onto an account, and retires the token that proved it.
+ *
+ * Two credentials, in two places. The account token goes in the header, since
+ * a canvas has to be attributed to somebody, so both write tokens travel in
+ * the body. The caller mints the next one, exactly as rotating does, so an
+ * answer lost on the way back can be asked for again with the same pair.
+ */
+export const claimCanvas = (
+  api: string,
+  id: string,
+  accountToken: string,
+  writeToken: string,
+  nextWriteToken: string,
+): Promise<Rotated> =>
+  call(
+    api,
+    {
+      method: "POST",
+      path: `${canvasPath(id)}/claim`,
+      canvas: id,
+      token: accountToken,
+      body: { writeToken, nextWriteToken },
+    },
+    Rotated,
   );
