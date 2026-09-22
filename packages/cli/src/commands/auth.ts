@@ -166,10 +166,12 @@ const ranOut = (): PrLensCliError =>
  * reach the app is kept and retried — and only reported if the window closes
  * with it still failing.
  */
+type Approval = { token: string; claimed: number | undefined };
+
 const waitForApproval = async (
   api: string,
   started: StartedSignIn,
-): Promise<string> => {
+): Promise<Approval> => {
   const deadline = Date.now() + started.expiresInSeconds * 1000;
   let seconds = started.intervalSeconds;
   let unreached: PrLensCliError | undefined;
@@ -190,7 +192,7 @@ const waitForApproval = async (
 
     switch (outcome.type) {
       case "token":
-        return outcome.token;
+        return { token: outcome.token, claimed: outcome.claimed };
       case "pending":
         break;
       case "slow_down":
@@ -240,7 +242,7 @@ const login = async (
     : askToOpen(started.approveUrl);
   tellHowToApprove(started, opening, terminal);
 
-  const token = await waitForApproval(api, started);
+  const { token, claimed } = await waitForApproval(api, started);
   await writeCredential(env, api, token, new Date().toISOString());
 
   // Asked after the credential is on disk, never before: the sign-in has
@@ -250,8 +252,13 @@ const login = async (
   terminal.out(
     who === undefined ? `✓ Signed in to ${hostOf(api)}` : `✓ Signed in to ${hostOf(api)} as ${who}`,
   );
+  // A count only when the app sent one. "0 canvases are now yours" is a
+  // sentence worth saying to somebody who expected some; "we did not ask" is
+  // not a sentence at all, which is why absent and zero stay apart.
   terminal.out(
-    "  This machine is linked, so every canvas it has pushed is yours, and so is every one it pushes next.",
+    claimed === undefined
+      ? "  This machine is linked, so every canvas it has pushed is yours, and so is every one it pushes next."
+      : `  This machine is linked. ${claimed === 1 ? "1 canvas is" : `${claimed} canvases are`} now yours, and so is every one it pushes next.`,
   );
 };
 

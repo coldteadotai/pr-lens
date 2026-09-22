@@ -30,6 +30,7 @@ const app = {
   machines: { status: 200, list: [] as { id: string; revoked: boolean }[] },
   account: { status: 200, email: "favour@coldtea.ai" },
   session: { status: 200 },
+  claimed: {} as { claimed?: number },
   offline: false,
   seen: [] as Seen[],
 };
@@ -44,7 +45,7 @@ const pollAnswer = (): Response => {
   const next = app.polls.length > 1 ? app.polls.shift() : app.polls[0];
   switch (next?.type) {
     case "token":
-      return json(200, { access_token: TOKEN, token_type: "Bearer" });
+      return json(200, { access_token: TOKEN, token_type: "Bearer", ...app.claimed });
     case "slow_down":
       return json(400, { error: "slow_down", interval: 0 });
     case "denied":
@@ -64,6 +65,7 @@ const useApp = (): void => {
   app.machines = { status: 200, list: [] };
   app.account = { status: 200, email: "favour@coldtea.ai" };
   app.session = { status: 200 };
+  app.claimed = {};
   app.offline = false;
   app.seen = [];
 
@@ -495,4 +497,35 @@ test("an unreachable app does not keep somebody signed in on their own laptop", 
   expect(`${output.out.join("\n")}\n${output.err.join("\n")}`).toContain(
     "not signed in to canvas.test",
   );
+});
+
+test("login says how many canvases the machine just brought with it", async () => {
+  useApp();
+  app.claimed = { claimed: 8 };
+
+  expect(await login()).toBe(0);
+  expect(output.out.join("\n")).toContain("8 canvases are now yours");
+});
+
+test("one canvas is not eight, and none is still a sentence", async () => {
+  useApp();
+  app.claimed = { claimed: 1 };
+  expect(await login()).toBe(0);
+  expect(output.out.join("\n")).toContain("1 canvas is now yours");
+
+  output.out.length = 0;
+  useApp();
+  app.claimed = { claimed: 0 };
+  expect(await login()).toBe(0);
+  expect(output.out.join("\n")).toContain("0 canvases are now yours");
+});
+
+test("an app that sends no count says nothing about one", async () => {
+  useApp();
+  app.claimed = {};
+
+  expect(await login()).toBe(0);
+  // Absent is not zero: an older store has not told us there were none.
+  expect(output.out.join("\n")).toContain("every canvas it has pushed is yours");
+  expect(output.out.join("\n")).not.toContain("now yours,");
 });

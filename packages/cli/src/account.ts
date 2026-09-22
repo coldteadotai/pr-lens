@@ -158,7 +158,16 @@ export const startSignIn = async (
   };
 };
 
-const Granted = z.object({ access_token: z.string().min(1) });
+/**
+ * `claimed` is an extension member the app adds, which RFC 6749 §5.1 permits.
+ * Optional here rather than required: a store that does not send it is not
+ * answering wrongly, and a sign-in must not fail over a number used in one
+ * line of output.
+ */
+const Granted = z.object({
+  access_token: z.string().min(1),
+  claimed: z.coerce.number().int().min(0).optional(),
+});
 
 const Pending = z.object({
   error: z.enum(["authorization_pending", "slow_down", "access_denied", "expired_token"]),
@@ -166,7 +175,7 @@ const Pending = z.object({
 });
 
 export type PollOutcome =
-  | { type: "token"; token: string }
+  | { type: "token"; token: string; claimed: number | undefined }
   | { type: "pending" }
   /** Polled too fast. The floor is now at least `interval` seconds. */
   | { type: "slow_down"; intervalSeconds: number | undefined }
@@ -183,7 +192,7 @@ export const pollSignIn = async (api: string, deviceCode: string): Promise<PollO
     const granted = Granted.safeParse(answer.body);
     if (!granted.success)
       throw unavailable(api, "the sign-in was approved and the answer carried no token", answer.status);
-    return { type: "token", token: granted.data.access_token };
+    return { type: "token", token: granted.data.access_token, claimed: granted.data.claimed };
   }
 
   const pending = Pending.safeParse(answer.body);
