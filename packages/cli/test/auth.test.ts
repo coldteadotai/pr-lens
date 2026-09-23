@@ -516,7 +516,9 @@ test("one canvas is not eight, and none is still a sentence", async () => {
   output.out.length = 0;
   useApp();
   app.claimed = { claimed: 0 };
-  expect(await login()).toBe(0);
+  // `--force`, because the first login left a credential and a machine that is
+  // already signed in is no longer asked to sign in again.
+  expect(await login("--force")).toBe(0);
   expect(output.out.join("\n")).toContain("0 canvases are now yours");
 });
 
@@ -528,4 +530,55 @@ test("an app that sends no count says nothing about one", async () => {
   // Absent is not zero: an older store has not told us there were none.
   expect(output.out.join("\n")).toContain("every canvas it has pushed is yours");
   expect(output.out.join("\n")).not.toContain("now yours,");
+});
+
+
+/**
+ * Running `auth login` twice used to mint a second device code and open a
+ * second browser for a session the machine already had — and leave the first
+ * grant to expire unanswered.
+ */
+test("a machine that is already signed in is not asked to sign in again", async () => {
+  useApp();
+  expect(await login()).toBe(0);
+
+  output.out.length = 0;
+  app.seen.length = 0;
+
+  expect(await login()).toBe(0);
+  expect(output.out.join("\n")).toContain("Already signed in");
+  expect(output.out.join("\n")).toContain("--force");
+
+  // And nothing was started: no code minted, nothing left to expire.
+  expect(seen("/api/device/code")).toHaveLength(0);
+});
+
+test("--force signs in again over a live session", async () => {
+  useApp();
+  expect(await login()).toBe(0);
+
+  output.out.length = 0;
+  app.seen.length = 0;
+
+  expect(await login("--force")).toBe(0);
+  expect(output.out.join("\n")).not.toContain("Already signed in");
+  expect(seen("/api/device/code")).toHaveLength(1);
+});
+
+/**
+ * A token the app has ended is exactly when a fresh login is right, so the
+ * check must not stand in the way of one — "not you" and "we could not ask"
+ * are different answers and only the first is evidence about the credential.
+ */
+test("a session the app has ended does not block a fresh login", async () => {
+  useApp();
+  expect(await login()).toBe(0);
+
+  output.out.length = 0;
+  app.seen.length = 0;
+  app.account = { status: 401, email: "favour@coldtea.ai" };
+
+  expect(await login()).toBe(0);
+  expect(output.out.join("\n")).not.toContain("Already signed in");
+  expect(seen("/api/device/code")).toHaveLength(1);
 });

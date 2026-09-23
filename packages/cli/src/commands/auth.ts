@@ -10,6 +10,7 @@ import { parseOptions, readBoolean } from "../args.js";
 import { API_ENV, DEFAULT_API, readApi } from "../canvas/write.js";
 import {
   forgetCredential,
+  readToken,
   readCredential,
   TOKEN_ENV,
   writeCredential,
@@ -20,6 +21,7 @@ import {
   endSession,
   pollSignIn,
   startSignIn,
+  checkSession,
   whoAmI,
   type MachineState,
   type StartedSignIn,
@@ -38,6 +40,7 @@ rather than unlisted pages only a link reaches. Nothing else needs it: pushing,
 pulling and rendering all work signed out, and always will.
 
   pr-lens auth login                   approve this machine in a browser
+  pr-lens auth login --force           sign in again even if this machine already is
     --no-browser                       print the link instead of opening one
 
   pr-lens auth status                  which app this machine is signed in to
@@ -218,6 +221,7 @@ const login = async (
   const { values, positionals } = parseOptions(args, {
     api: { type: "string" },
     "no-browser": { type: "boolean" },
+    force: { type: "boolean" },
   });
   if (positionals.length > 0)
     throw usageError(
@@ -225,6 +229,29 @@ const login = async (
     );
 
   const api = readApi(values.api, env);
+
+  /*
+   * A machine that is already signed in is not asked to sign in again.
+   *
+   * This used to mint a device code and open a browser unconditionally, so
+   * running the command twice put somebody through an approval for a session
+   * they already had — and left a second grant to expire unanswered.
+   *
+   * Only an active session stops it. A token the app has ended is exactly
+   * when a fresh login is the right answer, and a store that did not reply is
+   * not evidence about the token: the flow below needs the network anyway and
+   * will report the outage with a better error than this check could.
+   */
+  if (!readBoolean(values.force)) {
+    const stored = await readToken(env, api);
+    const session = stored === undefined ? undefined : await checkSession(api, stored);
+
+    if (session?.type === "active") {
+      terminal.out(`✓ Already signed in to ${hostOf(api)} as ${session.email}`);
+      terminal.out("  pr-lens auth login --force signs in again, as somebody else or on a new token.");
+      return;
+    }
+  }
 
   // The same id every mint already carries, so approving links the machine
   // that pushed rather than minting a second identity for the same laptop.

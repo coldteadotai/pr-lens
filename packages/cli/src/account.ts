@@ -301,6 +301,39 @@ export const whoAmI = async (api: string, token: string): Promise<string | undef
   }
 };
 
+/**
+ * Whether the credential on this machine still signs in.
+ *
+ * `whoAmI` answers `undefined` for a revoked token and for a store that did
+ * not reply, which is right where a greeting is optional — but a command
+ * deciding whether to start a whole sign-in cannot treat "your token is dead"
+ * and "the network blinked" as one answer. A dead token means re-authorise; an
+ * unreachable store means we do not know, and the honest move is to carry on
+ * to a flow that will report the outage itself.
+ */
+export type Session =
+  | { type: "active"; email: string }
+  | { type: "ended" }
+  | { type: "unknown" };
+
+export const checkSession = async (api: string, token: string): Promise<Session> => {
+  let answer: Awaited<ReturnType<typeof send>>;
+  try {
+    answer = await send(api, "/api/account", { method: "GET", token });
+  } catch {
+    return { type: "unknown" };
+  }
+
+  // Only the two the app uses to say "not you": anything else is the store
+  // having a bad minute, which is not evidence about this credential.
+  if (answer.status === 401 || answer.status === 403) return { type: "ended" };
+
+  const account = Account.safeParse(answer.body);
+  return answer.status === 200 && account.success
+    ? { type: "active", email: account.data.email }
+    : { type: "unknown" };
+};
+
 export type SignOut = "ended" | "already" | { type: "unreachable"; why: string };
 
 /**
