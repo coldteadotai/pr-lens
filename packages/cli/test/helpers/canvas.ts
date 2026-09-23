@@ -25,10 +25,24 @@ type RegistryEntry = {
 export const setupCanvasTest = () => {
   const originalCwd = process.cwd();
   let directory = "";
-  const output: { out: string[]; err: string[] } = { out: [], err: [] };
+  const output: { out: string[]; err: string[]; status: (string | undefined)[] } = {
+    out: [],
+    err: [],
+    status: [],
+  };
+  /*
+   * `status` is left off by default, because absent is the answer a pipe and
+   * a CI log give and it is what most of these tests are standing in for. A
+   * test that wants the live line turns it on with `rewritable()`.
+   */
   const terminal: Terminal = {
     out: (line) => output.out.push(line),
     err: (line) => output.err.push(line),
+  };
+
+  /** Give this run a terminal that can rewrite a line, as a real one can. */
+  const rewritable = (): void => {
+    terminal.status = (line) => output.status.push(line);
   };
   const fetchMock = vi.fn<typeof fetch>();
   /** A config home inside the temp directory, so no test writes to the real one. */
@@ -65,5 +79,5 @@ export const setupCanvasTest = () => {
     await rm(directory, { recursive: true, force: true });
   });
 
-  return { output, fetchMock, invoke, registry, createCheckout, installId, env: () => env };
+  return { output, fetchMock, invoke, rewritable, registry, createCheckout, installId, env: () => env };
 };

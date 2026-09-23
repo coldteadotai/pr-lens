@@ -6,7 +6,7 @@ import { installHash } from "../src/account.js";
 import { authPath } from "../src/auth.js";
 import { nextInterval } from "../src/commands/auth.js";
 
-const { output, fetchMock, invoke, installId, env } = setupCanvasTest();
+const { output, fetchMock, invoke, rewritable, installId, env } = setupCanvasTest();
 
 const USER_CODE = "WDJB-MJHT";
 const DEVICE_CODE = "WDJBMJHT.aaaaaaaaaaaaaaaaaaaaaa";
@@ -581,4 +581,45 @@ test("a session the app has ended does not block a fresh login", async () => {
   expect(await login()).toBe(0);
   expect(output.out.join("\n")).not.toContain("Already signed in");
   expect(seen("/api/device/code")).toHaveLength(1);
+});
+
+/**
+ * The live line only exists where a terminal can rewrite one. A pipe, a CI
+ * log and a file all want the static sentence instead — a spinner frame every
+ * hundred milliseconds is not something you want in a build log.
+ */
+test("without a rewritable line, the static sentence is printed instead", async () => {
+  useApp();
+  expect(await login()).toBe(0);
+
+  expect(output.out.join("\n")).toContain("Waiting for it…");
+});
+
+test("with one, the sentence gives way to the live line, and the line is cleared", async () => {
+  useApp();
+  rewritable();
+
+  expect(await login()).toBe(0);
+
+  // Not both: the live line replaces the sentence rather than joining it.
+  expect(output.out.join("\n")).not.toContain("Waiting for it…");
+
+  // And however it ended, it ended by clearing — a half-drawn spinner left
+  // above an error message is worse than no spinner.
+  //
+  // The length check is the half that can fail: `at(-1)` on an empty array is
+  // also undefined, so without it this would pass on a terminal that was
+  // never written to at all.
+  expect(output.status.length).toBeGreaterThan(0);
+  expect(output.status.at(-1)).toBeUndefined();
+});
+
+test("the live line is cleared even when the sign-in fails", async () => {
+  useApp();
+  rewritable();
+  app.polls = [{ type: "denied" }];
+
+  expect(await login()).not.toBe(0);
+  expect(output.status.length).toBeGreaterThan(0);
+  expect(output.status.at(-1)).toBeUndefined();
 });

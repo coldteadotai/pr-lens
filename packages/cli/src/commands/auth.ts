@@ -137,7 +137,10 @@ const tellHowToApprove = (
   terminal.out(
     `  Check the page shows the same code, then approve. The code lasts ${minutes(started.expiresInSeconds)}.`,
   );
-  terminal.out("  Waiting for it…");
+  // Printed only where nothing will replace it. On a real terminal the
+  // ticker below writes a live line instead, and two of them would be one
+  // too many.
+  if (terminal.status === undefined) terminal.out("  Waiting for it…");
 };
 
 const refused = (): PrLensCliError =>
@@ -171,14 +174,56 @@ const ranOut = (): PrLensCliError =>
  */
 type Approval = { token: string; claimed: number | undefined };
 
+/**
+ * A line that says the wait is alive, and how much of it is left.
+ *
+ * Only where a terminal can rewrite a line — `terminal.status` is a no-op
+ * otherwise, so a pipe or a CI log keeps the static sentence printed above
+ * rather than collecting a spinner frame every hundred milliseconds.
+ *
+ * The countdown is the part that earns its place. A spinner says the process
+ * is alive; the remaining time says whether it is worth walking to another
+ * machine to approve this, which is the question somebody actually has while
+ * they wait.
+ */
+const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+const TICK_MS = 120;
+
+const remaining = (deadline: number): string => {
+  const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+};
+
+const ticker = (terminal: Terminal, deadline: number): (() => void) => {
+  if (terminal.status === undefined) return () => undefined;
+
+  let frame = 0;
+  const timer = setInterval(() => {
+    frame = (frame + 1) % FRAMES.length;
+    terminal.status?.(`  ${FRAMES[frame]} Waiting for approval · ${remaining(deadline)} left`);
+  }, TICK_MS);
+
+  // Never the reason the process stays up: an interval that outlives the wait
+  // would hold the event loop open after the command has finished.
+  timer.unref?.();
+
+  return () => {
+    clearInterval(timer);
+    terminal.status?.(undefined);
+  };
+};
+
 const waitForApproval = async (
   api: string,
   started: StartedSignIn,
+  terminal: Terminal,
 ): Promise<Approval> => {
   const deadline = Date.now() + started.expiresInSeconds * 1000;
   let seconds = started.intervalSeconds;
   let unreached: PrLensCliError | undefined;
 
+  const stop = ticker(terminal, deadline);
+  try {
   while (Date.now() < deadline) {
     await sleep(seconds * 1000);
 
@@ -211,6 +256,12 @@ const waitForApproval = async (
   }
 
   throw unreached ?? ranOut();
+  } finally {
+    // Every exit clears it: the token, the refusal, the expiry and the
+    // unreachable store all leave through here, and a half-drawn spinner
+    // left on the line above an error message is worse than no spinner.
+    stop();
+  }
 };
 
 const login = async (
@@ -269,7 +320,7 @@ const login = async (
     : askToOpen(started.approveUrl);
   tellHowToApprove(started, opening, terminal);
 
-  const { token, claimed } = await waitForApproval(api, started);
+  const { token, claimed } = await waitForApproval(api, started, terminal);
   await writeCredential(env, api, token, new Date().toISOString());
 
   // Asked after the credential is on disk, never before: the sign-in has
