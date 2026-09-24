@@ -161,7 +161,7 @@ Approving links this machine to your account, and that link is the claim: every 
 
 `status` says which app this machine is signed in to, and asks the app whether the sign-in still opens anything. `--json` is the same answer for scripts. Neither prints the token. An app that cannot be reached is reported as one that could not be asked, not as a sign-in that has gone bad.
 
-`logout` forgets the sign-in kept on this machine. The machine stays linked, so the canvases it pushed stay yours; removing it from the account is done in the app's settings, and a removed machine cannot be linked again.
+`logout` forgets the sign-in kept on this machine. The machine stays linked, so the canvases it pushed stay yours; removing it from the account is done in the app's settings, and signing in again from a removed machine links it back.
 
 The sign-in lives in `~/.config/pr-lens/auth/`, one file per app and readable by you alone, so one machine can be signed in to prlens.dev and to a private store at the same time. `PR_LENS_TOKEN` overrides it, which is how CI signs in without a browser — [the Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action) takes it as `token`.
 

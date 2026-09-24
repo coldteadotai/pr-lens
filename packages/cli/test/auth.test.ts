@@ -297,7 +297,7 @@ test("a machine the account removed is named, and not called signed out", async 
 
   expect(await invoke("auth", "status", "--api", API)).toBe(1);
   expect(output.err.join("\n")).toContain("[MACHINE_REVOKED]");
-  expect(output.err.join("\n")).toContain("cannot be linked again");
+  expect(output.err.join("\n")).toContain("auth login --force links it again");
 });
 
 test("an app that cannot be reached is not a credential that is wrong", async () => {

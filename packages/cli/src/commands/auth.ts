@@ -458,7 +458,7 @@ const refusalFor = (status: Status): PrLensCliError | undefined => {
         ? new PrLensCliError(
             "MACHINE_REVOKED",
             `this machine was removed from the account on ${host}`,
-            "the sign-in still works, but nothing this machine pushes is attributed, and an id that was removed cannot be linked again",
+            "the sign-in still works, but nothing this machine pushes is attributed; pr-lens auth login --force links it again",
           )
         : undefined;
 

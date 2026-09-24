@@ -340,9 +340,9 @@ export type SignOut = "ended" | "already" | { type: "unreachable"; why: string }
  * Ends this session at the app, and nothing else.
  *
  * Deliberately not `DELETE /api/machines/{id}`, which is the only other
- * revoke and is permanent: that one shuts the install id out forever, so
- * signing out would cost the machine its ability to sign back in. This ends
- * the credential and leaves the machine linked.
+ * revoke and a heavier one: that shuts the machine out of attribution and
+ * ends every session it holds, and getting back means signing in again from
+ * that machine. This ends the credential and leaves the machine linked.
  *
  * Unreachable is its own answer and not a failure to report, because the
  * caller must forget the token locally either way — somebody signing out of
