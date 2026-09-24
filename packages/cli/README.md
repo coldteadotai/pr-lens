@@ -80,7 +80,7 @@ The renderer also hands back an atlas of where every lane, node, edge and flow s
 ### `comment`
 
 ```bash
-pr-lens comment --graph .pr-lens/drawn.graph.json --manifest .pr-lens/manifest.json \
+pr-lens comment --graph .pr-lens/<drawing>/drawn.graph.json --manifest .pr-lens/<drawing>/manifest.json \
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 ```
 
@@ -112,9 +112,9 @@ pr-lens canvas push
 
 Puts the document on prlens.dev as a canvas: a page anyone you share it with can read, and an SVG a README can embed.
 
-`push` sends the JSON document, never an SVG; the app draws it. The default is `.pr-lens/drawn.graph.json`, the document `render` drew, so what the page shows is what the diagrams show. The first push of a file mints a canvas and every push after that updates the same one, matched by the path it came from. That is what you want for a redraw — correcting a diagram should move it on a revision, not leave a trail of near-identical ones — but it means a repository holds one canvas until you say otherwise, because `render` always writes to the same path.
+`push` sends the JSON document, never an SVG; the app draws it. Give it the `drawn.graph.json` a render wrote, so what the page shows is what the diagrams show; with one drawing in the checkout a bare `push` finds it, and with several it lists them and asks which.
 
-`--new` is how you say otherwise: it mints even though this document has been pushed before, for a second diagram that should stand beside the first rather than replace it. The path then means the new canvas, and the older one is reached with `--canvas <id|name>`, which also picks one for a single push. `--name` says what to call a new one; the document's title is the default. It prints the view link, the embed, and the way to take it down again:
+The first push of a document mints a canvas and every push after that updates the same one, matched by the path it came from. That is what you want for a redraw — correcting a diagram should move it on a revision, not leave a trail of near-identical ones — and because `render` gives each drawing a directory named after its title, a second diagram is a second path and a second canvas without anything being asked for. `--canvas <id|name>` picks one for a single push and `--name` says what to call a new one; the document's title is the default. It prints the view link, the embed, and the way to take it down again:
 
 ```
 ✓ https://prlens.dev/c/{id} — rev 1 · 4 diagrams

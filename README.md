@@ -338,10 +338,11 @@ export GEMINI_API_KEY=…    # the default provider; OPENAI_API_KEY with --provi
 npx @coldtea/pr-lens-cli analyze --base origin/main
 
 # The document as light and dark SVGs, plus the manifest a comment is built from.
+# Each drawing lands in its own directory under .pr-lens/, named after its title.
 npx @coldtea/pr-lens-cli render .pr-lens/graph.json
 
 # The pull request comment as markdown, on stdout. Posting is your business.
-npx @coldtea/pr-lens-cli comment --graph .pr-lens/drawn.graph.json --manifest .pr-lens/manifest.json \
+npx @coldtea/pr-lens-cli comment --graph .pr-lens/<drawing>/drawn.graph.json --manifest .pr-lens/<drawing>/manifest.json \
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 
 # Any PR Lens document, checked against the contract — every problem, not just the first.

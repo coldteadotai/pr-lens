@@ -207,7 +207,9 @@ test("an edit link for a canvas nobody has pushed to is registered, and the push
   ]);
   expect((await registry())[FIRST]).toEqual({
     name: FIRST,
-    source: ".pr-lens/drawn.graph.json",
+    // No source. Nothing was fetched, so there is no document on disk, and
+    // naming a path nothing wrote would make a bare push resolve to a canvas
+    // this checkout cannot draw.
     api: API,
     writeToken: TOKEN1,
     rev: 0,

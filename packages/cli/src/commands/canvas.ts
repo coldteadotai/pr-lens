@@ -11,7 +11,6 @@ import {
 } from "../canvas/api.js";
 import {
   ensureRegistryHome,
-  claimSource,
   findBySource,
   findCanvas,
   isCanvasId,
@@ -32,7 +31,7 @@ import { writeJsonFile } from "../io.js";
 import { readInstallId } from "../install.js";
 import { readGraphDoc } from "../document.js";
 import type { Terminal } from "../terminal.js";
-import { WORKSPACE_DIR } from "../workspace.js";
+import { drawings, WORKSPACE_DIR } from "../workspace.js";
 import { requireToken } from "../auth.js";
 import { claimCommand } from "../canvas/claim.js";
 import { deleteCommand } from "../canvas/delete.js";
@@ -40,7 +39,17 @@ import { parseOptions, readBoolean, readString } from "../args.js";
 import { PrLensCliError, usageError } from "../errors.js";
 import { DEFAULT_API, API_ENV, readApi, requireSameApi, requireWriteToken, settleRotation, settlePendingRotation } from "../canvas/write.js";
 
-const DEFAULT_SOURCE = `${WORKSPACE_DIR}/drawn.graph.json`;
+const DRAWN = "drawn.graph.json";
+
+/**
+ * Where `render` wrote before each drawing had its own directory.
+ *
+ * Kept only so a checkout that pushed with 0.7.0 keeps its canvas: its
+ * registry entry names this path, and a render into the new layout would
+ * otherwise mint a second canvas and leave the first one orphaned without
+ * saying so.
+ */
+const LEGACY_SOURCE = `${WORKSPACE_DIR}/${DRAWN}`;
 const DEFAULT_OUT = `${WORKSPACE_DIR}/graph.json`;
 
 const SUBCOMMANDS = [
@@ -68,7 +77,8 @@ in its fragment, so share the view link and keep the edit link to yourself.
     --api <url>                        only the canvases at that app
     --json                             the same listing, for scripts
 
-  pr-lens canvas push [graph.json]     send the document (default ${DEFAULT_SOURCE})
+  pr-lens canvas push [graph.json]     send the document (default the checkout's
+                                       only drawing, under ${WORKSPACE_DIR}/)
     --canvas <id|name>                 which canvas (default the one this document
                                        was pushed to before, else a new one)
     --new                              a different drawing, not an update: mints one
@@ -167,7 +177,9 @@ const recordPull = (current: CanvasRegistry, pull: PullRecord): Recorded => {
     name: entry?.name ?? pull.fetched?.title ?? pull.id,
     source:
       entry?.source ??
-      (pull.fetched === undefined ? DEFAULT_SOURCE : sourceKey(pull.out)),
+      // A canvas recorded without its document has no local source, and
+      // naming a path nothing wrote would make a bare push resolve to it.
+      (pull.fetched === undefined ? undefined : sourceKey(pull.out)),
     api: pull.api,
     ...(pending === undefined ? {} : { pending }),
     ...(kept === undefined ? {} : { writeToken: kept }),
@@ -214,6 +226,52 @@ const tellRecorded = (
   }
 };
 
+/**
+ * Which drawing a bare push means, or why it cannot say.
+ *
+ * The same shape as `onlyCanvas`: one is the answer, none and several are
+ * both things to tell somebody rather than guess at. It replaces a fixed
+ * `.pr-lens/drawn.graph.json`, which could only ever name one drawing
+ * because `render` could only ever write one.
+ */
+const onlyDrawing = async (): Promise<string> => {
+  const found = await drawings();
+  const [only, ...more] = found;
+
+  if (only === undefined)
+    throw usageError(
+      `no drawing in ${WORKSPACE_DIR}/`,
+      "pr-lens render <graph.json> draws one, or name the document to push",
+    );
+
+  if (more.length > 0)
+    throw usageError(
+      `${found.length} drawings in ${WORKSPACE_DIR}/`,
+      `name the one to push: ${found.join(", ")}`,
+    );
+
+  return only;
+};
+
+/**
+ * A canvas pushed before each drawing had its own directory.
+ *
+ * 0.7.0 wrote every document to `.pr-lens/drawn.graph.json` and registered
+ * that path. A render into the new layout is a new path, so without this the
+ * next push mints a second canvas and leaves the first orphaned — silently,
+ * which is the failure this whole change is about.
+ *
+ * Adopted once: the push that follows records the new path, and the entry
+ * stops looking legacy. Only ever one, because there could only ever be one.
+ */
+const adoptLegacy = (
+  registry: CanvasRegistry,
+  source: string,
+): Registered | undefined =>
+  sourceKey(source) === sourceKey(LEGACY_SOURCE)
+    ? undefined
+    : findBySource(registry, LEGACY_SOURCE);
+
 const push = async (
   args: readonly string[],
   terminal: Terminal,
@@ -222,7 +280,6 @@ const push = async (
   const { values, positionals } = parseOptions(args, {
     canvas: { type: "string" },
     name: { type: "string" },
-    new: { type: "boolean" },
     api: { type: "string" },
   });
   if (positionals.length > 1)
@@ -230,14 +287,7 @@ const push = async (
       `push takes one graph document, got ${positionals.length}`,
     );
 
-  const fresh = readBoolean(values.new);
-  // Naming which canvas and asking for a new one are opposite instructions,
-  // and guessing which was meant would either overwrite a canvas somebody
-  // asked to keep or leave a new one they asked for unmade.
-  if (fresh && values.canvas !== undefined)
-    throw usageError("push takes --new or --canvas, not both");
-
-  const source = positionals[0] ?? DEFAULT_SOURCE;
+  const source = positionals[0] ?? (await onlyDrawing());
   const document = await readGraphDoc(source);
   const api = readApi(values.api, env);
   await ensureRegistryHome(terminal);
@@ -245,22 +295,20 @@ const push = async (
 
   const ref = readString(values.canvas, "canvas");
   /*
-   * `--new` is how you say "a different drawing", which nothing else said.
+   * The path says which canvas, and now it can.
    *
-   * A push onto the path a canvas was pushed from before is an update, and
-   * that is right: redrawing after a code change should move the canvas on a
-   * revision rather than leave a trail of near-identical ones. But the
-   * document always lands at the same path — the agent skill writes
-   * `drawn.graph.json` and pushes it — so without this a checkout could only
-   * ever hold one canvas, and no flag said otherwise. `--name` labels a mint
-   * that was already happening; `--canvas` picks one that already exists.
+   * A push onto the path a canvas came from is an update — redrawing after a
+   * code change should move it on a revision, not leave a trail of
+   * near-identical canvases. That was the whole rule, and it was right; what
+   * was wrong is that `render` wrote every drawing to one path, so a
+   * repository could only ever hold one canvas. Each drawing has its own
+   * directory now, so two drawings are two paths and two canvases without
+   * anybody having to say so.
    */
   const known =
-    fresh || ref !== undefined
-      ? ref === undefined
-        ? undefined
-        : findCanvas(registry, ref)
-      : findBySource(registry, source);
+    ref === undefined
+      ? findBySource(registry, source) ?? adoptLegacy(registry, source)
+      : findCanvas(registry, ref);
 
   const registered: Registered =
     known ??
@@ -268,10 +316,8 @@ const push = async (
     // instead of minting its own.
     (await withRegistryLock(async () => {
       const current = await readRegistry();
-      // Not when `--new` was asked for: the racing push found is the very
-      // thing being asked to mint past.
       const meanwhile =
-        ref === undefined && !fresh ? findBySource(current, source) : undefined;
+        ref === undefined ? findBySource(current, source) : undefined;
       if (meanwhile !== undefined) return meanwhile;
 
       // Read here rather than above: a push onto a canvas this checkout
@@ -317,11 +363,6 @@ const push = async (
   );
 
   await updateRegistry((current) => {
-    // This canvas is what the path means now; whatever held it before is
-    // reached by `--canvas` from here on. Without that a checkout that has
-    // used `--new` has two entries claiming one path, and a bare push can
-    // never resolve again.
-    claimSource(current, target.id, source);
     current.canvases[target.id] = {
       ...(current.canvases[target.id] ?? target.entry),
       source: sourceKey(source),
