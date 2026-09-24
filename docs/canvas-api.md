@@ -381,13 +381,13 @@ curl -s -X POST "$API/api/canvas"
 # first push
 curl -s -X PUT "$API/api/canvas/$ID" \
   -H "authorization: Bearer $TOKEN" -H "if-match: 0" \
-  -H "content-type: application/json" --data-binary @.pr-lens/drawn.graph.json
+  -H "content-type: application/json" --data-binary @.pr-lens/<drawing>/drawn.graph.json
 # → 200 { id, rev: 1, viewUrl, editUrl, embedUrl, tiles }
 
 # stale push
 curl -s -X PUT "$API/api/canvas/$ID" \
   -H "authorization: Bearer $TOKEN" -H "if-match: 0" \
-  -H "content-type: application/json" --data-binary @.pr-lens/drawn.graph.json
+  -H "content-type: application/json" --data-binary @.pr-lens/<drawing>/drawn.graph.json
 # → 409 { error: { code: "REVISION_MOVED", message, rev: 1 } }
 
 # fetch

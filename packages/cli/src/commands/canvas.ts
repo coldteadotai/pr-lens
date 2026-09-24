@@ -81,10 +81,6 @@ in its fragment, so share the view link and keep the edit link to yourself.
                                        only drawing, under ${WORKSPACE_DIR}/)
     --canvas <id|name>                 which canvas (default the one this document
                                        was pushed to before, else a new one)
-    --new                              a different drawing, not an update: mints one
-                                       even though this document has been pushed
-                                       before. The path then means the new canvas,
-                                       and the old one is reached by --canvas
     --name <name>                      what to call a new canvas (default the document's title)
 
   pr-lens canvas pull [url|id]         fetch the document (default the checkout's only canvas)
