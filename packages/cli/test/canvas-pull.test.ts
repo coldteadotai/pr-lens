@@ -2,9 +2,9 @@ import { expect, test, vi } from "vitest";
 import { link, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 
 import { API, GOLDEN, REGISTRY } from "./helpers/canvas.js";
-import { FIRST, TOKEN1, setupCanvasAppTest } from "./helpers/canvas-app.js";
+import { ACCOUNT, FIRST, TOKEN1, setupCanvasAppTest } from "./helpers/canvas-app.js";
 
-const { output, app, invoke, registry, fakeFetch, createCheckout } =
+const { output, app, invoke, registry, fakeFetch, createCheckout, env } =
   setupCanvasAppTest();
 
 test("pull writes the document and brings the recorded rev up to date", async () => {
@@ -323,4 +323,57 @@ test("pulling a view link records the revision, and push then asks for the edit 
     ),
   ).toBe(1);
   expect(output.err.join("\n")).toContain("pull its edit link");
+});
+
+/**
+ * A canvas you own, from a checkout that has never seen it.
+ *
+ * Pulling used to mean holding an edit link: the token in `#w=` was what
+ * proved the canvas was yours to do anything with. Reading was never gated —
+ * a canvas is unlisted, not private — so the id alone is enough to fetch,
+ * and being signed in is what makes the entry worth recording.
+ */
+test("pulls a canvas by id into a checkout that holds nothing for it", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  const fresh = await createCheckout();
+  process.chdir(fresh);
+  output.out = [];
+
+  expect(await invoke("canvas", "pull", FIRST, "--api", API)).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ .pr-lens/graph.json — rev 1 of ${API}/c/${FIRST}`);
+  expect(JSON.parse(await readFile(".pr-lens/graph.json", "utf8"))).toHaveProperty("lanes");
+});
+
+test("records it without a write token, rather than pretending to one", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  const fresh = await createCheckout();
+  process.chdir(fresh);
+
+  await invoke("canvas", "pull", FIRST, "--api", API);
+
+  const entry = (await registry())[FIRST];
+  expect(entry?.writeToken).toBeUndefined();
+  // And the entry is real: rev and api recorded, so a later push knows where
+  // it lives and what revision it last saw.
+  expect(entry?.rev).toBe(1);
+  expect(entry?.api).toBe(API);
+});
+
+test("and that checkout can then push to it when signed in", async () => {
+  // The whole point: pull by id, push as the owner, no edit link anywhere.
+  env().PR_LENS_TOKEN = ACCOUNT;
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+
+  const fresh = await createCheckout();
+  process.chdir(fresh);
+  await writeFile("drawn.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+  await invoke("canvas", "pull", FIRST, "--api", API);
+  output.out = [];
+  app.seen = [];
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(0);
+
+  const put = app.seen.find((request) => request.method === "PUT");
+  expect(put?.headers.get("authorization")).toBe(`Bearer ${ACCOUNT}`);
 });
