@@ -1,5 +1,6 @@
 import { expect, test, vi } from "vitest";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 import { API, GOLDEN, REGISTRY } from "./helpers/canvas.js";
 import {
@@ -367,6 +368,34 @@ test("and says which ones there are rather than guessing between them", async ()
   expect(said).toContain("2 drawings");
   expect(said).toContain(DRAWING);
   expect(said).toContain(OTHER);
+});
+
+test("a drawing reached through a symlink is still a drawing", async () => {
+  await rm(".pr-lens/drawn.graph.json", { force: true });
+  // Drawn elsewhere and linked in, which is how a shared drawings directory
+  // or a checkout on another volume lands under `.pr-lens/`. A symlinked
+  // directory is a directory to everything else on the machine.
+  const elsewhere = await draw("elsewhere");
+  await mkdir(".pr-lens", { recursive: true });
+  await symlink(resolve("elsewhere"), ".pr-lens/linked", "dir");
+  output.out = [];
+
+  expect(await invoke("canvas", "push", "--api", API)).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 1 · 2 diagrams`);
+  expect(elsewhere).toContain("elsewhere");
+});
+
+test("a file named like a drawing directory is not one", async () => {
+  await rm(".pr-lens/drawn.graph.json", { force: true });
+  await draw(DRAWING);
+  await writeFile(".pr-lens/notes", "not a drawing", "utf8");
+  await mkdir(".pr-lens/empty", { recursive: true });
+  output.out = [];
+
+  // One drawing, however many other things are lying around.
+  expect(await invoke("canvas", "push", "--api", API)).toBe(0);
+  expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 1 · 2 diagrams`);
 });
 
 test("with nothing drawn it says to draw something", async () => {

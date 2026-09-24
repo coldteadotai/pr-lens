@@ -220,10 +220,13 @@ export async function drawings(): Promise<string[]> {
   const legacy = join(WORKSPACE_DIR, DRAWN_NAME);
   if (await readable(legacy)) found.push(legacy);
 
-  const entries = await readdir(WORKSPACE_DIR, { withFileTypes: true }).catch(() => []);
+  // Every entry is asked for its document rather than asked whether it is a
+  // directory first: `Dirent.isDirectory()` is false for a symlink to one,
+  // and a drawing linked in from elsewhere is still a drawing. A file or an
+  // empty directory simply has no document at that path.
+  const entries = await readdir(WORKSPACE_DIR).catch(() => []);
   for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const drawn = join(WORKSPACE_DIR, entry.name, DRAWN_NAME);
+    const drawn = join(WORKSPACE_DIR, entry, DRAWN_NAME);
     if (await readable(drawn)) found.push(drawn);
   }
 
