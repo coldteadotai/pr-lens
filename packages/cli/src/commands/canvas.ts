@@ -38,7 +38,7 @@ import { claimCommand } from "../canvas/claim.js";
 import { deleteCommand } from "../canvas/delete.js";
 import { parseOptions, readBoolean, readString } from "../args.js";
 import { PrLensCliError, usageError } from "../errors.js";
-import { DEFAULT_API, API_ENV, readApi, requireSameApi, requireWriteToken, settleRotation, settlePendingRotation } from "../canvas/write.js";
+import { DEFAULT_API, API_ENV, readApi, requireSameApi, requireWriteToken, settleRotation, settlePendingRotation, writeCredential } from "../canvas/write.js";
 
 const DRAWN = "drawn.graph.json";
 
@@ -360,7 +360,7 @@ const push = async (
   const pushed = await pushCanvas(
     api,
     target.id,
-    requireWriteToken(target),
+    await writeCredential(target, env, api),
     target.entry.rev,
     document,
   );

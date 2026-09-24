@@ -4,13 +4,14 @@ import { resolve } from "node:path";
 
 import { API, GOLDEN, REGISTRY } from "./helpers/canvas.js";
 import {
+  ACCOUNT,
   FIRST,
   TOKEN1,
   refuse,
   setupCanvasAppTest,
 } from "./helpers/canvas-app.js";
 
-const { output, app, invoke, registry, fakeFetch, fetchMock } = setupCanvasAppTest();
+const { output, app, invoke, registry, fakeFetch, fetchMock, env } = setupCanvasAppTest();
 
 test("the first push records a canvas and prints its links, access warning, and remove hint", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(
@@ -497,4 +498,69 @@ test("a title two canvases already answer to is asked about rather than guessed"
 
   expect(await invoke("canvas", "push", ".pr-lens/third/drawn.graph.json", "--api", API)).not.toBe(0);
   expect(output.err.join("\n")).toContain("2 canvases are named");
+});
+
+/**
+ * Being signed in is enough, when this checkout holds no token.
+ *
+ * The write token was the only credential a push could send, so a second
+ * laptop, a fresh CI runner, or a checkout that never pulled the edit link
+ * could not touch a canvas its own account owned. The app takes either now
+ * and checks the account owns it, so the CLI's job is only to choose.
+ */
+test("pushes with the account token when the registry holds no write token", async () => {
+  // Signed in before the mint, so the canvas is attributed and there is an
+  // owner for owning to mean anything. An unowned canvas still needs its
+  // write token, which is the whole point of the guard on the app side.
+  env().PR_LENS_TOKEN = ACCOUNT;
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  const entries = await registry();
+  // What a fresh checkout that pulled a view link looks like: the canvas is
+  // known, its token is not here.
+  await writeFile(
+    ".pr-lens/canvas.json",
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: undefined } } }),
+    "utf8",
+  );
+  app.seen = [];
+  output.out = [];
+
+  const code = await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  expect(code, output.err.join("\n")).toBe(0);
+
+  const put = app.seen.find((request) => request.method === "PUT");
+  expect(put?.headers.get("authorization")).toBe(`Bearer ${ACCOUNT}`);
+});
+
+test("prefers the write token when it has one", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  env().PR_LENS_TOKEN = ACCOUNT;
+  app.seen = [];
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+
+  // The credential this checkout was given for this canvas, which works
+  // whether or not anybody is signed in.
+  const put = app.seen.find((request) => request.method === "PUT");
+  expect(put?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
+});
+
+test("says both ways in when it has neither", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  const entries = await registry();
+  await writeFile(
+    ".pr-lens/canvas.json",
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: undefined } } }),
+    "utf8",
+  );
+  delete env().PR_LENS_TOKEN;
+  output.err = [];
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
+
+  const said = output.err.join("\n");
+  // The old message named only the edit link, which was the only way in when
+  // it was written.
+  expect(said).toContain("auth login");
+  expect(said).toContain("#w=");
 });

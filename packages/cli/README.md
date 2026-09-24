@@ -127,6 +127,8 @@ The view link is the one to share. The edit link is the same page with the write
 
 A canvas plays the document's walkthrough when it carries one. The app checks that every step resolves against the diagrams it drew, and a push it refuses arrives here as `CANVAS_REJECTED` carrying the app's own words rather than a generic failure.
 
+Changing a canvas takes the write token **or** being signed in as its owner. The token is preferred where this checkout has one — it works whether or not anybody is signed in — and the account token is what a second laptop, a fresh CI runner or a checkout that never pulled the edit link sends instead. Claiming is the exception: it is how a canvas gets an owner, so only the token can prove it.
+
 `pull` fetches the document back, by the view link or the bare id, into `.pr-lens/graph.json` unless `-o` says otherwise, and records the revision. Pull the edit link, the one ending in `#w=…`, and its token is recorded too: that is how a fresh checkout, or one that lost `.pr-lens/canvas.json`, gets the canvas back. A push carries the revision it last saw, and one that has been overtaken is refused rather than applied: pull, then push again.
 
 `rotate` mints a new write token and retires the old one. Use it when an edit link has leaked. The CLI saves the new token before it sends the request, so if the connection drops, the next command finishes the rotation instead of losing the token. The token lives in `.pr-lens/canvas.json`, keyed by canvas id, and git ignores it. Lose that file and the canvas is still readable by everyone; pushing to it again needs the token, which the edit link still carries.

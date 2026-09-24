@@ -58,6 +58,19 @@ export const claimCommand = async (
   const settled = await settlePendingRotation(api, selected, terminal);
   const id = settled.id;
 
+  /*
+   * Claiming is the one write that still needs the token, and saying so
+   * before anything is sent.
+   *
+   * A push or a delete takes being the owner instead, so `settleRotation`
+   * stopped demanding a token for a checkout with no rotation to settle —
+   * which used to be what stopped this command early. Claiming is how a
+   * canvas *gets* an owner, so there is nobody to authorise it but whoever
+   * holds the pen, and asking the app about a canvas this checkout cannot
+   * claim is a question with no use for its answer.
+   */
+  requireWriteToken(settled);
+
   // Asked rather than attempted. The app treats a claim from the owner as a
   // replay and finishes it, which is right for a lost answer and wrong for a
   // command run twice — the second run would retire a token nobody asked to

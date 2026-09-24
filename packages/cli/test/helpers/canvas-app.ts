@@ -101,6 +101,23 @@ const TILES = [tile("view:overview"), tile("view:new-batch-path")];
 const bearer = (headers: Headers): string | undefined =>
   headers.get("authorization")?.replace(/^Bearer /, "");
 
+/**
+ * Whether a request may change this canvas, the way the app decides it.
+ *
+ * Either the write token, or an account credential whose account owns it.
+ * Modelled here rather than assumed: a double that only knows write tokens
+ * answers 404 to exactly the request this change exists to make, and the
+ * test then reads as the CLI being wrong.
+ */
+const mayWrite = (headers: Headers, canvas: Stored, alsoToken?: string): boolean => {
+  const presented = bearer(headers);
+  if (presented !== undefined && presented === canvas.token) return true;
+  if (alsoToken !== undefined && alsoToken === canvas.token) return true;
+
+  const account = accountOf(headers);
+  return account !== undefined && canvas.owner === account;
+};
+
 /** Account tokens carry a prefix, so the fake can tell one from a write token. */
 const accountOf = (headers: Headers): string | undefined => {
   const token = bearer(headers);
@@ -151,7 +168,13 @@ export const setupCanvasAppTest = () => {
         app.minted += 1;
         const id = String(app.minted).padStart(22, "0");
         const token = `token-${app.minted}-a`.padEnd(22, "a");
-        app.canvases.set(id, { token, rev: 0, document: undefined });
+        // Attributed when the mint names an account, the way the app does it.
+        // A CI runner is a fresh machine every time, so the bearer is the only
+        // thing that can put its canvases on an account — and without this
+        // every canvas here is unowned, which is the one state where owning
+        // cannot authorise anything.
+        const owner = accountOf(headers);
+        app.canvases.set(id, { token, rev: 0, document: undefined, ...(owner === undefined ? {} : { owner }) });
         return json(201, {
           id,
           writeToken: token,
@@ -183,9 +206,8 @@ export const setupCanvasAppTest = () => {
             "INVALID_REQUEST",
             "The body must carry the new writeToken",
           );
-        if (bearer(headers) === canvas.token) canvas.token = next;
-        else if (next !== canvas.token)
-          return refuse(404, "NOT_FOUND", "There is no canvas here");
+        if (mayWrite(headers, canvas, next)) canvas.token = next;
+        else return refuse(404, "NOT_FOUND", "There is no canvas here");
         if (app.loseNextAnswer) {
           app.loseNextAnswer = false;
           throw new TypeError("fetch failed");
@@ -258,7 +280,7 @@ export const setupCanvasAppTest = () => {
       }
       case "push": {
         const { id, canvas } = route;
-        if (bearer(headers) !== canvas.token)
+        if (!mayWrite(headers, canvas))
           return refuse(404, "NOT_FOUND", "There is no canvas here");
 
         if (headers.get("if-match") !== String(canvas.rev))

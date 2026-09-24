@@ -1,4 +1,5 @@
 import { readString } from "../args.js";
+import { readToken } from "../auth.js";
 import { rotateCanvas } from "./api.js";
 import type { Terminal } from "../terminal.js";
 import { PrLensCliError, usageError } from "../errors.js";
@@ -50,6 +51,42 @@ export const requireWriteToken = ({ id, entry }: Registered): string => {
     "CANVAS_UNREGISTERED",
     `this checkout can read ${id} but holds no write token for it`,
     "pull its edit link, the one with #w= at the end, and the token comes with it",
+  );
+};
+
+/**
+ * What to send to change a canvas: the write token, or being its owner.
+ *
+ * The token first, and not only for habit. It is the credential this
+ * checkout was given for this canvas, it works whether or not anyone is
+ * signed in, and it is what a store that has not been updated still expects.
+ *
+ * The account token is the answer when there is no write token here — a
+ * second laptop, a fresh CI runner, a checkout that never pulled the edit
+ * link. The app accepts either and checks that the account owns the canvas,
+ * so sending it proves nothing by itself.
+ *
+ * Neither leaves the old message, which was written when the token was the
+ * only way in and said so. It mentions signing in now, because that is the
+ * other one.
+ */
+export const writeCredential = async (
+  registered: Registered,
+  env: Record<string, string | undefined>,
+  api: string,
+): Promise<string> => {
+  if (registered.entry.writeToken !== undefined) return registered.entry.writeToken;
+
+  const account = await readToken(env, api);
+  if (account !== undefined) return account;
+
+  throw new PrLensCliError(
+    "CANVAS_UNREGISTERED",
+    `this checkout can read ${registered.id} but holds no write token for it`,
+    [
+      "pr-lens auth login signs this machine in, and an owner needs no token",
+      "or pull its edit link, the one with #w= at the end, and the token comes with it",
+    ].join("\n"),
   );
 };
 
@@ -131,9 +168,15 @@ export const settlePendingRotation = async (
   terminal: Terminal,
 ): Promise<Registered> => {
   requireSameApi(api, registered);
-  requireWriteToken(registered);
+
   const pending = registered.entry.pending;
-  return pending === undefined
-    ? registered
-    : (await settleRotation(api, registered, pending, terminal)).registered;
+  if (pending === undefined) return registered;
+
+  // Only now. The token is what carries a rotation out, so a checkout that
+  // holds none cannot finish one — but a checkout with nothing pending has
+  // nothing to finish, and demanding a token there turned "no rotation to
+  // settle" into "you may not push".
+  requireWriteToken(registered);
+
+  return (await settleRotation(api, registered, pending, terminal)).registered;
 };
