@@ -34,7 +34,12 @@ export function slugify(title: string): string {
    *
    * "." and ".." are directories that already exist and are not this one;
    * a title of "..." reduces to neither but is still nothing to name a
-   * directory. Anything that survives to here is a plain segment.
+   * directory. Windows keeps a handful of words for devices — `.pr-lens/con/`
+   * cannot be created there at all — so those get a suffix and stay readable.
+   * Anything that survives to here is a plain segment.
    */
-  return slug === "" ? FALLBACK_SLUG : slug;
+  if (slug === "") return FALLBACK_SLUG;
+  return WINDOWS_DEVICE.test(slug) ? `${slug}-${FALLBACK_SLUG}` : slug;
 }
+
+const WINDOWS_DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
