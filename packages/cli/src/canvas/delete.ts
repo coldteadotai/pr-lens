@@ -26,7 +26,7 @@ export const deleteCommand = async (
   const ref = readString(values.canvas, "canvas");
   const selected = selectCanvas(registry, ref);
 
-  const target = await settlePendingRotation(api, selected, terminal);
+  const target = await settlePendingRotation(api, selected, terminal, env);
   await deleteCanvas(api, target.id, await writeCredential(target, env, api));
 
   await updateRegistry((current) => {

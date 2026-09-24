@@ -355,7 +355,7 @@ const push = async (
       return { id: minted.id, entry };
     }));
 
-  const target = await settlePendingRotation(api, registered, terminal);
+  const target = await settlePendingRotation(api, registered, terminal, env);
 
   const pushed = await pushCanvas(
     api,
@@ -481,7 +481,21 @@ const rotate = async (
   await ensureRegistryHome(terminal);
   const registry = await readRegistry();
   const ref = readString(values.canvas, "canvas");
-  const { id } = selectCanvas(registry, ref);
+  const selected = selectCanvas(registry, ref);
+  const { id } = selected;
+
+  /*
+   * Proved before anything is written down.
+   *
+   * The pending token is saved before the request so a lost answer cannot
+   * lose it — which means a rotation nobody may perform would leave one
+   * behind, and the next push would carry it out. This used to be a token
+   * check inside the write below; it is a credential check out here now,
+   * because an owner has no token to check and must still be stopped from
+   * leaving a pending rotation if they are not the owner after all.
+   */
+  requireSameApi(api, selected);
+  await writeCredential(selected, env, api);
 
   // Saved before the request, so a lost answer cannot lose it; chosen under
   // the lock, so two rotations at once finish the same one.
@@ -489,10 +503,7 @@ const rotate = async (
   await updateRegistry((current) => {
     const entry = current.canvases[id];
     if (entry === undefined) return;
-    // Without a token, a pending rotation would be carried out by whatever
-    // token arrives next, retiring the very link that brought it.
     requireSameApi(api, { id, entry });
-    requireWriteToken({ id, entry });
     pending = {
       id,
       entry: { ...entry, pending: entry.pending ?? mintWriteToken() },
@@ -510,6 +521,7 @@ const rotate = async (
     pending,
     pending.entry.pending,
     terminal,
+    env,
   );
 
   const view = new URL(editUrl);

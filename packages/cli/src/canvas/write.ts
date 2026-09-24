@@ -108,11 +108,12 @@ export const settleRotation = async (
   { id, entry }: Registered,
   nextToken: string,
   terminal: Terminal,
+  env: Record<string, string | undefined>,
 ): Promise<{ registered: Registered; editUrl: string }> => {
   const rotated = await rotateCanvas(
     api,
     id,
-    requireWriteToken({ id, entry }),
+    await writeCredential({ id, entry }, env, api),
     nextToken,
   ).catch(async (error: unknown) => {
     if (!(error instanceof PrLensCliError)) throw error;
@@ -166,17 +167,12 @@ export const settlePendingRotation = async (
   api: string,
   registered: Registered,
   terminal: Terminal,
+  env: Record<string, string | undefined>,
 ): Promise<Registered> => {
   requireSameApi(api, registered);
 
   const pending = registered.entry.pending;
   if (pending === undefined) return registered;
 
-  // Only now. The token is what carries a rotation out, so a checkout that
-  // holds none cannot finish one — but a checkout with nothing pending has
-  // nothing to finish, and demanding a token there turned "no rotation to
-  // settle" into "you may not push".
-  requireWriteToken(registered);
-
-  return (await settleRotation(api, registered, pending, terminal)).registered;
+  return (await settleRotation(api, registered, pending, terminal, env)).registered;
 };

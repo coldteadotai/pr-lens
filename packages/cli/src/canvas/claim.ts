@@ -55,7 +55,7 @@ export const claimCommand = async (
   // app has already replaced. It also finishes a claim whose answer was lost:
   // the token that claim minted is pending, the app has it on record, and
   // rotating onto it is answered "rotated".
-  const settled = await settlePendingRotation(api, selected, terminal);
+  const settled = await settlePendingRotation(api, selected, terminal, env);
   const id = settled.id;
 
   /*
