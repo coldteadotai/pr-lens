@@ -168,9 +168,15 @@ describe("through a push", () => {
 
   test("reuses the id on a second mint", async () => {
     await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+    // A different title, because that is what makes a second drawing: the
+    // same document under another path is the same drawing, and pushing it
+    // updates the canvas it already has rather than minting beside it.
+    const document = JSON.parse(await readFile("drawn.graph.json", "utf8")) as {
+      title: string;
+    };
     await writeFile(
       "other.graph.json",
-      await readFile("drawn.graph.json", "utf8"),
+      JSON.stringify({ ...document, title: "Another drawing" }),
     );
     await invoke("canvas", "push", "other.graph.json", "--api", API);
 

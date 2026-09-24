@@ -471,6 +471,40 @@ export const findBySource = (
   return only;
 };
 
+/**
+ * The canvas a document belongs to when no path points at one.
+ *
+ * A pull writes the source document; a render then writes the drawing
+ * somewhere else, under a directory named for the title. Either file is a
+ * legitimate thing to push, and only one of them can be the recorded path —
+ * so after a pull, one of the two flows would mint a second canvas for a
+ * document that already has one.
+ *
+ * The title is what actually identifies a drawing here: it is what the
+ * render directory is named after, and "the same title is the same drawing
+ * redrawn" is the rule the whole layout rests on. So when the path says
+ * nothing, the title is asked.
+ *
+ * Only ever a fallback. A path that matches is a stronger answer, because it
+ * is a fact about what was pushed rather than an inference from a field
+ * somebody can edit.
+ */
+export const findByTitle = (
+  registry: CanvasRegistry,
+  title: string,
+): Registered | undefined => {
+  const matching = entries(registry).filter(({ entry }) => entry.name === title);
+  const [only, ...more] = matching;
+
+  if (more.length > 0)
+    throw usageError(
+      `${matching.length} canvases are named ${JSON.stringify(title)}`,
+      `pass --canvas <id>: ${matching.map(describe).join(", ")}`,
+    );
+
+  return only;
+};
+
 export const onlyCanvas = (registry: CanvasRegistry): Registered => {
   const all = entries(registry);
   const [only, ...more] = all;

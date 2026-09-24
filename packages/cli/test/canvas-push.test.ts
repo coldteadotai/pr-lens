@@ -439,3 +439,62 @@ test("adopting happens once, so the next drawing is still its own canvas", async
 
   expect(Object.keys(await registry()).sort()).toEqual([FIRST, SECOND]);
 });
+
+/**
+ * A pull, a render and a push are one canvas, not two.
+ *
+ * `pull` writes the source document; `render` writes the drawing somewhere
+ * else, under a directory named for the title. Either is a legitimate thing
+ * to push, and only one of them can be the path the registry recorded — so
+ * whichever the reader chose, the other minted a second canvas for a drawing
+ * that already had one. The title is what links them, and it is the same
+ * thing the render directory is named after.
+ */
+test("pulling, rendering and pushing lands back on the canvas that was pulled", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  await invoke("canvas", "pull", "--api", API);
+  // What `render` writes: a directory named for the same title.
+  await draw(DRAWING);
+  output.out = [];
+
+  expect(await invoke("canvas", "push", `${DRAWING}/drawn.graph.json`, "--api", API)).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 2 · 2 diagrams`);
+  expect(Object.keys(await registry())).toEqual([FIRST]);
+});
+
+test("and so does pushing the pulled document itself", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  await invoke("canvas", "pull", "--api", API);
+  output.out = [];
+
+  // The other half of the same problem: recording one path can only ever
+  // serve one of these two.
+  expect(await invoke("canvas", "push", ".pr-lens/graph.json", "--api", API)).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 2 · 2 diagrams`);
+  expect(Object.keys(await registry())).toEqual([FIRST]);
+});
+
+test("a title two canvases already answer to is asked about rather than guessed", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  await draw(OTHER, "Auth flow");
+  await invoke("canvas", "push", `${OTHER}/drawn.graph.json`, "--api", API);
+  // Rename the second to collide, the way `--name` lets somebody.
+  const entries = await registry();
+  await writeFile(
+    ".pr-lens/canvas.json",
+    JSON.stringify({
+      canvases: {
+        ...entries,
+        [SECOND]: { ...entries[SECOND], name: entries[FIRST]?.name, source: undefined },
+      },
+    }),
+    "utf8",
+  );
+  await draw(".pr-lens/third");
+  output.err = [];
+
+  expect(await invoke("canvas", "push", ".pr-lens/third/drawn.graph.json", "--api", API)).not.toBe(0);
+  expect(output.err.join("\n")).toContain("2 canvases are named");
+});

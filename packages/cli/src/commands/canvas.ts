@@ -12,6 +12,7 @@ import {
 import {
   ensureRegistryHome,
   findBySource,
+  findByTitle,
   findCanvas,
   isCanvasId,
   mintWriteToken,
@@ -303,7 +304,9 @@ const push = async (
    */
   const known =
     ref === undefined
-      ? findBySource(registry, source) ?? adoptLegacy(registry, source)
+      ? findBySource(registry, source) ??
+        adoptLegacy(registry, source) ??
+        findByTitle(registry, document.title)
       : findCanvas(registry, ref);
 
   const registered: Registered =
