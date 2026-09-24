@@ -32,7 +32,7 @@ import { readInstallId } from "../install.js";
 import { readGraphDoc } from "../document.js";
 import type { Terminal } from "../terminal.js";
 import { drawings, WORKSPACE_DIR } from "../workspace.js";
-import { requireToken } from "../auth.js";
+import { readToken, requireToken } from "../auth.js";
 import { claimCommand } from "../canvas/claim.js";
 import { deleteCommand } from "../canvas/delete.js";
 import { parseOptions, readBoolean, readString } from "../args.js";
@@ -318,7 +318,11 @@ const push = async (
 
       // Read here rather than above: a push onto a canvas this checkout
       // already knows never mints, and so never needs to name the machine.
-      const minted = await mintCanvas(api, await readInstallId(env, api));
+      const minted = await mintCanvas(
+        api,
+        await readInstallId(env, api),
+        await readToken(env, api),
+      );
       const entry: CanvasEntry = {
         name: readString(values.name, "name") ?? document.title,
         source: sourceKey(source),

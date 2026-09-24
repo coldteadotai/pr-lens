@@ -98,6 +98,8 @@ X-PR-Lens-Install: prl_i_...
 
 It names the machine that minted, so that a person signing in later can be given the canvases that machine pushed. A server that ignores it behaves exactly as this page describes, and the CLI neither notices nor complains — mints carrying no install id stay anonymous, which is what happens before anyone signs in. The value is 128 random bits as base64url behind a `prl_i_` prefix, and the CLI keeps one per origin, so a private store is never told the id used anywhere else.
 
+A signed-in CLI also sends the [account credential](#the-account-credential) on this one request, and on no other write: a runner is a fresh machine every time, so the install id it mints is never linked, and the bearer is the only way a workflow's canvases reach the account that named it. The hosted app owns such a canvas on arrival. A store with no accounts ignores the header; one that recognises the shape and finds nothing behind it answers `UNAUTHENTICATED`, so a workflow whose token was revoked hears so rather than drawing canvases nobody will ever see.
+
 ```json
 {
   "id": "Qk3vZp9xLm2aRt8yWn4bCg",

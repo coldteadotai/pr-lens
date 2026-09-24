@@ -4,7 +4,7 @@ import { afterAll, describe, expect, test } from "vitest";
 import { chmod, mkdtemp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 
 import { API } from "./helpers/canvas.js";
-import { setupCanvasAppTest } from "./helpers/canvas-app.js";
+import { setupCanvasAppTest, TOKEN1 } from "./helpers/canvas-app.js";
 import { installPath, readInstallId } from "../src/install.js";
 
 const OTHER = "https://lens.example.com";
@@ -186,6 +186,36 @@ describe("through a push", () => {
 
     expect(await installId(API)).toMatch(/^prl_i_/);
     expect(await installId(OTHER)).toBeUndefined();
+  });
+
+  test("sends the account token on the mint when CI names one", async () => {
+    // The app attributes a mint to an account only from the bearer on
+    // `POST /api/canvas`. A runner is a fresh machine every time, so its
+    // install id is never linked: the token is the only way a workflow's
+    // canvases reach the dashboard, and the Action's `token` input promises
+    // exactly that.
+    env().PR_LENS_TOKEN = "prl_u_" + "ci".padEnd(22, "c");
+
+    expect(
+      await invoke("canvas", "push", "drawn.graph.json", "--api", API),
+    ).toBe(0);
+
+    const mint = app.seen.find((request) => request.method === "POST");
+    expect(mint?.headers.get("authorization")).toBe(
+      `Bearer ${env().PR_LENS_TOKEN}`,
+    );
+    // And never on the push that follows: that one carries the write token.
+    const push = app.seen.find((request) => request.method === "PUT");
+    expect(push?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
+  });
+
+  test("an empty PR_LENS_TOKEN sends no authorization on the mint", async () => {
+    env().PR_LENS_TOKEN = "";
+
+    expect(
+      await invoke("canvas", "push", "drawn.graph.json", "--api", API),
+    ).toBe(0);
+    expect(app.seen[0]?.headers.get("authorization")).toBeNull();
   });
 
   test("still pushes when there is nowhere to keep an id", async () => {

@@ -290,14 +290,20 @@ const call = async <T>(
 
 const canvasPath = (id: string): string => `/api/canvas/${id}`;
 
-/** A store that does not know the header ignores it, so an unattributed mint is the old behaviour. */
+/**
+ * A store that does not know the header ignores it, so an unattributed mint
+ * is the old behaviour. The account token is the other half: a runner is a
+ * fresh machine every time and its install id is never linked, so the bearer
+ * is the only way a workflow's canvases reach the account that named it.
+ */
 export const mintCanvas = (
   api: string,
   install: string | undefined,
+  token: string | undefined,
 ): Promise<Minted> =>
   call(
     api,
-    { method: "POST", path: "/api/canvas", canvas: undefined, install },
+    { method: "POST", path: "/api/canvas", canvas: undefined, install, token },
     Minted,
   );
 
