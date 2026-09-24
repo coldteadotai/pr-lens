@@ -11,6 +11,7 @@ import {
 } from "../canvas/api.js";
 import {
   ensureRegistryHome,
+  claimSource,
   findBySource,
   findCanvas,
   isCanvasId,
@@ -70,6 +71,10 @@ in its fragment, so share the view link and keep the edit link to yourself.
   pr-lens canvas push [graph.json]     send the document (default ${DEFAULT_SOURCE})
     --canvas <id|name>                 which canvas (default the one this document
                                        was pushed to before, else a new one)
+    --new                              a different drawing, not an update: mints one
+                                       even though this document has been pushed
+                                       before. The path then means the new canvas,
+                                       and the old one is reached by --canvas
     --name <name>                      what to call a new canvas (default the document's title)
 
   pr-lens canvas pull [url|id]         fetch the document (default the checkout's only canvas)
@@ -217,12 +222,20 @@ const push = async (
   const { values, positionals } = parseOptions(args, {
     canvas: { type: "string" },
     name: { type: "string" },
+    new: { type: "boolean" },
     api: { type: "string" },
   });
   if (positionals.length > 1)
     throw usageError(
       `push takes one graph document, got ${positionals.length}`,
     );
+
+  const fresh = readBoolean(values.new);
+  // Naming which canvas and asking for a new one are opposite instructions,
+  // and guessing which was meant would either overwrite a canvas somebody
+  // asked to keep or leave a new one they asked for unmade.
+  if (fresh && values.canvas !== undefined)
+    throw usageError("push takes --new or --canvas, not both");
 
   const source = positionals[0] ?? DEFAULT_SOURCE;
   const document = await readGraphDoc(source);
@@ -231,10 +244,23 @@ const push = async (
   const registry = await readRegistry();
 
   const ref = readString(values.canvas, "canvas");
+  /*
+   * `--new` is how you say "a different drawing", which nothing else said.
+   *
+   * A push onto the path a canvas was pushed from before is an update, and
+   * that is right: redrawing after a code change should move the canvas on a
+   * revision rather than leave a trail of near-identical ones. But the
+   * document always lands at the same path — the agent skill writes
+   * `drawn.graph.json` and pushes it — so without this a checkout could only
+   * ever hold one canvas, and no flag said otherwise. `--name` labels a mint
+   * that was already happening; `--canvas` picks one that already exists.
+   */
   const known =
-    ref === undefined
-      ? findBySource(registry, source)
-      : findCanvas(registry, ref);
+    fresh || ref !== undefined
+      ? ref === undefined
+        ? undefined
+        : findCanvas(registry, ref)
+      : findBySource(registry, source);
 
   const registered: Registered =
     known ??
@@ -242,8 +268,10 @@ const push = async (
     // instead of minting its own.
     (await withRegistryLock(async () => {
       const current = await readRegistry();
+      // Not when `--new` was asked for: the racing push found is the very
+      // thing being asked to mint past.
       const meanwhile =
-        ref === undefined ? findBySource(current, source) : undefined;
+        ref === undefined && !fresh ? findBySource(current, source) : undefined;
       if (meanwhile !== undefined) return meanwhile;
 
       // Read here rather than above: a push onto a canvas this checkout
@@ -289,6 +317,11 @@ const push = async (
   );
 
   await updateRegistry((current) => {
+    // This canvas is what the path means now; whatever held it before is
+    // reached by `--canvas` from here on. Without that a checkout that has
+    // used `--new` has two entries claiming one path, and a bare push can
+    // never resolve again.
+    claimSource(current, target.id, source);
     current.canvases[target.id] = {
       ...(current.canvases[target.id] ?? target.entry),
       source: sourceKey(source),

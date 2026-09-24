@@ -112,7 +112,9 @@ pr-lens canvas push
 
 Puts the document on prlens.dev as a canvas: a page anyone you share it with can read, and an SVG a README can embed.
 
-`push` sends the JSON document, never an SVG; the app draws it. The default is `.pr-lens/drawn.graph.json`, the document `render` drew, so what the page shows is what the diagrams show. The first push of a file mints a canvas and every push after that updates the same one, matched by the path it came from. `--canvas <id|name>` picks a different one and `--name` says what to call a new one; the document's title is the default. It prints the view link, the embed, and the way to take it down again:
+`push` sends the JSON document, never an SVG; the app draws it. The default is `.pr-lens/drawn.graph.json`, the document `render` drew, so what the page shows is what the diagrams show. The first push of a file mints a canvas and every push after that updates the same one, matched by the path it came from. That is what you want for a redraw — correcting a diagram should move it on a revision, not leave a trail of near-identical ones — but it means a repository holds one canvas until you say otherwise, because `render` always writes to the same path.
+
+`--new` is how you say otherwise: it mints even though this document has been pushed before, for a second diagram that should stand beside the first rather than replace it. The path then means the new canvas, and the older one is reached with `--canvas <id|name>`, which also picks one for a single push. `--name` says what to call a new one; the document's title is the default. It prints the view link, the embed, and the way to take it down again:
 
 ```
 ✓ https://prlens.dev/c/{id} — rev 1 · 4 diagrams

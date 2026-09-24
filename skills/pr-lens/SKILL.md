@@ -45,6 +45,14 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
 
    Pushing the same file again updates the same canvas, so a follow-up such as "rename that node" or "add the queue" is: edit the document, validate, render, push. The link stays the same. If the push fails, say so and tell them where the SVGs are and which one is the top view.
 
+   When the user wants a **different** diagram rather than a changed one — another part of the system, a second thing worth its own picture — pass `--new` and name it:
+
+   ```bash
+   npx @coldtea/pr-lens-cli@latest canvas push --new --name "Auth flow"
+   ```
+
+   Without it every drawing in a repository overwrites the last, because the document always lands at the same path. Use it when the user asks for a new diagram and the existing one should stay; leave it off when they are correcting or extending the one you just made. After `--new`, a bare push updates the newest canvas — the earlier one is reached with `--canvas <id|name>`, and `canvas list` shows them all.
+
 5. **Attach, when there is a pull request to attach to.** That means the user asked you to open a PR, asked for a diagram on one that exists, or you are opening a PR as part of changes made. Otherwise skip this step.
 
    GitHub CLI uploads the diagram with the pull request. Write the body with a Markdown image pointing at the local file, then pass the same path to `--attach`. `gh` rewrites the reference to the uploaded asset and keeps the alt text you wrote:

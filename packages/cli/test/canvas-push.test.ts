@@ -293,3 +293,88 @@ test("a redirect carrying terminal escapes cannot write them to the screen", asy
   expect(output.err.join("\n")).not.toContain("\u001b");
   expect(output.err.join("\n")).toContain("https://evil.test/[2Kwiped");
 });
+
+const SECOND = "2".padStart(22, "0");
+
+/**
+ * Telling a different drawing from an updated one.
+ *
+ * A push onto the path a canvas came from is an update, and that is right:
+ * redrawing after a code change should move the canvas on a revision rather
+ * than leave a trail of near-identical ones. But the document always lands at
+ * the same path — the skill writes `drawn.graph.json` and pushes it — so
+ * without a way to say otherwise a checkout could only ever hold one canvas,
+ * and a dashboard could only ever show one card per project.
+ */
+test("--new mints a second canvas from the same document", async () => {
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+  output.out = [];
+
+  expect(
+    await invoke("canvas", "push", "drawn.graph.json", "--new", "--name", "Auth flow", "--api", API),
+  ).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ ${API}/c/${SECOND} — rev 1 · 2 diagrams`);
+  expect(Object.keys(await registry()).sort()).toEqual([FIRST, SECOND]);
+  expect((await registry())[SECOND]?.name).toBe("Auth flow");
+});
+
+test("the path means the newest canvas, so a bare push still resolves", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  await invoke("canvas", "push", "drawn.graph.json", "--new", "--api", API);
+  output.out = [];
+
+  // Two entries both claiming one path would make `findBySource` refuse to
+  // guess, and a bare push would never work again in this checkout — a flag
+  // that quietly breaks the command it is a flag of.
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ ${API}/c/${SECOND} — rev 2 · 2 diagrams`);
+});
+
+test("the canvas that gave up the path keeps everything else", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  await invoke("canvas", "push", "drawn.graph.json", "--new", "--api", API);
+
+  const first = (await registry())[FIRST];
+  expect(first?.source).toBeUndefined();
+  // Its write token above all: losing that is losing the canvas.
+  expect(first?.writeToken).toBe(TOKEN1);
+  expect(first?.rev).toBe(1);
+});
+
+test("and is still pushed to by name", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  await invoke("canvas", "push", "drawn.graph.json", "--new", "--api", API);
+  output.out = [];
+
+  expect(
+    await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API),
+  ).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 2 · 2 diagrams`);
+  // And takes the path back, because it is the most recent push from it.
+  expect((await registry())[SECOND]?.source).toBeUndefined();
+});
+
+test("--new and --canvas are opposite instructions, so both is a usage error", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  output.err = [];
+
+  // Guessing would either overwrite a canvas somebody asked to keep or leave
+  // a new one they asked for unmade.
+  expect(
+    await invoke("canvas", "push", "drawn.graph.json", "--new", "--canvas", FIRST, "--api", API),
+  ).not.toBe(0);
+  expect(output.err.join("\n")).toContain("--new or --canvas, not both");
+});
+
+test("without --new, pushing the same document is still an update", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  output.out = [];
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 2 · 2 diagrams`);
+  expect(Object.keys(await registry())).toEqual([FIRST]);
+});

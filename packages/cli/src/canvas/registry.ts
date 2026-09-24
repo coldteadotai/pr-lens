@@ -36,7 +36,17 @@ export const mintWriteToken = (): string =>
 
 const Entry = z.object({
   name: z.string(),
-  source: z.string(),
+  /**
+   * The document this was last pushed from, and the reason a bare push
+   * updates rather than mints.
+   *
+   * Optional, because a path names the canvas most recently pushed from it
+   * and only that one. Two entries claiming it would make `findBySource`
+   * ambiguous and a bare push impossible for the rest of the checkout's
+   * life, which is what `--new` would otherwise cost — so the older entry
+   * gives it up and is reached by `--canvas` from then on.
+   */
+  source: z.string().optional(),
   /** Another app's 404 says nothing about this entry. */
   api: z.string(),
   /** Absent for a canvas pulled by its view link. */
@@ -446,7 +456,7 @@ export const findBySource = (
 ): Registered | undefined => {
   const key = sourceKey(path);
   const matching = entries(registry).filter(
-    ({ entry }) => sourceKey(entry.source) === key,
+    ({ entry }) => entry.source !== undefined && sourceKey(entry.source) === key,
   );
   const [only, ...more] = matching;
   if (more.length > 0)
@@ -456,6 +466,31 @@ export const findBySource = (
     );
 
   return only;
+};
+
+/**
+ * Hands a source path to one entry and takes it off every other.
+ *
+ * The path names the canvas most recently pushed from it. Without this,
+ * `--new` would leave two entries claiming one path, `findBySource` would
+ * refuse to guess between them, and a bare push would never work again in
+ * that checkout — a flag that quietly breaks the command it is a flag of.
+ *
+ * The older canvas keeps everything else, including its write token, and is
+ * reached by `--canvas <id|name>` from then on.
+ */
+export const claimSource = (
+  registry: CanvasRegistry,
+  canvasId: string,
+  path: string,
+): void => {
+  const key = sourceKey(path);
+
+  for (const [id, entry] of Object.entries(registry.canvases)) {
+    if (id === canvasId) continue;
+    if (entry.source === undefined || sourceKey(entry.source) !== key) continue;
+    registry.canvases[id] = { ...entry, source: undefined };
+  }
 };
 
 export const onlyCanvas = (registry: CanvasRegistry): Registered => {
