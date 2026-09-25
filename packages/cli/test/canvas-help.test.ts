@@ -18,7 +18,7 @@ test("a subcommand that is not one is a misuse", async () => {
   const reported = output.err.join("\n");
   expect(reported).toContain('unknown canvas subcommand "publish"');
   expect(reported).toContain(
-    "pr-lens canvas <list | push | pull | claim | rotate | delete>",
+    "pr-lens canvas <list | push | pull | claim | rotate | delete | open | answer | show | fork | look>",
   );
 });
 

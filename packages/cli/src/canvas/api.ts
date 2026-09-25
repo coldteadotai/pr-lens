@@ -2,7 +2,9 @@ import { z } from "zod";
 import {
   assertNever,
   safeParseGraphDoc,
+  ViewerLook,
   type GraphDoc,
+  type LiveCommand,
 } from "@coldtea/pr-lens-schema";
 
 import { CLI_VERSION } from "../version.js";
@@ -87,6 +89,19 @@ const Refusal = z.discriminatedUnion("code", [
   z.object({ code: z.literal("TOO_LARGE"), message: z.string() }),
   z.object({ code: z.literal("UNAUTHENTICATED"), message: z.string() }),
   z.object({ code: z.literal("ALREADY_OWNED"), message: z.string() }),
+  z.object({ code: z.literal("LIVE_ENDED"), message: z.string() }),
+  z.object({
+    code: z.literal("UNKNOWN_PLACE"),
+    message: z.string(),
+    unknown: z.array(
+      z.object({ at: z.string(), kind: z.string(), id: z.string(), detail: z.string() }),
+    ),
+    valid: z.object({
+      components: z.array(z.string()),
+      messages: z.array(z.string()),
+      diagrams: z.array(z.string()),
+    }),
+  }),
 ]);
 
 type Request = {
@@ -208,6 +223,17 @@ const refusal = (
         `${request.canvas ?? "that canvas"} belongs to another account on ${hostOf(api)}`,
         "the first claim wins, and somebody else's landed first",
       );
+    case "LIVE_ENDED":
+      return new PrLensCliError(
+        "LIVE_ENDED",
+        `the live session on ${request.canvas ?? "this canvas"} has ended`,
+        "pr-lens canvas open starts a new one and opens a tab for it",
+      );
+    case "UNKNOWN_PLACE":
+      return unknownPlaces(
+        error.unknown.map((place) => `${place.at}: "${place.id}" ${place.detail}`),
+        error.valid,
+      );
     case "INVALID_REQUEST":
     case "TOO_LARGE":
       return unavailable(api, status, error.message);
@@ -215,6 +241,31 @@ const refusal = (
       return assertNever(error, "Unhandled canvas refusal");
   }
 };
+
+/** The ids the canvas would have taken, so the next attempt can copy one rather than guess again. */
+export type ValidPlaces = { components: readonly string[]; messages: readonly string[]; diagrams: readonly string[] };
+
+const SHOWN_IDS = 40;
+
+const idList = (label: string, ids: readonly string[]): string =>
+  ids.length === 0
+    ? `  ${label}: none`
+    : `  ${label}: ${ids.slice(0, SHOWN_IDS).join(", ")}${ids.length > SHOWN_IDS ? `, and ${ids.length - SHOWN_IDS} more` : ""}`;
+
+export const unknownPlaces = (problems: readonly string[], valid: ValidPlaces): PrLensCliError =>
+  new PrLensCliError(
+    "LIVE_UNKNOWN_PLACE",
+    problems.length === 1
+      ? "1 id is not on the canvas"
+      : `${problems.length} ids are not on the canvas`,
+    [
+      ...problems,
+      "copy an id from these:",
+      idList("components", valid.components),
+      idList("messages", valid.messages),
+      idList("diagrams", valid.diagrams),
+    ].join("\n"),
+  );
 
 const call = async <T>(
   api: string,
@@ -433,4 +484,62 @@ export const claimCanvas = (
       body: { writeToken, nextWriteToken },
     },
     Rotated,
+  );
+
+const LiveOpened = z.object({
+  session: z.string(),
+  url: z.string(),
+  expiresAt: z.string(),
+});
+
+const TAB_STATES = ["following", "stepped_out", "not_open"] as const;
+
+const LiveSent = z.object({
+  seq: z.number().int(),
+  tab: z.enum(TAB_STATES),
+});
+
+const LookRead = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("not_open") }),
+  z.object({ status: z.literal("seen"), seenAt: z.string(), look: ViewerLook }),
+]);
+
+export type LiveOpened = z.infer<typeof LiveOpened>;
+export type TabState = (typeof TAB_STATES)[number];
+export type LookRead = z.infer<typeof LookRead>;
+
+const livePath = (id: string, session?: string): string =>
+  session === undefined ? `${canvasPath(id)}/live` : `${canvasPath(id)}/live/${session}`;
+
+/** A session is one tab, paired by the secret in the link this answers with. */
+export const openLive = (
+  api: string,
+  id: string,
+  token: string,
+): Promise<LiveOpened> =>
+  call(api, { method: "POST", path: livePath(id), canvas: id, token }, LiveOpened);
+
+export const sendLive = (
+  api: string,
+  id: string,
+  token: string,
+  session: string,
+  command: LiveCommand,
+): Promise<z.infer<typeof LiveSent>> =>
+  call(
+    api,
+    { method: "POST", path: livePath(id, session), canvas: id, token, body: command },
+    LiveSent,
+  );
+
+export const readLook = (
+  api: string,
+  id: string,
+  token: string,
+  session: string,
+): Promise<LookRead> =>
+  call(
+    api,
+    { method: "GET", path: `${livePath(id, session)}/look`, canvas: id, token },
+    LookRead,
   );

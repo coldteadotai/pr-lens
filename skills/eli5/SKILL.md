@@ -65,6 +65,8 @@ The PR Lens skill, installed beside this one from the same repo. If `pr-lens/SKI
 
 7. **Open it and stop.** If this harness can open a browser, open the view link. Reply with the answer sentence and the link, on two lines. Nothing else: no step list, no file list, no summary of what you did. If the person who asked wants a report or a comparison, that is a second request, answered after this one.
 
+A follow-up question about the canvas is answered on the canvas: `npx @coldtea/pr-lens-cli@latest canvas open .pr-lens/<drawing>/drawn.graph.json` once, then `canvas answer` with `--drawing` and the same path, as "Answering beside an open canvas" in the pr-lens skill says. Keep the same plain words there.
+
 ## Words
 
 Plain words only. Not: leverages, orchestrates, pipeline, abstraction, handler, wrapper, layer, utility, invoke, instantiate. Say what it does. Real names appear once each, in subtitles, so a curious reader can find the code.

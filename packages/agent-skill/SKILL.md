@@ -86,6 +86,82 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
 
 If you would rather not author the document yourself, `npx @coldtea/pr-lens-cli@latest analyze --base <ref>` does steps 1 and 2 by asking a provider — Gemini, OpenAI, or any endpoint speaking `/chat/completions` — with a key of your own. That is the only path here that needs one.
 
+## Answering beside an open canvas
+
+Once a canvas is pushed, you can answer questions about it on the canvas itself. The reader keeps the page open, asks you in the terminal, and your answer plays there: the camera moves step by step, what you name lights up, and each name is a link.
+
+Run this once, when the user wants to talk about a canvas they have open or are about to open. Name the drawing you pushed, the same path as the push:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas open .pr-lens/<drawing>/drawn.graph.json
+```
+
+It opens one browser tab that follows you. Only that tab moves. Anyone else reading the same link sees the canvas as it was. Every command below talks to that tab, and takes the same path as `--drawing`. Always pass it: a checkout can hold several canvases, and the path says which one you mean.
+
+**When the user says "this", "here" or "what I selected", look first.** They clicked a component, dragged a box or picked a part of a drawing in the tab, and you cannot see it:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas look --drawing .pr-lens/<drawing>/drawn.graph.json
+```
+
+It prints JSON: the diagram they are on (`diagram.stage`, ready to paste into a step), what is on screen (`inFrame`), what they selected (`scope`), the answer they have open, and the drawing hung under the canvas (`fork`), if there is one. Answer about `scope` when it is set. `following: false` means they left agent mode: tell them the answer is waiting rather than saying you moved their canvas.
+
+**Answer** with a JSON file, or `-` to pipe it in:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas answer .pr-lens/answer.json --drawing .pr-lens/<drawing>/drawn.graph.json
+```
+
+```json
+{
+  "question": "What does push check first?",
+  "steps": [
+    {
+      "heading": "Push checks the token first",
+      "stage": { "kind": "view", "view": "overview" },
+      "focus": { "kind": "selection", "nodes": ["canvas-api"] },
+      "paragraphs": [
+        {
+          "parts": [
+            { "text": "The " },
+            { "text": "canvas API", "ref": { "kind": "component", "id": "canvas-api" } },
+            { "text": " refuses a push without the write token, before it draws anything." }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+- One to four steps. Two is usual. Each step stops on one diagram, in the order a reader should follow.
+- `heading` is a sentence of at most six words: who or what, a verb, what happens. The first step's heading is the answer. To a yes or no question it says yes or no.
+- `stage` and `focus` work exactly as they do in a walkthrough. Leave `stage` out for the opening diagram. Light one or two things, not half the diagram.
+- A paragraph is one or two sentences and at most 30 words. A second paragraph is for a failure or a risk the first did not name.
+- Every place you name carries a `ref`: `component` is a node id, `message` is `flowId/messageId`, `diagram` is a view or flow id. Copy ids from the document exactly. Never make one up. The CLI checks every id against the drawing before sending, and the app checks again; a wrong one comes back with the ids that exist.
+- When the canvas cannot answer part of the question, say what is missing in `cannotTell` rather than guessing.
+
+**"Take me to X"** is a camera move, not an answer:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas show --drawing .pr-lens/<drawing>/drawn.graph.json \
+  --diagram send-pipeline --focus send-pipeline/enqueue --open send-pipeline/enqueue
+```
+
+`--focus` takes node ids or `flow/message` and repeats. `--open` opens that message's sample payload.
+
+**"What's inside X", "expand on X" or "break X down"** is a drawing. Write a small graph document of X's insides (up to ten nodes) and hang it under X:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas fork .pr-lens/inside-x.json --from x --drawing .pr-lens/<drawing>/drawn.graph.json
+```
+
+The sketch can leave out `schemaVersion`, `kind` and `provenance`; they come from the canvas.
+
+**When the question needs the diagram itself changed** (a missing component, a wrong arrow), edit the document, validate, render and `canvas push` as usual. The open tab reloads onto the new revision by itself.
+
+After `answer`, `show` and `fork`, the CLI says where the reader is. If it says they stepped out, tell the user the answer is waiting in their Questions list, and that `/` opens it.
+
 ## The pull request body, when there is one
 
 A reviewer should understand the change before reading the diff, so the diagram goes where they look first: the description, not a trailing comment. Open with one sentence on why the change exists, then the architecture diagram, then whatever proves the change works, such as a screenshot of the result or a recording of the interaction. Use one visual per idea. A diagram that needs a paragraph of explanation has a document problem; go back to step 2.

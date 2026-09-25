@@ -72,7 +72,7 @@ const sleep = (ms: number): Promise<void> =>
 const hostOf = (api: string): string => new URL(api).host;
 
 /** True means asked, not opened (over SSH it "succeeds" on no screen), so the link is printed either way. */
-const askToOpen = (url: string): boolean => {
+export const askToOpen = (url: string): boolean => {
   // The URL came off the wire: only http(s), and never through a shell
   // (hence `rundll32` over `cmd /c start`).
   const scheme = ((): string => {

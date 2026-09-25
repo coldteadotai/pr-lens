@@ -4,6 +4,7 @@ import { GraphDoc, View } from "../src/graph.js";
 import { JsonValue } from "../src/primitives.js";
 import { RenderManifest } from "../src/manifest.js";
 import { PatchDoc } from "../src/patch.js";
+import { LiveCommand, ViewerLook } from "../src/live.js";
 import { SCHEMA_VERSION } from "../src/version.js";
 import { goldenDocuments } from "../src/examples/index.js";
 
@@ -21,6 +22,8 @@ const documents = [
   { file: "patch-doc.schema.json", title: "PR Lens patch document", schema: PatchDoc },
   { file: "config.schema.json", title: "PR Lens repository config", schema: Config },
   { file: "render-manifest.schema.json", title: "PR Lens render manifest", schema: RenderManifest },
+  { file: "live-command.schema.json", title: "PR Lens live command", schema: LiveCommand },
+  { file: "viewer-look.schema.json", title: "PR Lens viewer look", schema: ViewerLook },
 ] as const;
 
 const serialize = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
