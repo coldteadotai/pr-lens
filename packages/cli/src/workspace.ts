@@ -201,12 +201,9 @@ export const prepareWorkspace = async (out: string, terminal: Terminal): Promise
 /** What `render` writes beside the manifest, in every drawing's directory. */
 export const DRAWN_NAME = "drawn.graph.json";
 
-/** Includes the top-level `drawn.graph.json` that 0.7.0 wrote. */
+/** The top-level `drawn.graph.json` from 0.7.0 counts only until a newer render exists. */
 export async function drawings(): Promise<string[]> {
   const found: string[] = [];
-
-  const legacy = join(WORKSPACE_DIR, DRAWN_NAME);
-  if (await readable(legacy)) found.push(legacy);
 
   // No `isDirectory()` check: it is false for a symlinked drawing.
   const entries = await readdir(WORKSPACE_DIR).catch(() => []);
@@ -214,8 +211,10 @@ export async function drawings(): Promise<string[]> {
     const drawn = join(WORKSPACE_DIR, entry, DRAWN_NAME);
     if (await readable(drawn)) found.push(drawn);
   }
+  if (found.length > 0) return found;
 
-  return found;
+  const legacy = join(WORKSPACE_DIR, DRAWN_NAME);
+  return (await readable(legacy)) ? [legacy] : [];
 }
 
 const readable = (path: string): Promise<boolean> =>
