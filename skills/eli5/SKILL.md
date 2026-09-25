@@ -56,8 +56,10 @@ The PR Lens skill, installed beside this one from the same repo. If `pr-lens/SKI
    ```bash
    npx @coldtea/pr-lens-cli@latest validate .pr-lens/graph.json
    npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme light
-   npx @coldtea/pr-lens-cli@latest canvas push
+   npx @coldtea/pr-lens-cli@latest canvas push .pr-lens/<drawing>/drawn.graph.json
    ```
+
+   `render` prints the folder it drew into, named after the document's title. Push the `drawn.graph.json` in that folder. A bare `canvas push` stops when `.pr-lens/` holds more than one drawing.
 
    Fix every failure and validate again. Do not delete the element a failure names; fix the reference. `canvas push` prints the view link, `https://prlens.dev/c/{id}`, and an embed link. The view link is the deliverable.
 
