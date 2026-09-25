@@ -32,6 +32,8 @@ jobs:
 
 That is the whole setup. `GEMINI_API_KEY` is the secret name because `provider` defaults to Gemini; set `provider` to `openai`, or to `openai-compatible` with a `base-url`, and the key is whatever that endpoint wants. The key is passed to the CLI through the environment, so it never appears in a command line or a log; the diff goes to the provider you named and nowhere else.
 
+`token` is optional. It is a PR Lens account token, passed to the CLI through the environment like the model key, and it tells prlens.dev which account owns the canvases this workflow draws. Without it, runs draw anonymously. CI needs a token because a runner is a new machine every time, so any sign-in it kept would be gone before the next run.
+
 The `concurrency` block is not decoration. Every run of every pull request writes to one shared branch and one shared comment, so two runs of the same pull request racing is ordinary. A group per pull request means a new push supersedes the render it replaces instead of the two fighting for the comment.
 
 It is not a lock, though, and the Action does not treat it as one: cancellation arrives when it arrives, and a request already on its way to GitHub still lands. So publishing replays onto the branch tip rather than failing, and the comment step asks GitHub for the pull request's head immediately before it writes: a run that was overtaken while it drew says so and posts nothing, rather than replacing a newer diagram with an older one.
@@ -59,6 +61,7 @@ Finding that comment takes more than the marker: anyone can post the marker them
 | `data-branch` | `pr-lens` | branch the SVGs are committed to |
 | `cli-version` | the version in this repository | version of `@coldtea/pr-lens-cli` to run |
 | `comment-author` | `github-actions[bot]` | the login that owns the comment; only its comments are ever edited |
+| `token` | none | optional; a PR Lens account token, so canvases this workflow sends to prlens.dev are yours |
 | `github-token` | `${{ github.token }}` | used to publish and to comment |
 
 Outputs: `graph`, the path of the document that was produced, and `assets-url`, where the SVGs were published.

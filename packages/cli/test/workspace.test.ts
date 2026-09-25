@@ -51,6 +51,9 @@ const terminalCollecting = (lines: string[]): Terminal => ({
   err: (line) => lines.push(line),
 });
 
+/** Where the golden document's own title puts its drawing. */
+const DRAWING = join(WORKSPACE_DIR, "batch-broadcast-sending-through-postmark");
+
 /** Runs the CLI with `cwd` as the working directory, as a user would. */
 const renderIn = async (cwd: string, ...args: string[]): Promise<string[]> => {
   const lines: string[] = [];
@@ -226,8 +229,8 @@ test("render leaves its previews in the workspace, ignored and explained", async
 
   const lines = await renderIn(directory);
 
-  expect(lines.join("\n")).toContain(join(WORKSPACE_DIR, "manifest.json"));
-  expect(await readFile(join(directory, WORKSPACE_DIR, "manifest.json"), "utf8")).toContain(
+  expect(lines.join("\n")).toContain(join(DRAWING, "manifest.json"));
+  expect(await readFile(join(directory, DRAWING, "manifest.json"), "utf8")).toContain(
     "assets",
   );
   expect(await readFile(join(directory, WORKSPACE_DIR, "README.md"), "utf8")).toContain(
@@ -243,7 +246,7 @@ test("a run inside a subdirectory ignores the previews it actually wrote", async
 
   await renderIn(nested);
 
-  expect(await readFile(join(nested, WORKSPACE_DIR, "manifest.json"), "utf8")).toContain("assets");
+  expect(await readFile(join(nested, DRAWING, "manifest.json"), "utf8")).toContain("assets");
   expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
 });
 
@@ -255,7 +258,7 @@ test("a render from a subdirectory whose name is a git wildcard is still ignored
 
   await renderIn(nested);
 
-  expect(await readFile(join(nested, WORKSPACE_DIR, "manifest.json"), "utf8")).toContain("assets");
+  expect(await readFile(join(nested, DRAWING, "manifest.json"), "utf8")).toContain("assets");
   expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
 });
 
@@ -293,7 +296,7 @@ test("a render from a subdirectory whose name begins with a space is still ignor
 
   await renderIn(nested);
 
-  expect(await readFile(join(nested, WORKSPACE_DIR, "manifest.json"), "utf8")).toContain("assets");
+  expect(await readFile(join(nested, DRAWING, "manifest.json"), "utf8")).toContain("assets");
   expect(await ignoresPreviews(directory, join(nested, WORKSPACE_DIR))).toBe(true);
 });
 

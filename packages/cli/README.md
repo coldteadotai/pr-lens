@@ -80,7 +80,7 @@ The renderer also hands back an atlas of where every lane, node, edge and flow s
 ### `comment`
 
 ```bash
-pr-lens comment --graph .pr-lens/drawn.graph.json --manifest .pr-lens/manifest.json \
+pr-lens comment --graph .pr-lens/<drawing>/drawn.graph.json --manifest .pr-lens/<drawing>/manifest.json \
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 ```
 
@@ -112,7 +112,9 @@ pr-lens canvas push
 
 Puts the document on prlens.dev as a canvas: a page anyone you share it with can read, and an SVG a README can embed.
 
-`push` sends the JSON document, never an SVG; the app draws it. The default is `.pr-lens/drawn.graph.json`, the document `render` drew, so what the page shows is what the diagrams show. The first push of a file mints a canvas and every push after that updates the same one, matched by the path it came from. `--canvas <id|name>` picks a different one and `--name` says what to call a new one; the document's title is the default. It prints the view link, the embed, and the way to take it down again:
+`push` sends the JSON document, never an SVG; the app draws it. Give it the `drawn.graph.json` a render wrote, so the page shows what the diagrams show. With one drawing in the checkout a bare `push` finds it; with several it lists them and asks which.
+
+The first push of a document mints a canvas, and every push after that updates the same one. It is matched by the path the document came from, or by the document's title when no recorded path points at a canvas. The title match is what lets `pull`, `render`, `push` land back on the canvas you pulled: the pull writes the source document, the render writes the drawing somewhere else, and only one of them can be the recorded path. So a corrected diagram becomes a new revision of its canvas instead of a near copy. Because `render` gives each drawing a directory named after its title, a second diagram gets its own path and its own canvas without you asking for one. `--canvas <id|name>` picks a canvas for a single push and `--name` says what to call a new one; the document's title is the default. It prints the view link, the embed, and the way to take it down again:
 
 ```
 ✓ https://prlens.dev/c/{id} — rev 1 · 4 diagrams
@@ -124,6 +126,8 @@ Puts the document on prlens.dev as a canvas: a page anyone you share it with can
 The view link is the one to share. The edit link is the same page with the write token in the fragment, and anyone holding it can push over your canvas, so it stays with you. The embed is the hero diagram as an SVG, for a README or a wiki.
 
 A canvas plays the document's walkthrough when it carries one. The app checks that every step resolves against the diagrams it drew, and a push it refuses arrives here as `CANVAS_REJECTED` carrying the app's own words rather than a generic failure.
+
+Changing a canvas takes its write token or a sign-in as its owner. The CLI sends the write token when this checkout has one, since it works signed in or not. A second laptop, a fresh CI runner, or a checkout that never pulled the edit link sends the account token instead. `canvas claim` accepts only the write token, because claiming is how a canvas gets an owner in the first place.
 
 `pull` fetches the document back, by the view link or the bare id, into `.pr-lens/graph.json` unless `-o` says otherwise, and records the revision. Pull the edit link, the one ending in `#w=…`, and its token is recorded too: that is how a fresh checkout, or one that lost `.pr-lens/canvas.json`, gets the canvas back. A push carries the revision it last saw, and one that has been overtaken is refused rather than applied: pull, then push again.
 
@@ -138,6 +142,30 @@ Registry writes take a lock at `.pr-lens/canvas.json.lock`. The CLI never remove
 The CLI refuses to write the registry where git could commit it. If a checkout tracks `.pr-lens/canvas.json` or un-ignores `.pr-lens/`, the command fails with `CANVAS_REGISTRY_EXPOSED` and writes nothing.
 
 `--api` points at another PR Lens app, or set `PR_LENS_API_URL`. The protocol between the CLI and the app is five routes and one error envelope, written up in [the canvas API contract](https://github.com/coldteadotai/pr-lens/blob/main/docs/canvas-api.md) so a private server can answer it and documents stay on your network.
+
+### `auth`
+
+```bash
+pr-lens auth login
+```
+
+Signs this machine in, so the canvases it pushes belong to your account. Signed out, they are unlisted pages that only a link reaches. `push`, `pull` and `render` all work signed out, and always will.
+
+It prints a code and opens the browser. The code travels in the link, so you never type it; check that it matches the one on the page:
+
+```
+  Code WDJB-MJHT · opening https://prlens.dev/device?code=WDJB-MJHT
+  Check the page shows the same code, then approve. The code lasts 15 minutes.
+  Waiting for it…
+```
+
+Approving links this machine to your account. Every canvas the machine has already pushed becomes yours, and so does every one it pushes after that. `--no-browser` prints the link instead of opening it, for a machine you reach over SSH.
+
+`status` says which app this machine is signed in to and asks the app whether the sign-in still works. `--json` gives the same answer for scripts. Neither prints the token. When the app can't be reached, `status` says it couldn't check; it does not call the sign-in bad.
+
+`logout` forgets the sign-in kept on this machine. The machine stays linked, so the canvases it pushed stay yours. To remove the machine from your account, use the app's settings; signing in again from a removed machine links it back.
+
+The sign-in lives in `~/.config/pr-lens/auth/`, one file per app and readable by you alone, so one machine can be signed in to prlens.dev and to a private store at the same time. `PR_LENS_TOKEN` overrides it, which is how CI signs in without a browser. [The Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action) takes it as its `token` input.
 
 ## Corrections
 
@@ -159,7 +187,7 @@ A lane pin may name a lane the document never declared; the band is created and 
 
 ## Failures
 
-Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`, and for `canvas`: `CANVAS_UNREGISTERED`, `CANVAS_UNKNOWN`, `CANVAS_CONFLICT`, `CANVAS_REJECTED`, `CANVAS_RATE_LIMITED`, `CANVAS_UNAVAILABLE`, `CANVAS_REGISTRY_EXPOSED`. Misuse exits 2, everything else exits 1.
+Every failure carries a code, so a script can branch on it: `USAGE`, `UNREADABLE_FILE`, `UNKNOWN_DOCUMENT`, `INVALID_DOCUMENT`, `GIT_FAILED`, `EMPTY_DIFF`, `REPOSITORY_UNKNOWN`, `MISSING_API_KEY`, `PROVIDER_FAILED`, `MODEL_OUTPUT_INVALID`, `RENDER_FAILED`, and for `canvas`: `CANVAS_UNREGISTERED`, `CANVAS_UNKNOWN`, `CANVAS_CONFLICT`, `CANVAS_REJECTED`, `CANVAS_RATE_LIMITED`, `CANVAS_UNAVAILABLE`, `CANVAS_REGISTRY_EXPOSED`, and for `auth`: `AUTH_REQUIRED`, `MACHINE_REVOKED`, `APP_UNAVAILABLE`. Misuse exits 2, everything else exits 1.
 
 ---
 

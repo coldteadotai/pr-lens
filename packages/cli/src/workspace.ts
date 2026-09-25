@@ -1,5 +1,6 @@
 import { assertNever } from "@coldtea/pr-lens-schema";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
+import { readdir, stat } from "node:fs/promises";
 import { git } from "./git.js";
 import { readTextFile, writeTextFile } from "./io.js";
 import type { Terminal } from "./terminal.js";
@@ -183,13 +184,39 @@ other people's hands.
  * user's, and so is the question of what to do with it.
  */
 export const prepareWorkspace = async (out: string, terminal: Terminal): Promise<void> => {
+  // A first render into `.pr-lens/<title>` must still gitignore the workspace.
   const directory = resolve(out);
-  if (directory !== resolve(WORKSPACE_DIR)) return;
+  const workspace = resolve(WORKSPACE_DIR);
+  const inside = directory === workspace || directory.startsWith(`${workspace}${sep}`);
+  if (!inside) return;
 
   // The README first, which is what puts the directory on disk: git is asked
   // whether a directory is ignored, and one that is not there cannot be.
-  await writeTextFile(join(directory, README_NAME), README);
+  await writeTextFile(join(workspace, README_NAME), README);
 
-  const ignored = await ignoreWorkspace(directory);
+  const ignored = await ignoreWorkspace(workspace);
   if (ignored !== undefined) terminal.err(`✓ ${ignored} — ${WORKSPACE_DIR}/ is ignored`);
 };
+
+/** What `render` writes beside the manifest, in every drawing's directory. */
+export const DRAWN_NAME = "drawn.graph.json";
+
+/** Includes the top-level `drawn.graph.json` that 0.7.0 wrote. */
+export async function drawings(): Promise<string[]> {
+  const found: string[] = [];
+
+  const legacy = join(WORKSPACE_DIR, DRAWN_NAME);
+  if (await readable(legacy)) found.push(legacy);
+
+  // No `isDirectory()` check: it is false for a symlinked drawing.
+  const entries = await readdir(WORKSPACE_DIR).catch(() => []);
+  for (const entry of entries) {
+    const drawn = join(WORKSPACE_DIR, entry, DRAWN_NAME);
+    if (await readable(drawn)) found.push(drawn);
+  }
+
+  return found;
+}
+
+const readable = (path: string): Promise<boolean> =>
+  stat(path).then((found) => found.isFile()).catch(() => false);

@@ -17,11 +17,15 @@ export type CliErrorCode =
   | "RENDER_FAILED"
   | "CANVAS_UNREGISTERED"
   | "CANVAS_UNKNOWN"
+  | "CANVAS_OWNED"
   | "CANVAS_CONFLICT"
   | "CANVAS_REJECTED"
   | "CANVAS_RATE_LIMITED"
   | "CANVAS_UNAVAILABLE"
-  | "CANVAS_REGISTRY_EXPOSED";
+  | "CANVAS_REGISTRY_EXPOSED"
+  | "AUTH_REQUIRED"
+  | "MACHINE_REVOKED"
+  | "APP_UNAVAILABLE";
 
 export class PrLensCliError extends Error {
   readonly code: CliErrorCode;

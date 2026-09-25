@@ -85,6 +85,8 @@ const Refusal = z.discriminatedUnion("code", [
     retryAt: z.string(),
   }),
   z.object({ code: z.literal("TOO_LARGE"), message: z.string() }),
+  z.object({ code: z.literal("UNAUTHENTICATED"), message: z.string() }),
+  z.object({ code: z.literal("ALREADY_OWNED"), message: z.string() }),
 ]);
 
 type Request = {
@@ -93,6 +95,8 @@ type Request = {
   /** Undefined when minting, so a 404 there is not blamed on a canvas. */
   canvas: string | undefined;
   token?: string;
+  /** Lets a later sign-in claim what this machine pushed. */
+  install?: string;
   ifMatch?: number;
   body?: unknown;
 };
@@ -111,6 +115,25 @@ const unavailable = (
       : `${hostOf(api)} answered ${status}`,
     details,
   );
+
+/** Untrusted server content, so printable and short. */
+const LOCATION_SHOWN = 200;
+
+/** Printing the target turns an `http://` for `https://` typo into a fix. */
+const redirected = (api: string, response: Response): PrLensCliError => {
+  const location = response.headers
+    .get("location")
+    ?.replace(/[^\x20-\x7e]/g, "")
+    .slice(0, LOCATION_SHOWN);
+
+  return unavailable(
+    api,
+    response.status,
+    location === undefined || location === ""
+      ? "the canvas API answers at the address it is given, and this one redirects"
+      : `the canvas API answers at the address it is given; this one points at ${location}, so pass that as --api`,
+  );
+};
 
 const parseJson = (text: string): unknown => {
   try {
@@ -170,6 +193,21 @@ const refusal = (
         `${hostOf(api)} is rate limiting this client until ${error.retryAt}`,
         error.message,
       );
+    case "UNAUTHENTICATED":
+      return new PrLensCliError(
+        "AUTH_REQUIRED",
+        `${hostOf(api)} did not accept this sign-in`,
+        [error.message, "pr-lens auth login signs this machine in again"].join(
+          "\n",
+        ),
+      );
+    case "ALREADY_OWNED":
+      // The caller holds the write token, so naming the case leaks nothing.
+      return new PrLensCliError(
+        "CANVAS_OWNED",
+        `${request.canvas ?? "that canvas"} belongs to another account on ${hostOf(api)}`,
+        "the first claim wins, and somebody else's landed first",
+      );
     case "INVALID_REQUEST":
     case "TOO_LARGE":
       return unavailable(api, status, error.message);
@@ -191,6 +229,9 @@ const call = async <T>(
   if (request.token !== undefined)
     headers.authorization = `Bearer ${request.token}`;
 
+  if (request.install !== undefined)
+    headers["x-pr-lens-install"] = request.install;
+
   if (request.ifMatch !== undefined)
     headers["if-match"] = String(request.ifMatch);
 
@@ -200,6 +241,9 @@ const call = async <T>(
     method: request.method,
     headers,
     body: request.body === undefined ? undefined : JSON.stringify(request.body),
+    // A cross-origin redirect keeps every header but `authorization`, which
+    // would leak the install id to another host.
+    redirect: "manual",
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   }).catch(() => {
     // The runtime's message names addresses and internals; keep it out.
@@ -209,6 +253,10 @@ const call = async <T>(
       "check the address and the connection, then try again",
     );
   });
+
+  // A 3xx body is not an error envelope.
+  if (response.status >= 300 && response.status < 400)
+    throw redirected(api, response);
 
   // A body can fail after the headers arrived.
   const text = await response.text().catch(() => {
@@ -234,8 +282,17 @@ const call = async <T>(
 
 const canvasPath = (id: string): string => `/api/canvas/${id}`;
 
-export const mintCanvas = (api: string): Promise<Minted> =>
-  call(api, { method: "POST", path: "/api/canvas", canvas: undefined }, Minted);
+/** The bearer is how CI attributes a mint: a runner's install id is never linked. */
+export const mintCanvas = (
+  api: string,
+  install: string | undefined,
+  token: string | undefined,
+): Promise<Minted> =>
+  call(
+    api,
+    { method: "POST", path: "/api/canvas", canvas: undefined, install, token },
+    Minted,
+  );
 
 export const fetchCanvas = async (
   api: string,
@@ -321,4 +378,59 @@ export const deleteCanvas = (
     api,
     { method: "DELETE", path: canvasPath(id), canvas: id, token },
     z.object({ id: z.literal(id), deleted: z.literal(true) }),
+  );
+
+/** An unreadable revision must not read as an empty canvas. */
+const Preview = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("drawn"), title: z.string().min(1) }),
+  z.object({ type: z.literal("not_drawn") }),
+  z.object({ type: z.literal("unreadable") }),
+]);
+
+const Owned = z.object({
+  id: z.string(),
+  rev: z.number().int(),
+  preview: Preview,
+});
+
+const Owning = z.object({ canvases: z.array(Owned) });
+
+export type CanvasPreview = z.infer<typeof Preview>;
+export type OwnedCanvas = z.infer<typeof Owned>;
+
+/**
+ * Carries no write tokens: the app keeps only their hashes. A store without
+ * accounts 404s here, which reads as unavailable, not as a missing canvas.
+ */
+export const listOwnedCanvases = (
+  api: string,
+  token: string,
+): Promise<OwnedCanvas[]> =>
+  call(
+    api,
+    { method: "GET", path: "/api/canvases", canvas: undefined, token },
+    Owning,
+  ).then(({ canvases }) => canvases);
+
+/**
+ * The account token takes the header, so the write tokens go in the body.
+ * The caller mints the next token so a lost answer can be replayed.
+ */
+export const claimCanvas = (
+  api: string,
+  id: string,
+  accountToken: string,
+  writeToken: string,
+  nextWriteToken: string,
+): Promise<Rotated> =>
+  call(
+    api,
+    {
+      method: "POST",
+      path: `${canvasPath(id)}/claim`,
+      canvas: id,
+      token: accountToken,
+      body: { writeToken, nextWriteToken },
+    },
+    Rotated,
   );
