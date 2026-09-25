@@ -95,7 +95,7 @@ type Request = {
   /** Undefined when minting, so a 404 there is not blamed on a canvas. */
   canvas: string | undefined;
   token?: string;
-  /** Names the machine that minted, so signing in later can claim what it pushed. */
+  /** Lets a later sign-in claim what this machine pushed. */
   install?: string;
   ifMatch?: number;
   body?: unknown;
@@ -116,14 +116,10 @@ const unavailable = (
     details,
   );
 
-/** Content from a server we have just declined to follow, so: printable, and short. */
+/** Untrusted server content, so printable and short. */
 const LOCATION_SHOWN = 200;
 
-/**
- * A hop is refused rather than followed, so the address it named is the one
- * thing worth printing — typing `http://` where a store answers on `https://`
- * is an ordinary mistake, and without this it dead-ends on a bare status.
- */
+/** Printing the target turns an `http://` for `https://` typo into a fix. */
 const redirected = (api: string, response: Response): PrLensCliError => {
   const location = response.headers
     .get("location")
@@ -135,7 +131,7 @@ const redirected = (api: string, response: Response): PrLensCliError => {
     response.status,
     location === undefined || location === ""
       ? "the canvas API answers at the address it is given, and this one redirects"
-      : `the canvas API answers at the address it is given; this one points at ${location} — pass that as --api`,
+      : `the canvas API answers at the address it is given; this one points at ${location}, so pass that as --api`,
   );
 };
 
@@ -206,8 +202,7 @@ const refusal = (
         ),
       );
     case "ALREADY_OWNED":
-      // The caller has already shown the write token, so they know the canvas
-      // is real; naming the case gives nothing away that they did not bring.
+      // The caller holds the write token, so naming the case leaks nothing.
       return new PrLensCliError(
         "CANVAS_OWNED",
         `${request.canvas ?? "that canvas"} belongs to another account on ${hostOf(api)}`,
@@ -246,11 +241,8 @@ const call = async <T>(
     method: request.method,
     headers,
     body: request.body === undefined ? undefined : JSON.stringify(request.body),
-    // Never followed. The runtime strips `authorization` when a redirect
-    // crosses origins but forwards everything else, so a hop would hand the
-    // install id — which names this machine to an account — to whatever host
-    // answered. Every route here replies directly, so a 3xx is a surprise
-    // worth reporting rather than obeying.
+    // A cross-origin redirect keeps every header but `authorization`, which
+    // would leak the install id to another host.
     redirect: "manual",
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   }).catch(() => {
@@ -262,7 +254,7 @@ const call = async <T>(
     );
   });
 
-  // Before the refusal dispatch, so a hop is never read as an error envelope.
+  // A 3xx body is not an error envelope.
   if (response.status >= 300 && response.status < 400)
     throw redirected(api, response);
 
@@ -290,12 +282,7 @@ const call = async <T>(
 
 const canvasPath = (id: string): string => `/api/canvas/${id}`;
 
-/**
- * A store that does not know the header ignores it, so an unattributed mint
- * is the old behaviour. The account token is the other half: a runner is a
- * fresh machine every time and its install id is never linked, so the bearer
- * is the only way a workflow's canvases reach the account that named it.
- */
+/** The bearer is how CI attributes a mint: a runner's install id is never linked. */
 export const mintCanvas = (
   api: string,
   install: string | undefined,
@@ -393,11 +380,7 @@ export const deleteCanvas = (
     z.object({ id: z.literal(id), deleted: z.literal(true) }),
   );
 
-/**
- * What a listing can say about a canvas without opening it. Three answers,
- * held apart: nothing pushed yet, and a revision that would not read, are not
- * the same thing, and neither is a name the account can show.
- */
+/** An unreadable revision must not read as an empty canvas. */
 const Preview = z.discriminatedUnion("type", [
   z.object({ type: z.literal("drawn"), title: z.string().min(1) }),
   z.object({ type: z.literal("not_drawn") }),
@@ -416,12 +399,8 @@ export type CanvasPreview = z.infer<typeof Preview>;
 export type OwnedCanvas = z.infer<typeof Owned>;
 
 /**
- * Every canvas the account owns, across every machine it has linked.
- *
- * No write tokens: the app keeps only their hashes, so a machine that owns a
- * canvas and never pushed it can read it here and still not edit it. A store
- * with no accounts does not serve this route at all, and its 404 is reported
- * as the store being unavailable rather than as a missing canvas.
+ * Carries no write tokens: the app keeps only their hashes. A store without
+ * accounts 404s here, which reads as unavailable, not as a missing canvas.
  */
 export const listOwnedCanvases = (
   api: string,
@@ -434,12 +413,8 @@ export const listOwnedCanvases = (
   ).then(({ canvases }) => canvases);
 
 /**
- * Takes a canvas onto an account, and retires the token that proved it.
- *
- * Two credentials, in two places. The account token goes in the header, since
- * a canvas has to be attributed to somebody, so both write tokens travel in
- * the body. The caller mints the next one, exactly as rotating does, so an
- * answer lost on the way back can be asked for again with the same pair.
+ * The account token takes the header, so the write tokens go in the body.
+ * The caller mints the next token so a lost answer can be replayed.
  */
 export const claimCanvas = (
   api: string,

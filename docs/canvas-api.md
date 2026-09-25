@@ -18,7 +18,7 @@ This is version 1 of the contract. Changes to it are additive: a field may be ad
 - Requests and answers are JSON. The CLI sends `accept: application/json`, a `user-agent` of `pr-lens-cli/<version>`, and `content-type: application/json` whenever it sends a body.
 - The CLI gives a request 60 seconds. A server that draws on push should draw within that.
 - Answers should carry `Cache-Control: no-store`, so that nothing between the CLI and the server keeps a document under an address that is meant to stay secret.
-- The CLI does not follow redirects. Every route answers directly, and a 3xx is reported as the server being unavailable — so a store must serve the API at the base URL it was given rather than bouncing to another host.
+- The CLI does not follow redirects, and it reports a 3xx as the server being unavailable. A store must answer every route directly at the base URL it was given.
 
 ### Ids and tokens
 
@@ -34,15 +34,15 @@ The hosted app stores only a hash of the token and compares in constant time, so
 
 ### The account credential
 
-The [ownership routes](#ownership) take a third secret, and it is not a capability on any one canvas: it says who is asking. The hosted app's account tokens are 128 random bits as base64url behind a prefix naming the kind, and they travel in the header.
+The [ownership routes](#ownership) take a third secret. It says who is asking and grants nothing on any one canvas by itself. The hosted app's account tokens are 128 random bits as base64url behind a prefix naming the kind, sent in the header:
 
 ```
 Authorization: Bearer prl_u_xK9mQw2vRt7yLp4nBc6sZe
 ```
 
-The CLI keeps one per origin, so a private store is never sent the credential for another one. `$PR_LENS_TOKEN` overrides the stored one, which is how CI signs in without a browser — and it is read for truthiness rather than presence, because a workflow with nothing to say sets it to the empty string.
+The CLI keeps one per origin, so a private store never receives the credential for another. `$PR_LENS_TOKEN` overrides the stored one, which is how CI signs in without a browser. An empty `$PR_LENS_TOKEN` counts as unset, because a workflow with no token to pass sets it to the empty string.
 
-A store with no accounts serves none of these routes, and the CLI carries on without them: everything under [Routes](#routes) works signed out, which is the property that matters most here. Nothing a person can do with a canvas has ever needed an account, and nothing here changes that.
+A store with no accounts serves none of these routes, and the CLI carries on without them: everything under [Routes](#routes) works signed out. Pushing, pulling, rotating and deleting a canvas never require an account.
 
 ### Errors
 
@@ -74,7 +74,7 @@ Every refusal is a JSON envelope with a code the client switches on, a sentence 
 | `INSTALL_REVOKED`     | 403    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
 | `MACHINE_LINKED`      | 409    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
 
-The last three are in the table because one vocabulary owns every code and its status, and not because a route on this page raises them. `NOT_OWNER` is reserved for a caller who already knows the thing is real — it came out of their own listing — so everywhere else "exists, and is not yours" stays `NOT_FOUND`, including on the [re-grant route](#a-fresh-write-token-for-an-owner) where it would have fitted. `INSTALL_REVOKED` and `MACHINE_LINKED` belong to the machine-linking route the CLI signs in through, which this page does not cover. A private store that never sends any of the three is understood in full.
+No route on this page raises the last three. They are listed because one vocabulary owns every code and its status. `NOT_OWNER` is only for a caller who already knows the canvas exists because it came from their own listing. Everywhere else, "exists, and is not yours" stays `NOT_FOUND`, including on the [re-grant route](#a-fresh-write-token-for-an-owner). `INSTALL_REVOKED` and `MACHINE_LINKED` belong to the machine-linking route the CLI signs in through, which this page does not cover. A private store that never sends any of the three is understood in full.
 
 The message is shown to the person who ran the command, so write it for them. An unknown code, or a refusal without the envelope, is reported as the server being unavailable, so a private server that only ever answers with these codes is understood in full.
 
@@ -96,9 +96,9 @@ The CLI may send one optional header:
 X-PR-Lens-Install: prl_i_...
 ```
 
-It names the machine that minted, so that a person signing in later can be given the canvases that machine pushed. A server that ignores it behaves exactly as this page describes, and the CLI neither notices nor complains — mints carrying no install id stay anonymous, which is what happens before anyone signs in. The value is 128 random bits as base64url behind a `prl_i_` prefix, and the CLI keeps one per origin, so a private store is never told the id used anywhere else.
+It names the machine that minted, so a person who signs in there later can be given the canvases that machine pushed. A server that ignores it still behaves exactly as this page describes, and the CLI won't notice. A mint without an install id stays anonymous, like every mint before anyone signs in. The value is 128 random bits as base64url behind a `prl_i_` prefix. The CLI keeps one per origin, so a private store never learns the id used anywhere else.
 
-A signed-in CLI also sends the [account credential](#the-account-credential) on this one request, and on no other write: a runner is a fresh machine every time, so the install id it mints is never linked, and the bearer is the only way a workflow's canvases reach the account that named it. The hosted app owns such a canvas on arrival. A store with no accounts ignores the header; one that recognises the shape and finds nothing behind it answers `UNAUTHENTICATED`, so a workflow whose token was revoked hears so rather than drawing canvases nobody will ever see.
+A signed-in CLI also sends the [account credential](#the-account-credential) on this request. A CI runner is a new machine every time, so its install id is never linked, and the bearer is the only way a workflow's canvases reach the account that named it. The hosted app gives such a canvas to that account as soon as it is minted. A store with no accounts ignores the header. One that recognises the token's shape but finds no account behind it answers `UNAUTHENTICATED`, so a workflow whose token was revoked finds out instead of drawing canvases nobody will ever see.
 
 ```json
 {
@@ -228,9 +228,9 @@ Nothing in the CLI fetches these addresses. What `/c/{id}` and `/c/{id}.svg` ser
 
 ## Ownership
 
-Three optional routes, and the only ones on this page that ask who you are. They exist so a person can see every canvas they own from a machine that never pushed it, and take a canvas onto their account from a machine they no longer have.
+These three routes are optional, and they are the only ones on this page that ask who you are. They let a person see every canvas they own from a machine that never pushed it, and take a canvas onto their account from a machine they no longer have.
 
-A store that serves none of them is a complete store: `push`, `pull`, `rotate` and `delete` never ask, `pr-lens canvas list` reads the local registry, and only `canvas list --remote` and `canvas claim` need anything here.
+A store that serves none of them is still complete. `push`, `pull`, `rotate` and `delete` never require an account, `pr-lens canvas list` reads the local registry, and only `canvas list --remote` and `canvas claim` use these routes.
 
 ### Everything an account owns
 
@@ -259,7 +259,7 @@ Authorization: Bearer {accountToken}
 }
 ```
 
-Status 200, and `UNAUTHENTICATED` when there is no account behind the credential. No write tokens: only their hashes were ever stored, so a machine can own a canvas here and still not be able to edit it. That is exactly what `canvas list --remote` reports — it merges this answer over the local registry, and the `EDIT HERE` column comes from the registry alone.
+Status 200, or `UNAUTHENTICATED` when there is no account behind the credential. The answer carries no write tokens, because only their hashes were ever stored, so a machine can own a canvas here and still hold no write token for it. `canvas list --remote` shows exactly that: it merges this answer over the local registry, and the `EDIT HERE` column comes from the registry alone.
 
 `preview` is what a listing can say about a canvas without opening it, and it has three shapes:
 
@@ -269,9 +269,9 @@ Status 200, and `UNAUTHENTICATED` when there is no account behind the credential
 | `not_drawn`  |                  | Minted, never pushed to. `rev` is 0                              |
 | `unreadable` |                  | The revision would not read. Not an empty canvas                 |
 
-`unreadable` is a failed read and nothing more. A store that answered `not_drawn` for one would be telling a person their work is gone because a bucket had a bad minute, so the two stay apart. The CLI shows a canvas with no `title` under its id, which is what the local listing already does for one nobody named.
+`unreadable` means the read failed. Keep it apart from `not_drawn`: a store that answered `not_drawn` for a failed read would tell a person their work is gone because a bucket had a bad minute. The CLI shows a canvas with no `title` under its id, as the local listing does for one nobody named.
 
-Order is the server's business; the CLI sorts by name and then by id. Anything else in the answer is ignored — the CLI reads `id`, `rev` and the preview's `title`.
+Order is the server's business; the CLI sorts by name and then by id. It reads `id`, `rev` and the preview's `title`, and ignores everything else in the answer.
 
 ### Claiming a canvas
 
@@ -284,9 +284,9 @@ Authorization: Bearer {accountToken}
 { "writeToken": "uH7sKd2pXw9qLz4mNc6vTe", "nextWriteToken": "Ab3dEf5gHi7jKl9mNo1pQr" }
 ```
 
-Takes a canvas onto the account, on the strength of its write token, and retires that token in the same step. Both write tokens are in the body because the header is carrying the account credential.
+Takes a canvas onto the account on the strength of its write token, and retires that token in the same step. Both write tokens go in the body because the header carries the account credential.
 
-The rotation is the point rather than housekeeping. A write token sits in the fragment of every edit link ever shared, so if possession alone granted ownership and the token survived, every link ever pasted into a chat would be a standing offer of the canvas. Whoever claims walks away with a token nobody else has seen.
+The claim rotates the token because a write token sits in the fragment of every edit link ever shared. If possession alone granted ownership and the token survived, every link ever pasted into a chat would be a standing offer of the canvas. Whoever claims walks away with a token nobody else has seen.
 
 The checks happen in this order, and the first to fail is the answer:
 
@@ -303,11 +303,11 @@ The checks happen in this order, and the first to fail is the answer:
 }
 ```
 
-Status 200. Ownership is written first and write-once, so two claims racing cannot both win; the swap follows.
+Status 200. The app writes ownership first, and only once, so two racing claims cannot both win; the token swap follows.
 
-Asking again with the same pair is answered 200 again, which is how a claim whose answer was lost is finished — the same replay rule [rotate](#rotate) has, and the reason the caller brings the next token rather than being handed one.
+Asking again with the same pair gets 200 again, which is how a claim whose answer was lost gets finished. [rotate](#rotate) has the same replay rule, and it is why the caller brings the next token instead of being handed one.
 
-An owner asking again with a *different* next token is not refused by the app: it rotates. First claim wins, and after that a claim only ever finishes itself. The CLI will not make that call — `canvas claim` asks `/api/canvases` first and stops if the canvas is already yours, so running the command twice is never a surprise rotation — but a store implementing this should know the route leaves that decision to its caller.
+If the owner asks again with a different next token, the app rotates the token instead of refusing. First claim wins, and after that a claim only ever finishes itself. The CLI never makes that call: `canvas claim` asks `/api/canvases` first and stops if the canvas is already yours, so running the command twice never rotates by surprise. A store implementing this route should know it leaves that decision to the caller.
 
 ### A fresh write token for an owner
 
@@ -320,12 +320,12 @@ Authorization: Bearer {accountToken}
 { "writeToken": "Ab3dEf5gHi7jKl9mNo1pQr" }
 ```
 
-For an owner who no longer has a write token at all. Only a hash was ever kept, so the old one cannot be handed back: this replaces it, and any edit link still in circulation stops working. Ownership is the whole proof, which is why nothing in the body proves anything.
+For an owner who has no write token left. Only a hash was ever kept, so the old token cannot be handed back. This route replaces it, and any edit link still in circulation stops working. Ownership is the only proof, so the body carries just the new token.
 
 - No account behind the credential: `UNAUTHENTICATED`.
 - A body that is not JSON, or a `writeToken` that is not 22 characters of base64url: `INVALID_REQUEST`.
-- An unknown id, a canvas nobody owns, or one owned by somebody else: `NOT_FOUND`, all three. `NOT_OWNER` exists and is deliberately not used here — this route would otherwise answer which ids are real to anyone with an account.
-- Otherwise 200, with the same `{ id, editUrl }` claim answers.
+- An unknown id, a canvas nobody owns, or one owned by somebody else: `NOT_FOUND`, all three. `NOT_OWNER` is deliberately not used here, since it would tell anyone with an account which ids are real.
+- Otherwise 200, with the same `{ id, editUrl }` a claim answers with.
 
 The CLI does not call this route yet.
 
@@ -371,7 +371,7 @@ The revision check is the only conflict handling there is. Two writers holding t
 
 ## The smallest server that works
 
-To run the CLI end to end, a server needs the five routes above, the error envelope, and a store keyed by id holding a token hash, a revision counter and the last document. The [ownership routes](#ownership) are not among them: without accounts there is nobody to own anything, and everything but `canvas list --remote` and `canvas claim` works the same. It can answer `tiles: []`, skip drawing, skip rate limiting and serve nothing at `/c/{id}`. Everything the CLI writes to disk, the document at `.pr-lens/graph.json` and the registry at `.pr-lens/canvas.json`, works the same against it as against prlens.dev.
+To run the CLI end to end, a server needs the five routes above, the error envelope, and a store keyed by id holding a token hash, a revision counter and the last document. It does not need the [ownership routes](#ownership): without accounts nobody owns anything, and everything except `canvas list --remote` and `canvas claim` works the same. It can answer `tiles: []`, skip drawing, skip rate limiting and serve nothing at `/c/{id}`. Everything the CLI writes to disk, the document at `.pr-lens/graph.json` and the registry at `.pr-lens/canvas.json`, works the same against it as against prlens.dev.
 
 A walk through the whole lifecycle with curl, against a server at `$API`:
 

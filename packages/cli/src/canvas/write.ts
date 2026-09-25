@@ -9,15 +9,8 @@ export const DEFAULT_API = "https://prlens.dev";
 export const API_ENV = "PR_LENS_API_URL";
 
 /**
- * Truthiness rather than `??` on the environment, deliberately.
- *
- * A workflow has no way to leave an `env` key out conditionally, so the one
- * with nothing to say sets it to the empty string — and `?? DEFAULT_API`
- * would read that blank as an address and fail on it instead of falling
- * through. `PR_LENS_TOKEN` is read the same way and for the same reason.
- *
- * The flag keeps `??`: `--api ""` was typed by somebody, and telling them it
- * is not a URL beats quietly using a different store than the one they named.
+ * `||` for the environment: a workflow cannot omit an `env` key, so it sets
+ * it to "". The flag keeps `??`, so a typed `--api ""` is reported.
  */
 export const readApi = (
   value: unknown,
@@ -55,20 +48,8 @@ export const requireWriteToken = ({ id, entry }: Registered): string => {
 };
 
 /**
- * What to send to change a canvas: the write token, or being its owner.
- *
- * The token first, and not only for habit. It is the credential this
- * checkout was given for this canvas, it works whether or not anyone is
- * signed in, and it is what a store that has not been updated still expects.
- *
- * The account token is the answer when there is no write token here — a
- * second laptop, a fresh CI runner, a checkout that never pulled the edit
- * link. The app accepts either and checks that the account owns the canvas,
- * so sending it proves nothing by itself.
- *
- * Neither leaves the old message, which was written when the token was the
- * only way in and said so. It mentions signing in now, because that is the
- * other one.
+ * The write token first: it works signed out and on stores without accounts.
+ * The account token only works if the app finds the account owns the canvas.
  */
 export const writeCredential = async (
   registered: Registered,

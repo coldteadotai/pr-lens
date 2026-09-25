@@ -30,25 +30,20 @@ export const setupCanvasTest = () => {
     err: [],
     status: [],
   };
-  /*
-   * `status` is left off by default, because absent is the answer a pipe and
-   * a CI log give and it is what most of these tests are standing in for. A
-   * test that wants the live line turns it on with `rewritable()`.
-   */
+  // No `status` by default, like a pipe or a CI log.
   const terminal: Terminal = {
     out: (line) => output.out.push(line),
     err: (line) => output.err.push(line),
   };
 
-  /** Give this run a terminal that can rewrite a line, as a real one can. */
   const rewritable = (): void => {
     terminal.status = (line) => output.status.push(line);
   };
   const fetchMock = vi.fn<typeof fetch>();
-  /** A config home inside the temp directory, so no test writes to the real one. */
+  /** Points the config home into the temp directory, away from the real one. */
   let env: Record<string, string | undefined> = {};
   const invoke = (...argv: string[]) => run(argv, terminal, env);
-  /** Takes the store explicitly: ids are kept one per origin. */
+  /** Ids are kept one per origin. */
   const installId = async (api: string): Promise<string | undefined> => {
     const home = env.XDG_CONFIG_HOME;
     if (home === undefined) return undefined;

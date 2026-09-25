@@ -45,10 +45,10 @@ inputs:
     default: github-actions[bot]
   token:
     description: >-
-      PR Lens account token, so that canvases this workflow draws are yours on
-      prlens.dev. Optional: without it a run draws anonymously, exactly as
-      before. A runner is a fresh machine every time, which is why CI names the
-      account with a token rather than with the install id a laptop keeps.
+      Optional PR Lens account token. With it, canvases this workflow draws
+      belong to your prlens.dev account; without it, they are anonymous. CI
+      needs a token because a runner is a new machine every time and cannot
+      keep the install id a laptop does.
     default: ""
   github-token:
     description: Token used to publish the SVGs and post the comment.

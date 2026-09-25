@@ -32,7 +32,7 @@ jobs:
 
 That is the whole setup. `GEMINI_API_KEY` is the secret name because `provider` defaults to Gemini; set `provider` to `openai`, or to `openai-compatible` with a `base-url`, and the key is whatever that endpoint wants. The key is passed to the CLI through the environment, so it never appears in a command line or a log; the diff goes to the provider you named and nowhere else.
 
-`token` is the other credential, and it is optional. It is a PR Lens account token, handed to the CLI through the environment like the model key, and it tells prlens.dev which account the canvases from this workflow belong to. Leave it out and a run draws anonymously, exactly as it does now. CI is named by a token rather than by the sign-in a laptop keeps because a runner is a new machine every time: anything it minted for itself would be gone before the next run.
+`token` is optional. It is a PR Lens account token, passed to the CLI through the environment like the model key, and it tells prlens.dev which account owns the canvases this workflow draws. Without it, runs draw anonymously. CI needs a token because a runner is a new machine every time, so any sign-in it kept would be gone before the next run.
 
 The `concurrency` block is not decoration. Every run of every pull request writes to one shared branch and one shared comment, so two runs of the same pull request racing is ordinary. A group per pull request means a new push supersedes the render it replaces instead of the two fighting for the comment.
 

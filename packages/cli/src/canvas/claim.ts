@@ -1,11 +1,6 @@
 /**
- * Taking a canvas onto the account this machine is signed in to.
- *
- * For a canvas pushed from a machine that is gone, or from a checkout nobody
- * has any more. Possession of the write token is the only proof on offer, and
- * that token rides in the fragment of every edit link ever pasted into a chat
- * — so claiming retires it in the same step. Whoever claims walks away with a
- * token nobody else has seen, and the links already handed out stop editing.
+ * The write token is the only proof, and it rides in every edit link ever
+ * shared, so claiming retires it in the same step.
  */
 import { requireToken } from "../auth.js";
 import type { Terminal } from "../terminal.js";
@@ -27,7 +22,7 @@ const unfinishedClaim = (error: PrLensCliError): PrLensCliError =>
     `${error.message}; the claim may have landed`,
     [
       error.details,
-      "run pr-lens canvas claim again: the token it minted is kept, and asking again with the same pair is how a lost answer is finished",
+      "run pr-lens canvas claim again: the token it minted is kept, and a second run finishes the claim",
     ]
       .filter((line) => line !== undefined && line !== "")
       .join("\n"),
@@ -47,34 +42,19 @@ export const claimCommand = async (
   const registry = await readRegistry();
   const selected = findCanvas(registry, ref);
 
-  // Before anything is sent: a machine that is not signed in has nothing to
-  // claim onto, and finding that out must not cost a rotation.
+  // Checked first, so a signed-out machine never costs a rotation.
   const account = await requireToken(env, api);
 
-  // A rotation left half done would have this checkout offering a token the
-  // app has already replaced. It also finishes a claim whose answer was lost:
-  // the token that claim minted is pending, the app has it on record, and
-  // rotating onto it is answered "rotated".
+  // Also finishes a claim whose answer was lost: its token is still pending.
   const settled = await settlePendingRotation(api, selected, terminal, env);
   const id = settled.id;
 
-  /*
-   * Claiming is the one write that still needs the token, and saying so
-   * before anything is sent.
-   *
-   * A push or a delete takes being the owner instead, so `settleRotation`
-   * stopped demanding a token for a checkout with no rotation to settle —
-   * which used to be what stopped this command early. Claiming is how a
-   * canvas *gets* an owner, so there is nobody to authorise it but whoever
-   * holds the pen, and asking the app about a canvas this checkout cannot
-   * claim is a question with no use for its answer.
-   */
+  // Unlike push and delete, ownership cannot stand in: claiming is how a
+  // canvas gets an owner.
   requireWriteToken(settled);
 
-  // Asked rather than attempted. The app treats a claim from the owner as a
-  // replay and finishes it, which is right for a lost answer and wrong for a
-  // command run twice — the second run would retire a token nobody asked to
-  // retire. Whoever wins the race to own it is still settled by the app.
+  // The app treats an owner's claim as a replay and rotates, so running the
+  // command twice would retire a token for nothing.
   const mine = await listOwnedCanvases(api, account);
   if (mine.some((canvas) => canvas.id === id))
     throw new PrLensCliError(
@@ -86,8 +66,7 @@ export const claimCommand = async (
   terminal.err("! Claiming rotates this canvas's write token.");
   terminal.err("  Edit links you have already shared will stop working.");
 
-  // Saved before the request, so an answer that never arrives does not take
-  // the new token with it.
+  // Saved first, so a lost answer does not lose the token.
   const nextToken = mintWriteToken();
   let saved = false;
   await updateRegistry((current) => {
@@ -110,10 +89,8 @@ export const claimCommand = async (
     nextToken,
   ).catch(async (error: unknown) => {
     if (!(error instanceof PrLensCliError)) throw error;
-    // These two are the app saying it decided and did not rotate: it answers
-    // NOT_FOUND only when neither token is on record, and ALREADY_OWNED
-    // before the swap. Anything else may have landed, so the pending token
-    // stays and the next claim or rotation finishes it.
+    // Only these two mean the app did not rotate. Anything else may have
+    // landed, so the pending token stays for the next run to finish.
     if (error.code !== "CANVAS_UNKNOWN" && error.code !== "CANVAS_OWNED")
       throw unfinishedClaim(error);
 

@@ -184,14 +184,7 @@ other people's hands.
  * user's, and so is the question of what to do with it.
  */
 export const prepareWorkspace = async (out: string, terminal: Terminal): Promise<void> => {
-  /*
-   * Anywhere inside the workspace, not only the workspace itself.
-   *
-   * Each drawing renders into its own directory under `.pr-lens/` now, so a
-   * checkout whose first ever render is `.pr-lens/auth-flow` used to get no
-   * README and, worse, no gitignore — the write tokens and the SVGs would
-   * have been staged by the next `git add`.
-   */
+  // A first render into `.pr-lens/<title>` must still gitignore the workspace.
   const directory = resolve(out);
   const workspace = resolve(WORKSPACE_DIR);
   const inside = directory === workspace || directory.startsWith(`${workspace}${sep}`);
@@ -208,22 +201,14 @@ export const prepareWorkspace = async (out: string, terminal: Terminal): Promise
 /** What `render` writes beside the manifest, in every drawing's directory. */
 export const DRAWN_NAME = "drawn.graph.json";
 
-/**
- * Every drawing in the workspace, newest directory last.
- *
- * One per directory under `.pr-lens/`, plus the loose `drawn.graph.json` that
- * 0.7.0 wrote at the top before each drawing had a directory of its own.
- */
+/** Includes the top-level `drawn.graph.json` that 0.7.0 wrote. */
 export async function drawings(): Promise<string[]> {
   const found: string[] = [];
 
   const legacy = join(WORKSPACE_DIR, DRAWN_NAME);
   if (await readable(legacy)) found.push(legacy);
 
-  // Every entry is asked for its document rather than asked whether it is a
-  // directory first: `Dirent.isDirectory()` is false for a symlink to one,
-  // and a drawing linked in from elsewhere is still a drawing. A file or an
-  // empty directory simply has no document at that path.
+  // No `isDirectory()` check: it is false for a symlinked drawing.
   const entries = await readdir(WORKSPACE_DIR).catch(() => []);
   for (const entry of entries) {
     const drawn = join(WORKSPACE_DIR, entry, DRAWN_NAME);

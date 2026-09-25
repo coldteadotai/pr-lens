@@ -56,10 +56,8 @@ test("one machine is a different id at every store", async () => {
 
   expect(hosted).toMatch(/^prl_i_/);
   expect(private_).toMatch(/^prl_i_/);
-  // A store is never told the id used anywhere else, so learning one buys
-  // nothing against another.
+  // So learning one store's id buys nothing against another.
   expect(hosted).not.toBe(private_);
-  // And each is still stable on its own.
   expect(await readInstallId(env, API)).toBe(hosted);
 });
 
@@ -72,8 +70,8 @@ test("a path differs by origin but not by the rest of the URL", async () => {
     installPath(env, "https://other.example"),
   );
 
-  // Every non-http scheme has an origin of the literal "null", so filing them
-  // would put unrelated stores in one place. No path, no id, no sharing.
+  // Every non-http origin is the literal "null", so filing them would merge
+  // unrelated stores.
   expect(installPath(env, "file:///tmp/store")).toBeUndefined();
   expect(installPath(env, "weird://a.example")).toBeUndefined();
 });
@@ -103,8 +101,7 @@ test("concurrent first runs settle on one id", async () => {
     Array.from({ length: 8 }, () => readInstallId(env, API)),
   );
 
-  // Every caller must have been told the id that is actually on disk. A caller
-  // handed a discarded id would mint a canvas this machine can never claim.
+  // A caller handed a discarded id mints a canvas this machine can never claim.
   const onDisk = await readInstallId(env, API);
   expect(new Set(racing)).toEqual(new Set([onDisk]));
 });
@@ -115,13 +112,11 @@ test("replaces a file whose bytes say nothing usable, and keeps what it made", a
 
   const repaired = await readInstallId(env, API);
   expect(repaired).toMatch(/^prl_i_/);
-  // Proves the repair persisted, not merely that it answered.
   expect(await readInstallId(env, API)).toBe(repaired);
 });
 
 test("never destroys a good id it merely could not read", async () => {
-  // Root reads a 0000 file, so there the read would succeed and this would
-  // assert nothing at all.
+  // Root can read a 0000 file, so this would assert nothing.
   if (process.getuid?.() === 0) return;
 
   const env = await configHome();
@@ -129,7 +124,7 @@ test("never destroys a good id it merely could not read", async () => {
   const path = installPath(env, API) as string;
   const before = await readFile(path, "utf8");
 
-  // Unreadable, not corrupt — the id on disk is fine and the app has it.
+  // Unreadable, not corrupt: the id on disk is fine and the app has it.
   await chmod(path, 0o000);
   await readInstallId(env, API);
   await chmod(path, 0o600);
@@ -162,15 +157,13 @@ describe("through a push", () => {
 
     const sent = app.seen[0]?.headers.get("x-pr-lens-install");
     expect(sent).toMatch(/^prl_i_[A-Za-z0-9_-]{22}$/);
-    // The id the app was told is the one this machine keeps, not a fresh one.
     expect(sent).toBe(await installId(API));
   });
 
   test("reuses the id on a second mint", async () => {
     await invoke("canvas", "push", "drawn.graph.json", "--api", API);
-    // A different title, because that is what makes a second drawing: the
-    // same document under another path is the same drawing, and pushing it
-    // updates the canvas it already has rather than minting beside it.
+    // A second drawing needs a different title; the same one under another
+    // path would update the existing canvas.
     const document = JSON.parse(await readFile("drawn.graph.json", "utf8")) as {
       title: string;
     };
@@ -195,11 +188,8 @@ describe("through a push", () => {
   });
 
   test("sends the account token on the mint when CI names one", async () => {
-    // The app attributes a mint to an account only from the bearer on
-    // `POST /api/canvas`. A runner is a fresh machine every time, so its
-    // install id is never linked: the token is the only way a workflow's
-    // canvases reach the dashboard, and the Action's `token` input promises
-    // exactly that.
+    // A runner's install id is never linked, so the bearer on the mint is the
+    // only way its canvases reach the account.
     env().PR_LENS_TOKEN = "prl_u_" + "ci".padEnd(22, "c");
 
     expect(
@@ -210,7 +200,7 @@ describe("through a push", () => {
     expect(mint?.headers.get("authorization")).toBe(
       `Bearer ${env().PR_LENS_TOKEN}`,
     );
-    // And never on the push that follows: that one carries the write token.
+    // The push that follows carries the write token instead.
     const push = app.seen.find((request) => request.method === "PUT");
     expect(push?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
   });

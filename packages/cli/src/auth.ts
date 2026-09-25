@@ -1,20 +1,9 @@
 /**
- * The credential that signs this machine in, on disk.
- *
- * One file per store, beside the install ids and for the same reason: a token
- * is enough to be someone at the store that issued it, so a single file
- * holding every store's token is a single file to send to the wrong one.
- *
- * It is also what settles two shells signing in at once. A file per origin
- * means the only thing they can race for is the same origin's token, where
- * the last write is the right answer — both tokens work, and the later one is
- * the one the person just asked for. A map keyed by origin would have to be
- * read and then written back, and the shell that lost would take a token for
- * an origin it never touched down with it.
- *
- * `0600`, because the whole point of the file is that nobody else on the
- * machine can be you; `0700` on the directory, because the names in it say
- * which stores this person has signed in to.
+ * The sign-in credential on disk, one file per store so a token never reaches
+ * the wrong one. A file per origin also means two shells signing in at once
+ * can only race on the same origin, where the last write wins correctly.
+ * `0600` on the file, `0700` on the directory: the file names reveal which
+ * stores this person signs in to.
  */
 import { dirname } from "node:path";
 import { mkdir, readFile, rm } from "node:fs/promises";
@@ -27,16 +16,11 @@ import { originPath } from "./config-home.js";
 const CREDENTIALS = "auth";
 
 /**
- * Read with `||` and never `??`.
- *
- * The Action sets this key to the empty string when no token was given —
- * GitHub Actions has no way to leave an `env` key out conditionally — so
- * `??` would read a blank as a credential and send every workflow run an
- * authorization header with nothing behind it.
+ * Read with `||`, never `??`: the Action sets it to "" when no token was
+ * given, since Actions cannot omit an `env` key conditionally.
  */
 export const TOKEN_ENV = "PR_LENS_TOKEN";
 
-/** The app's account tokens: a prefix naming the kind, then 128 bits of base64url. */
 const ACCOUNT_TOKEN = /^prl_u_[A-Za-z0-9_-]{22}$/;
 
 export const authPath = (
@@ -47,12 +31,8 @@ export const authPath = (
 export type Credential = { token: string; signedInAt: string | undefined };
 
 /**
- * Could not read it, and is wrong, and is absent are three answers.
- *
- * A home directory that is momentarily unreadable is not a person who is
- * signed out, and nothing here deletes what it could not understand — the
- * bytes may be a working token this version simply failed to open, and
- * `auth logout` is the one place a person asks for the file to go.
+ * An unreadable file is kept apart from a missing one and never deleted here:
+ * it may hold a working token. Only `auth logout` removes it.
  */
 export type CredentialRead =
   | { type: "credential"; path: string; credential: Credential }
@@ -68,7 +48,6 @@ const missing = (error: unknown): boolean =>
   "code" in error &&
   error.code === "ENOENT";
 
-/** Pure, so "these bytes say nothing usable" is answerable without a read. */
 const credentialIn = (text: string): Credential | undefined => {
   const contents = ((): unknown => {
     try {
@@ -113,14 +92,7 @@ export const readCredential = async (
     : { type: "credential", path, credential };
 };
 
-/**
- * The token to send, from the environment first.
- *
- * Every failure answers undefined and the caller goes on unauthenticated,
- * which is the property the install id has and for the same reason: a push
- * has never needed an account, and nothing added here may be the thing that
- * makes one start failing.
- */
+/** Every failure answers undefined, so a push never starts failing over an account. */
 export const readToken = async (
   env: Record<string, string | undefined>,
   api: string,
@@ -133,13 +105,8 @@ export const readToken = async (
 };
 
 /**
- * The token to send when the command cannot go on without one.
- *
- * `readToken` answers undefined on every failure, which is right for a push:
- * it has never needed an account and must not start. A command that is about
- * the account has to tell the three answers apart instead — a credential file
- * that will not open is not somebody who is signed out, and telling them to
- * sign in again would be advice about a file this CLI never read.
+ * For account commands, which must tell an unreadable file apart from being
+ * signed out rather than advise signing in again.
  */
 export const requireToken = async (
   env: Record<string, string | undefined>,
@@ -192,12 +159,8 @@ export const writeCredential = async (
 };
 
 /**
- * Signing out, which is the one thing allowed to remove a file it could not
- * read — and the only place that removes this file at all.
- *
- * The removal is what reports whether there was anything to remove, rather
- * than a read before it: reading first would let a sign-in that landed in
- * another shell in between be thrown away as though it had been seen.
+ * The only place that removes the file, readable or not. No read first: a
+ * sign-in from another shell in between would be thrown away unseen.
  */
 export const forgetCredential = async (
   env: Record<string, string | undefined>,

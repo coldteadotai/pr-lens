@@ -139,7 +139,7 @@ test("login shows a code to check, links this machine, and keeps the token 0600"
   expect(printed).toContain("The code lasts 15 minutes.");
   expect(printed).toContain("✓ Signed in to canvas.test");
 
-  // Two polls: the first was answered "not yet".
+  // The first poll was answered "not yet".
   expect(seen("/api/device/token")).toHaveLength(2);
 
   const credential = await stored();
@@ -215,8 +215,7 @@ test("the wait ends on the deadline the code arrived with, not on a poll count",
   expect(Date.now() - started).toBeGreaterThanOrEqual(900);
   expect(output.err.join("\n")).toContain("ran out before anyone approved it");
   expect(seen("/api/device/token").length).toBeLessThanOrEqual(2);
-  // The only test here that waits on a real clock, so it gets room to be
-  // scheduled late rather than becoming the suite's flaky one.
+  // The one test on a real clock; the headroom keeps it from flaking.
 }, 20_000);
 
 test("too many codes from one address is a wait, not an accusation", async () => {
@@ -375,8 +374,7 @@ test("PR_LENS_TOKEN set to the empty string is a run without a token", async () 
   app.seen = [];
 
   expect(await invoke("auth", "status", "--api", API, "--json")).toBe(0);
-  // The stored credential, not the blank: `??` here would send `Bearer ` and
-  // report a sign-in that came from the environment.
+  // A blank variable falls back to the file; `??` would send `Bearer `.
   expect(JSON.parse(output.out.join("\n"))).toMatchObject({ source: "file", state: "signed_in" });
   expect(seen("/api/machines")[0]?.headers.get("authorization")).toBe(`Bearer ${TOKEN}`);
 });
@@ -386,9 +384,7 @@ test("PR_LENS_TOKEN with a token in it is how CI signs in", async () => {
   env().PR_LENS_TOKEN = TOKEN;
 
   expect(await invoke("auth", "status", "--api", API, "--json")).toBe(0);
-  // `unknown` rather than `unlinked`: a runner that has never pushed has no
-  // install id, and status will not mint one just to have something to ask
-  // about. Not asking is not the same answer as asking and being told no.
+  // `unknown`, since a runner that never pushed has no install id to ask about.
   expect(JSON.parse(output.out.join("\n"))).toMatchObject({
     source: "environment",
     state: "signed_in",
@@ -438,8 +434,7 @@ test("auth needs a subcommand, and names the ones it has", async () => {
 });
 
 test("slow_down backs off by five seconds, however small a floor the app names", () => {
-  // The app answers slow_down with its own five-second floor, so honouring
-  // that alone would leave a client already at five polling at five forever.
+  // The app's floor is five seconds, so honouring it alone never backs off.
   expect(nextInterval(5, 5)).toBe(10);
   expect(nextInterval(0, 0)).toBe(5);
   expect(nextInterval(5, 60)).toBe(60);
@@ -454,8 +449,7 @@ test("login names the address it signed in as", async () => {
 
 test("an app that cannot say who you are still signs you in", async () => {
   useApp();
-  // The credential is already on disk by the time the greeting is fetched, so
-  // a store too old to answer must cost the name and nothing else.
+  // The credential is saved before the greeting, so an old store costs only the name.
   app.account = { status: 404, email: "" };
 
   expect(await login()).toBe(0);
@@ -472,7 +466,6 @@ test("logout ends the session at the app before forgetting it here", async () =>
 
   const ended = app.seen.find((seen) => seen.path === "/api/session");
   expect(ended?.method).toBe("DELETE");
-  // The token it is ending is the one it holds, not a fresh sign-in.
   expect(ended?.headers.get("authorization")).toBe(`Bearer ${TOKEN}`);
   expect(output.out.join("\n")).toContain("✓ Signed out of canvas.test");
 });
@@ -484,14 +477,9 @@ test("an unreachable app does not keep somebody signed in on their own laptop", 
 
   expect(await invoke("auth", "logout", "--api", API)).toBe(0);
 
-  // Forgotten locally regardless, and told plainly that the far end does not
-  // know yet — the one thing worse than this message is silently keeping the
-  // credential because a server was down.
+  // Forgotten locally even when the app cannot be told.
   expect(output.out.join("\n")).toContain("✓ Signed out of canvas.test");
-  expect(output.out.join("\n")).toContain("could not be told");
-  // Forgotten here is the half that must hold: status now reports no sign-in,
-  // and exits non-zero saying so, the way it does for a machine that never
-  // signed in at all.
+  expect(output.out.join("\n")).toContain("did not end the session");
   app.offline = false;
   expect(await invoke("auth", "status", "--api", API)).toBe(1);
   expect(`${output.out.join("\n")}\n${output.err.join("\n")}`).toContain(
@@ -516,8 +504,7 @@ test("one canvas is not eight, and none is still a sentence", async () => {
   output.out.length = 0;
   useApp();
   app.claimed = { claimed: 0 };
-  // `--force`, because the first login left a credential and a machine that is
-  // already signed in is no longer asked to sign in again.
+  // `--force`: the first login left a credential, so a bare login would stop.
   expect(await login("--force")).toBe(0);
   expect(output.out.join("\n")).toContain("0 canvases are now yours");
 });
@@ -533,11 +520,6 @@ test("an app that sends no count says nothing about one", async () => {
 });
 
 
-/**
- * Running `auth login` twice used to mint a second device code and open a
- * second browser for a session the machine already had — and leave the first
- * grant to expire unanswered.
- */
 test("a machine that is already signed in is not asked to sign in again", async () => {
   useApp();
   expect(await login()).toBe(0);
@@ -549,7 +531,6 @@ test("a machine that is already signed in is not asked to sign in again", async 
   expect(output.out.join("\n")).toContain("Already signed in");
   expect(output.out.join("\n")).toContain("--force");
 
-  // And nothing was started: no code minted, nothing left to expire.
   expect(seen("/api/device/code")).toHaveLength(0);
 });
 
@@ -565,11 +546,7 @@ test("--force signs in again over a live session", async () => {
   expect(seen("/api/device/code")).toHaveLength(1);
 });
 
-/**
- * A token the app has ended is exactly when a fresh login is right, so the
- * check must not stand in the way of one — "not you" and "we could not ask"
- * are different answers and only the first is evidence about the credential.
- */
+/** Only "not you" says the credential is bad; "could not ask" does not. */
 test("a session the app has ended does not block a fresh login", async () => {
   useApp();
   expect(await login()).toBe(0);
@@ -583,11 +560,7 @@ test("a session the app has ended does not block a fresh login", async () => {
   expect(seen("/api/device/code")).toHaveLength(1);
 });
 
-/**
- * The live line only exists where a terminal can rewrite one. A pipe, a CI
- * log and a file all want the static sentence instead — a spinner frame every
- * hundred milliseconds is not something you want in a build log.
- */
+/** A spinner frame every 100ms does not belong in a build log. */
 test("without a rewritable line, the static sentence is printed instead", async () => {
   useApp();
   expect(await login()).toBe(0);
@@ -601,15 +574,9 @@ test("with one, the sentence gives way to the live line, and the line is cleared
 
   expect(await login()).toBe(0);
 
-  // Not both: the live line replaces the sentence rather than joining it.
   expect(output.out.join("\n")).not.toContain("Waiting for it…");
 
-  // And however it ended, it ended by clearing — a half-drawn spinner left
-  // above an error message is worse than no spinner.
-  //
-  // The length check is the half that can fail: `at(-1)` on an empty array is
-  // also undefined, so without it this would pass on a terminal that was
-  // never written to at all.
+  // `at(-1)` of an empty array is undefined too, so check something was written.
   expect(output.status.length).toBeGreaterThan(0);
   expect(output.status.at(-1)).toBeUndefined();
 });

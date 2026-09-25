@@ -36,19 +36,7 @@ export const mintWriteToken = (): string =>
 
 const Entry = z.object({
   name: z.string(),
-  /**
-   * The document this was last pushed from, and the reason a bare push
-   * updates rather than mints.
-   *
-   * Absent for a canvas recorded from an edit link without its document:
-   * there is no local file, and naming a path nothing wrote would make a
-   * bare push resolve to a canvas this checkout cannot actually draw.
-   *
-   * Two entries cannot claim one path. A drawing renders into a directory
-   * named after its title, so two documents sharing a path share a title,
-   * which makes them the same drawing redrawn — exactly the case that should
-   * land on the same canvas.
-   */
+  /** Absent for a canvas recorded from an edit link: no local file wrote it. */
   source: z.string().optional(),
   /** Another app's 404 says nothing about this entry. */
   api: z.string(),
@@ -472,22 +460,9 @@ export const findBySource = (
 };
 
 /**
- * The canvas a document belongs to when no path points at one.
- *
- * A pull writes the source document; a render then writes the drawing
- * somewhere else, under a directory named for the title. Either file is a
- * legitimate thing to push, and only one of them can be the recorded path —
- * so after a pull, one of the two flows would mint a second canvas for a
- * document that already has one.
- *
- * The title is what actually identifies a drawing here: it is what the
- * render directory is named after, and "the same title is the same drawing
- * redrawn" is the rule the whole layout rests on. So when the path says
- * nothing, the title is asked.
- *
- * Only ever a fallback. A path that matches is a stronger answer, because it
- * is a fact about what was pushed rather than an inference from a field
- * somebody can edit.
+ * Fallback after the path: a pull and the render after it write two files,
+ * and only one can be the recorded path. A path match wins, since a title
+ * can be edited.
  */
 export const findByTitle = (
   registry: CanvasRegistry,

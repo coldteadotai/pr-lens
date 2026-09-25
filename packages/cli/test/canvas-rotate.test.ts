@@ -163,16 +163,6 @@ test("a rotation the app has refused for good is dropped, not carried out by a l
   expect(app.canvases.get(FIRST)?.token).toBe(current);
 });
 
-/**
- * Rotating a canvas you own, from a checkout that holds no token.
- *
- * This was the one write that still refused: `rotate` demanded a token
- * before minting the pending one, and `settleRotation` demanded it again
- * before sending. Push and delete had both moved to the account token and
- * this had not, so an owner could change a canvas but not retire the link
- * to it — and no test noticed, because none of them ran rotate without a
- * token in the registry.
- */
 test("rotates with the account token when the registry holds none", async () => {
   env().PR_LENS_TOKEN = ACCOUNT;
   await invoke("canvas", "push", "drawn.graph.json", "--api", API);

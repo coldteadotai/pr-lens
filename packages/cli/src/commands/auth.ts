@@ -35,9 +35,9 @@ const isSubcommand = (value: string): value is Subcommand =>
 
 export const USAGE = `pr-lens auth <login | status | logout> [options]
 
-Signs this machine in to the PR Lens app, so the canvases it pushes are yours
-rather than unlisted pages only a link reaches. Nothing else needs it: pushing,
-pulling and rendering all work signed out, and always will.
+Signs this machine in to the PR Lens app, so the canvases it pushes belong to
+your account. Nothing else needs it: pushing, pulling and rendering
+all work signed out, and always will.
 
   pr-lens auth login                   approve this machine in a browser
   pr-lens auth login --force           sign in again even if this machine already is
@@ -56,17 +56,12 @@ without a browser.`;
 
 const CLIENT = `pr-lens-cli/${CLI_VERSION}`;
 
-/** RFC 8628 §3.5: a `slow_down` means back off by five seconds, every time. */
+/** RFC 8628 §3.5: each `slow_down` adds five seconds. */
 const SLOW_DOWN_STEP_SECONDS = 5;
 
 /**
- * The floor after the app said we asked too soon.
- *
- * The RFC's rule is "add five seconds", and it has to be the addition rather
- * than whatever the app serves: this app answers `slow_down` with the same
- * five-second floor it always names, so obeying that number alone would leave
- * a client that is already at five polling at five forever. A larger number
- * from the app still wins.
+ * Adds the step rather than taking the served interval: the app serves the
+ * same five-second floor on `slow_down`, which alone would never back off.
  */
 export const nextInterval = (seconds: number, served: number | undefined): number =>
   Math.max(seconds + SLOW_DOWN_STEP_SECONDS, served ?? 0);
@@ -76,18 +71,10 @@ const sleep = (ms: number): Promise<void> =>
 
 const hostOf = (api: string): string => new URL(api).host;
 
-/**
- * Asks the desktop to open a link, and never minds if it cannot.
- *
- * True means asked, not opened: there is no answer to wait for, and a machine
- * reached over SSH will happily report success while the browser appears on
- * nobody's screen. That is why the link is printed either way.
- */
+/** True means asked, not opened (over SSH it "succeeds" on no screen), so the link is printed either way. */
 const askToOpen = (url: string): boolean => {
-  // The address came off the wire, and handing an arbitrary string to the
-  // desktop is how an opener becomes a way to run something. Windows gets
-  // `rundll32` rather than `cmd /c start` for the same reason: nothing here
-  // goes near a shell.
+  // The URL came off the wire: only http(s), and never through a shell
+  // (hence `rundll32` over `cmd /c start`).
   const scheme = ((): string => {
     try {
       return new URL(url).protocol;
@@ -109,8 +96,7 @@ const askToOpen = (url: string): boolean => {
       detached: true,
       stdio: "ignore",
     });
-    // A desktop with no opener fails asynchronously, and unhandled would take
-    // the sign-in down with it.
+    // A missing opener fails asynchronously; unhandled, it would crash the sign-in.
     child.on("error", () => undefined);
     child.unref();
     return true;
@@ -137,9 +123,7 @@ const tellHowToApprove = (
   terminal.out(
     `  Check the page shows the same code, then approve. The code lasts ${minutes(started.expiresInSeconds)}.`,
   );
-  // Printed only where nothing will replace it. On a real terminal the
-  // ticker below writes a live line instead, and two of them would be one
-  // too many.
+  // On a TTY the ticker shows this instead.
   if (terminal.status === undefined) terminal.out("  Waiting for it…");
 };
 
@@ -156,36 +140,12 @@ const ranOut = (): PrLensCliError =>
     "the code ran out before anyone approved it",
     [
       "run pr-lens auth login for a fresh one",
-      "a code also runs out when the browser refused to link the machine — it says so on the page, and this end only sees the wait",
+      "a code also runs out when the browser refused to link the machine; the page says so, but this terminal only sees the wait",
     ].join("\n"),
   );
 
-/**
- * Polls until somebody answers, the code runs out, or the clock does.
- *
- * The deadline is fixed from the moment the code arrived rather than counted
- * down, so a slow round trip or a laptop that slept cannot leave this asking
- * about a grant the app threw away an hour ago.
- *
- * A request that does not arrive is not an answer. Wi-Fi drops mid-sign-in,
- * and a fifteen-minute window is long enough to carry one, so a failure to
- * reach the app is kept and retried — and only reported if the window closes
- * with it still failing.
- */
 type Approval = { token: string; claimed: number | undefined };
 
-/**
- * A line that says the wait is alive, and how much of it is left.
- *
- * Only where a terminal can rewrite a line — `terminal.status` is a no-op
- * otherwise, so a pipe or a CI log keeps the static sentence printed above
- * rather than collecting a spinner frame every hundred milliseconds.
- *
- * The countdown is the part that earns its place. A spinner says the process
- * is alive; the remaining time says whether it is worth walking to another
- * machine to approve this, which is the question somebody actually has while
- * they wait.
- */
 const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const TICK_MS = 120;
 
@@ -194,6 +154,7 @@ const remaining = (deadline: number): string => {
   return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
 };
 
+/** Only on a TTY, so pipes and CI logs don't collect spinner frames. */
 const ticker = (terminal: Terminal, deadline: number): (() => void) => {
   if (terminal.status === undefined) return () => undefined;
 
@@ -203,8 +164,7 @@ const ticker = (terminal: Terminal, deadline: number): (() => void) => {
     terminal.status?.(`  ${FRAMES[frame]} Waiting for approval · ${remaining(deadline)} left`);
   }, TICK_MS);
 
-  // Never the reason the process stays up: an interval that outlives the wait
-  // would hold the event loop open after the command has finished.
+  // Must not hold the event loop open after the command finishes.
   timer.unref?.();
 
   return () => {
@@ -213,6 +173,10 @@ const ticker = (terminal: Terminal, deadline: number): (() => void) => {
   };
 };
 
+/**
+ * The deadline is fixed up front, so a slept laptop never polls a dead grant.
+ * An unreachable app is retried and reported only if the window closes on it.
+ */
 const waitForApproval = async (
   api: string,
   started: StartedSignIn,
@@ -257,9 +221,7 @@ const waitForApproval = async (
 
   throw unreached ?? ranOut();
   } finally {
-    // Every exit clears it: the token, the refusal, the expiry and the
-    // unreachable store all leave through here, and a half-drawn spinner
-    // left on the line above an error message is worse than no spinner.
+    // Every exit clears the spinner, so none is left above an error.
     stop();
   }
 };
@@ -281,18 +243,8 @@ const login = async (
 
   const api = readApi(values.api, env);
 
-  /*
-   * A machine that is already signed in is not asked to sign in again.
-   *
-   * This used to mint a device code and open a browser unconditionally, so
-   * running the command twice put somebody through an approval for a session
-   * they already had — and left a second grant to expire unanswered.
-   *
-   * Only an active session stops it. A token the app has ended is exactly
-   * when a fresh login is the right answer, and a store that did not reply is
-   * not evidence about the token: the flow below needs the network anyway and
-   * will report the outage with a better error than this check could.
-   */
+  // Only an active session skips the flow; an unreachable store falls
+  // through so the flow below reports the outage.
   if (!readBoolean(values.force)) {
     const stored = await readToken(env, api);
     const session = stored === undefined ? undefined : await checkSession(api, stored);
@@ -304,8 +256,7 @@ const login = async (
     }
   }
 
-  // The same id every mint already carries, so approving links the machine
-  // that pushed rather than minting a second identity for the same laptop.
+  // The id mints already carry, so approval links the machine that pushed.
   const installId = await readInstallId(env, api);
   if (installId === undefined)
     throw new PrLensCliError(
@@ -323,16 +274,12 @@ const login = async (
   const { token, claimed } = await waitForApproval(api, started, terminal);
   await writeCredential(env, api, token, new Date().toISOString());
 
-  // Asked after the credential is on disk, never before: the sign-in has
-  // happened, and a greeting that could not be fetched must not make it look
-  // as though it had not.
+  // After the write, so a failed greeting never looks like a failed sign-in.
   const who = await whoAmI(api, token);
   terminal.out(
     who === undefined ? `✓ Signed in to ${hostOf(api)}` : `✓ Signed in to ${hostOf(api)} as ${who}`,
   );
-  // A count only when the app sent one. "0 canvases are now yours" is a
-  // sentence worth saying to somebody who expected some; "we did not ask" is
-  // not a sentence at all, which is why absent and zero stay apart.
+  // Absent and zero stay apart: "0 canvases" is worth saying, "unknown" is not.
   terminal.out(
     claimed === undefined
       ? "  This machine is linked, so every canvas it has pushed is yours, and so is every one it pushes next."
@@ -350,7 +297,7 @@ type State =
 type Status = {
   api: string;
   state: State;
-  /** Where the credential came from, and never the credential itself. */
+  /** Never the credential itself. */
   source: "file" | "environment" | "none";
   signedInAt: string | undefined;
   machine: MachineState;
@@ -388,8 +335,7 @@ const statusOf = async (
       ? { ...base, state: "unreadable", why: `${stored.path}: ${stored.why}` }
       : { ...base, state: "signed_out", why: undefined };
 
-  // Read, never minted: asking a question must not leave a new machine
-  // identity on disk for a store this person may never push to.
+  // Read, never minted: a status check must not create a machine identity.
   const checked = await checkSignIn(api, token, await readStoredInstallId(env, api));
   switch (checked.type) {
     case "live":
@@ -440,20 +386,13 @@ const tellSource = (status: Status, terminal: Terminal): void => {
   }
 };
 
-/**
- * The states a person has to act on, as the error each one ends the run with.
- *
- * Separate from the printing so `--json` answers the question and still exits
- * on the verdict, without a second copy of it in prose underneath.
- */
+/** Separate from printing so `--json` still exits on the verdict. */
 const refusalFor = (status: Status): PrLensCliError | undefined => {
   const host = hostOf(status.api);
 
   switch (status.state) {
     case "signed_in":
-      // A machine the account has removed still holds a working token when
-      // that token came from CI, and saying "signed in" and stopping would
-      // leave somebody wondering why nothing they push shows up.
+      // A CI token still works on a removed machine, but nothing it pushes is attributed.
       return status.machine === "revoked"
         ? new PrLensCliError(
             "MACHINE_REVOKED",
@@ -480,8 +419,6 @@ const refusalFor = (status: Status): PrLensCliError | undefined => {
       );
 
     case "unreadable":
-      // Not "signed out" and not "the token is wrong": these bytes could not
-      // be opened, and what they hold is still unknown.
       return new PrLensCliError(
         "UNREADABLE_FILE",
         `the sign-in for ${host} cannot be read`,
@@ -511,7 +448,7 @@ const tellStatus = (status: Status, terminal: Terminal): void => {
       terminal.out(`  ${host} could not be asked to confirm it: ${status.why ?? "no reason given"}`);
       return;
 
-    // Every other state ends the run, and `refusalFor` is what says so.
+    // `refusalFor` reports these.
     case "rejected":
     case "signed_out":
     case "unreadable":
@@ -540,8 +477,7 @@ const status = async (
 
   const refusal = refusalFor(found);
 
-  // Answered before the refusal, so `--json` says something in every state
-  // and the exit code still carries whether this machine is signed in.
+  // Print first, so `--json` answers in every state and the exit code still carries the verdict.
   if (readBoolean(values.json))
     terminal.out(
       JSON.stringify(
@@ -574,10 +510,8 @@ const logout = async (
 
   const api = readApi(values.api, env);
 
-  // Ended at the app first, then forgotten here whatever it answered. A
-  // store that cannot be reached must not keep somebody signed in on a
-  // laptop they are holding — so the local half is unconditional, and the
-  // remote half only decides what the last line says.
+  // Forgotten locally whatever the app answers; an unreachable store must
+  // not keep somebody signed in.
   const stored = await readCredential(env, api);
   const ended =
     stored.type === "credential" ? await endSession(api, stored.credential.token) : undefined;
@@ -595,7 +529,7 @@ const logout = async (
   terminal.out(`✓ Signed out of ${host}`);
   if (ended !== undefined && typeof ended !== "string")
     terminal.out(
-      `  ${host} could not be told, so the token is forgotten here and stays live there until it is used: ${ended.why}`,
+      `  ${host} did not end the session, so the token is forgotten here but stays live there until it is used: ${ended.why}`,
     );
   terminal.out(
     "  The machine stays linked, so the canvases it pushed stay yours. Remove it in the app's settings to cut it off.",

@@ -33,7 +33,7 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
    npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme light
    ```
 
-   Render light by default unless the user requests another theme. The SVGs, the manifest and `drawn.graph.json` land in a directory of their own under `.pr-lens/`, named after the document's title — the render prints the path, so read it from there. `.pr-lens/` is added to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
+   Render light by default unless the user requests another theme. The SVGs, the manifest and `drawn.graph.json` land in a directory of their own under `.pr-lens/`, named after the document's title. The render prints that path, so read it from there. The CLI adds `.pr-lens/` to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
 
    If the user asked for a diagram, an explanation or a picture of the architecture and nothing more, put it on a canvas and hand back the link:
 
@@ -41,13 +41,13 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
    npx @coldtea/pr-lens-cli@latest canvas push .pr-lens/<drawing>/drawn.graph.json
    ```
 
-   Name the document the render just wrote. A bare `canvas push` finds it while the checkout holds one drawing; with more than one it lists them and asks which, so passing the path is the habit to keep.
+   Pass the path the render printed. A bare `canvas push` finds the drawing when the checkout holds only one; with more than one it lists them and asks which, so always pass the path.
 
    It prints three links. Give the user the view link, `https://prlens.dev/c/{id}`: that is the diagram, full screen, every view on one page, and it opens without a login. The edit link, the one ending in `#w=…`, lets its holder push over the canvas, so leave it out of the reply unless they ask, and never paste it anywhere public. The embed link serves the top view as an SVG for a README.
 
-   Pushing the same document again updates the same canvas, so a follow-up such as "rename that node" or "add the queue" is: edit the document, validate, render, push. Keep the title and it renders back to the same directory and pushes to the same canvas; the link does not change. If the push fails, say so and tell them where the SVGs are and which one is the top view.
+   Pushing the same document again updates the same canvas, so a follow-up such as "rename that node" or "add the queue" is: edit the document, validate, render, push. While the title stays the same, it renders to the same directory and pushes to the same canvas, so the link does not change. If the push fails, say so and tell them where the SVGs are and which one is the top view.
 
-   A **different** diagram is a different title, and nothing else is needed: it renders into its own directory and pushes to its own canvas, leaving the first where it was. `canvas list` shows them all.
+   A different diagram only needs a different title. It renders into its own directory and pushes to its own canvas, and the first one stays as it was. `canvas list` shows them all.
 
 5. **Attach, when there is a pull request to attach to.** That means the user asked you to open a PR, asked for a diagram on one that exists, or you are opening a PR as part of changes made. Otherwise skip this step.
 

@@ -12,16 +12,7 @@ import type { Terminal } from "../terminal.js";
 import { slugify } from "../slug.js";
 import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
 
-/**
- * Each drawing gets its own directory, named after the document's title.
- *
- * It used to be `.pr-lens/` itself, which made the workspace a single slot:
- * the document, the manifest and the canvas a push resolved to were all one
- * fixed path, so a second drawing in a repository overwrote the first on disk
- * and pushed over its canvas. A title that is the same drawing redrawn lands
- * back here, which is what keeps a correction a revision rather than a
- * second canvas.
- */
+/** Same title, same directory, so a redraw updates its canvas instead of minting one. */
 const defaultOut = (title: string): string => join(WORKSPACE_DIR, slugify(title));
 
 const MANIFEST = "manifest.json";

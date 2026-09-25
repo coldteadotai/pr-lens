@@ -1,23 +1,8 @@
 /**
- * What this machine is called when it pushes a canvas, so that signing in
- * later can claim everything it has already sent.
+ * Names this machine to a store so a later sign-in can claim what it pushed.
  *
- * It lives beside the account credentials rather than in `.pr-lens/`, because
- * it belongs to the machine and not to any one checkout: the same id is meant
- * to cover every repository a person draws from. It is also never put in a
- * link, which is what separates it from a write token — an edit link carries
- * its token in the fragment and gets pasted into chat, so ownership taken
- * from possession of one would leak with every link ever shared.
- *
- * One id per store, not one per machine. The id is what links a machine to an
- * account, so whoever holds it can have this machine's canvases attributed to
- * them; sending the same one to every `--api` would hand that to a private
- * store, or to a host someone was talked into passing. The account credential
- * beside it is kept per origin for the same reason.
- *
- * A file is made by exclusive create and then left alone, so two first runs
- * settle without a lock: the loser reads the winner's id instead of minting a
- * second machine. The one exception is repair, below, which has a ceiling.
+ * Kept per store, since whoever holds the id can have this machine's canvases
+ * attributed to them. Never put in a link, unlike a write token.
  */
 import { dirname } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -27,7 +12,6 @@ import { originPath } from "./config-home.js";
 
 const INSTALLS = "installs";
 
-/** The same 128 random bits the app's ids use, behind a prefix that names the kind. */
 const PREFIX = "prl_i_";
 
 const INSTALL_ID = /^prl_i_[A-Za-z0-9_-]{22}$/;
@@ -37,7 +21,6 @@ export const installPath = (
   api: string,
 ): string | undefined => originPath(env, INSTALLS, api);
 
-/** Pure, so that "these bytes say nothing usable" is answerable without a read. */
 const idIn = (text: string): string | undefined => {
   const contents = ((): unknown => {
     try {
@@ -54,11 +37,10 @@ const idIn = (text: string): string | undefined => {
     : undefined;
 };
 
-/** Anything unreadable is treated as absent: a machine with no id still pushes. */
+/** Unreadable counts as absent: a machine with no id still pushes. */
 const storedId = (path: string): Promise<string | undefined> =>
   readFile(path, "utf8").then(idIn, () => undefined);
 
-/** The id this machine already has, for callers with no business minting one. */
 export const readStoredInstallId = async (
   env: Record<string, string | undefined>,
   api: string,
@@ -85,18 +67,8 @@ const alreadyThere = (error: unknown): boolean =>
   error.code === "EEXIST";
 
 /**
- * Exclusive create, falling back to whatever won the race.
- *
- * Anything other than the file already existing — a read-only home, no
- * entropy — answers undefined on the first attempt, and the caller mints
- * unattributed.
- *
- * Repair is deliberately narrow: only a file whose bytes were read and say
- * nothing usable is cleared. Its ceiling is concurrency — several runs
- * repairing one junk file can each be handed an id that is not the one left
- * on disk, or none at all. Closing that needs deletion by identity rather
- * than by path, which is more machinery than a corrupt install.json is worth;
- * with the read/junk distinction above, reaching it at all is rare.
+ * Exclusive create settles two first runs without a lock: the loser reads the
+ * winner's id. Repairing a junk file can race under concurrency; accepted as rare.
  */
 const create = async (path: string): Promise<string | undefined> => {
   try {
@@ -104,14 +76,10 @@ const create = async (path: string): Promise<string | undefined> => {
   } catch (error) {
     if (!alreadyThere(error)) return undefined;
 
-    // One read answers both questions. Reading twice leaves a gap for a peer's
-    // repair to land in, and the second read then reports a file the first
-    // never saw — handing back nothing while a good id sits on disk.
+    // One read, so a peer's repair cannot land between two.
     const text = await readFile(path, "utf8").catch(() => undefined);
 
-    // Never delete what cannot be seen. An unreadable file may hold an id
-    // already sent to the app, and unlinking is governed by the directory
-    // rather than the file, so a run that cannot read it can still remove it.
+    // An unreadable file may hold an id the app already has; never delete it.
     if (text === undefined) return undefined;
 
     const won = idIn(text);
@@ -127,14 +95,7 @@ const create = async (path: string): Promise<string | undefined> => {
   }
 };
 
-/**
- * This machine's id for one store, minting one on first use.
- *
- * Every failure answers `undefined`, and the caller mints the canvas without
- * an install id, exactly as it did before this existed. Attribution is worth
- * having but it is not worth a push that used to work and now does not —
- * there is no home directory on some runners, and a read-only one on others.
- */
+/** Failures answer undefined: attribution is never worth breaking a push. */
 export const readInstallId = async (
   env: Record<string, string | undefined>,
   api: string,

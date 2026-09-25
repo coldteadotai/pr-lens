@@ -23,17 +23,9 @@ test("a subcommand that is not one is a misuse", async () => {
 });
 
 /**
- * Help that names a flag the parser refuses is worse than no help: somebody
- * reads it, types what it told them, and is told the flag does not exist.
- *
- * `--new` survived here for one commit after it left the code, which is how
- * long usage text and an option table stay in step when nothing compares
- * them.
- *
- * Scoped to `push`, whose flags all take a value — so an unknown one is
- * refused by the parser while a known one only complains that its value is
- * missing, and neither reaches the network. A sweep over the whole usage
- * would ask `push` about `--remote`, which belongs to `list`.
+ * Scoped to `push`, whose flags all take a value: an unknown one is refused by
+ * the parser, a known one only lacks its value, and neither reaches the
+ * network. The whole usage would also name `--remote`, which is `list`'s.
  */
 test("the usage names no push flag the push parser refuses", async () => {
   expect(await invoke("canvas", "--help")).toBe(0);
@@ -49,8 +41,7 @@ test("the usage names no push flag the push parser refuses", async () => {
 
   for (const flag of named) {
     output.err = [];
-    // Deliberately no `--help`, which is answered before any parsing happens
-    // and would make every one of these pass.
+    // No `--help`: it is answered before parsing, so everything would pass.
     await invoke("canvas", "push", flag);
     expect(output.err.join("\n"), `${flag} is named in the usage`).not.toContain(
       "Unknown option",

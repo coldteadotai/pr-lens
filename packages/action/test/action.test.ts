@@ -31,7 +31,7 @@ const script = (name: string) =>
 
 const CLI = "@coldtea/pr-lens-cli";
 
-/** A step runs the CLI directly, or through the one script it hands off to. */
+/** Directly, or through the one script it hands off to. */
 const runsTheCli = async (step: z.infer<typeof Step>): Promise<boolean> => {
   const body = step.run ?? "";
   if (body.includes(CLI)) return true;
@@ -131,10 +131,7 @@ test("every step that runs the CLI is handed the account token", async () => {
   }
 });
 
-// The token names an account; a workflow that never gives one keeps drawing
-// anonymously. So nothing may read it outside the environment it is handed in:
-// a flag or a guard would make the run behave differently for want of one, and
-// would also spell a secret onto a command line.
+// Read only from the environment: a flag would put a secret on a command line.
 test("a run without the token is the run there was before", async () => {
   expect(action.inputs["token"]?.required).not.toBe(true);
   expect(action.inputs["token"]?.default).toBe("");

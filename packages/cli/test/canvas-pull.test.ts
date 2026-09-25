@@ -207,9 +207,7 @@ test("an edit link for a canvas nobody has pushed to is registered, and the push
   ]);
   expect((await registry())[FIRST]).toEqual({
     name: FIRST,
-    // No source. Nothing was fetched, so there is no document on disk, and
-    // naming a path nothing wrote would make a bare push resolve to a canvas
-    // this checkout cannot draw.
+    // No source: nothing was written, and a bare push must not resolve to it.
     api: API,
     writeToken: TOKEN1,
     rev: 0,
@@ -325,14 +323,7 @@ test("pulling a view link records the revision, and push then asks for the edit 
   expect(output.err.join("\n")).toContain("pull its edit link");
 });
 
-/**
- * A canvas you own, from a checkout that has never seen it.
- *
- * Pulling used to mean holding an edit link: the token in `#w=` was what
- * proved the canvas was yours to do anything with. Reading was never gated —
- * a canvas is unlisted, not private — so the id alone is enough to fetch,
- * and being signed in is what makes the entry worth recording.
- */
+/** Reading needs only the id; being signed in makes the entry worth recording. */
 test("pulls a canvas by id into a checkout that holds nothing for it", async () => {
   await invoke("canvas", "push", "drawn.graph.json", "--api", API);
   const fresh = await createCheckout();
@@ -354,14 +345,11 @@ test("records it without a write token, rather than pretending to one", async ()
 
   const entry = (await registry())[FIRST];
   expect(entry?.writeToken).toBeUndefined();
-  // And the entry is real: rev and api recorded, so a later push knows where
-  // it lives and what revision it last saw.
   expect(entry?.rev).toBe(1);
   expect(entry?.api).toBe(API);
 });
 
 test("and that checkout can then push to it when signed in", async () => {
-  // The whole point: pull by id, push as the owner, no edit link anywhere.
   env().PR_LENS_TOKEN = ACCOUNT;
   await invoke("canvas", "push", "drawn.graph.json", "--api", API);
 

@@ -313,15 +313,7 @@ const draw = async (directory: string, title?: string): Promise<string> => {
   return `${directory}/drawn.graph.json`;
 };
 
-/**
- * One drawing, one canvas.
- *
- * Every render used to write `.pr-lens/drawn.graph.json`, so a repository
- * held one document and a push could only ever resolve to one canvas: a
- * second diagram overwrote the first on disk and pushed over its canvas. Each
- * drawing has its own directory now, and the path rule that was already there
- * does the rest.
- */
+/** Each drawing has its own directory, so the path rule gives it its own canvas. */
 test("two drawings are two canvases, with no flag to say so", async () => {
   await draw(DRAWING);
   await draw(OTHER, "Auth flow");
@@ -339,8 +331,7 @@ test("redrawing the same one is still an update", async () => {
   await invoke("canvas", "push", `${DRAWING}/drawn.graph.json`, "--api", API);
   output.out = [];
 
-  // The case the path rule exists for: a correction moves the canvas on a
-  // revision rather than leaving a trail of near-identical ones.
+  // A correction is a new revision, not a near-identical second canvas.
   expect(await invoke("canvas", "push", `${DRAWING}/drawn.graph.json`, "--api", API)).toBe(0);
 
   expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 2 · 2 diagrams`);
@@ -373,9 +364,7 @@ test("and says which ones there are rather than guessing between them", async ()
 
 test("a drawing reached through a symlink is still a drawing", async () => {
   await rm(".pr-lens/drawn.graph.json", { force: true });
-  // Drawn elsewhere and linked in, which is how a shared drawings directory
-  // or a checkout on another volume lands under `.pr-lens/`. A symlinked
-  // directory is a directory to everything else on the machine.
+  // How a shared drawings directory or another volume lands under `.pr-lens/`.
   const elsewhere = await draw("elsewhere");
   await mkdir(".pr-lens", { recursive: true });
   await symlink(resolve("elsewhere"), ".pr-lens/linked", "dir");
@@ -394,7 +383,6 @@ test("a file named like a drawing directory is not one", async () => {
   await mkdir(".pr-lens/empty", { recursive: true });
   output.out = [];
 
-  // One drawing, however many other things are lying around.
   expect(await invoke("canvas", "push", "--api", API)).toBe(0);
   expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 1 · 2 diagrams`);
 });
@@ -409,14 +397,11 @@ test("with nothing drawn it says to draw something", async () => {
 });
 
 /**
- * 0.7.0 wrote every document to `.pr-lens/drawn.graph.json` and registered
- * that path. A render into the new layout is a new path, so without this the
- * next push mints a second canvas and orphans the first — silently, which is
- * the failure this whole change is about.
+ * 0.7.0 registered `.pr-lens/drawn.graph.json`. Without adoption, the first
+ * push from the new layout mints a second canvas and orphans the first.
  */
 test("a canvas pushed before the layout changed is adopted, not replaced", async () => {
-  // Where 0.7.0's render put it, which is what its registry entry names. The
-  // fixture's root-level copy is a convenience and was never that path.
+  // Where 0.7.0's render put it; the fixture's root copy was never that path.
   const legacy = await draw(".pr-lens");
   expect(await invoke("canvas", "push", legacy, "--api", API)).toBe(0);
   await draw(DRAWING);
@@ -426,7 +411,6 @@ test("a canvas pushed before the layout changed is adopted, not replaced", async
 
   expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 2 · 2 diagrams`);
   expect(Object.keys(await registry())).toEqual([FIRST]);
-  // And it stops looking legacy: the entry now names where the drawing lives.
   expect((await registry())[FIRST]?.source).toBe(`${DRAWING}/drawn.graph.json`);
 });
 
@@ -442,19 +426,12 @@ test("adopting happens once, so the next drawing is still its own canvas", async
 });
 
 /**
- * A pull, a render and a push are one canvas, not two.
- *
- * `pull` writes the source document; `render` writes the drawing somewhere
- * else, under a directory named for the title. Either is a legitimate thing
- * to push, and only one of them can be the path the registry recorded — so
- * whichever the reader chose, the other minted a second canvas for a drawing
- * that already had one. The title is what links them, and it is the same
- * thing the render directory is named after.
+ * `pull` and `render` write to different paths and the registry records one,
+ * so the title is what links the other back to the canvas.
  */
 test("pulling, rendering and pushing lands back on the canvas that was pulled", async () => {
   await invoke("canvas", "push", "drawn.graph.json", "--api", API);
   await invoke("canvas", "pull", "--api", API);
-  // What `render` writes: a directory named for the same title.
   await draw(DRAWING);
   output.out = [];
 
@@ -469,8 +446,6 @@ test("and so does pushing the pulled document itself", async () => {
   await invoke("canvas", "pull", "--api", API);
   output.out = [];
 
-  // The other half of the same problem: recording one path can only ever
-  // serve one of these two.
   expect(await invoke("canvas", "push", ".pr-lens/graph.json", "--api", API)).toBe(0);
 
   expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 2 · 2 diagrams`);
@@ -500,23 +475,14 @@ test("a title two canvases already answer to is asked about rather than guessed"
   expect(output.err.join("\n")).toContain("2 canvases are named");
 });
 
-/**
- * Being signed in is enough, when this checkout holds no token.
- *
- * The write token was the only credential a push could send, so a second
- * laptop, a fresh CI runner, or a checkout that never pulled the edit link
- * could not touch a canvas its own account owned. The app takes either now
- * and checks the account owns it, so the CLI's job is only to choose.
- */
+/** The app checks the account owns the canvas; the CLI only picks a credential. */
 test("pushes with the account token when the registry holds no write token", async () => {
-  // Signed in before the mint, so the canvas is attributed and there is an
-  // owner for owning to mean anything. An unowned canvas still needs its
-  // write token, which is the whole point of the guard on the app side.
+  // Signed in before the mint, so the canvas has an owner. An unowned one
+  // still needs its write token.
   env().PR_LENS_TOKEN = ACCOUNT;
   await invoke("canvas", "push", "drawn.graph.json", "--api", API);
   const entries = await registry();
-  // What a fresh checkout that pulled a view link looks like: the canvas is
-  // known, its token is not here.
+  // A checkout that pulled the view link: canvas known, no token.
   await writeFile(
     ".pr-lens/canvas.json",
     JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: undefined } } }),
@@ -539,8 +505,7 @@ test("prefers the write token when it has one", async () => {
 
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(0);
 
-  // The credential this checkout was given for this canvas, which works
-  // whether or not anybody is signed in.
+  // The write token works whether or not anybody is signed in.
   const put = app.seen.find((request) => request.method === "PUT");
   expect(put?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
 });
@@ -559,8 +524,6 @@ test("says both ways in when it has neither", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(1);
 
   const said = output.err.join("\n");
-  // The old message named only the edit link, which was the only way in when
-  // it was written.
   expect(said).toContain("auth login");
   expect(said).toContain("#w=");
 });

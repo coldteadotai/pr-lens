@@ -7,16 +7,15 @@ import { API, setupCanvasTest } from "./canvas.js";
 export const FIRST = "1".padStart(22, "0");
 export const TOKEN1 = "token-1-a".padEnd(22, "a");
 
-/** The shape the app's account tokens have, so the fake can tell one from a write token. */
+/** Shaped like the app's account tokens. */
 export const ACCOUNT = `prl_u_${"account".padEnd(22, "a")}`;
 
 type Stored = {
   token: string;
   rev: number;
   document: unknown;
-  /** The account this canvas belongs to, if anybody has claimed it. */
   owner?: string;
-  /** A revision the store cannot read back, which is not a canvas with nothing in it. */
+  /** A revision that will not read, which is not the same as an empty canvas. */
   unreadable?: boolean;
 };
 type Seen = { method: string; path: string; headers: Headers; body: unknown };
@@ -101,14 +100,7 @@ const TILES = [tile("view:overview"), tile("view:new-batch-path")];
 const bearer = (headers: Headers): string | undefined =>
   headers.get("authorization")?.replace(/^Bearer /, "");
 
-/**
- * Whether a request may change this canvas, the way the app decides it.
- *
- * Either the write token, or an account credential whose account owns it.
- * Modelled here rather than assumed: a double that only knows write tokens
- * answers 404 to exactly the request this change exists to make, and the
- * test then reads as the CLI being wrong.
- */
+/** The write token, or an account credential whose account owns the canvas. */
 const mayWrite = (headers: Headers, canvas: Stored, alsoToken?: string): boolean => {
   const presented = bearer(headers);
   if (presented !== undefined && presented === canvas.token) return true;
@@ -118,7 +110,6 @@ const mayWrite = (headers: Headers, canvas: Stored, alsoToken?: string): boolean
   return account !== undefined && canvas.owner === account;
 };
 
-/** Account tokens carry a prefix, so the fake can tell one from a write token. */
 const accountOf = (headers: Headers): string | undefined => {
   const token = bearer(headers);
   return token !== undefined && token.startsWith("prl_u_") ? token : undefined;
@@ -131,7 +122,6 @@ const title = (document: unknown): string | undefined =>
     ? String(document.title)
     : undefined;
 
-/** What the listing says about a canvas without opening it. */
 const preview = (canvas: Stored) => {
   if (canvas.unreadable) return { type: "unreadable" };
   if (canvas.document === undefined) return { type: "not_drawn" };
@@ -168,11 +158,7 @@ export const setupCanvasAppTest = () => {
         app.minted += 1;
         const id = String(app.minted).padStart(22, "0");
         const token = `token-${app.minted}-a`.padEnd(22, "a");
-        // Attributed when the mint names an account, the way the app does it.
-        // A CI runner is a fresh machine every time, so the bearer is the only
-        // thing that can put its canvases on an account — and without this
-        // every canvas here is unowned, which is the one state where owning
-        // cannot authorise anything.
+        // The bearer on the mint is how a CI runner's canvases reach an account.
         const owner = accountOf(headers);
         app.canvases.set(id, { token, rev: 0, document: undefined, ...(owner === undefined ? {} : { owner }) });
         return json(201, {
@@ -257,9 +243,8 @@ export const setupCanvasAppTest = () => {
             "The body must carry the writeToken and a nextWriteToken",
           );
 
-        // Possession before ownership, so a canvas that is not yours cannot be
-        // told from one that was never there. The next token counts as
-        // possession: that is what finishes a claim whose answer was lost.
+        // Possession before ownership, so somebody else's canvas looks absent.
+        // The next token counts too: it finishes a claim whose answer was lost.
         if (token !== canvas.token && next !== canvas.token)
           return refuse(404, "NOT_FOUND", "There is no canvas here");
 
@@ -327,7 +312,7 @@ export const setupCanvasAppTest = () => {
     }
   };
 
-  /** A canvas on the app that this checkout never pushed: no token over here. */
+  /** A canvas this checkout never pushed, so it holds no token for it. */
   const place = (
     id: string,
     canvas: Partial<Stored> & { owner?: string } = {},

@@ -112,9 +112,9 @@ pr-lens canvas push
 
 Puts the document on prlens.dev as a canvas: a page anyone you share it with can read, and an SVG a README can embed.
 
-`push` sends the JSON document, never an SVG; the app draws it. Give it the `drawn.graph.json` a render wrote, so what the page shows is what the diagrams show; with one drawing in the checkout a bare `push` finds it, and with several it lists them and asks which.
+`push` sends the JSON document, never an SVG; the app draws it. Give it the `drawn.graph.json` a render wrote, so the page shows what the diagrams show. With one drawing in the checkout a bare `push` finds it; with several it lists them and asks which.
 
-The first push of a document mints a canvas and every push after that updates the same one, matched by the path it came from — or, when no path points at one, by the document's title. That second question is what makes `pull` then `render` then `push` land back on the canvas that was pulled: the pull wrote the source document and the render wrote the drawing somewhere else, and only one of those two can be the recorded path. That is what you want for a redraw — correcting a diagram should move it on a revision, not leave a trail of near-identical ones — and because `render` gives each drawing a directory named after its title, a second diagram is a second path and a second canvas without anything being asked for. `--canvas <id|name>` picks one for a single push and `--name` says what to call a new one; the document's title is the default. It prints the view link, the embed, and the way to take it down again:
+The first push of a document mints a canvas, and every push after that updates the same one. It is matched by the path the document came from, or by the document's title when no recorded path points at a canvas. The title match is what lets `pull`, `render`, `push` land back on the canvas you pulled: the pull writes the source document, the render writes the drawing somewhere else, and only one of them can be the recorded path. So a corrected diagram becomes a new revision of its canvas instead of a near copy. Because `render` gives each drawing a directory named after its title, a second diagram gets its own path and its own canvas without you asking for one. `--canvas <id|name>` picks a canvas for a single push and `--name` says what to call a new one; the document's title is the default. It prints the view link, the embed, and the way to take it down again:
 
 ```
 ✓ https://prlens.dev/c/{id} — rev 1 · 4 diagrams
@@ -127,7 +127,7 @@ The view link is the one to share. The edit link is the same page with the write
 
 A canvas plays the document's walkthrough when it carries one. The app checks that every step resolves against the diagrams it drew, and a push it refuses arrives here as `CANVAS_REJECTED` carrying the app's own words rather than a generic failure.
 
-Changing a canvas takes the write token **or** being signed in as its owner. The token is preferred where this checkout has one — it works whether or not anybody is signed in — and the account token is what a second laptop, a fresh CI runner or a checkout that never pulled the edit link sends instead. Claiming is the exception: it is how a canvas gets an owner, so only the token can prove it.
+Changing a canvas takes its write token or a sign-in as its owner. The CLI sends the write token when this checkout has one, since it works signed in or not. A second laptop, a fresh CI runner, or a checkout that never pulled the edit link sends the account token instead. `canvas claim` accepts only the write token, because claiming is how a canvas gets an owner in the first place.
 
 `pull` fetches the document back, by the view link or the bare id, into `.pr-lens/graph.json` unless `-o` says otherwise, and records the revision. Pull the edit link, the one ending in `#w=…`, and its token is recorded too: that is how a fresh checkout, or one that lost `.pr-lens/canvas.json`, gets the canvas back. A push carries the revision it last saw, and one that has been overtaken is refused rather than applied: pull, then push again.
 
@@ -149,9 +149,9 @@ The CLI refuses to write the registry where git could commit it. If a checkout t
 pr-lens auth login
 ```
 
-Signs this machine in, so the canvases it pushes are yours rather than unlisted pages only a link reaches. Nothing else needs it: `push`, `pull` and `render` all work signed out, and always will.
+Signs this machine in, so the canvases it pushes belong to your account. Signed out, they are unlisted pages that only a link reaches. `push`, `pull` and `render` all work signed out, and always will.
 
-It prints a code and opens the browser. The code is there to be checked against the one the page shows, not typed — it travels in the link:
+It prints a code and opens the browser. The code travels in the link, so you never type it; check that it matches the one on the page:
 
 ```
   Code WDJB-MJHT · opening https://prlens.dev/device?code=WDJB-MJHT
@@ -159,13 +159,13 @@ It prints a code and opens the browser. The code is there to be checked against 
   Waiting for it…
 ```
 
-Approving links this machine to your account, and that link is the claim: every canvas the machine has already pushed becomes yours, and so does every one it pushes next. `--no-browser` prints the link instead of opening one, which is what a machine reached over SSH wants.
+Approving links this machine to your account. Every canvas the machine has already pushed becomes yours, and so does every one it pushes after that. `--no-browser` prints the link instead of opening it, for a machine you reach over SSH.
 
-`status` says which app this machine is signed in to, and asks the app whether the sign-in still opens anything. `--json` is the same answer for scripts. Neither prints the token. An app that cannot be reached is reported as one that could not be asked, not as a sign-in that has gone bad.
+`status` says which app this machine is signed in to and asks the app whether the sign-in still works. `--json` gives the same answer for scripts. Neither prints the token. When the app can't be reached, `status` says it couldn't check; it does not call the sign-in bad.
 
-`logout` forgets the sign-in kept on this machine. The machine stays linked, so the canvases it pushed stay yours; removing it from the account is done in the app's settings, and signing in again from a removed machine links it back.
+`logout` forgets the sign-in kept on this machine. The machine stays linked, so the canvases it pushed stay yours. To remove the machine from your account, use the app's settings; signing in again from a removed machine links it back.
 
-The sign-in lives in `~/.config/pr-lens/auth/`, one file per app and readable by you alone, so one machine can be signed in to prlens.dev and to a private store at the same time. `PR_LENS_TOKEN` overrides it, which is how CI signs in without a browser — [the Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action) takes it as `token`.
+The sign-in lives in `~/.config/pr-lens/auth/`, one file per app and readable by you alone, so one machine can be signed in to prlens.dev and to a private store at the same time. `PR_LENS_TOKEN` overrides it, which is how CI signs in without a browser. [The Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action) takes it as its `token` input.
 
 ## Corrections
 

@@ -116,7 +116,6 @@ test("no write token ever reaches the terminal, in either shape", async () => {
     expect(everything).not.toContain(entry.writeToken);
   }
   expect(everything).not.toContain("pending-rotation-aaaaa");
-  // The token the account is signed in with is no more printable than the rest.
   expect(everything).not.toContain(ACCOUNT);
 });
 

@@ -1,21 +1,13 @@
 /**
- * Where this machine keeps what belongs to it rather than to any checkout.
- *
- * Two things live here, and they are kept the same way for the same reason:
- * the install id that names this machine, and the credential that signs it
- * in. Either one is enough to act as this machine somewhere, so one file per
- * store makes sending either to the wrong `--api` impossible rather than
- * unlikely.
+ * Per-machine state: the install id and the sign-in credential. Either one
+ * can act as this machine, so each store gets its own file and neither can
+ * reach the wrong `--api`.
  */
 import { join } from "node:path";
 
 const DIRECTORY = "pr-lens";
 
-/**
- * Read from the environment the caller was given rather than the process, so
- * that a test never writes to the real home directory, and so a run with
- * nothing set is a run without a config home rather than a guess.
- */
+/** Takes `env` from the caller so tests never write to the real home directory. */
 export const configHome = (
   env: Record<string, string | undefined>,
 ): string | undefined => {
@@ -27,10 +19,8 @@ export const configHome = (
 };
 
 /**
- * Percent-encoded, so one file name can hold an origin and still be a file
- * name. Only the two schemes the API speaks: every other scheme has an origin
- * of the literal "null", which would file unrelated stores together in the one
- * function whose whole job is that stores never share.
+ * http and https only: other schemes have the origin "null", which would put
+ * unrelated stores in one file.
  */
 const fileFor = (api: string): string | undefined => {
   try {
@@ -42,7 +32,6 @@ const fileFor = (api: string): string | undefined => {
   }
 };
 
-/** Undefined when there is nowhere to put it, which every caller treats as "no file". */
 export const originPath = (
   env: Record<string, string | undefined>,
   folder: string,

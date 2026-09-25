@@ -10,14 +10,10 @@ test("makes a readable directory name out of a title", () => {
 });
 
 test("keeps the letters out of a title that is not plain English", () => {
-  // Decomposed and stripped, so a title stays recognisable rather than
-  // becoming a row of hyphens.
   expect(slugify("Café résumé")).toBe("cafe-resume");
 });
 
 test("never produces a path separator", () => {
-  // A title is free text and this is a path segment. A slash would write the
-  // drawing somewhere nobody asked for.
   expect(slugify("auth/flow")).toBe("auth-flow");
   expect(slugify("a\\b")).toBe("a-b");
   expect(slugify("../../etc/passwd")).toBe("etc-passwd");
@@ -53,17 +49,13 @@ test("cuts a long title without leaving a trailing hyphen", () => {
 });
 
 test("two documents with the same title are the same drawing", () => {
-  // Deliberately not unique: a redraw should land on the directory and the
-  // canvas it landed on last time.
+  // Deliberately not unique: a redraw lands where it landed last time.
   expect(slugify("Auth flow")).toBe(slugify("Auth  flow"));
 });
 
 /**
- * Whatever the title, the result is one plain path segment.
- *
- * A seeded generator rather than a library: the property is small, and the
- * inputs that matter — separators, dots, reserved words, marks, emoji — are
- * listed so every run visits them, with random noise around and between.
+ * Whatever the title, the result is one plain path segment. The inputs that
+ * matter are listed so every seeded run visits them.
  */
 const RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 
@@ -100,8 +92,7 @@ test("never emits a separator, a reserved name, or anything but a plain segment"
     expect(slug.length, JSON.stringify(title)).toBeLessThanOrEqual(48);
     expect(slug, JSON.stringify(title)).not.toBe(".");
     expect(slug, JSON.stringify(title)).not.toBe("..");
-    // `.pr-lens/con/` cannot be created on Windows, and this CLI reads
-    // `USERPROFILE`, so Windows is a place it expects to run.
+    // `.pr-lens/con/` cannot be created on Windows.
     expect(slug, JSON.stringify(title)).not.toMatch(RESERVED);
   }
 });
@@ -109,7 +100,6 @@ test("never emits a separator, a reserved name, or anything but a plain segment"
 test("a title that is a device name on Windows still gets a directory", () => {
   for (const title of ["CON", "aux", "Nul", "com1", "LPT9", "prn"]) {
     expect(slugify(title)).not.toMatch(RESERVED);
-    // Still recognisable, rather than falling all the way to the fallback.
     expect(slugify(title)).toContain(title.toLowerCase());
   }
 });

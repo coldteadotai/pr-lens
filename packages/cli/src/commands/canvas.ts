@@ -42,14 +42,7 @@ import { DEFAULT_API, API_ENV, readApi, requireSameApi, requireWriteToken, settl
 
 const DRAWN = "drawn.graph.json";
 
-/**
- * Where `render` wrote before each drawing had its own directory.
- *
- * Kept only so a checkout that pushed with 0.7.0 keeps its canvas: its
- * registry entry names this path, and a render into the new layout would
- * otherwise mint a second canvas and leave the first one orphaned without
- * saying so.
- */
+/** Where 0.7.0 rendered; its registry entries still name this path. */
 const LEGACY_SOURCE = `${WORKSPACE_DIR}/${DRAWN}`;
 const DEFAULT_OUT = `${WORKSPACE_DIR}/graph.json`;
 
@@ -174,8 +167,7 @@ const recordPull = (current: CanvasRegistry, pull: PullRecord): Recorded => {
     name: entry?.name ?? pull.fetched?.title ?? pull.id,
     source:
       entry?.source ??
-      // A canvas recorded without its document has no local source, and
-      // naming a path nothing wrote would make a bare push resolve to it.
+      // No document, so no source a bare push could resolve to.
       (pull.fetched === undefined ? undefined : sourceKey(pull.out)),
     api: pull.api,
     ...(pending === undefined ? {} : { pending }),
@@ -223,14 +215,7 @@ const tellRecorded = (
   }
 };
 
-/**
- * Which drawing a bare push means, or why it cannot say.
- *
- * The same shape as `onlyCanvas`: one is the answer, none and several are
- * both things to tell somebody rather than guess at. It replaces a fixed
- * `.pr-lens/drawn.graph.json`, which could only ever name one drawing
- * because `render` could only ever write one.
- */
+/** Like `onlyCanvas`: none or several is reported, never guessed at. */
 const onlyDrawing = async (): Promise<string> => {
   const found = await drawings();
   const [only, ...more] = found;
@@ -251,15 +236,8 @@ const onlyDrawing = async (): Promise<string> => {
 };
 
 /**
- * A canvas pushed before each drawing had its own directory.
- *
- * 0.7.0 wrote every document to `.pr-lens/drawn.graph.json` and registered
- * that path. A render into the new layout is a new path, so without this the
- * next push mints a second canvas and leaves the first orphaned — silently,
- * which is the failure this whole change is about.
- *
- * Adopted once: the push that follows records the new path, and the entry
- * stops looking legacy. Only ever one, because there could only ever be one.
+ * Without this, the first push after upgrading from 0.7.0 would orphan the
+ * old canvas. The push records the new path, so it is adopted once.
  */
 const adoptLegacy = (
   registry: CanvasRegistry,
@@ -291,17 +269,7 @@ const push = async (
   const registry = await readRegistry();
 
   const ref = readString(values.canvas, "canvas");
-  /*
-   * The path says which canvas, and now it can.
-   *
-   * A push onto the path a canvas came from is an update — redrawing after a
-   * code change should move it on a revision, not leave a trail of
-   * near-identical canvases. That was the whole rule, and it was right; what
-   * was wrong is that `render` wrote every drawing to one path, so a
-   * repository could only ever hold one canvas. Each drawing has its own
-   * directory now, so two drawings are two paths and two canvases without
-   * anybody having to say so.
-   */
+  // A push onto a known path updates, so a redraw moves the canvas on a revision.
   const known =
     ref === undefined
       ? findBySource(registry, source) ??
@@ -319,8 +287,7 @@ const push = async (
         ref === undefined ? findBySource(current, source) : undefined;
       if (meanwhile !== undefined) return meanwhile;
 
-      // Read here rather than above: a push onto a canvas this checkout
-      // already knows never mints, and so never needs to name the machine.
+      // Only a mint names the machine.
       const minted = await mintCanvas(
         api,
         await readInstallId(env, api),
@@ -484,16 +451,8 @@ const rotate = async (
   const selected = selectCanvas(registry, ref);
   const { id } = selected;
 
-  /*
-   * Proved before anything is written down.
-   *
-   * The pending token is saved before the request so a lost answer cannot
-   * lose it — which means a rotation nobody may perform would leave one
-   * behind, and the next push would carry it out. This used to be a token
-   * check inside the write below; it is a credential check out here now,
-   * because an owner has no token to check and must still be stopped from
-   * leaving a pending rotation if they are not the owner after all.
-   */
+  // Checked before the pending token is saved, or an unauthorised rotation
+  // would leave one behind for the next push to carry out.
   requireSameApi(api, selected);
   await writeCredential(selected, env, api);
 
@@ -535,20 +494,14 @@ type Listed = {
   name: string;
   api: string;
   rev: number;
-  /**
-   * A canvas pulled by its view link stays readable here and never becomes
-   * writable: the app keeps only a hash, so no one can hand the token back.
-   */
+  /** False for a view-link pull: the app keeps only the token's hash. */
   editHere: boolean;
 };
 
 const byNameThenId = (a: Listed, b: Listed): number =>
   a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
 
-/**
- * Copied field by field rather than spread, because the entry these come from
- * carries the write token and the pending one, and neither may leave here.
- */
+/** Not spread: the entry carries write tokens, which must not be listed. */
 const listed = (registry: CanvasRegistry): Listed[] =>
   Object.entries(registry.canvases)
     .map(([id, entry]) => ({
@@ -560,12 +513,6 @@ const listed = (registry: CanvasRegistry): Listed[] =>
     }))
     .sort(byNameThenId);
 
-/**
- * A canvas the app has no name for is shown under its id, which is what the
- * local listing does for one that was never named. `unreadable` is one of
- * those and is not an empty canvas: a revision that would not open is still
- * the account's, and showing nothing for it would read as gone.
- */
 const previewName = (preview: CanvasPreview): string | undefined => {
   switch (preview.type) {
     case "drawn":
@@ -579,12 +526,8 @@ const previewName = (preview: CanvasPreview): string | undefined => {
 };
 
 /**
- * The account's canvases over this checkout's.
- *
- * The app is the authority on what exists and what it is called; the registry
- * is the only thing that can say whether the write token is here, since the
- * app keeps only a hash of it. A canvas this checkout knows at another app is
- * left alone: the same id there would be a different canvas.
+ * The app owns names; only the registry knows whether the write token is
+ * here. Keyed by app too, since an id at another app is another canvas.
  */
 const merged = (
   local: readonly Listed[],
@@ -640,11 +583,8 @@ const list = async (
 
   const remote = readBoolean(values.remote);
 
-  // The flag narrows the listing to one app; the environment names the app to
-  // ask and nothing more. Reading the environment as a filter would quietly
-  // drop every canvas this checkout keeps somewhere else from a listing that
-  // has never left the machine — and reading it at all here would let a
-  // malformed $PR_LENS_API_URL fail a listing that never leaves it.
+  // Only the flag filters. $PR_LENS_API_URL is read only when asking an app,
+  // so a local listing neither hides canvases nor fails on a bad value.
   const narrowed = readString(values.api, "api") !== undefined;
   const api = readApi(values.api, remote || narrowed ? env : {});
 
