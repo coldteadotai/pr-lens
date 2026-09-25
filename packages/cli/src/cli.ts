@@ -26,6 +26,7 @@ const HELP = `pr-lens — review what actually matters
   pr-lens validate  <file...>               any PR Lens document, checked against the contract
   pr-lens export    <graph.json>            the merged state, as a map worth committing
   pr-lens canvas    list | push | pull | claim | rotate | delete   that document, kept on prlens.dev as a page and an embed
+                    open | answer | show | fork | look          your coding agent, answering on that page
   pr-lens auth      login | status | logout   sign this machine in, so the canvases it pushes are yours
   pr-lens skill                             diagram instructions for coding agents
 

@@ -36,6 +36,14 @@ import { drawings, WORKSPACE_DIR } from "../workspace.js";
 import { readToken, requireToken } from "../auth.js";
 import { claimCommand } from "../canvas/claim.js";
 import { deleteCommand } from "../canvas/delete.js";
+import {
+  answerCommand,
+  forkCommand,
+  LIVE_USAGE,
+  lookCommand,
+  openLiveCommand,
+  showCommand,
+} from "../canvas/live.js";
 import { parseOptions, readBoolean, readString } from "../args.js";
 import { PrLensCliError, usageError } from "../errors.js";
 import { DEFAULT_API, API_ENV, readApi, requireSameApi, requireWriteToken, settleRotation, settlePendingRotation, writeCredential } from "../canvas/write.js";
@@ -53,13 +61,18 @@ const SUBCOMMANDS = [
   "claim",
   "rotate",
   "delete",
+  "open",
+  "answer",
+  "show",
+  "fork",
+  "look",
 ] as const;
 type Subcommand = (typeof SUBCOMMANDS)[number];
 
 const isSubcommand = (value: string): value is Subcommand =>
   SUBCOMMANDS.some((subcommand) => subcommand === value);
 
-export const USAGE = `pr-lens canvas <list | push | pull | claim | rotate | delete> [options]
+export const USAGE = `pr-lens canvas <list | push | pull | claim | rotate | delete | open | answer | show | fork | look> [options]
 
 Keeps a graph document on the PR Lens app as a canvas: a page anyone you share
 it with can read, and an SVG a README can embed. The write token lands in
@@ -90,6 +103,16 @@ in its fragment, so share the view link and keep the edit link to yourself.
 
   pr-lens canvas delete                permanently delete the hosted canvas; keep local graph and SVG files
     --canvas <id|name>                 which canvas (default the checkout's only canvas)
+
+Live mode puts your coding agent beside an open canvas: it answers there, with
+the camera, the highlights and the links the page's own agent uses.
+
+${LIVE_USAGE}
+
+  Every live command takes the drawing it is about:
+    --drawing <path>                   the same drawn.graph.json you opened (open takes it as
+                                       its argument); left out, the checkout's only paired canvas
+    --canvas <id|name>                 a canvas by id or name, instead of a drawing
 
   --api <url>                          the PR Lens app (default $${API_ENV}, else ${DEFAULT_API})`;
 
@@ -173,6 +196,7 @@ const recordPull = (current: CanvasRegistry, pull: PullRecord): Recorded => {
     ...(pending === undefined ? {} : { pending }),
     ...(kept === undefined ? {} : { writeToken: kept }),
     rev: pull.fetched?.rev ?? entry?.rev ?? 0,
+    ...(entry?.live === undefined ? {} : { live: entry.live }),
   };
 
   return imports
@@ -639,7 +663,7 @@ export const canvasCommand = async (
   const [name, ...rest] = args;
   if (name === undefined)
     throw usageError(
-      "canvas needs a subcommand: list, push, pull, claim, rotate or delete",
+      "canvas needs a subcommand: list, push, pull, claim, rotate, delete, open, answer, show, fork or look",
     );
   if (!isSubcommand(name))
     throw usageError(`unknown canvas subcommand ${JSON.stringify(name)}`);
@@ -657,6 +681,16 @@ export const canvasCommand = async (
       return deleteCommand(rest, terminal, env);
     case "rotate":
       return rotate(rest, terminal, env);
+    case "open":
+      return openLiveCommand(rest, terminal, env);
+    case "answer":
+      return answerCommand(rest, terminal, env);
+    case "show":
+      return showCommand(rest, terminal, env);
+    case "fork":
+      return forkCommand(rest, terminal, env);
+    case "look":
+      return lookCommand(rest, terminal, env);
     default:
       return assertNever(name, "Unhandled canvas subcommand");
   }

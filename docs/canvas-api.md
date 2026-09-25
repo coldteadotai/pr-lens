@@ -70,6 +70,8 @@ Every refusal is a JSON envelope with a code the client switches on, a sentence 
 | `TOO_LARGE`           | 413    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
 | `UNAUTHENTICATED`     | 401    |                                      | `AUTH_REQUIRED`, telling the user to sign in       |
 | `ALREADY_OWNED`       | 409    |                                      | `CANVAS_OWNED`, naming the canvas                  |
+| `LIVE_ENDED`          | 404    |                                      | `LIVE_ENDED`, telling the user to open a new tab   |
+| `UNKNOWN_PLACE`       | 422    | `unknown`, `valid`: see [Live mode](#live-mode) | `LIVE_UNKNOWN_PLACE`, listing both      |
 | `NOT_OWNER`           | 403    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
 | `INSTALL_REVOKED`     | 403    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
 | `MACHINE_LINKED`      | 409    |                                      | `CANVAS_UNAVAILABLE`, with the message             |
@@ -328,6 +330,89 @@ For an owner who has no write token left. Only a hash was ever kept, so the old 
 - Otherwise 200, with the same `{ id, editUrl }` a claim answers with.
 
 The CLI does not call this route yet.
+
+## Live mode
+
+A canvas can follow the reader's own coding agent. The agent runs `pr-lens canvas open .pr-lens/<drawing>/drawn.graph.json`, which pairs one browser tab, and then sends answers, camera moves and drawings to that tab through the server. The server checks every id against the canvas and relays what it resolved; the thinking happens on the reader's machine, not the server's.
+
+A store that serves none of these routes is still understood: `open` is reported as the store being unavailable, and nothing else on this page changes.
+
+Two credentials. The CLI sends the same bearer a [push](#push) takes, a write token or an owner's [account credential](#the-account-credential). The paired tab sends the session's secret as its bearer, and never the write token.
+
+Session ids and secrets are 22 characters of base64url. A session lasts 2 hours after the last thing sent to it.
+
+### Open a session
+
+```
+POST /api/canvas/{id}/live
+Authorization: Bearer {writeToken}
+```
+
+No body. Mints a session on the canvas as it stands.
+
+```json
+{
+  "session": "Tq8wLm3xZp9aRv2yNc4bKe",
+  "url": "https://lens.example.com/c/Qk3vZp9xLm2aRt8yWn4bCg#live=Tq8wLm3xZp9aRv2yNc4bKe.Hs5dPw7qXk2mLz9nBv4cTa",
+  "expiresAt": "2026-09-25T18:00:00.000Z"
+}
+```
+
+Status 200. `url` is the canvas page with the session and its secret in the fragment, so the secret never reaches a server log or a referrer. The CLI opens it once and keeps `session` beside the write token. A canvas nobody has pushed to, a wrong token or an unknown id is `NOT_FOUND`.
+
+### Send a command
+
+```
+POST /api/canvas/{id}/live/{session}
+Authorization: Bearer {writeToken}
+```
+
+The body is a `LiveCommand` from `@coldtea/pr-lens-schema` (published as `live-command.schema.json` beside the graph document's schema). There are three kinds:
+
+- `answer`: `{ question, steps }`, one to four steps. Each step takes a walkthrough step's `stage` and `focus`, a `heading`, and paragraphs of `parts`, where a part that names a place carries a `ref`.
+- `show`: a `stage` and `focus` to move the camera to, and optionally a message whose payload to open.
+- `fork`: a graph document of what is inside one or more components, drawn under them.
+
+Ids are the document's own: a component is a node id, a message is `flowId/messageId`, a diagram is a view or flow id. The server resolves them exactly.
+
+```json
+{ "seq": 3, "tab": "following" }
+```
+
+Status 200. `tab` is where the reader was when their tab last reported: `following` in agent mode, `stepped_out` of it (the answer waits for them), or `not_open` when no tab has reported yet.
+
+Refusals, beyond the usual `INVALID_REQUEST`, `TOO_LARGE` and `NOT_FOUND`:
+
+- `LIVE_ENDED`: the session is unknown or has lapsed. Open another.
+- `UNKNOWN_PLACE`: an id the canvas does not have, or does not draw where the command puts it. `unknown` lists each one as `{ at, kind, id, detail }`, with `at` a path into the command, and `valid` lists the `components`, `messages` and `diagrams` the canvas does have, so the next attempt copies one instead of guessing again.
+- `INVALID_DOCUMENT` and `CANNOT_DRAW`: a fork's drawing, refused as a push would refuse it.
+
+### What the reader is looking at
+
+```
+GET /api/canvas/{id}/live/{session}/look
+Authorization: Bearer {writeToken}
+```
+
+```json
+{
+  "status": "seen",
+  "seenAt": "2026-09-25T16:04:11.000Z",
+  "look": {
+    "following": true,
+    "rev": 3,
+    "diagram": { "stage": { "kind": "view", "view": "overview" }, "title": "Overview" },
+    "inFrame": [{ "kind": "component", "id": "canvas-api", "label": "Canvas API" }],
+    "scope": { "kind": "place", "place": { "kind": "component", "id": "canvas-api", "label": "Canvas API" } },
+    "answer": null,
+    "fork": null
+  }
+}
+```
+
+Status 200, or `{ "status": "not_open" }` before the tab has reported. `scope` is what the reader selected: a clicked part, a dragged region (`places`), or a box inside a drawing (`label`, `within`, `places`). `fork` names the drawing hung under the canvas and its parts, or is null. The shape is `ViewerLook` in `@coldtea/pr-lens-schema`.
+
+The tab's own two routes, reading the relayed events and reporting its look, take the secret rather than the write token and are the server's business. A push to the canvas tells every paired tab to reload onto the new revision.
 
 ## Tiles
 
