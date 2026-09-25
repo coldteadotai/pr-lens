@@ -414,6 +414,36 @@ test("a canvas pushed before the layout changed is adopted, not replaced", async
   expect((await registry())[FIRST]?.source).toBe(`${DRAWING}/drawn.graph.json`);
 });
 
+test("after upgrading, a bare push adopts the old canvas instead of asking which drawing", async () => {
+  await invoke("canvas", "push", await draw(".pr-lens"), "--api", API);
+  await draw(DRAWING);
+  output.out = [];
+
+  expect(await invoke("canvas", "push", "--api", API)).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ ${API}/c/${FIRST} — rev 2 · 2 diagrams`);
+  expect((await registry())[FIRST]?.source).toBe(`${DRAWING}/drawn.graph.json`);
+});
+
+test("and an unpushed 0.7.0 drawing does not compete with one rendered since", async () => {
+  await draw(".pr-lens");
+  await draw(DRAWING);
+  output.out = [];
+
+  expect(await invoke("canvas", "push", "--api", API)).toBe(0);
+
+  expect((await registry())[FIRST]?.source).toBe(`${DRAWING}/drawn.graph.json`);
+});
+
+test("a checkout that has only rendered with 0.7.0 still pushes bare", async () => {
+  const legacy = await draw(".pr-lens");
+  output.out = [];
+
+  expect(await invoke("canvas", "push", "--api", API)).toBe(0);
+
+  expect((await registry())[FIRST]?.source).toBe(legacy);
+});
+
 test("adopting happens once, so the next drawing is still its own canvas", async () => {
   await invoke("canvas", "push", await draw(".pr-lens"), "--api", API);
   await draw(DRAWING);
