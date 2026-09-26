@@ -85,11 +85,27 @@ export type Lens = z.infer<typeof Lens>;
 
 export const LENSES = Lens.options;
 
-/** The two renders that make a `<picture>` pair. */
-export const Theme = z.enum(["light", "dark"]).describe("Which colour scheme a render targets.");
+/**
+ * What a render can target. `light` and `dark` are the two halves of a
+ * `<picture>` pair, for a surface that can swap them. `neutral` is the single
+ * self-contained render for a surface that shows one image and cannot: it
+ * carries its own ground, because no flat colour clears a readable contrast
+ * ratio against both a white page and a near-black one.
+ */
+export const Theme = z
+  .enum(["light", "dark", "neutral"])
+  .describe("Which colour scheme a render targets.");
 export type Theme = z.infer<typeof Theme>;
 
 export const THEMES = Theme.options;
+
+/**
+ * The two that make a `<picture>` pair, and the widest render any target
+ * asks for. `neutral` replaces the pair rather than joining it — a surface
+ * wants either the pair or the single image, never all three — so this, not
+ * the size of the enum, is what bounds a document's view tree.
+ */
+export const THEME_PAIR = ["light", "dark"] as const satisfies readonly Theme[];
 
 /**
  * A render is one asset per view per theme, so these two caps are one rule
@@ -101,16 +117,22 @@ export const THEMES = Theme.options;
  * place — raise the budget, or add a theme, and the other end moves with it
  * instead of every surface rediscovering the arithmetic.
  *
- * The cap is deliberately the worst case, every theme rendered, rather than
- * what some particular render would emit. A renderer asked for one theme
- * could describe twice as many views, but then whether a document is
- * renderable would depend on how it was asked to be rendered, and the promise
- * this package exists to make — if it parses, it renders — would need a
- * second rule at a second boundary to stay true.
+ * The cap is deliberately the worst case any target asks for — the pair —
+ * rather than what some particular render would emit. A renderer asked for
+ * one theme could describe twice as many views, but then whether a document
+ * is renderable would depend on how it was asked to be rendered, and the
+ * promise this package exists to make — if it parses, it renders — would
+ * need a second rule at a second boundary to stay true.
+ *
+ * The worst case is the pair rather than the whole enum because `neutral`
+ * replaces the pair and never joins it: a surface shows the two halves or
+ * the one self-contained render. `RenderThemes` in the renderer is what
+ * keeps that true at the boundary, so a caller cannot ask for all three and
+ * emit three assets per view against a budget that assumed two.
  */
 export const MAX_RENDER_ASSETS = 256;
 
-export const MAX_VIEWS = MAX_RENDER_ASSETS / THEMES.length;
+export const MAX_VIEWS = MAX_RENDER_ASSETS / THEME_PAIR.length;
 
 /**
  * How an element relates to the base branch. `unchanged` elements are the

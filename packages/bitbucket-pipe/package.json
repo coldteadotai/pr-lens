@@ -1,0 +1,40 @@
+{
+  "name": "@coldtea/pr-lens-bitbucket-pipe",
+  "version": "0.1.0",
+  "description": "The PR Lens Bitbucket pipe: analyze a pull request with your own model key, publish the diagrams to Downloads, keep one sticky comment.",
+  "license": "MIT",
+  "author": "Coldtea AI",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coldteadotai/pr-lens.git",
+    "directory": "packages/bitbucket-pipe"
+  },
+  "keywords": [
+    "pr-lens",
+    "code-review",
+    "architecture-diagram",
+    "data-flow",
+    "bitbucket-pipelines",
+    "pull-request"
+  ],
+  "type": "module",
+  "private": true,
+  "files": [
+    "pipe.yml",
+    "Dockerfile",
+    "pipe",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11",
+    "yaml": "^2.8.1",
+    "zod": "^4.4.3"
+  }
+}

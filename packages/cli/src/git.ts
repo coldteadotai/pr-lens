@@ -1,3 +1,4 @@
+import { assertNever, type Provider } from "@coldtea/pr-lens-schema";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { PrLensCliError } from "./errors.js";
@@ -115,7 +116,41 @@ export const collectDiff = async (
   };
 };
 
-export type RepoSlug = { owner: string; name: string; host: string };
+export type RepoSlug = { owner: string; name: string; host: string; provider: Provider };
+
+/**
+ * Which forge a host belongs to. bitbucket.org is exact because Bitbucket
+ * Cloud has one host; anything with "gitlab" in the name is taken to be a
+ * self-managed GitLab, since those hosts follow no other convention; and
+ * everything else is treated as GitHub, which keeps today's behavior for
+ * every repository the CLI already handles. A self-managed GitLab on a host
+ * that does not say so is what `--forge` exists for.
+ */
+export const providerForHost = (host: string): Provider => {
+  const lowered = host.toLowerCase();
+  if (lowered === "bitbucket.org") return "bitbucket";
+  if (lowered.includes("gitlab")) return "gitlab";
+  return "github";
+};
+
+/**
+ * Where a pull request lives on each forge. The number is the same concept
+ * everywhere — GitLab's iid, Bitbucket's id — but each forge spells the path
+ * differently, and a wrong spelling is a 404 in the reader's face.
+ */
+export const pullRequestUrl = (slug: RepoSlug, pr: number): string => {
+  const repository = `https://${slug.host}/${slug.owner}/${slug.name}`;
+  switch (slug.provider) {
+    case "github":
+      return `${repository}/pull/${pr}`;
+    case "gitlab":
+      return `${repository}/-/merge_requests/${pr}`;
+    case "bitbucket":
+      return `${repository}/pull-requests/${pr}`;
+    default:
+      return assertNever(slug.provider, "Unhandled provider");
+  }
+};
 
 const REMOTE_URL = /^(?:(?:ssh|git|https?):\/\/)?(?:[^@/]+@)?([^/:]+)[:/](.+?)(?:\.git)?\/?$/;
 
@@ -131,7 +166,7 @@ export const parseRemoteUrl = (url: string): RepoSlug | undefined => {
   const owner = segments.slice(0, -1).join("/");
   if (name === undefined || owner === "") return undefined;
 
-  return { owner, name, host };
+  return { owner, name, host, provider: providerForHost(host) };
 };
 
 export const parseRepoSlug = (slug: string): RepoSlug | undefined => {
@@ -139,7 +174,7 @@ export const parseRepoSlug = (slug: string): RepoSlug | undefined => {
   const name = segments.at(-1);
   const owner = segments.slice(0, -1).join("/");
   if (name === undefined || owner === "" || segments.length !== 2) return undefined;
-  return { owner, name, host: "github.com" };
+  return { owner, name, host: "github.com", provider: "github" };
 };
 
 export const remoteSlug = async (repo: string, remote: string): Promise<RepoSlug | undefined> => {

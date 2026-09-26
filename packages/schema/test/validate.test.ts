@@ -3,7 +3,7 @@ import { postmarkRefactorGraphInput } from "../src/examples/postmark-refactor.js
 import { minimalGraphInput } from "../src/examples/minimal.js";
 import type { GraphDocInput } from "../src/graph.js";
 import type { ViewInput } from "../src/graph.js";
-import { MAX_RENDER_ASSETS, MAX_VIEWS, THEMES } from "../src/primitives.js";
+import { MAX_RENDER_ASSETS, MAX_VIEWS, THEMES, THEME_PAIR } from "../src/primitives.js";
 import { postmarkRefactorManifestInput } from "../src/examples/postmark-refactor.js";
 import { safeParseConfig, safeParseGraphDoc, safeParseRenderManifest } from "../src/validate.js";
 import { SCHEMA_VERSION } from "../src/version.js";
@@ -356,8 +356,17 @@ const nestedViews = (count: number): ViewInput[] => {
 };
 
 describe("the drill-down tree and the render it implies", () => {
-  it("is one rule: every view fits a manifest at every theme", () => {
-    expect(MAX_VIEWS * THEMES.length).toBe(MAX_RENDER_ASSETS);
+  it("is one rule: every view fits a manifest at every paired theme", () => {
+    expect(MAX_VIEWS * THEME_PAIR.length).toBe(MAX_RENDER_ASSETS);
+  });
+
+  it("bounds the budget on the pair, because neutral replaces it rather than joining it", () => {
+    // Binding this to the size of the whole enum would shrink the view cap
+    // every time a theme is added, even one no render asks for alongside the
+    // others — and 256/3 is not a whole number of views.
+    expect(THEME_PAIR.length).toBe(2);
+    expect(THEMES).toContain("neutral");
+    expect(THEME_PAIR as readonly string[]).not.toContain("neutral");
   });
 
   it("accepts a tree a render can describe", () => {
@@ -410,5 +419,22 @@ describe("config validation", () => {
   it("requires a repository to declare which contract its corrections target", () => {
     const result = safeParseConfig({ lenses: ["architecture"] });
     expect(result.ok).toBe(false);
+  });
+});
+
+/**
+ * The renderer's `RenderThemes` is what keeps this arithmetic true: it admits
+ * the pair, one half of it, or the single neutral, and never all three. A
+ * caller able to ask for three would emit three assets per view against a
+ * cap derived from two, so a document that validates could produce a
+ * manifest that does not — and the promise this package makes is that if it
+ * parses, it renders.
+ */
+describe("the view cap's assumption", () => {
+  it("holds because no render asks for more themes than the pair", () => {
+    expect(MAX_VIEWS * THEME_PAIR.length).toBe(MAX_RENDER_ASSETS);
+    expect(MAX_VIEWS).toBe(Math.floor(MAX_VIEWS));
+    // Three themes exist, and a render never asks for all of them at once.
+    expect(THEMES.length).toBeGreaterThan(THEME_PAIR.length);
   });
 });
