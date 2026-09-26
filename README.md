@@ -376,10 +376,13 @@ pipelines:
       - step:
           name: PR Lens
           script:
-            - pipe: coldtea/pr-lens-pipe:0.1.0
+            - pipe: docker://coldtea/pr-lens-pipe:0.1.0
+              variables:
+                GEMINI_API_KEY: $GEMINI_API_KEY
+                PR_LENS_TOKEN: $PR_LENS_TOKEN
 ```
 
-Two secured variables: your model key, and a repository access token with `pullrequest:write` and `repository:write` — the second publishes the diagrams to the repository's Downloads. Repository access tokens come with every Bitbucket plan; the workspace-wide ones need Premium.
+Two secured variables, passed through by name because a pipe sees only what the step hands it: your model key, and a repository access token with `pullrequest:write` and `repository:write` — the second publishes the diagrams to the repository's Downloads. Repository access tokens come with every Bitbucket plan; the workspace-wide ones need Premium.
 
 Bitbucket renders comments as plain Markdown, so the comment arrives without collapsible sections or a light/dark pair: headline, numbers, one diagram per lens, and the drill-down views in order. Bitbucket also never runs a pipeline for a pull request opened from a fork, so those go undrawn however the pipe is configured — the hosted app is the answer for a repository that lives on fork contributions. Details in [`packages/bitbucket-pipe`](packages/bitbucket-pipe).
 

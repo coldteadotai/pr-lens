@@ -19,10 +19,15 @@ pipelines:
       - step:
           name: PR Lens
           script:
-            - pipe: coldtea/pr-lens-pipe:0.1.0
+            - pipe: docker://coldtea/pr-lens-pipe:0.1.0
               variables:
-                MODEL_PROVIDER: "gemini"
+                GEMINI_API_KEY: $GEMINI_API_KEY
+                PR_LENS_TOKEN: $PR_LENS_TOKEN
 ```
+
+A pipe runs in its own container and sees only what the step hands it, so
+the two secured variables are passed through by name. Their values never
+appear in the file; `$GEMINI_API_KEY` is a reference the runner resolves.
 
 ## Variables
 
@@ -92,37 +97,45 @@ and a shallow clone does not reach it.
 
 ```yaml
 script:
-  - pipe: coldtea/pr-lens-pipe:0.1.0
+  - pipe: docker://coldtea/pr-lens-pipe:0.1.0
+    variables:
+      GEMINI_API_KEY: $GEMINI_API_KEY
+      PR_LENS_TOKEN: $PR_LENS_TOKEN
 ```
 
 ### A different provider
 
 ```yaml
 script:
-  - pipe: coldtea/pr-lens-pipe:0.1.0
+  - pipe: docker://coldtea/pr-lens-pipe:0.1.0
     variables:
       MODEL_PROVIDER: "openai-compatible"
       MODEL: "your-model-name"
       BASE_URL: "https://your-endpoint/v1"
       API_KEY_VARIABLE: "YOUR_KEY_VARIABLE"
+      YOUR_KEY_VARIABLE: $YOUR_KEY_VARIABLE
+      PR_LENS_TOKEN: $PR_LENS_TOKEN
 ```
 
 ### Render without commenting
 
 ```yaml
 script:
-  - pipe: coldtea/pr-lens-pipe:0.1.0
+  - pipe: docker://coldtea/pr-lens-pipe:0.1.0
     variables:
       COMMENT: "false"
+      GEMINI_API_KEY: $GEMINI_API_KEY
 ```
 
 ### One lens only
 
 ```yaml
 script:
-  - pipe: coldtea/pr-lens-pipe:0.1.0
+  - pipe: docker://coldtea/pr-lens-pipe:0.1.0
     variables:
       LENS: "architecture"
+      GEMINI_API_KEY: $GEMINI_API_KEY
+      PR_LENS_TOKEN: $PR_LENS_TOKEN
 ```
 
 ### Without the pipe
@@ -157,7 +170,10 @@ Open an issue at
 
 The pipe is a Docker image: build from this directory's `Dockerfile` and
 push as `coldtea/pr-lens-pipe:<version>`, keeping `pipe.yml`'s `image:` pin
-in step. The image carries only `pipe/lens.sh` plus node, git and curl.
+in step. The `docker://` reference works from that push alone. The short
+`coldtea/pr-lens-pipe:0.1.0` form resolves through a Bitbucket repository of
+the same name holding this `pipe.yml`, which is also what the Pipes listing
+reads; until one exists, the examples say `docker://`. The image carries only `pipe/lens.sh` plus node, git and curl.
 
 ## License
 
