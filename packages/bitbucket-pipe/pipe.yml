@@ -32,7 +32,7 @@ variables:
   - name: COMMENT
     default: "true"
   - name: CLI_VERSION
-    default: "0.6.1"
+    default: "0.10.0"
   - name: API_KEY_VARIABLE
     default: GEMINI_API_KEY
   - name: TOKEN_VARIABLE

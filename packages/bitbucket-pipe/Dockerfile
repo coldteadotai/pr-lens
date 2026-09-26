@@ -11,7 +11,7 @@ RUN apt-get update \
 # that minute inside the customer's CI, where their repository variables
 # live, and charges them the install time on top. Pinned here, resolved once,
 # at a version this image is built and tagged against.
-ARG CLI_VERSION=0.6.1
+ARG CLI_VERSION=0.10.0
 RUN npm install -g "@coldtea/pr-lens-cli@${CLI_VERSION}" \
   && npm cache clean --force
 

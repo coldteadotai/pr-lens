@@ -60,7 +60,7 @@ spec:
         - "false"
       description: Post the comment. Set "false" to render without commenting.
     cli_version:
-      default: "0.6.1"
+      default: "0.10.0"
       type: string
       regex: ^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$
       description: Version of @coldtea/pr-lens-cli to run.
