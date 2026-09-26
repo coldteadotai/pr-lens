@@ -33,17 +33,21 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
    npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme light
    ```
 
-   Render light by default unless the user requests another theme. The SVGs, the manifest and `drawn.graph.json` land in `.pr-lens/`, which the CLI adds to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
+   Render light by default unless the user requests another theme. The SVGs, the manifest and `drawn.graph.json` land in a directory of their own under `.pr-lens/`, named after the document's title. The render prints that path, so read it from there. The CLI adds `.pr-lens/` to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
 
    If the user asked for a diagram, an explanation or a picture of the architecture and nothing more, put it on a canvas and hand back the link:
 
    ```bash
-   npx @coldtea/pr-lens-cli@latest canvas push
+   npx @coldtea/pr-lens-cli@latest canvas push .pr-lens/<drawing>/drawn.graph.json
    ```
 
-   This pushes `.pr-lens/drawn.graph.json` and prints three links. Give the user the view link, `https://prlens.dev/c/{id}`: that is the diagram, full screen, every view on one page, and it opens without a login. The edit link, the one ending in `#w=…`, lets its holder push over the canvas, so leave it out of the reply unless they ask, and never paste it anywhere public. The embed link serves the top view as an SVG for a README.
+   Pass the path the render printed. A bare `canvas push` finds the drawing when the checkout holds only one; with more than one it lists them and asks which, so always pass the path.
 
-   Pushing the same file again updates the same canvas, so a follow-up such as "rename that node" or "add the queue" is: edit the document, validate, render, push. The link stays the same. If the push fails, say so and tell them where the SVGs are and which one is the top view.
+   It prints three links. Give the user the view link, `https://prlens.dev/c/{id}`: that is the diagram, full screen, every view on one page, and it opens without a login. The edit link, the one ending in `#w=…`, lets its holder push over the canvas, so leave it out of the reply unless they ask, and never paste it anywhere public. The embed link serves the top view as an SVG for a README.
+
+   Pushing the same document again updates the same canvas, so a follow-up such as "rename that node" or "add the queue" is: edit the document, validate, render, push. While the title stays the same, it renders to the same directory and pushes to the same canvas, so the link does not change. If the push fails, say so and tell them where the SVGs are and which one is the top view.
+
+   A different diagram only needs a different title. It renders into its own directory and pushes to its own canvas, and the first one stays as it was. `canvas list` shows them all.
 
 5. **Attach, when there is a pull request to attach to.** That means the user asked you to open a PR, asked for a diagram on one that exists, or you are opening a PR as part of changes made. Otherwise skip this step.
 
@@ -90,16 +94,92 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
 
    ```bash
    npx @coldtea/pr-lens-cli@latest comment \
-     --graph .pr-lens/drawn.graph.json \
-     --manifest .pr-lens/manifest.json \
+     --graph .pr-lens/<drawing>/drawn.graph.json \
+     --manifest .pr-lens/<drawing>/manifest.json \
      --asset-base-url https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<dir>
    ```
 
-   `--graph` takes `drawn.graph.json`, not the document you wrote, because corrections change what the diagrams show and the CLI refuses a document its manifest does not describe. `--asset-base-url` is where you published the SVGs; leave it out and the markdown points at local paths no reader can fetch. The markdown goes to stdout; posting it is your business.
+   `--graph` takes the drawing's own `drawn.graph.json`, not the document you wrote, because corrections change what the diagrams show and the CLI refuses a document its manifest does not describe. `--asset-base-url` is where you published the SVGs; leave it out and the markdown points at local paths no reader can fetch. The markdown goes to stdout, with each diagram as a `<picture>` pair; posting it is your business.
 
    Add `--target gitlab` or `--target bitbucket` when the comment is not for GitHub. The composer writes what that forge renders: GitHub gets `<picture>` theme pairs and collapsible drill-downs, GitLab gets the same HTML carrying the single neutral render, Bitbucket gets plain Markdown with the views flattened. The wrong target is a comment full of tags shown as text.
 
 If you would rather not author the document yourself, `npx @coldtea/pr-lens-cli@latest analyze --base <ref>` does steps 1 and 2 by asking a provider — Gemini, OpenAI, or any endpoint speaking `/chat/completions` — with a key of your own. That is the only path here that needs one.
+
+## Answering beside an open canvas
+
+Once a canvas is pushed, you can answer questions about it on the canvas itself. The reader keeps the page open, asks you in the terminal, and your answer plays there: the camera moves step by step, what you name lights up, and each name is a link.
+
+Run this once, when the user wants to talk about a canvas they have open or are about to open. Name the drawing you pushed, the same path as the push:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas open .pr-lens/<drawing>/drawn.graph.json
+```
+
+It opens one browser tab that follows you. Only that tab moves. Anyone else reading the same link sees the canvas as it was. Every command below talks to that tab, and takes the same path as `--drawing`. Always pass it: a checkout can hold several canvases, and the path says which one you mean.
+
+**When the user says "this", "here" or "what I selected", look first.** They clicked a component, dragged a box or picked a part of a drawing in the tab, and you cannot see it:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas look --drawing .pr-lens/<drawing>/drawn.graph.json
+```
+
+It prints JSON: the diagram they are on (`diagram.stage`, ready to paste into a step), what is on screen (`inFrame`), what they selected (`scope`), the answer they have open, and the drawing hung under the canvas (`fork`), if there is one. Answer about `scope` when it is set. `following: false` means they left agent mode: tell them the answer is waiting rather than saying you moved their canvas.
+
+**Answer** with a JSON file, or `-` to pipe it in:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas answer .pr-lens/answer.json --drawing .pr-lens/<drawing>/drawn.graph.json
+```
+
+```json
+{
+  "question": "What does push check first?",
+  "steps": [
+    {
+      "heading": "Push checks the token first",
+      "stage": { "kind": "view", "view": "overview" },
+      "focus": { "kind": "selection", "nodes": ["canvas-api"] },
+      "paragraphs": [
+        {
+          "parts": [
+            { "text": "The " },
+            { "text": "canvas API", "ref": { "kind": "component", "id": "canvas-api" } },
+            { "text": " refuses a push without the write token, before it draws anything." }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+- One to four steps. Two is usual. Each step stops on one diagram, in the order a reader should follow.
+- `heading` is a sentence of at most six words: who or what, a verb, what happens. The first step's heading is the answer. To a yes or no question it says yes or no.
+- `stage` and `focus` work exactly as they do in a walkthrough. Leave `stage` out for the opening diagram. Light one or two things, not half the diagram.
+- A paragraph is one or two sentences and at most 30 words. A second paragraph is for a failure or a risk the first did not name.
+- Every place you name carries a `ref`: `component` is a node id, `message` is `flowId/messageId`, `diagram` is a view or flow id. Copy ids from the document exactly. Never make one up. The CLI checks every id against the drawing before sending, and the app checks again; a wrong one comes back with the ids that exist.
+- When the canvas cannot answer part of the question, say what is missing in `cannotTell` rather than guessing.
+
+**"Take me to X"** is a camera move, not an answer:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas show --drawing .pr-lens/<drawing>/drawn.graph.json \
+  --diagram send-pipeline --focus send-pipeline/enqueue --open send-pipeline/enqueue
+```
+
+`--focus` takes node ids or `flow/message` and repeats. `--open` opens that message's sample payload.
+
+**"What's inside X", "expand on X" or "break X down"** is a drawing. Write a small graph document of X's insides (up to ten nodes) and hang it under X:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas fork .pr-lens/inside-x.json --from x --drawing .pr-lens/<drawing>/drawn.graph.json
+```
+
+The sketch can leave out `schemaVersion`, `kind` and `provenance`; they come from the canvas.
+
+**When the question needs the diagram itself changed** (a missing component, a wrong arrow), edit the document, validate, render and `canvas push` as usual. The open tab reloads onto the new revision by itself.
+
+After `answer`, `show` and `fork`, the CLI says where the reader is. If it says they stepped out, tell the user the answer is waiting in their Questions list, and that `/` opens it.
 
 ## The pull request body, when there is one
 

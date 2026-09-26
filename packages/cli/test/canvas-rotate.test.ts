@@ -2,9 +2,9 @@ import { expect, test } from "vitest";
 import { readFile, writeFile } from "node:fs/promises";
 
 import { API, GOLDEN, REGISTRY } from "./helpers/canvas.js";
-import { FIRST, TOKEN1, setupCanvasAppTest } from "./helpers/canvas-app.js";
+import { ACCOUNT, FIRST, TOKEN1, setupCanvasAppTest } from "./helpers/canvas-app.js";
 
-const { output, app, invoke, registry, createCheckout } = setupCanvasAppTest();
+const { output, app, invoke, registry, createCheckout, env } = setupCanvasAppTest();
 
 test("rotate mints the next token here, and the old one stops opening the door", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(
@@ -161,4 +161,39 @@ test("a rotation the app has refused for good is dropped, not carried out by a l
     ]),
   ).toEqual([["PUT", false]]);
   expect(app.canvases.get(FIRST)?.token).toBe(current);
+});
+
+test("rotates with the account token when the registry holds none", async () => {
+  env().PR_LENS_TOKEN = ACCOUNT;
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  const entries = await registry();
+  await writeFile(
+    ".pr-lens/canvas.json",
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: undefined } } }),
+    "utf8",
+  );
+  app.seen = [];
+  output.out = [];
+
+  const code = await invoke("canvas", "rotate", "--api", API);
+  expect(code, output.err.join("\n")).toBe(0);
+
+  const post = app.seen.find((request) => request.path.endsWith("/rotate"));
+  expect(post?.headers.get("authorization")).toBe(`Bearer ${ACCOUNT}`);
+});
+
+test("and refuses a stranger's account the same way a wrong token is refused", async () => {
+  env().PR_LENS_TOKEN = ACCOUNT;
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  const entries = await registry();
+  await writeFile(
+    ".pr-lens/canvas.json",
+    JSON.stringify({ canvases: { [FIRST]: { ...entries[FIRST], writeToken: undefined } } }),
+    "utf8",
+  );
+  env().PR_LENS_TOKEN = `prl_u_${"stranger".padEnd(22, "z")}`;
+  output.err = [];
+
+  expect(await invoke("canvas", "rotate", "--api", API)).toBe(1);
+  expect(output.err.join("\n")).toContain("CANVAS_UNKNOWN");
 });

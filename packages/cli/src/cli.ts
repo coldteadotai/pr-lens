@@ -3,6 +3,7 @@ import { assertNever } from "@coldtea/pr-lens-schema";
 import { CLI_VERSION } from "./version.js";
 import type { Terminal } from "./terminal.js";
 import { formatError, PrLensCliError } from "./errors.js";
+import { authCommand, USAGE as AUTH_USAGE } from "./commands/auth.js";
 import { skillCommand, USAGE as SKILL_USAGE } from "./commands/skill.js";
 import { exportCommand, USAGE as EXPORT_USAGE } from "./commands/export.js";
 import { canvasCommand, USAGE as CANVAS_USAGE } from "./commands/canvas.js";
@@ -11,7 +12,7 @@ import { analyzeCommand, USAGE as ANALYZE_USAGE } from "./commands/analyze.js";
 import { commentCommand, USAGE as COMMENT_USAGE } from "./commands/comment.js";
 import { USAGE as VALIDATE_USAGE, validateCommand } from "./commands/validate.js";
 
-const COMMANDS = ["analyze", "render", "comment", "validate", "export", "canvas", "skill"] as const;
+const COMMANDS = ["analyze", "render", "comment", "validate", "export", "canvas", "auth", "skill"] as const;
 type CommandName = (typeof COMMANDS)[number];
 
 const isCommand = (value: string): value is CommandName =>
@@ -24,7 +25,9 @@ const HELP = `pr-lens — review what actually matters
   pr-lens comment   --graph --manifest      the pull request comment, as markdown
   pr-lens validate  <file...>               any PR Lens document, checked against the contract
   pr-lens export    <graph.json>            the merged state, as a map worth committing
-  pr-lens canvas    push | pull | rotate | delete    that document, kept on prlens.dev as a page and an embed
+  pr-lens canvas    list | push | pull | claim | rotate | delete   that document, kept on prlens.dev as a page and an embed
+                    open | answer | show | fork | look          your coding agent, answering on that page
+  pr-lens auth      login | status | logout   sign this machine in, so the canvases it pushes are yours
   pr-lens skill                             diagram instructions for coding agents
 
   pr-lens <command> --help                  what a command takes
@@ -47,6 +50,8 @@ const usageFor = (command: CommandName): string => {
       return EXPORT_USAGE;
     case "canvas":
       return CANVAS_USAGE;
+    case "auth":
+      return AUTH_USAGE;
     case "skill":
       return SKILL_USAGE;
     default:
@@ -73,6 +78,8 @@ const dispatch = (
       return exportCommand(args, terminal);
     case "canvas":
       return canvasCommand(args, terminal, env);
+    case "auth":
+      return authCommand(args, terminal, env);
     case "skill":
       return skillCommand(args, terminal);
     default:

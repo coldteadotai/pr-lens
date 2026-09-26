@@ -15,9 +15,12 @@ import { PrLensCliError, usageError } from "../errors.js";
 import { repositoryRoot } from "../git.js";
 import { writeJsonFile, writeTextFile } from "../io.js";
 import type { Terminal } from "../terminal.js";
+import { slugify } from "../slug.js";
 import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
 
-const DEFAULT_OUT = WORKSPACE_DIR;
+/** Same title, same directory, so a redraw updates its canvas instead of minting one. */
+const defaultOut = (title: string): string => join(WORKSPACE_DIR, slugify(title));
+
 const MANIFEST = "manifest.json";
 
 /**
@@ -37,7 +40,8 @@ Draws the document as self-contained SVGs — one per drill-down section per
 lens, in light and dark — and writes the manifest describing them. A document
 with no sections gets one diagram per lens it declares.
 
-  -o, --out <dir>      where the SVGs and the manifest go (default ${DEFAULT_OUT}/)
+  -o, --out <dir>      where the SVGs, the document and the manifest go
+                       (default ${WORKSPACE_DIR}/<title>/, one directory per drawing)
       --theme <theme>  light | dark | both | neutral (default both)
                        neutral is the single self-contained render for a
                        surface that shows one image: GitLab and Bitbucket
@@ -85,7 +89,7 @@ export const renderCommand = async (args: readonly string[], terminal: Terminal)
   });
 
   const graph = await readGraphDoc(expectOne(positionals, "one graph document to render"));
-  const out = readString(values.out, "out") ?? DEFAULT_OUT;
+  const out = readString(values.out, "out") ?? defaultOut(graph.title);
 
   const configPath = readString(values.config, "config");
   const configured = readBoolean(values["no-config"])

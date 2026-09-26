@@ -2,9 +2,9 @@ import { expect, test, vi } from "vitest";
 import { link, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 
 import { API, GOLDEN, REGISTRY } from "./helpers/canvas.js";
-import { FIRST, TOKEN1, setupCanvasAppTest } from "./helpers/canvas-app.js";
+import { ACCOUNT, FIRST, TOKEN1, setupCanvasAppTest } from "./helpers/canvas-app.js";
 
-const { output, app, invoke, registry, fakeFetch, createCheckout } =
+const { output, app, invoke, registry, fakeFetch, createCheckout, env } =
   setupCanvasAppTest();
 
 test("pull writes the document and brings the recorded rev up to date", async () => {
@@ -207,7 +207,7 @@ test("an edit link for a canvas nobody has pushed to is registered, and the push
   ]);
   expect((await registry())[FIRST]).toEqual({
     name: FIRST,
-    source: ".pr-lens/drawn.graph.json",
+    // No source: nothing was written, and a bare push must not resolve to it.
     api: API,
     writeToken: TOKEN1,
     rev: 0,
@@ -321,4 +321,47 @@ test("pulling a view link records the revision, and push then asks for the edit 
     ),
   ).toBe(1);
   expect(output.err.join("\n")).toContain("pull its edit link");
+});
+
+/** Reading needs only the id; being signed in makes the entry worth recording. */
+test("pulls a canvas by id into a checkout that holds nothing for it", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  const fresh = await createCheckout();
+  process.chdir(fresh);
+  output.out = [];
+
+  expect(await invoke("canvas", "pull", FIRST, "--api", API)).toBe(0);
+
+  expect(output.out[0]).toBe(`✓ .pr-lens/graph.json — rev 1 of ${API}/c/${FIRST}`);
+  expect(JSON.parse(await readFile(".pr-lens/graph.json", "utf8"))).toHaveProperty("lanes");
+});
+
+test("records it without a write token, rather than pretending to one", async () => {
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+  const fresh = await createCheckout();
+  process.chdir(fresh);
+
+  await invoke("canvas", "pull", FIRST, "--api", API);
+
+  const entry = (await registry())[FIRST];
+  expect(entry?.writeToken).toBeUndefined();
+  expect(entry?.rev).toBe(1);
+  expect(entry?.api).toBe(API);
+});
+
+test("and that checkout can then push to it when signed in", async () => {
+  env().PR_LENS_TOKEN = ACCOUNT;
+  await invoke("canvas", "push", "drawn.graph.json", "--api", API);
+
+  const fresh = await createCheckout();
+  process.chdir(fresh);
+  await writeFile("drawn.graph.json", await readFile(GOLDEN, "utf8"), "utf8");
+  await invoke("canvas", "pull", FIRST, "--api", API);
+  output.out = [];
+  app.seen = [];
+
+  expect(await invoke("canvas", "push", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(0);
+
+  const put = app.seen.find((request) => request.method === "PUT");
+  expect(put?.headers.get("authorization")).toBe(`Bearer ${ACCOUNT}`);
 });

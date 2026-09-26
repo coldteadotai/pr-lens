@@ -3,7 +3,7 @@ import { usageError } from "../errors.js";
 import type { Terminal } from "../terminal.js";
 import { parseOptions, readString } from "../args.js";
 import { selectCanvas, readRegistry, updateRegistry } from "./registry.js";
-import { readApi, requireWriteToken, settlePendingRotation } from "./write.js";
+import { readApi, settlePendingRotation, writeCredential } from "./write.js";
 
 export const deleteCommand = async (
   args: readonly string[],
@@ -26,8 +26,8 @@ export const deleteCommand = async (
   const ref = readString(values.canvas, "canvas");
   const selected = selectCanvas(registry, ref);
 
-  const target = await settlePendingRotation(api, selected, terminal);
-  await deleteCanvas(api, target.id, requireWriteToken(target));
+  const target = await settlePendingRotation(api, selected, terminal, env);
+  await deleteCanvas(api, target.id, await writeCredential(target, env, api));
 
   await updateRegistry((current) => {
     if (current.canvases[target.id]?.api === api)

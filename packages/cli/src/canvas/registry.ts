@@ -36,7 +36,8 @@ export const mintWriteToken = (): string =>
 
 const Entry = z.object({
   name: z.string(),
-  source: z.string(),
+  /** Absent for a canvas recorded from an edit link: no local file wrote it. */
+  source: z.string().optional(),
   /** Another app's 404 says nothing about this entry. */
   api: z.string(),
   /** Absent for a canvas pulled by its view link. */
@@ -44,6 +45,8 @@ const Entry = z.object({
   /** Next token of a rotation whose answer has not arrived yet, so it can be asked again. */
   pending: z.string().optional(),
   rev: z.number().int().nonnegative(),
+  /** The tab `canvas open` paired, which `answer`, `show`, `fork` and `look` talk to. */
+  live: z.object({ session: z.string(), expiresAt: z.string() }).optional(),
 });
 
 const Registry = z.object({
@@ -446,13 +449,34 @@ export const findBySource = (
 ): Registered | undefined => {
   const key = sourceKey(path);
   const matching = entries(registry).filter(
-    ({ entry }) => sourceKey(entry.source) === key,
+    ({ entry }) => entry.source !== undefined && sourceKey(entry.source) === key,
   );
   const [only, ...more] = matching;
   if (more.length > 0)
     throw unregistered(
       `${matching.length} canvases were pushed from ${key}`,
       `pass --canvas <id|name>: ${matching.map(describe).join(", ")}`,
+    );
+
+  return only;
+};
+
+/**
+ * Fallback after the path: a pull and the render after it write two files,
+ * and only one can be the recorded path. A path match wins, since a title
+ * can be edited.
+ */
+export const findByTitle = (
+  registry: CanvasRegistry,
+  title: string,
+): Registered | undefined => {
+  const matching = entries(registry).filter(({ entry }) => entry.name === title);
+  const [only, ...more] = matching;
+
+  if (more.length > 0)
+    throw usageError(
+      `${matching.length} canvases are named ${JSON.stringify(title)}`,
+      `pass --canvas <id>: ${matching.map(describe).join(", ")}`,
     );
 
   return only;

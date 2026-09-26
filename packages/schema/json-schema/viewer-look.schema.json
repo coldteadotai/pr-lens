@@ -1,0 +1,331 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/coldteadotai/pr-lens/main/packages/schema/json-schema/viewer-look.schema.json",
+  "title": "PR Lens viewer look",
+  "version": "0.2.0",
+  "type": "object",
+  "properties": {
+    "following": {
+      "type": "boolean",
+      "description": "The tab is in agent mode, following the agent."
+    },
+    "rev": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "The revision the tab is showing."
+    },
+    "diagram": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "stage": {
+              "anyOf": [
+                {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "view"
+                        },
+                        "view": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                          "description": "Id of the drill-down view to draw."
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "view"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "flow"
+                        },
+                        "flow": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                          "description": "Id of the flow to draw."
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "flow"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "description": "Which diagram a walkthrough step plays over."
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Null is a whole-map canvas with no views."
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "stage",
+            "title"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The diagram nearest the middle of the window."
+    },
+    "inFrame": {
+      "maxItems": 64,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "component",
+              "message",
+              "diagram"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "label"
+        ],
+        "description": "A place on the canvas, with the id spellings a LiveRef takes."
+      },
+      "description": "Components and messages on screen."
+    },
+    "scope": {
+      "anyOf": [
+        {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "place"
+                },
+                "place": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "component",
+                        "message",
+                        "diagram"
+                      ]
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "id",
+                    "label"
+                  ],
+                  "description": "A place on the canvas, with the id spellings a LiveRef takes."
+                }
+              },
+              "required": [
+                "kind",
+                "place"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "region"
+                },
+                "places": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "component",
+                          "message",
+                          "diagram"
+                        ]
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "label"
+                    ],
+                    "description": "A place on the canvas, with the id spellings a LiveRef takes."
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "places"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "drawn"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "within": {
+                  "type": "string"
+                },
+                "places": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "component",
+                          "message",
+                          "diagram"
+                        ]
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "label"
+                    ],
+                    "description": "A place on the canvas, with the id spellings a LiveRef takes."
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "label",
+                "within",
+                "places"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "What the reader selected: a clicked part, a dragged region, or a box inside a drawing."
+    },
+    "answer": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string"
+            },
+            "step": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "steps": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "question",
+            "step",
+            "steps"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The answer open in the tab."
+    },
+    "fork": {
+      "default": null,
+      "description": "The drawing hung under the strip, and the labels of its parts. Null when there is none.",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "parts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "label",
+            "parts"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "following",
+    "rev",
+    "diagram",
+    "inFrame",
+    "scope",
+    "answer"
+  ],
+  "description": "What the reader of a paired canvas tab is looking at."
+}

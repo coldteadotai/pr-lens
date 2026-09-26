@@ -137,6 +137,19 @@ A walkthrough tours the change one step at a time. It dims everything else, ligh
 <tr>
 <td width="46%" valign="middle">
 
+### Your agent, live on the canvas
+
+Ask your local coding agent to connect live to a canvas, then use it to understand any codebase or code change. Ask follow-up questions, drill into any part of the graph, or drag across several nodes and ask your agent about them.
+
+</td>
+<td width="54%" valign="middle">
+<img alt="A terminal agent beside a live canvas: a question typed in the terminal comes back on the canvas as a two-step answer, and the canvas follows the agent through each step" src="docs/showcase/welcome.live.gif">
+</td>
+</tr>
+
+<tr>
+<td width="46%" valign="middle">
+
 ### From one card to a monorepo
 
 The same visual grammar answers for every size of change: lanes, node cards, delta colours, and routes you can trace with your eye alone.
@@ -253,7 +266,7 @@ The App is the whole setup for most people. The modes below cover what it does n
 <summary><b>Via your coding agent</b></summary>
 <br>
 
-Your agent is usually already the model. Rather than spending a provider key to describe a diff it already understands, it writes the graph document itself and lets the validator hold it to the contract.
+A lot happens before a PR's issued. You can leverage the same underlying renderer to understand any codebase, or agent changes before a PR is issued, or just keep a sharp mental model of the system as it evolves
 
 <p align="center">
   <picture>
@@ -267,7 +280,7 @@ Your agent is usually already the model. Rather than spending a provider key to 
 npx skills add coldteadotai/pr-lens
 ```
 
-Then say, literally:
+Then instruct your coding agent e.g.:
 
 > Diagram the change you just made with PR Lens and attach it to the pull request.
 
@@ -276,15 +289,15 @@ The agent reads the diff, writes the document, runs `npx @coldtea/pr-lens-cli va
 Prefer to have the agent do the whole setup? Paste this:
 
 ```text
-Set up PR Lens (prlens.dev) for me: it draws each pull request as animated architecture and data-flow diagrams, inside the pull request itself.
+Set up PR Lens for me: it draws code changes as animated architecture and data-flow diagrams.
 
 1. Install the agent skill: `npx skills add coldteadotai/pr-lens`.
 
 2. Walk me through installing the GitHub App at https://github.com/apps/coldtea-pr-lens on every repository where I review pull requests. It posts one sticky comment per pull request and updates it on every push, with no model key of mine involved.
 
-3. If I'd rather run it from CI with a model key of mine, offer the Action instead: `.github/workflows/pr-lens.yml` using `coldteadotai/pr-lens/packages/action@v0`, with the key as a repository secret. It takes Gemini by default, OpenAI, or any endpoint speaking `/chat/completions`.
+3. If I'd rather run it from CI with a model key of mine, offer the Action instead: `.github/workflows/pr-lens.yml` using `coldteadotai/pr-lens/packages/action@v0`, with the key as a repository secret. It takes any endpoint speaking `/chat/completions` e.g., OpenAI, Gemini etc.
 
-4. Then prove it: diagram the most recent change in this repository and show me the rendered SVGs.
+4. Then test it: diagram the most recent change in this repository and show me the rendered SVGs or canvas
 ```
 
 </details>
@@ -385,10 +398,11 @@ export GEMINI_API_KEY=…    # the default provider; OPENAI_API_KEY with --provi
 npx @coldtea/pr-lens-cli analyze --base origin/main
 
 # The document as light and dark SVGs, plus the manifest a comment is built from.
+# Each drawing lands in its own directory under .pr-lens/, named after its title.
 npx @coldtea/pr-lens-cli render .pr-lens/graph.json
 
 # The pull request comment as markdown, on stdout. Posting is your business.
-npx @coldtea/pr-lens-cli comment --graph .pr-lens/drawn.graph.json --manifest .pr-lens/manifest.json \
+npx @coldtea/pr-lens-cli comment --graph .pr-lens/<drawing>/drawn.graph.json --manifest .pr-lens/<drawing>/manifest.json \
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 
 # Any PR Lens document, checked against the contract — every problem, not just the first.
@@ -450,6 +464,12 @@ Node 20.11+ and pnpm 10.
 ## Self-hosting the canvas
 
 Please start here [docs/canvas-api.md](docs/canvas-api.md)
+
+<br />
+
+## Community
+
+Ask questions or show us your diagrams on [Discord](https://discord.gg/sGDwjs8yHK). We post releases and new features on X at [@drawwithlens](https://x.com/drawwithlens)
 
 <br />
 

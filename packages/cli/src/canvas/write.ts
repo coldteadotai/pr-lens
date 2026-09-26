@@ -1,4 +1,5 @@
 import { readString } from "../args.js";
+import { readToken } from "../auth.js";
 import { rotateCanvas } from "./api.js";
 import type { Terminal } from "../terminal.js";
 import { PrLensCliError, usageError } from "../errors.js";
@@ -7,11 +8,15 @@ import { updateRegistry, type Registered } from "./registry.js";
 export const DEFAULT_API = "https://prlens.dev";
 export const API_ENV = "PR_LENS_API_URL";
 
+/**
+ * `||` for the environment: a workflow cannot omit an `env` key, so it sets
+ * it to "". The flag keeps `??`, so a typed `--api ""` is reported.
+ */
 export const readApi = (
   value: unknown,
   env: Record<string, string | undefined>,
 ): string => {
-  const api = readString(value, "api") ?? env[API_ENV] ?? DEFAULT_API;
+  const api = readString(value, "api") ?? (env[API_ENV] || DEFAULT_API);
   try {
     new URL(api);
   } catch {
@@ -42,6 +47,30 @@ export const requireWriteToken = ({ id, entry }: Registered): string => {
   );
 };
 
+/**
+ * The write token first: it works signed out and on stores without accounts.
+ * The account token only works if the app finds the account owns the canvas.
+ */
+export const writeCredential = async (
+  registered: Registered,
+  env: Record<string, string | undefined>,
+  api: string,
+): Promise<string> => {
+  if (registered.entry.writeToken !== undefined) return registered.entry.writeToken;
+
+  const account = await readToken(env, api);
+  if (account !== undefined) return account;
+
+  throw new PrLensCliError(
+    "CANVAS_UNREGISTERED",
+    `this checkout can read ${registered.id} but holds no write token for it`,
+    [
+      "pr-lens auth login signs this machine in, and an owner needs no token",
+      "or pull its edit link, the one with #w= at the end, and the token comes with it",
+    ].join("\n"),
+  );
+};
+
 const unfinishedRotation = (error: PrLensCliError): PrLensCliError =>
   new PrLensCliError(
     error.code,
@@ -60,11 +89,12 @@ export const settleRotation = async (
   { id, entry }: Registered,
   nextToken: string,
   terminal: Terminal,
+  env: Record<string, string | undefined>,
 ): Promise<{ registered: Registered; editUrl: string }> => {
   const rotated = await rotateCanvas(
     api,
     id,
-    requireWriteToken({ id, entry }),
+    await writeCredential({ id, entry }, env, api),
     nextToken,
   ).catch(async (error: unknown) => {
     if (!(error instanceof PrLensCliError)) throw error;
@@ -118,11 +148,12 @@ export const settlePendingRotation = async (
   api: string,
   registered: Registered,
   terminal: Terminal,
+  env: Record<string, string | undefined>,
 ): Promise<Registered> => {
   requireSameApi(api, registered);
-  requireWriteToken(registered);
+
   const pending = registered.entry.pending;
-  return pending === undefined
-    ? registered
-    : (await settleRotation(api, registered, pending, terminal)).registered;
+  if (pending === undefined) return registered;
+
+  return (await settleRotation(api, registered, pending, terminal, env)).registered;
 };

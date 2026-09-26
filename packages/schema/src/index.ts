@@ -108,4 +108,15 @@ export { applyPatch, applyPatchDoc } from "./apply.js";
 
 export { pruneWalkthrough, type WalkthroughSubject } from "./walkthrough.js";
 
+export {
+  LiveCommand,
+  LivePart,
+  LivePlace,
+  LiveRef,
+  LiveStep,
+  MAX_FORK_COMPONENTS,
+  ViewerLook,
+  type LiveCommandInput,
+} from "./live.js";
+
 export { assertNever } from "./utils.js";

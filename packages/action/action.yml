@@ -35,7 +35,7 @@ inputs:
     default: pr-lens
   cli-version:
     description: Version of @coldtea/pr-lens-cli to run.
-    default: 0.7.0
+    default: 0.9.0
   comment-author:
     description: >-
       Login that owns the PR Lens comment. Only a comment posted by this
@@ -43,6 +43,13 @@ inputs:
       of their own and have this Action edit it. Change it when github-token
       belongs to another identity.
     default: github-actions[bot]
+  token:
+    description: >-
+      Optional PR Lens account token. With it, canvases this workflow draws
+      belong to your prlens.dev account; without it, they are anonymous. CI
+      needs a token because a runner is a new machine every time and cannot
+      keep the install id a laptop does.
+    default: ""
   github-token:
     description: Token used to publish the SVGs and post the comment.
     default: ${{ github.token }}
@@ -107,6 +114,7 @@ runs:
         BASE_URL: ${{ inputs.base-url }}
         LENS: ${{ inputs.lens }}
         PR_LENS_API_KEY: ${{ inputs.api-key }}
+        PR_LENS_TOKEN: ${{ inputs.token }}
 
     # Corrections are applied here, so this writes the document the diagrams
     # actually show alongside them, and the comment is composed from that one.
@@ -118,6 +126,7 @@ runs:
           --out "${RUNNER_TEMP}/pr-lens/assets"
       env:
         CLI_VERSION: ${{ inputs.cli-version }}
+        PR_LENS_TOKEN: ${{ inputs.token }}
 
     - name: Publish the SVGs
       id: publish
@@ -141,3 +150,4 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_LENS_TOKEN: ${{ inputs.token }}
