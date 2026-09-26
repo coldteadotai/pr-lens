@@ -1,4 +1,4 @@
 /** Recorded on every document this CLI produces, as the generator's version. */
-export const CLI_VERSION = "0.8.1";
+export const CLI_VERSION = "0.9.0";
 
 export const GENERATOR_NAME = "pr-lens-cli";
