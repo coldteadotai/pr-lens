@@ -1,4 +1,4 @@
-import { experimental_evaluate } from "ai";
+import type { experimental_evaluate } from "ai";
 import type { ChangedFile, Diff } from "./git.js";
 
 /**
@@ -69,9 +69,12 @@ export type Evaluate = typeof experimental_evaluate;
  */
 export const triageDiff = async (
   diff: Diff,
-  evaluate: Evaluate = experimental_evaluate,
+  // Loaded on demand: `ai` is a sizeable dependency that only --triage needs,
+  // and every other command should not pay its startup cost.
+  evaluate?: Evaluate,
 ): Promise<Triage> => {
   const startedAt = performance.now();
+  const judge = evaluate ?? (await import("ai")).experimental_evaluate;
   const segments = new Map(
     splitPatch(diff.patch).flatMap((segment) => (segment.path === undefined ? [] : [[segment.path, segment] as const])),
   );
@@ -98,7 +101,7 @@ export const triageDiff = async (
     );
 
     try {
-      const result = await evaluate({ model: TRIAGE_MODEL, state, questions });
+      const result = await judge({ model: TRIAGE_MODEL, state, questions });
       if (result.usage?.inputTokens !== undefined)
         inputTokens = (inputTokens ?? 0) + result.usage.inputTokens;
       judged.push(
