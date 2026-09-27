@@ -1,6 +1,6 @@
 {
   "name": "@coldtea/pr-lens-gitlab-component",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The PR Lens GitLab CI/CD component: analyze a merge request with your own model key, upload the diagrams as attachments, keep one sticky comment.",
   "license": "MIT",
   "author": "Coldtea AI",
