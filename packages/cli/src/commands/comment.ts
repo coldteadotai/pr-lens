@@ -1,6 +1,7 @@
 import { graphContentHash } from "@coldtea/pr-lens-renderer";
+import { PROVIDERS, type Provider } from "@coldtea/pr-lens-schema";
 import { parseOptions, readBoolean, readString } from "../args.js";
-import { composeComment, COMMENT_MARKER } from "../comment.js";
+import { commentMarker, composeComment } from "../comment.js";
 import { loadConfig } from "../config-file.js";
 import { readGraphDoc, readRenderManifest } from "../document.js";
 import { usageError } from "../errors.js";
@@ -20,9 +21,20 @@ goes to stdout, or to a file, for whatever does the posting.
                               manifest records local paths
       --config <file>         read 'branding' from a repository config
       --no-branding           leave off the PR Lens footer
+      --target <forge>        github | gitlab | bitbucket — who renders the
+                              comment (default github). GitLab gets no <picture>
+                              pair; Bitbucket gets plain markdown, no HTML
       --print-marker          print the hidden marker that identifies the
                               comment, and nothing else
   -o, --out <file>            write the markdown here instead of stdout`;
+
+const readTarget = (values: Record<string, unknown>): Provider => {
+  const target = readString(values.target, "target") ?? "github";
+  const known = PROVIDERS.find((provider) => provider === target);
+  if (known === undefined)
+    throw usageError(`unknown target ${JSON.stringify(target)}`, `known targets: ${PROVIDERS.join(", ")}`);
+  return known;
+};
 
 export const commentCommand = async (args: readonly string[], terminal: Terminal): Promise<void> => {
   const { values, positionals } = parseOptions(args, {
@@ -31,6 +43,7 @@ export const commentCommand = async (args: readonly string[], terminal: Terminal
     "asset-base-url": { type: "string" },
     config: { type: "string" },
     "no-branding": { type: "boolean" },
+    target: { type: "string" },
     "print-marker": { type: "boolean" },
     out: { type: "string", short: "o" },
   });
@@ -38,8 +51,10 @@ export const commentCommand = async (args: readonly string[], terminal: Terminal
   if (positionals.length > 0)
     throw usageError(`comment takes no positional arguments, got ${positionals.join(" ")}`);
 
+  const target = readTarget(values);
+
   if (readBoolean(values["print-marker"])) {
-    terminal.out(COMMENT_MARKER);
+    terminal.out(commentMarker(target));
     return;
   }
 
@@ -65,6 +80,7 @@ export const commentCommand = async (args: readonly string[], terminal: Terminal
     manifest,
     assetBaseUrl: readString(values["asset-base-url"], "asset-base-url"),
     branding: readBoolean(values["no-branding"]) ? false : (configured?.config.branding ?? true),
+    target,
   });
 
   const out = readString(values.out, "out");

@@ -1,4 +1,10 @@
-import { applyCorrections, PrLensRenderError, renderAll, THEMES, type Theme } from "@coldtea/pr-lens-renderer";
+import {
+  applyCorrections,
+  PrLensRenderError,
+  renderAll,
+  THEME_PAIR,
+  type RenderThemes,
+} from "@coldtea/pr-lens-renderer";
 import { safeParseGraphDoc, type Config, type GraphDoc } from "@coldtea/pr-lens-schema";
 import { join } from "node:path";
 import { expectOne, parseOptions, readBoolean, readString } from "../args.js";
@@ -36,20 +42,27 @@ with no sections gets one diagram per lens it declares.
 
   -o, --out <dir>      where the SVGs, the document and the manifest go
                        (default ${WORKSPACE_DIR}/<title>/, one directory per drawing)
-      --theme <theme>  light | dark | both (default both)
+      --theme <theme>  light | dark | both | neutral (default both)
+                       neutral is the single self-contained render for a
+                       surface that shows one image: GitLab and Bitbucket
       --config <file>  corrections to draw with (default the repository's, if any)
       --no-config      ignore the repository's corrections`;
 
-const readThemes = (value: unknown): readonly Theme[] => {
+const readThemes = (value: unknown): RenderThemes => {
   const theme = readString(value, "theme") ?? "both";
   switch (theme) {
     case "light":
     case "dark":
+    // A surface that shows one image wants this one instead of the pair, not
+    // as well as it — so it is a choice of --theme, never an addition to both.
+    case "neutral":
       return [theme];
     case "both":
-      return THEMES;
+      return THEME_PAIR;
     default:
-      throw usageError(`--theme takes light, dark or both, got ${JSON.stringify(theme)}`);
+      throw usageError(
+        `--theme takes light, dark, both or neutral, got ${JSON.stringify(theme)}`,
+      );
   }
 };
 

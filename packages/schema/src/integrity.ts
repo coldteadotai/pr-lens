@@ -1,6 +1,6 @@
 import type { SchemaIssue } from "./errors.js";
 import type { GraphDoc, View } from "./graph.js";
-import { FullSha, MAX_VIEWS, THEMES, type Delta } from "./primitives.js";
+import { FullSha, MAX_VIEWS, THEME_PAIR, type Delta } from "./primitives.js";
 import { assertNever } from "./utils.js";
 import { indexViews, stagedMessages } from "./walkthrough.js";
 
@@ -102,7 +102,7 @@ export const graphIntegrityIssues = (doc: GraphDoc): SchemaIssue[] => {
     issues.push({
       code: "INVALID_DOCUMENT",
       path: "views",
-      message: `drill-down tree carries ${views.length} views; a render is one asset per view per theme, and at ${THEMES.length} themes only ${MAX_VIEWS} fit a render manifest`,
+      message: `drill-down tree carries ${views.length} views; a render is one asset per view per theme, and at ${THEME_PAIR.length} paired themes only ${MAX_VIEWS} fit a render manifest`,
     });
 
   for (const { view, path } of views) {

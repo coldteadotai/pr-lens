@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { GraphDoc, Lens, RenderAsset, RenderManifest } from "@coldtea/pr-lens-schema";
 import { SCHEMA_VERSION } from "@coldtea/pr-lens-schema";
-import type { Theme } from "./theme.js";
+import { THEMES, type Theme } from "./theme.js";
 import { RENDERER_NAME, RENDERER_VERSION } from "./version.js";
 
 /**
@@ -62,7 +62,8 @@ const escapeForFileName = (id: string): string =>
 
 /** The contract's ceiling on an `Id`, which an asset id has to stay under. */
 const ASSET_ID_MAX = 128;
-const THEME_SUFFIX_MAX = "-light".length;
+/** The longest theme name, so a stem can never push an asset id over the cap. */
+const THEME_SUFFIX_MAX = Math.max(...THEMES.map((theme) => theme.length)) + "-".length;
 const STEM_MAX = ASSET_ID_MAX - THEME_SUFFIX_MAX;
 const DIGEST_LENGTH = 12;
 

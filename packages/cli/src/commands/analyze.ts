@@ -1,10 +1,10 @@
-import { LENSES, type GraphDocInput, type Lens } from "@coldtea/pr-lens-schema";
+import { LENSES, PROVIDERS, type GraphDocInput, type Lens, type Provider } from "@coldtea/pr-lens-schema";
 import { dirname } from "node:path";
 import { parseOptions, readBoolean, readInt, readList, readString } from "../args.js";
 import { discoverConfig, loadConfig, type LoadedConfig } from "../config-file.js";
 import { PrLensCliError, usageError } from "../errors.js";
 import { extractGraph } from "../extract.js";
-import { collectDiff, mergeBase, parseRepoSlug, remoteSlug, repositoryRoot, resolveCommit } from "../git.js";
+import { collectDiff, mergeBase, parseRepoSlug, pullRequestUrl, remoteSlug, repositoryRoot, resolveCommit } from "../git.js";
 import { writeJsonFile } from "../io.js";
 import { buildExtractionPrompt, SYSTEM_PROMPT } from "../prompt.js";
 import { completeJson, isProviderId, PROVIDER_IDS, resolveProvider } from "../providers/index.js";
@@ -36,6 +36,8 @@ environment, and the diff goes straight to the provider you name.
   --pr <number>             pull request number, recorded in provenance
   --repo-slug <owner/name>  override the slug read from the git remote
   --remote <name>           remote to read the slug from (default origin)
+  --forge <name>            github | gitlab | bitbucket — where the repository is
+                            hosted (default read from the remote host)
   --max-diff-bytes <n>      truncate the diff sent to the model (default ${DEFAULT_MAX_DIFF_BYTES})
   --max-output-tokens <n>   room for the answer (default ${DEFAULT_MAX_OUTPUT_TOKENS})
   --dry-run                 report what would be sent, and send nothing
@@ -50,6 +52,16 @@ const readLenses = (values: Record<string, unknown>): Lens[] | undefined => {
     throw usageError(`unknown lens ${unknown.join(", ")}`, `known lenses: ${LENSES.join(", ")}`);
 
   return LENSES.filter((lens) => requested.includes(lens));
+};
+
+const readForge = (values: Record<string, unknown>): Provider | undefined => {
+  const forge = readString(values.forge, "forge");
+  if (forge === undefined) return undefined;
+
+  const known = PROVIDERS.find((provider) => provider === forge);
+  if (known === undefined)
+    throw usageError(`unknown forge ${JSON.stringify(forge)}`, `known forges: ${PROVIDERS.join(", ")}`);
+  return known;
 };
 
 const readProviderId = (values: Record<string, unknown>) => {
@@ -78,6 +90,7 @@ export const analyzeCommand = async (
     pr: { type: "string" },
     "repo-slug": { type: "string" },
     remote: { type: "string" },
+    forge: { type: "string" },
     "max-diff-bytes": { type: "string" },
     "max-output-tokens": { type: "string" },
     "dry-run": { type: "boolean" },
@@ -94,16 +107,27 @@ export const analyzeCommand = async (
   const maxDiffBytes = readInt(values["max-diff-bytes"], "max-diff-bytes", DEFAULT_MAX_DIFF_BYTES);
 
   const slugOption = readString(values["repo-slug"], "repo-slug");
-  const slug = slugOption === undefined
+  const detected = slugOption === undefined
     ? await remoteSlug(repo, readString(values.remote, "remote") ?? "origin")
     : parseRepoSlug(slugOption);
 
-  if (slug === undefined)
+  if (detected === undefined)
     throw new PrLensCliError(
       "REPOSITORY_UNKNOWN",
       "cannot tell which repository this is",
       "pass --repo-slug owner/name, or add a git remote the CLI can read",
     );
+
+  const forge = readForge(values);
+  // An owner/name slug carries no host, and parseRepoSlug fills in
+  // github.com — which a non-GitHub forge would then dress in the wrong
+  // URLs. Refusing beats a permalink that 404s in the reader's face.
+  if (forge !== undefined && forge !== "github" && slugOption !== undefined)
+    throw usageError(
+      `--forge ${forge} cannot be combined with --repo-slug`,
+      "an owner/name slug names no host; let the CLI read the git remote, which carries one",
+    );
+  const slug = forge === undefined ? detected : { ...detected, provider: forge };
 
   const configPath = readString(values.config, "config");
   const configured: LoadedConfig | undefined = readBoolean(values["no-config"])
@@ -162,10 +186,10 @@ export const analyzeCommand = async (
   const pullRequest =
     pr === undefined
       ? undefined
-      : { number: pr, url: `https://${slug.host}/${slug.owner}/${slug.name}/pull/${pr}` };
+      : { number: pr, url: pullRequestUrl(slug, pr) };
 
   const provenance: GraphDocInput["provenance"] = {
-    repo: slug,
+    repo: { owner: slug.owner, name: slug.name, host: slug.host },
     base: { sha: comparedAgainst, ref: baseCommit.ref },
     head: { sha: headCommit.sha, ref: headCommit.ref },
     ...(pullRequest === undefined ? {} : { pullRequest }),

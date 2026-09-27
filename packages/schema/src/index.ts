@@ -23,6 +23,7 @@ export {
   MAX_VIEWS,
   Theme,
   THEMES,
+  THEME_PAIR,
   SchemaVersionField,
   Sha,
   Summary,
@@ -70,6 +71,15 @@ export {
 } from "./patch.js";
 
 export { Config, MapCorrections, Selector, type ConfigInput } from "./config.js";
+
+export {
+  Provider,
+  PROVIDERS,
+  RepoRef,
+  surfaceFor,
+  type CommentSurface,
+  type MarkdownDialect,
+} from "./provider.js";
 
 export { RenderAsset, RenderManifest, type RenderManifestInput } from "./manifest.js";
 
