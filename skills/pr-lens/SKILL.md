@@ -51,7 +51,7 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
 
 5. **Attach, when there is a pull request to attach to.** That means the user asked you to open a PR, asked for a diagram on one that exists, or you are opening a PR as part of changes made. Otherwise skip this step.
 
-   How the diagram gets there depends on the forge. Run `git remote get-url origin` to see the host before you write a body around a flag that forge may not have.
+How the diagram gets there depends on the forge. Run `git remote get-url origin` to see the host before you write a body around a flag that forge may not have.
 
    **GitHub.** GitHub CLI uploads the diagram with the pull request. Write the body with a Markdown image pointing at the local file, then pass the same path to `--attach`. `gh` rewrites the reference to the uploaded asset and keeps the alt text you wrote:
 
@@ -86,7 +86,7 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
    glab mr create --title "Batch broadcast sends" --description "$(cat .pr-lens/body.md)"
    ```
 
-   An uploaded image loads for every reader of the merge request. A raw file URL on a private project does not. The catch is that the attachment URL is the permission: it is unguessable, but anyone who has it can see the diagram, member or not. Tell the user this if the project is private. GitLab strips `<picture>`, so render with `--theme neutral` and reference that single SVG. The neutral render has its own background and reads in both light and dark mode. Either half of the light/dark pair looks wrong in one of them.
+An uploaded image loads for every reader of the merge request. A raw file URL on a private project does not. The catch is that the attachment URL is the permission: it is unguessable, but anyone who has it can see the diagram, member or not. Tell the user this if the project is private. GitLab strips `<picture>`, so render with `--theme neutral` and reference that single SVG. The neutral render has its own background and reads in both light and dark mode. Either half of the light/dark pair looks wrong in one of them.
 
    **Bitbucket.** Comments and descriptions are plain Markdown with no HTML, so there are no collapsible sections or theme pairs. Render with `--theme neutral` here too. Publish the SVGs somewhere durable, such as the repository's Downloads or a canvas, and reference them as ordinary Markdown images.
 
@@ -116,6 +116,14 @@ npx @coldtea/pr-lens-cli@latest canvas open .pr-lens/<drawing>/drawn.graph.json
 ```
 
 It opens one browser tab that follows you. Only that tab moves. Anyone else reading the same link sees the canvas as it was. Every command below talks to that tab, and takes the same path as `--drawing`. Always pass it: a checkout can hold several canvases, and the path says which one you mean.
+
+**When the user gives you a link to a canvas you did not push**, like `https://prlens.dev/c/<id>`, open it with the link. This works from any folder, as long as the canvas is not private:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas open --canvas https://prlens.dev/c/<id>
+```
+
+The CLI saves a copy of the drawing to `.pr-lens/canvases/<id>.graph.json`. Take the ids for your answer from that file. In the commands below, use `--canvas <id>` in place of `--drawing`. A private canvas opens only for its owner, after they run `npx @coldtea/pr-lens-cli@latest auth login`.
 
 **When the user says "this", "here" or "what I selected", look first.** They clicked a component, dragged a box or picked a part of a drawing in the tab, and you cannot see it:
 

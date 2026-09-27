@@ -345,13 +345,15 @@ export const mintCanvas = (
     Minted,
   );
 
+/** `token` lets an owner fetch their private canvas. */
 export const fetchCanvas = async (
   api: string,
   id: string,
+  token?: string,
 ): Promise<Fetched> => {
   const fetched = await call(
     api,
-    { method: "GET", path: canvasPath(id), canvas: id },
+    { method: "GET", path: canvasPath(id), canvas: id, token },
     Fetched,
   );
 
@@ -490,6 +492,8 @@ const LiveOpened = z.object({
   session: z.string(),
   url: z.string(),
   expiresAt: z.string(),
+  /** Sent once, and only for a reader's session. */
+  key: z.string().optional(),
 });
 
 const TAB_STATES = ["following", "stepped_out", "not_open"] as const;
@@ -511,11 +515,14 @@ export type LookRead = z.infer<typeof LookRead>;
 const livePath = (id: string, session?: string): string =>
   session === undefined ? `${canvasPath(id)}/live` : `${canvasPath(id)}/live/${session}`;
 
-/** A session is one tab, paired by the secret in the link this answers with. */
+/**
+ * A session is one tab, paired by the secret in the link this answers with.
+ * With no credential, a public canvas opens a reader's session.
+ */
 export const openLive = (
   api: string,
   id: string,
-  token: string,
+  token: string | undefined,
 ): Promise<LiveOpened> =>
   call(api, { method: "POST", path: livePath(id), canvas: id, token }, LiveOpened);
 

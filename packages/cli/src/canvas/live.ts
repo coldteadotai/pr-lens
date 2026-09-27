@@ -9,17 +9,22 @@ import {
   type View,
 } from "@coldtea/pr-lens-schema";
 
+import { readToken } from "../auth.js";
 import { readJsonFile } from "../io.js";
 import { readGraphDoc } from "../document.js";
 import type { Terminal } from "../terminal.js";
+import { WORKSPACE_DIR } from "../workspace.js";
 import { askToOpen } from "../commands/auth.js";
 import { PrLensCliError, usageError } from "../errors.js";
 import { parseOptions, readBoolean, readList, readString } from "../args.js";
+import { pullCanvas, readCanvasRef, refApi, tellRecorded } from "./pull.js";
 import { openLive, readLook, sendLive, unknownPlaces, type TabState } from "./api.js";
 import { readApi, settlePendingRotation, writeCredential } from "./write.js";
 import {
   ensureRegistryHome,
   findBySource,
+  findCanvas,
+  isCanvasId,
   readRegistry,
   REGISTRY_PATH,
   selectCanvas,
@@ -36,7 +41,10 @@ import {
 
 type Env = Record<string, string | undefined>;
 
-type Paired = { target: Registered; api: string; token: string; session: string };
+/** A writer sends its push credential; a reader sends its session key. */
+type Driver = "writer" | "reader";
+
+type Paired = { target: Registered; api: string; token: string; session: string; driver: Driver };
 
 /**
  * The canvas a live command means: the one named, else the only one in the
@@ -91,18 +99,39 @@ const paired = async (choice: CanvasChoice, apiFlag: unknown, terminal: Terminal
       "pr-lens canvas open <drawing> opens one that follows your agent",
     );
 
-  return { target, api, token: await writeCredential(target, env, api), session };
+  const key = target.entry.live?.key;
+  return key === undefined
+    ? { target, api, token: await writeCredential(target, env, api), session, driver: "writer" }
+    : { target, api, token: key, session, driver: "reader" };
 };
 
+/** Without a write token, a 404 means private or missing, so the rotated-token hint does not apply. */
+const privateOrMissing = (error: unknown, id: string, api: string): unknown =>
+  error instanceof PrLensCliError && error.code === "CANVAS_UNKNOWN"
+    ? new PrLensCliError(
+        "CANVAS_UNKNOWN",
+        `${id} is private, or there is no such canvas at ${new URL(api).host}`,
+        "only its owner can connect an agent to a private canvas: if it is yours, pr-lens auth login signs this machine in",
+      )
+    : error;
+
 /** An ended session is forgotten here too, so the next command says so without asking the app. */
-const forgetEnded = async (error: unknown, { target, session }: Paired, terminal: Terminal): Promise<never> => {
+const forgetEnded = async (error: unknown, { target, session, api, driver }: Paired, terminal: Terminal): Promise<never> => {
   if (error instanceof PrLensCliError && error.code === "LIVE_ENDED")
     await updateRegistry((current) => {
       const entry = current.canvases[target.id];
       if (entry?.live?.session !== session) return;
       current.canvases[target.id] = { ...entry, live: undefined };
     }, terminal);
-  throw error;
+
+  switch (driver) {
+    case "writer":
+      throw error;
+    case "reader":
+      throw privateOrMissing(error, target.id, api);
+    default:
+      return assertNever(driver, "Unhandled live driver");
+  }
 };
 
 const send = async (pairing: Paired, command: LiveCommand, terminal: Terminal): Promise<TabState> =>
@@ -324,6 +353,58 @@ const onlyPushed = (registry: CanvasRegistry): Registered => {
   );
 };
 
+/** One file per canvas, so another open or an `analyze` cannot overwrite the ids answers are checked against. */
+const fetchedDrawingPath = (id: string): string => `${WORKSPACE_DIR}/canvases/${id}.graph.json`;
+
+/** Recorded like a view-link pull, so later commands can find it and check ids against it. */
+const fetchForOpen = async (
+  registry: CanvasRegistry,
+  ref: string,
+  apiFlag: unknown,
+  terminal: Terminal,
+  env: Env,
+): Promise<{ api: string; selected: Registered }> => {
+  const { id, origin, writeToken } = readCanvasRef(ref);
+  const api = refApi(origin, apiFlag, env);
+  const entry = registry.canvases[id];
+  if (entry !== undefined) return { api, selected: { id, entry } };
+
+  const out = fetchedDrawingPath(id);
+  const { fetched, recorded } = await pullCanvas(
+    registry,
+    { api, id, writeToken, out, token: await readToken(env, api) },
+    terminal,
+  ).catch((error: unknown) => {
+    throw privateOrMissing(error, id, api);
+  });
+
+  if (fetched !== undefined) terminal.out(`✓ ${out}: rev ${fetched.rev} of ${fetched.viewUrl}`);
+  tellRecorded(recorded, id, terminal);
+  return { api, selected: findCanvas(await readRegistry(), id) };
+};
+
+/** A known name wins over a link: a title with a colon would parse as a URL. */
+const openTarget = async (
+  registry: CanvasRegistry,
+  drawing: string | undefined,
+  ref: string | undefined,
+  apiFlag: unknown,
+  terminal: Terminal,
+  env: Env,
+): Promise<{ api: string; selected: Registered }> => {
+  if (drawing !== undefined) {
+    const found = findBySource(registry, drawing);
+    if (found === undefined) throw notPushed(drawing);
+    return { api: readApi(apiFlag, env), selected: found };
+  }
+  if (ref === undefined) return { api: readApi(apiFlag, env), selected: onlyPushed(registry) };
+
+  const known = registry.canvases[ref] !== undefined || Object.values(registry.canvases).some((entry) => entry.name === ref);
+  if (known || !(isCanvasId(ref) || URL.canParse(ref))) return { api: readApi(apiFlag, env), selected: selectCanvas(registry, ref) };
+
+  return fetchForOpen(registry, ref, apiFlag, terminal, env);
+};
+
 export const openLiveCommand = async (args: readonly string[], terminal: Terminal, env: Env): Promise<void> => {
   const { values, positionals } = parseOptions(args, {
     canvas: { type: "string" },
@@ -332,27 +413,34 @@ export const openLiveCommand = async (args: readonly string[], terminal: Termina
   });
   if (positionals.length > 1) throw usageError(`open takes one drawing, got ${positionals.length}`);
 
-  const api = readApi(values.api, env);
   await ensureRegistryHome(terminal);
-  const registry = await readRegistry();
   const [drawing] = positionals;
   const ref = readString(values.canvas, "canvas");
-  const selected =
-    drawing !== undefined ? findBySource(registry, drawing) : ref !== undefined ? selectCanvas(registry, ref) : onlyPushed(registry);
-  if (selected === undefined) throw notPushed(drawing ?? "that drawing");
+  const { api, selected } = await openTarget(await readRegistry(), drawing, ref, values.api, terminal, env);
 
   const target = await settlePendingRotation(api, selected, terminal, env);
-  const opened = await openLive(api, target.id, await writeCredential(target, env, api));
+  // No credential is fine: the app picks writer or reader, and refuses only a private canvas.
+  const writeToken = target.entry.writeToken;
+  const opened = await openLive(api, target.id, writeToken ?? (await readToken(env, api))).catch((error: unknown) => {
+    throw writeToken === undefined ? privateOrMissing(error, target.id, api) : error;
+  });
 
   await updateRegistry((current) => {
     const entry = current.canvases[target.id];
     if (entry === undefined) return;
-    current.canvases[target.id] = { ...entry, live: { session: opened.session, expiresAt: opened.expiresAt } };
+    current.canvases[target.id] = {
+      ...entry,
+      live: { session: opened.session, expiresAt: opened.expiresAt, ...(opened.key === undefined ? {} : { key: opened.key }) },
+    };
   }, terminal);
 
   const opening = readBoolean(values["no-browser"]) ? false : askToOpen(opened.url);
   terminal.out(`✓ ${opening ? "opening" : "open"} ${opened.url}`);
-  terminal.out("  a tab opened with this link follows your agent; anyone with the plain view link sees the canvas as it is");
+  terminal.out(
+    opened.key === undefined
+      ? "  a tab opened with this link follows your agent; anyone with the plain view link sees the canvas as it is"
+      : "  a tab opened with this link follows your agent; nobody else's view of the canvas changes",
+  );
   terminal.out("  the session ends after 2 hours with nothing sent to it");
 };
 
@@ -510,6 +598,9 @@ export const lookCommand = async (args: readonly string[], terminal: Terminal, e
 export const LIVE_USAGE = `  pr-lens canvas open <drawing>        open a tab that follows your coding agent: name the
                                        .pr-lens/<drawing>/drawn.graph.json you pushed; its
                                        session is kept in ${REGISTRY_PATH}
+    --canvas <id|url>                  or a public canvas somebody else drew: its drawing is
+                                       saved to ${fetchedDrawingPath("<id>")}, and only
+                                       your tab follows your agent
     --no-browser                       print the link instead of opening it
 
   pr-lens canvas answer <file|->       answer on the open canvas: { question, steps } as JSON

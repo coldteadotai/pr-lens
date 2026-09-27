@@ -1,11 +1,9 @@
 import { assertNever } from "@coldtea/pr-lens-schema";
 
 import {
-  fetchCanvas,
   listOwnedCanvases,
   mintCanvas,
   pushCanvas,
-  verifyWriteToken,
   type CanvasPreview,
   type OwnedCanvas,
 } from "../canvas/api.js";
@@ -14,7 +12,6 @@ import {
   findBySource,
   findByTitle,
   findCanvas,
-  isCanvasId,
   mintWriteToken,
   selectCanvas,
   isReservedRegistryTarget,
@@ -28,13 +25,13 @@ import {
   type CanvasRegistry,
   type Registered,
 } from "../canvas/registry.js";
-import { writeJsonFile } from "../io.js";
 import { readInstallId } from "../install.js";
 import { readGraphDoc } from "../document.js";
 import type { Terminal } from "../terminal.js";
 import { drawings, WORKSPACE_DIR } from "../workspace.js";
 import { readToken, requireToken } from "../auth.js";
 import { claimCommand } from "../canvas/claim.js";
+import { pullCanvas, readCanvasRef, refApi, tellRecorded } from "../canvas/pull.js";
 import { deleteCommand } from "../canvas/delete.js";
 import {
   answerCommand,
@@ -116,128 +113,8 @@ ${LIVE_USAGE}
 
   --api <url>                          the PR Lens app (default $${API_ENV}, else ${DEFAULT_API})`;
 
-type CanvasRef = {
-  id: string;
-  origin: string | undefined;
-  writeToken: string | undefined;
-};
-
-const TOKEN_SHAPE = /^[A-Za-z0-9_-]{22}$/;
-
-/** Pulling an edit link is how a checkout that never pushed a canvas gets its token. */
-const readCanvasRef = (value: string): CanvasRef => {
-  if (isCanvasId(value))
-    return { id: value, origin: undefined, writeToken: undefined };
-
-  const url = (() => {
-    try {
-      return new URL(value);
-    } catch {
-      throw usageError(
-        `expected a canvas id or a canvas URL, got ${JSON.stringify(value)}`,
-      );
-    }
-  })();
-
-  const [, c, last, ...deeper] = url.pathname.split("/");
-  const id = last?.replace(/\.svg$/, "");
-  if (c !== "c" || id === undefined || deeper.length > 0 || !isCanvasId(id))
-    throw usageError(`${value} is not a canvas URL`, "expected {app}/c/{id}");
-
-  const fragment = new URLSearchParams(url.hash.replace(/^#/, ""));
-  const writeToken = fragment.get("w") ?? undefined;
-  if (writeToken !== undefined && !TOKEN_SHAPE.test(writeToken))
-    throw usageError(
-      `${value} carries something after #w= that is not a write token`,
-      "an edit link ends in #w= and 22 characters",
-    );
-  return { id, origin: url.origin, writeToken };
-};
-
 const countDiagrams = (count: number): string =>
   `${count} ${count === 1 ? "diagram" : "diagrams"}`;
-
-type Recorded = "imported" | "kept" | "overtaken" | "refused" | "elsewhere";
-
-type PullRecord = {
-  api: string;
-  id: string;
-  /** Undefined for a canvas minted and never pushed to. */
-  fetched: { rev: number; title: string } | undefined;
-  out: string;
-  writeToken: string | undefined;
-  /** The stored token when the proof was made; if it changed since, the proof is stale. */
-  seenToken: string | undefined;
-  proven: boolean;
-};
-
-/**
- * Decided under the lock. A token that changes hands drops a pending
- * rotation, which was the old holder's business; the same token keeps it.
- */
-const recordPull = (current: CanvasRegistry, pull: PullRecord): Recorded => {
-  const entry = current.canvases[pull.id];
-  if (entry !== undefined && entry.api !== pull.api) return "elsewhere";
-
-  const untouched = entry?.writeToken === pull.seenToken;
-  const imports =
-    pull.proven && untouched && pull.writeToken !== entry?.writeToken;
-
-  const kept = imports ? pull.writeToken : entry?.writeToken;
-  const pending = imports ? undefined : entry?.pending;
-
-  current.canvases[pull.id] = {
-    name: entry?.name ?? pull.fetched?.title ?? pull.id,
-    source:
-      entry?.source ??
-      // No document, so no source a bare push could resolve to.
-      (pull.fetched === undefined ? undefined : sourceKey(pull.out)),
-    api: pull.api,
-    ...(pending === undefined ? {} : { pending }),
-    ...(kept === undefined ? {} : { writeToken: kept }),
-    rev: pull.fetched?.rev ?? entry?.rev ?? 0,
-    ...(entry?.live === undefined ? {} : { live: entry.live }),
-  };
-
-  return imports
-    ? "imported"
-    : pull.proven && !untouched
-      ? "overtaken"
-      : pull.writeToken !== undefined && !pull.proven
-        ? "refused"
-        : "kept";
-};
-
-const tellRecorded = (
-  recorded: Recorded,
-  id: string,
-  terminal: Terminal,
-): void => {
-  switch (recorded) {
-    case "imported":
-      terminal.out(`  the edit link's token is now in ${REGISTRY_PATH}`);
-      return;
-    case "refused":
-      terminal.err(
-        `  the edit link's token no longer opens ${id}; nothing was recorded for it`,
-      );
-      return;
-    case "overtaken":
-      terminal.err(
-        `  ${REGISTRY_PATH} changed while the edit link was being checked; its token was not recorded`,
-      );
-      return;
-    case "elsewhere":
-      terminal.err(
-        `  ${id} is registered against another app in ${REGISTRY_PATH}; that entry was left as it is`,
-      );
-      return;
-    case "kept":
-      return;
-    default:
-      return assertNever(recorded, "Unhandled record outcome");
-  }
-};
 
 /** Like `onlyCanvas`: none or several is reported, never guessed at. */
 const onlyDrawing = async (): Promise<string> => {
@@ -400,58 +277,25 @@ const pull = async (
           writeToken: undefined,
         };
 
-  // A pasted link says where it lives; --api still wins.
-  const explicit = readString(values.api, "api");
-  const api =
-    explicit === undefined && origin !== undefined
-      ? origin
-      : readApi(explicit, env);
+  const api = refApi(origin, values.api, env);
   const out = readString(values.out, "out") ?? DEFAULT_OUT;
   if (await isReservedRegistryTarget(out))
     throw usageError(
       `${out} is where the write tokens live; a document cannot be written there`,
     );
 
-  // Proven before the fetch: an old bookmark must not replace the token
-  // that works, and an unpushed canvas has nothing to fetch yet.
-  const seenToken = registry.canvases[id]?.writeToken;
-  const proven =
-    writeToken !== undefined && (await verifyWriteToken(api, id, writeToken));
-
-  const fetched = await fetchCanvas(api, id).catch((error: unknown) => {
-    // Minted and never pushed: nothing to show, but a proven token is worth recording.
-    if (
-      error instanceof PrLensCliError &&
-      error.code === "CANVAS_UNKNOWN" &&
-      proven
-    )
-      return undefined;
-    throw error;
-  });
-  if (fetched !== undefined) await writeJsonFile(out, fetched.document);
-
-  const outcome: { recorded: Recorded } = { recorded: "kept" };
-  await updateRegistry((current) => {
-    outcome.recorded = recordPull(current, {
-      api,
-      id,
-      fetched:
-        fetched === undefined
-          ? undefined
-          : { rev: fetched.rev, title: fetched.document.title },
-      out,
-      writeToken,
-      seenToken,
-      proven,
-    });
-  }, terminal);
+  const { fetched, recorded } = await pullCanvas(
+    registry,
+    { api, id, writeToken, out, token: undefined },
+    terminal,
+  );
 
   terminal.out(
     fetched === undefined
       ? `✓ ${id} has nothing pushed to it yet`
       : `✓ ${out} — rev ${fetched.rev} of ${fetched.viewUrl}`,
   );
-  tellRecorded(outcome.recorded, id, terminal);
+  tellRecorded(recorded, id, terminal);
 };
 
 const rotate = async (

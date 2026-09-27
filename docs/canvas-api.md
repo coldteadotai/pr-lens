@@ -335,11 +335,13 @@ The CLI does not call this route yet.
 
 A canvas can follow the reader's own coding agent. The agent runs `pr-lens canvas open .pr-lens/<drawing>/drawn.graph.json`, which pairs one browser tab, and then sends answers, camera moves and drawings to that tab through the server. The server checks every id against the canvas and relays what it resolved; the thinking happens on the reader's machine, not the server's.
 
+You don't have to be the one who pushed the canvas. If the canvas is not private, anyone can run `pr-lens canvas open --canvas <id|url>` from any folder. The CLI downloads the drawing, the same way `pull` does, and opens a reader session. That session can only move the tab it opened. It never changes the saved canvas.
+
 A store that serves none of these routes is still understood: `open` is reported as the store being unavailable, and nothing else on this page changes.
 
-Two credentials. The CLI sends the same bearer a [push](#push) takes, a write token or an owner's [account credential](#the-account-credential). The paired tab sends the session's secret as its bearer, and never the write token.
+There are two ways to drive a session. A writer's CLI sends the same bearer it uses to [push](#push): a write token, or the owner's [account credential](#the-account-credential). Anyone else gets a reader session, on a canvas that is not private. The server gives them a key for it once, and every later call on that session sends the key as the bearer. The paired tab sends the session's secret as its bearer. It never sends the write token or the key.
 
-Session ids and secrets are 22 characters of base64url. A session lasts 2 hours after the last thing sent to it.
+Session ids, secrets and keys are 22 characters of base64url. A session lasts 2 hours after the last thing sent to it.
 
 ### Open a session
 
@@ -348,7 +350,7 @@ POST /api/canvas/{id}/live
 Authorization: Bearer {writeToken}
 ```
 
-No body. Mints a session on the canvas as it stands.
+No body. The `Authorization` header is optional. Mints a session on the canvas as it stands.
 
 ```json
 {
@@ -358,13 +360,21 @@ No body. Mints a session on the canvas as it stands.
 }
 ```
 
-Status 200. `url` is the canvas page with the session and its secret in the fragment, so the secret never reaches a server log or a referrer. The CLI opens it once and keeps `session` beside the write token. A canvas nobody has pushed to, a wrong token or an unknown id is `NOT_FOUND`.
+Status 200. `url` is the canvas page with the session and its secret in the fragment, so the secret never reaches a server log or a referrer. The CLI opens it once and keeps `session` beside the write token.
+
+Someone who is not a writer gets a reader session, with one extra field:
+
+```json
+{ "session": "…", "url": "…", "expiresAt": "…", "key": "Vn7cQx2mLp9aRt4yWk8bZe" }
+```
+
+The server sends `key` only in this answer, so the CLI saves it with the session in its registry, which git ignores. You get `NOT_FOUND` for an unknown id, for a canvas nobody has pushed to yet, and for a private canvas you can't write to. The hosted app also limits how many sessions readers can open. Past that limit the answer is `RATE_LIMITED`.
 
 ### Send a command
 
 ```
 POST /api/canvas/{id}/live/{session}
-Authorization: Bearer {writeToken}
+Authorization: Bearer {writeToken or key}
 ```
 
 The body is a `LiveCommand` from `@coldtea/pr-lens-schema` (published as `live-command.schema.json` beside the graph document's schema). There are three kinds:
@@ -383,7 +393,9 @@ Status 200. `tab` is where the reader was when their tab last reported: `followi
 
 Refusals, beyond the usual `INVALID_REQUEST`, `TOO_LARGE` and `NOT_FOUND`:
 
+- `NOT_FOUND` for a reader: the key is wrong, or the owner made the canvas private after the session opened.
 - `LIVE_ENDED`: the session is unknown or has lapsed. Open another.
+- `RATE_LIMITED`: a reader sent too many commands this hour. The hosted app counts them per IP address and per canvas. Writers have no limit here.
 - `UNKNOWN_PLACE`: an id the canvas does not have, or does not draw where the command puts it. `unknown` lists each one as `{ at, kind, id, detail }`, with `at` a path into the command, and `valid` lists the `components`, `messages` and `diagrams` the canvas does have, so the next attempt copies one instead of guessing again.
 - `INVALID_DOCUMENT` and `CANNOT_DRAW`: a fork's drawing, refused as a push would refuse it.
 
@@ -391,7 +403,7 @@ Refusals, beyond the usual `INVALID_REQUEST`, `TOO_LARGE` and `NOT_FOUND`:
 
 ```
 GET /api/canvas/{id}/live/{session}/look
-Authorization: Bearer {writeToken}
+Authorization: Bearer {writeToken or key}
 ```
 
 ```json
@@ -412,7 +424,9 @@ Authorization: Bearer {writeToken}
 
 Status 200, or `{ "status": "not_open" }` before the tab has reported. `scope` is what the reader selected: a clicked part, a dragged region (`places`), or a box inside a drawing (`label`, `within`, `places`). `fork` names the drawing hung under the canvas and its parts, or is null. The shape is `ViewerLook` in `@coldtea/pr-lens-schema`.
 
-The tab's own two routes, reading the relayed events and reporting its look, take the secret rather than the write token and are the server's business. A push to the canvas tells every paired tab to reload onto the new revision.
+Readers have a limit on looks too, counted per IP address and per canvas. It is separate from the command limit, so checking the tab often never uses up the commands. Past it the answer is `RATE_LIMITED`.
+
+The tab's own two routes, reading the relayed events and reporting its look, take the secret rather than the write token or the key, and are the server's business. A push to the canvas tells every paired tab to reload onto the new revision.
 
 ## Tiles
 
