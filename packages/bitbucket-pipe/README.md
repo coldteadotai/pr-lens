@@ -19,7 +19,7 @@ pipelines:
       - step:
           name: PR Lens
           script:
-            - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
+            - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.0
               variables:
                 GEMINI_API_KEY: $GEMINI_API_KEY
                 PR_LENS_TOKEN: $PR_LENS_TOKEN
@@ -98,7 +98,7 @@ and a shallow clone does not reach it.
 
 ```yaml
 script:
-  - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
+  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.0
     variables:
       GEMINI_API_KEY: $GEMINI_API_KEY
       PR_LENS_TOKEN: $PR_LENS_TOKEN
@@ -108,7 +108,7 @@ script:
 
 ```yaml
 script:
-  - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
+  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.0
     variables:
       MODEL_PROVIDER: "openai-compatible"
       MODEL: "your-model-name"
@@ -122,7 +122,7 @@ script:
 
 ```yaml
 script:
-  - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
+  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.0
     variables:
       COMMENT: "false"
       GEMINI_API_KEY: $GEMINI_API_KEY
@@ -132,7 +132,7 @@ script:
 
 ```yaml
 script:
-  - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
+  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.0
     variables:
       LENS: "architecture"
       GEMINI_API_KEY: $GEMINI_API_KEY
@@ -169,12 +169,19 @@ Open an issue at
 
 ## Publishing (maintainers)
 
-The pipe is a Docker image: build from this directory's `Dockerfile` and
-push as `coldteadotai/pr-lens-pipe:<version>`, keeping `pipe.yml`'s `image:` pin
-in step. The `docker://` reference works from that push alone. The short
-`coldteadotai/pr-lens-pipe:0.1.0` form resolves through a Bitbucket repository of
-the same name holding this `pipe.yml`, which is also what the Pipes listing
-reads; until one exists, the examples say `docker://`. The image carries only `pipe/lens.sh` plus node, git and curl.
+The pipe is a Docker image on GitHub's registry, free for a public image
+under the organisation: build from this directory's `Dockerfile` for
+`linux/amd64`, the architecture Bitbucket's runners have, and push as
+`ghcr.io/coldteadotai/pr-lens-pipe:<version>`, keeping `pipe.yml`'s `image:`
+pin in step. The package must be public, which is set once from its settings
+on GitHub. The `docker://` reference works from that push alone; the short
+form in Atlassian's listing resolves through a Bitbucket repository holding
+this `pipe.yml`, which is a later step.
+
+```bash
+docker buildx build --platform linux/amd64 -t ghcr.io/coldteadotai/pr-lens-pipe:0.1.0 .
+docker push ghcr.io/coldteadotai/pr-lens-pipe:0.1.0
+```
 
 ## License
 

@@ -105,7 +105,7 @@ test("secrets are named by variable, never taken as values", () => {
 });
 
 test("the image the metadata names is the image the Dockerfile builds for", () => {
-  expect(pipe.image).toMatch(/^coldteadotai\/pr-lens-pipe:\d+\.\d+\.\d+$/);
+  expect(pipe.image).toMatch(/^ghcr\.io\/coldteadotai\/pr-lens-pipe:\d+\.\d+\.\d+$/);
   expect(dockerfile).toContain("COPY pipe/lens.sh /lens.sh");
   expect(dockerfile).toContain('ENTRYPOINT ["bash", "/lens.sh"]');
 });
@@ -135,7 +135,7 @@ test("the image tag the metadata pins is this package's own version", async () =
   // pipe whose consumers pin a tag that does not carry what the release
   // notes describe.
   const manifest = JSON.parse(await read("package.json"));
-  expect(pipe.image).toBe(`coldteadotai/pr-lens-pipe:${manifest.version}`);
+  expect(pipe.image).toBe(`ghcr.io/coldteadotai/pr-lens-pipe:${manifest.version}`);
 });
 
 test("the changelog documents the version that is about to ship", async () => {

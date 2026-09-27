@@ -376,7 +376,7 @@ pipelines:
       - step:
           name: PR Lens
           script:
-            - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
+            - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.0
               variables:
                 GEMINI_API_KEY: $GEMINI_API_KEY
                 PR_LENS_TOKEN: $PR_LENS_TOKEN
