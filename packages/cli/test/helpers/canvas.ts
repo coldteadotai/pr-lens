@@ -20,6 +20,7 @@ type RegistryEntry = {
   writeToken?: string;
   pending?: string;
   rev: number;
+  live?: { session: string; expiresAt: string; key?: string };
 };
 
 export const setupCanvasTest = () => {

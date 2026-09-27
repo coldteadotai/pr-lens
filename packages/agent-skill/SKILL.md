@@ -117,6 +117,14 @@ npx @coldtea/pr-lens-cli@latest canvas open .pr-lens/<drawing>/drawn.graph.json
 
 It opens one browser tab that follows you. Only that tab moves. Anyone else reading the same link sees the canvas as it was. Every command below talks to that tab, and takes the same path as `--drawing`. Always pass it: a checkout can hold several canvases, and the path says which one you mean.
 
+**When the user gives you a link to a canvas you did not push**, like `https://prlens.dev/c/<id>`, open it with the link. This works from any folder, as long as the canvas is not private:
+
+```bash
+npx @coldtea/pr-lens-cli@latest canvas open --canvas https://prlens.dev/c/<id>
+```
+
+The CLI saves a copy of the drawing to `.pr-lens/canvases/<id>.graph.json`. Take the ids for your answer from that file. In the commands below, use `--canvas <id>` in place of `--drawing`. A private canvas opens only for its owner, after they run `npx @coldtea/pr-lens-cli@latest auth login`.
+
 **When the user says "this", "here" or "what I selected", look first.** They clicked a component, dragged a box or picked a part of a drawing in the tab, and you cannot see it:
 
 ```bash

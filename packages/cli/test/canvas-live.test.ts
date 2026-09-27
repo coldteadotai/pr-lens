@@ -1,27 +1,34 @@
 import { beforeEach, expect, test } from "vitest";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
-import { API } from "./helpers/canvas.js";
+import { API, GOLDEN } from "./helpers/canvas.js";
 import { FIRST, TOKEN1, refuse, setupCanvasAppTest } from "./helpers/canvas-app.js";
 
-const { output, app, fakeFetch, fetchMock, invoke, registry } = setupCanvasAppTest();
+const { output, app, fakeFetch, fetchMock, invoke, registry, place } = setupCanvasAppTest();
 
 const SESSION = "s".padEnd(22, "s");
 const SECRET = "k".padEnd(22, "k");
+const KEY = "r".padEnd(22, "r");
+
+/** A public canvas pushed from somewhere else. */
+const THEIRS = "9".padStart(22, "0");
 
 /**
  * The live routes, in front of the fake canvas app. A session is open only
- * once minted, and `ended` stands for one the app has let lapse.
+ * once minted, and `ended` stands for one the app has let lapse. The write
+ * token drives FIRST; anyone else gets a reader's session and its key, unless
+ * `limited` refuses the open.
  */
 type Live = {
   opened: boolean;
   ended: boolean;
+  limited: boolean;
   tab: "following" | "stepped_out" | "not_open";
   look: unknown;
   sent: unknown[];
 };
 
-const live: Live = { opened: false, ended: false, tab: "stepped_out", look: undefined, sent: [] };
+const live: Live = { opened: false, ended: false, limited: false, tab: "stepped_out", look: undefined, sent: [] };
 
 const json = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -29,6 +36,7 @@ const json = (status: number, body: unknown): Response =>
 beforeEach(() => {
   live.opened = false;
   live.ended = false;
+  live.limited = false;
   live.tab = "stepped_out";
   live.look = undefined;
   live.sent = [];
@@ -41,17 +49,23 @@ beforeEach(() => {
     const method = init?.method ?? "GET";
     const body: unknown = typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
     app.seen.push({ method, path: url.pathname, headers: new Headers(init?.headers), body });
-    if (id !== FIRST || new Headers(init?.headers).get("authorization") !== `Bearer ${TOKEN1}`)
-      return refuse(404, "NOT_FOUND", "There is no canvas here");
+    const bearer = new Headers(init?.headers).get("authorization");
+    const writer = id === FIRST && bearer === `Bearer ${TOKEN1}`;
+    const readable = id !== undefined && app.canvases.get(id)?.document !== undefined;
 
     if (session === undefined) {
+      if (!writer && !readable) return refuse(404, "NOT_FOUND", "There is no canvas here");
+      if (!writer && live.limited)
+        return refuse(429, "RATE_LIMITED", "Too many live sessions opened here in the last hour", { retryAt: "2026-09-25T17:00:00.000Z" });
       live.opened = true;
       return json(200, {
         session: SESSION,
         url: `${API}/c/${id}#live=${SESSION}.${SECRET}`,
         expiresAt: "2026-09-25T18:00:00.000Z",
+        ...(writer ? {} : { key: KEY }),
       });
     }
+    if (!writer && !(readable && bearer === `Bearer ${KEY}`)) return refuse(404, "NOT_FOUND", "There is no canvas here");
     if (!live.opened || live.ended || session !== SESSION)
       return refuse(404, "LIVE_ENDED", "This live session has ended");
 
@@ -92,8 +106,14 @@ test("open pairs a tab and keeps its session beside the write token", async () =
     writeToken: TOKEN1,
     live: { session: SESSION, expiresAt: "2026-09-25T18:00:00.000Z" },
   });
-  expect(output.out[0]).toBe(`✓ open ${API}/c/${FIRST}#live=${SESSION}.${SECRET}`);
+  expect((await registry())[FIRST]?.live).not.toHaveProperty("key");
+  expect(output.out).toEqual([
+    `✓ open ${API}/c/${FIRST}#live=${SESSION}.${SECRET}`,
+    "  a tab opened with this link follows your agent; anyone with the plain view link sees the canvas as it is",
+    "  the session ends after 2 hours with nothing sent to it",
+  ]);
   expect(app.seen.at(-1)).toMatchObject({ method: "POST", path: `/api/canvas/${FIRST}/live` });
+  expect(app.seen.at(-1)?.headers.get("authorization")).toBe(`Bearer ${TOKEN1}`);
 });
 
 test("an answer naming a component the drawing does not have never leaves the machine", async () => {
@@ -240,4 +260,80 @@ test("with several canvases, open asks for the drawing, and the other commands t
   output.err = [];
   expect(await invoke("canvas", "look", "--drawing", "drawn.graph.json", "--canvas", FIRST, "--api", API)).toBe(2);
   expect(output.err.join("\n")).toContain("pass --drawing or --canvas, not both");
+});
+
+const golden = async (): Promise<unknown> => JSON.parse(await readFile(GOLDEN, "utf8"));
+
+const DRAWN_THEIRS = `.pr-lens/canvases/${THEIRS}.graph.json`;
+
+test("open on a public canvas this checkout never pushed fetches it and opens a reader's session", async () => {
+  place(THEIRS, { document: await golden() });
+
+  expect(await invoke("canvas", "open", "--canvas", `${API}/c/${THEIRS}`, "--no-browser")).toBe(0);
+
+  expect(JSON.parse(await readFile(DRAWN_THEIRS, "utf8"))).toEqual(await golden());
+  expect((await registry())[THEIRS]).toEqual({
+    name: "Batch broadcast sending through Postmark",
+    source: DRAWN_THEIRS,
+    api: API,
+    rev: 1,
+    live: { session: SESSION, expiresAt: "2026-09-25T18:00:00.000Z", key: KEY },
+  });
+  const opening = app.seen.at(-1);
+  expect(opening).toMatchObject({ method: "POST", path: `/api/canvas/${THEIRS}/live` });
+  expect(opening?.headers.get("authorization")).toBeNull();
+  expect(output.out).toEqual([
+    `✓ ${DRAWN_THEIRS}: rev 1 of ${API}/c/${THEIRS}`,
+    `✓ open ${API}/c/${THEIRS}#live=${SESSION}.${SECRET}`,
+    "  a tab opened with this link follows your agent; nobody else's view of the canvas changes",
+    "  the session ends after 2 hours with nothing sent to it",
+  ]);
+});
+
+test("a reader's answer and look carry the session's key, and ids are checked against the fetched drawing", async () => {
+  place(THEIRS, { document: await golden() });
+  expect(await invoke("canvas", "open", "--canvas", THEIRS, "--no-browser", "--api", API)).toBe(0);
+  app.seen = [];
+
+  await writeFile("answer.json", JSON.stringify(answer({ kind: "component", id: "bulk-sender" })), "utf8");
+  expect(await invoke("canvas", "answer", "answer.json", "--api", API)).toBe(1);
+  expect(output.err.join("\n")).toContain('no component "bulk-sender"');
+  expect(app.seen).toEqual([]);
+
+  await writeFile("answer.json", JSON.stringify(answer({ kind: "component", id: "send-broadcast-bulk" })), "utf8");
+  expect(await invoke("canvas", "answer", "answer.json", "--api", API)).toBe(0);
+  expect(await invoke("canvas", "look", "--api", API)).toBe(0);
+
+  expect(live.sent).toHaveLength(1);
+  expect(app.seen.map((seen) => [seen.method, seen.path, seen.headers.get("authorization")])).toEqual([
+    ["POST", `/api/canvas/${THEIRS}/live/${SESSION}`, `Bearer ${KEY}`],
+    ["GET", `/api/canvas/${THEIRS}/live/${SESSION}/look`, `Bearer ${KEY}`],
+  ]);
+});
+
+test("a canvas pulled by its view link opens without a write token or a sign-in", async () => {
+  place(THEIRS, { document: await golden() });
+  expect(await invoke("canvas", "pull", THEIRS, "--api", API)).toBe(0);
+  output.out = [];
+
+  expect(await invoke("canvas", "open", "--no-browser", "--api", API)).toBe(0);
+  expect((await registry())[THEIRS]?.live).toEqual({ session: SESSION, expiresAt: "2026-09-25T18:00:00.000Z", key: KEY });
+});
+
+test("open on a canvas that is private or missing says so plainly", async () => {
+  expect(await invoke("canvas", "open", "--canvas", THEIRS, "--no-browser", "--api", API)).toBe(1);
+
+  const reported = output.err.join("\n");
+  expect(reported).toContain(`${THEIRS} is private, or there is no such canvas at canvas.test [CANVAS_UNKNOWN]`);
+  expect(reported).toContain("pr-lens auth login");
+  expect(reported).not.toContain("rotated");
+});
+
+test("a refused reader's open says when to try again", async () => {
+  place(THEIRS, { document: await golden() });
+  live.limited = true;
+
+  expect(await invoke("canvas", "open", "--canvas", THEIRS, "--no-browser", "--api", API)).toBe(1);
+  expect(output.err.join("\n")).toContain("canvas.test is rate limiting this client until 2026-09-25T17:00:00.000Z [CANVAS_RATE_LIMITED]");
+  expect((await registry())[THEIRS]).not.toHaveProperty("live");
 });

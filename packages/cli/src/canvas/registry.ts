@@ -45,8 +45,11 @@ const Entry = z.object({
   /** Next token of a rotation whose answer has not arrived yet, so it can be asked again. */
   pending: z.string().optional(),
   rev: z.number().int().nonnegative(),
-  /** The tab `canvas open` paired, which `answer`, `show`, `fork` and `look` talk to. */
-  live: z.object({ session: z.string(), expiresAt: z.string() }).optional(),
+  /**
+   * The tab `canvas open` paired, which `answer`, `show`, `fork` and `look` talk to.
+   * `key` is there only for a reader's session.
+   */
+  live: z.object({ session: z.string(), expiresAt: z.string(), key: z.string().optional() }).optional(),
 });
 
 const Registry = z.object({
