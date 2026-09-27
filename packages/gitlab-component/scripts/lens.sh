@@ -15,7 +15,7 @@ fail() {
 }
 
 [ -n "${CI_MERGE_REQUEST_IID:-}" ] \
-  || fail "PR Lens runs in merge request pipelines only. The consuming .gitlab-ci.yml must trigger them itself — for example workflow: rules: - if: \$CI_PIPELINE_SOURCE == \"merge_request_event\" — because rules inside an included component do not."
+  || fail "PR Lens runs in merge request pipelines only, and rules inside an included component cannot create them. Trigger them from your own .gitlab-ci.yml, for example with workflow: rules: - if: \$CI_PIPELINE_SOURCE == \"merge_request_event\"."
 
 [ -n "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}" ] \
   || fail "CI_MERGE_REQUEST_DIFF_BASE_SHA is empty, so there is no diff to measure."
@@ -27,7 +27,7 @@ export PR_LENS_API_KEY="${API_KEY}"
 
 TOKEN="${!PR_LENS_TOKEN_VARIABLE:-}"
 if [ "${PR_LENS_COMMENT}" = "true" ] && [ -z "${TOKEN}" ]; then
-  fail "posting the comment needs a project access token with the api scope in the CI/CD variable ${PR_LENS_TOKEN_VARIABLE}. CI_JOB_TOKEN cannot post notes — its API access is read-only for merge requests."
+  fail "posting the comment needs a project access token with the api scope in the CI/CD variable ${PR_LENS_TOKEN_VARIABLE}. CI_JOB_TOKEN cannot post notes, because its API access to merge requests is read-only."
 fi
 
 git cat-file -e "${CI_MERGE_REQUEST_DIFF_BASE_SHA}^{commit}" 2>/dev/null \
@@ -95,14 +95,14 @@ overtaken() {
   local current
   if ! current="$(api "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}" \
     | json 'const mr=JSON.parse(d);if(!mr.sha)process.exit(1);console.log(mr.sha)')"; then
-    fail "could not ask GitLab what !${CI_MERGE_REQUEST_IID} points at, so this run cannot tell whether its diagram is still the current one."
+    fail "could not ask GitLab for the head commit of !${CI_MERGE_REQUEST_IID}, so this run cannot tell whether its diagram is still current."
   fi
 
   if [ "${current}" = "${HEAD_SHA}" ]; then
     return 1
   fi
 
-  echo "!${CI_MERGE_REQUEST_IID} has moved on to ${current}; leaving the comment to the run that is drawing it."
+  echo "!${CI_MERGE_REQUEST_IID} now points at ${current}; leaving the comment to the run for that commit."
   return 0
 }
 

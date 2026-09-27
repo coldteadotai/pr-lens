@@ -342,7 +342,7 @@ Nothing here is tied to one model. `provider` takes `gemini` (the default), `ope
 <summary><b>On GitLab: the CI/CD component</b> · your pipeline · your key · one sticky comment</summary>
 <br>
 
-The same diagrams on a merge request, from GitLab CI. Two masked variables — your model key, and a project access token with the `api` scope, which is what posts the comment — then include the component:
+GitLab CI can post the same diagrams on a merge request. Add two masked variables, your model key and a project access token with the `api` scope (the token posts the comment), then include the component:
 
 ```yaml
 workflow:
@@ -354,9 +354,9 @@ include:
   - component: gitlab.com/coldteadotai/pr-lens/pr-lens@0.1.0
 ```
 
-The `workflow: rules` block is yours rather than the component's: merge request pipelines only exist when your own `.gitlab-ci.yml` asks for them, and rules inside an included component do not count. `CI_JOB_TOKEN` cannot post notes, which is why the access token is not optional — on GitLab.com project access tokens need Premium or Ultimate, and on the Free plan a personal access token with the `api` scope does the same job, posting as you rather than as a bot.
+The `workflow: rules` block has to live in your own `.gitlab-ci.yml`. Merge request pipelines only exist when that file asks for them, and rules inside an included component do not count. The access token is required because `CI_JOB_TOKEN` cannot post notes. On GitLab.com, project access tokens need Premium or Ultimate. On the Free plan, a personal access token with the `api` scope works too, and the comment posts under your name instead of a bot's.
 
-The rendered SVGs are uploaded to the project as attachments, which is what makes them load for every reader of the merge request rather than only for people who can fetch a raw file. Know what that costs on a private project: the attachment URL is itself the permission. It is unguessable, and anyone holding it can see the diagram whether or not they are a member. A project that turns on **Require authentication to view media files** blocks them instead, and the canvas link in the comment is the way through. Details in [`packages/gitlab-component`](packages/gitlab-component).
+The rendered SVGs are uploaded to the project as attachments, so they load for every reader of the merge request, including people who cannot fetch a raw file from the repository. On a private project, that has a cost: the attachment URL is the permission. The URL is unguessable, but anyone who has it can see the diagram, member or not. If a project turns on **Require authentication to view media files**, the images are blocked, and readers can open the diagrams from the canvas link in the comment instead. Details are in [`packages/gitlab-component`](packages/gitlab-component).
 
 </details>
 
@@ -364,7 +364,7 @@ The rendered SVGs are uploaded to the project as attachments, which is what make
 <summary><b>On Bitbucket: the pipe</b> · your pipeline · your key · one sticky comment</summary>
 <br>
 
-The same again from Bitbucket Pipelines, as a pipe under `pull-requests:`:
+On Bitbucket Pipelines, add the pipe under `pull-requests:`:
 
 ```yaml
 clone:
@@ -382,9 +382,9 @@ pipelines:
                 PR_LENS_TOKEN: $PR_LENS_TOKEN
 ```
 
-Two secured variables, passed through by name because a pipe sees only what the step hands it: your model key, and a repository access token with `pullrequest:write` and `repository:write` — the second publishes the diagrams to the repository's Downloads. Repository access tokens come with every Bitbucket plan; the workspace-wide ones need Premium.
+A pipe sees only the variables its step passes in, so the step passes two secured variables by name: your model key, and a repository access token with the `pullrequest:write` and `repository:write` scopes. The second scope lets the pipe publish the diagrams to the repository's Downloads. Repository access tokens come with every Bitbucket plan; workspace-wide tokens need Premium.
 
-Bitbucket renders comments as plain Markdown, so the comment arrives without collapsible sections or a light/dark pair: headline, numbers, one diagram per lens, and the drill-down views in order. Bitbucket also never runs a pipeline for a pull request opened from a fork, so those go undrawn however the pipe is configured — the hosted app is the answer for a repository that lives on fork contributions. Details in [`packages/bitbucket-pipe`](packages/bitbucket-pipe).
+Bitbucket renders comments as plain Markdown, so the comment has no collapsible sections or light/dark pair. It shows the headline, the numbers, one diagram per lens, and the drill-down views in order. Bitbucket never runs a pipeline for a pull request opened from a fork, so the pipe cannot draw those pull requests, whatever its configuration. A repository that depends on fork contributions should use the hosted app. Details are in [`packages/bitbucket-pipe`](packages/bitbucket-pipe).
 
 </details>
 
@@ -417,7 +417,7 @@ npx @coldtea/pr-lens-cli export .pr-lens/graph.json -o .github/pr-lens.map.json
 
 Everything lands in `.pr-lens/`, which the CLI adds to your `.gitignore` the first time it writes there. Treat it as scratch: the files are rebuilt from the diff on demand, and the only one worth committing is the map `export` writes. `--out` puts them somewhere else if you would rather.
 
-`comment --target gitlab` or `--target bitbucket` writes what that forge renders rather than GitHub's markup, and `analyze` reads the forge from your git remote. Ollama, DeepSeek, OpenRouter and anything else speaking `/chat/completions` are reached with `--provider openai-compatible --base-url <url>`. The full command reference, the correction file, and the failure codes a script can branch on are in [`packages/cli`](packages/cli).
+`comment --target gitlab` or `--target bitbucket` writes markup that forge can render, and `analyze` reads the forge from your git remote. Ollama, DeepSeek, OpenRouter and anything else speaking `/chat/completions` are reached with `--provider openai-compatible --base-url <url>`. The full command reference, the correction file, and the failure codes a script can branch on are in [`packages/cli`](packages/cli).
 
 </details>
 

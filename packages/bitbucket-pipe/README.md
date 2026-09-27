@@ -1,9 +1,9 @@
 # Bitbucket Pipelines Pipe: PR Lens
 
-Draws a pull request as architecture and data-flow diagrams, posted as one
-comment on the pull request itself — the same diagrams the
+Draws a pull request as architecture and data-flow diagrams and posts them
+as one comment on the pull request. They are the same diagrams the
 [GitHub Action](../action) and the [GitLab component](../gitlab-component)
-post, from your own CI with your own model key.
+post, made in your own CI with your own model key.
 
 ## YAML Definition
 
@@ -25,9 +25,9 @@ pipelines:
                 PR_LENS_TOKEN: $PR_LENS_TOKEN
 ```
 
-A pipe runs in its own container and sees only what the step hands it, so
-the two secured variables are passed through by name. Their values never
-appear in the file; `$GEMINI_API_KEY` is a reference the runner resolves.
+A pipe runs in its own container and sees only the variables its step passes
+in, so the step passes both secured variables by name. `$GEMINI_API_KEY` is a
+reference the runner resolves, so the values never appear in the file.
 
 ## Variables
 
@@ -43,53 +43,54 @@ appear in the file; `$GEMINI_API_KEY` is a reference the runner resolves.
 | API_KEY_VARIABLE   | Name of the variable holding the model key. Default: `GEMINI_API_KEY` |
 | TOKEN_VARIABLE     | Name of the variable holding the access token. Default: `PR_LENS_TOKEN` |
 
-The key and the token are named by variable, never passed as values, so
-neither ever appears in a pipeline definition or a step log.
+You pass the names of the key and token variables, not their values, so
+neither value appears in a pipeline definition or a step log.
 
 ## Details
 
-Pipelines hands the step a clone with the destination already merged into
-the source branch, and no destination-commit variable — so the pipe fetches
-the destination and lets the diff run from their merge base, which is
-exactly the pull request's effective change. It renders the SVGs, publishes
-them to the repository's **Downloads** (content-hash filenames, so an
-identical render overwrites itself), and keeps exactly one sticky comment
-per pull request, updated in place on every push. A run whose commit is no
-longer the pull request's head stands down instead of overwriting a newer
-drawing.
+Pipelines gives the step a clone with the destination branch already merged
+into the source branch, and no variable for the destination commit. The pipe
+fetches the destination and diffs from the merge base, which gives exactly
+the pull request's changes. It renders the SVGs and publishes them to the
+repository's Downloads. The filenames are content hashes, so an identical
+render replaces its earlier copy.
 
-Bitbucket renders comments as plain Markdown, so the comment arrives without
-collapsible sections or theme pairs: headline, numbers, one diagram per lens
-— the neutral render, which reads for a light-mode and a dark-mode reader
-alike — and the drill-down views in order.
+The pipe keeps one sticky comment per pull request and updates it in place on
+every push. If the pull request's head has moved past a run's commit, that
+run leaves the comment alone so it cannot overwrite a newer drawing.
 
-It also files a Code Insights report on the commit, so the pull request's
-**Reports** tab records that PR Lens ran and links to the drawing — a surface
-that survives a collapsed comment thread. Bitbucket insists on one of its
-four report types, so the report is filed as `TEST`: the least misleading of
-SECURITY, COVERAGE, TEST and BUG for a drawing, since a passed test report
-says only that a tool ran and had nothing to flag. It carries no
-annotations, which render as findings against lines. If Bitbucket refuses
-the report the run carries on; the comment is the product.
+Bitbucket renders comments as plain Markdown, so the comment has no
+collapsible sections or theme pairs. It shows the headline, the numbers, one
+diagram per lens, and the drill-down views in order. Each diagram is the
+neutral render, which reads in both light and dark mode.
+
+The pipe also files a Code Insights report on the commit. The pull request's
+Reports tab then records that PR Lens ran and links to the drawing, and the
+report stays visible when the comment thread is collapsed. Bitbucket requires
+one of four report types (SECURITY, COVERAGE, TEST and BUG), and the pipe
+uses `TEST`. A passed test report says only that a tool ran and found nothing
+to flag, which misleads least for a drawing. The report has no annotations,
+because Bitbucket shows those as findings against lines. If Bitbucket
+refuses the report, the run continues; the comment is what matters.
 
 Bitbucket does not run pull-request pipelines for forks, so the pipe only
-ever sees same-repository pull requests.
+sees pull requests from the same repository.
 
 ## Prerequisites
 
-Two secured repository variables (Repository settings → Pipelines →
+Add two secured repository variables (Repository settings → Pipelines →
 Repository variables):
 
-- **`GEMINI_API_KEY`** — your model key. `MODEL_PROVIDER` defaults to Gemini;
-  name a different variable with `API_KEY_VARIABLE` for another provider.
-- **`PR_LENS_TOKEN`** — a [repository access token](https://support.atlassian.com/bitbucket-cloud/docs/repository-access-tokens/)
-  with the `pullrequest:write` and `repository:write` scopes (available on
-  every plan) — the first posts the comment, the second publishes the
-  diagrams to Downloads. The comment shows the token's name. Pipelines
-  provides no token of its own for the Bitbucket API, and app passwords are
-  retired.
+- `GEMINI_API_KEY`: your model key. `MODEL_PROVIDER` defaults to Gemini. For
+  another provider, name a different variable with `API_KEY_VARIABLE`.
+- `PR_LENS_TOKEN`: a [repository access token](https://support.atlassian.com/bitbucket-cloud/docs/repository-access-tokens/)
+  with the `pullrequest:write` and `repository:write` scopes, available on
+  every plan. The first scope posts the comment and the second publishes the
+  diagrams to Downloads. The comment appears under the token's name.
+  Pipelines has no built-in token for the Bitbucket API, and app passwords
+  are retired.
 
-`clone: depth: full` is required: the diff is measured from the merge base,
+`clone: depth: full` is required because the diff starts at the merge base,
 and a shallow clone does not reach it.
 
 ## Examples
@@ -141,9 +142,9 @@ script:
 
 ### Without the pipe
 
-A pipe is a Docker image, so using one means the image has been published. The
-same script runs as an ordinary step, which needs nothing published at all:
-copy [`pipe/lens.sh`](pipe/lens.sh) into your repository and run it.
+A pipe is a Docker image, so it only works once the image is published. The
+same script also runs as an ordinary step with nothing published: copy
+[`pipe/lens.sh`](pipe/lens.sh) into your repository and run it.
 
 ```yaml
 - step:
@@ -153,14 +154,14 @@ copy [`pipe/lens.sh`](pipe/lens.sh) into your repository and run it.
       - bash ./ci/pr-lens.sh
 ```
 
-Every variable in the table above defaults inside the script, so a step needs
-only the same two repository variables the pipe does — `GEMINI_API_KEY` and
-`PR_LENS_TOKEN`. Set any other by exporting it before the call.
+The script sets a default for every variable in the table above, so the step
+needs only the two repository variables the pipe uses, `GEMINI_API_KEY` and
+`PR_LENS_TOKEN`. To set any other, export it before running the script.
 
-This is the same script the pipe runs, and the same shape the
+It is the same script the pipe runs, and the
 [GitHub Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action)
-uses. What you give up is discovery: a pipe appears in Atlassian's listing and
-is one line to adopt, where a copied script is yours to update.
+works the same way. A pipe appears in Atlassian's listing and takes one line
+to adopt. A copied script does not, and you have to update it yourself.
 
 ## Support
 
@@ -169,14 +170,14 @@ Open an issue at
 
 ## Publishing (maintainers)
 
-The pipe is a Docker image on GitHub's registry, free for a public image
-under the organisation: build from this directory's `Dockerfile` for
-`linux/amd64`, the architecture Bitbucket's runners have, and push as
-`ghcr.io/coldteadotai/pr-lens-pipe:<version>`, keeping `pipe.yml`'s `image:`
-pin in step. The package must be public, which is set once from its settings
-on GitHub. The `docker://` reference works from that push alone; the short
-form in Atlassian's listing resolves through a Bitbucket repository holding
-this `pipe.yml`, which is a later step.
+The pipe is a Docker image on GitHub's registry, which hosts public images
+under the organisation for free. Build it from this directory's `Dockerfile`
+for `linux/amd64`, the architecture Bitbucket's runners use, push it as
+`ghcr.io/coldteadotai/pr-lens-pipe:<version>`, and update the `image:` pin in
+`pipe.yml` to match. The package must be public, which you set once in its
+settings on GitHub. The `docker://` reference works as soon as the image is
+pushed. The short form in Atlassian's listing resolves through a Bitbucket
+repository that holds this `pipe.yml`; setting that up is a later step.
 
 ```bash
 docker buildx build --platform linux/amd64 -t ghcr.io/coldteadotai/pr-lens-pipe:0.1.0 .

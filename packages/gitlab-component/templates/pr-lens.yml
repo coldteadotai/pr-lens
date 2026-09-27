@@ -16,15 +16,15 @@ spec:
     allow_failure:
       default: true
       type: boolean
-      description: Keep the pipeline green when PR Lens fails. On by default — a commentary tool has no business blocking a merge.
+      description: Keep the pipeline green when PR Lens fails. On by default, because a diagram should never block a merge.
     timeout:
       default: 15 minutes
       type: string
-      description: Job timeout. Well under a project default on purpose, so a hung model call cannot bill an hour of CI minutes.
+      description: Job timeout. Set well under the project default so a hung model call cannot bill an hour of CI minutes.
     interruptible:
       default: true
       type: boolean
-      description: Cancel this job when a newer commit supersedes the pipeline, rather than drawing a SHA nobody is looking at.
+      description: Cancel this job when a newer commit supersedes the pipeline, since nobody is looking at the older commit.
     provider:
       default: gemini
       type: string
@@ -143,7 +143,7 @@ spec:
       }
 
       [ -n "${CI_MERGE_REQUEST_IID:-}" ] \
-        || fail "PR Lens runs in merge request pipelines only. The consuming .gitlab-ci.yml must trigger them itself — for example workflow: rules: - if: \$CI_PIPELINE_SOURCE == \"merge_request_event\" — because rules inside an included component do not."
+        || fail "PR Lens runs in merge request pipelines only, and rules inside an included component cannot create them. Trigger them from your own .gitlab-ci.yml, for example with workflow: rules: - if: \$CI_PIPELINE_SOURCE == \"merge_request_event\"."
 
       [ -n "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}" ] \
         || fail "CI_MERGE_REQUEST_DIFF_BASE_SHA is empty, so there is no diff to measure."
@@ -155,7 +155,7 @@ spec:
 
       TOKEN="${!PR_LENS_TOKEN_VARIABLE:-}"
       if [ "${PR_LENS_COMMENT}" = "true" ] && [ -z "${TOKEN}" ]; then
-        fail "posting the comment needs a project access token with the api scope in the CI/CD variable ${PR_LENS_TOKEN_VARIABLE}. CI_JOB_TOKEN cannot post notes — its API access is read-only for merge requests."
+        fail "posting the comment needs a project access token with the api scope in the CI/CD variable ${PR_LENS_TOKEN_VARIABLE}. CI_JOB_TOKEN cannot post notes, because its API access to merge requests is read-only."
       fi
 
       git cat-file -e "${CI_MERGE_REQUEST_DIFF_BASE_SHA}^{commit}" 2>/dev/null \
@@ -223,14 +223,14 @@ spec:
         local current
         if ! current="$(api "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}" \
           | json 'const mr=JSON.parse(d);if(!mr.sha)process.exit(1);console.log(mr.sha)')"; then
-          fail "could not ask GitLab what !${CI_MERGE_REQUEST_IID} points at, so this run cannot tell whether its diagram is still the current one."
+          fail "could not ask GitLab for the head commit of !${CI_MERGE_REQUEST_IID}, so this run cannot tell whether its diagram is still current."
         fi
 
         if [ "${current}" = "${HEAD_SHA}" ]; then
           return 1
         fi
 
-        echo "!${CI_MERGE_REQUEST_IID} has moved on to ${current}; leaving the comment to the run that is drawing it."
+        echo "!${CI_MERGE_REQUEST_IID} now points at ${current}; leaving the comment to the run for that commit."
         return 0
       }
 

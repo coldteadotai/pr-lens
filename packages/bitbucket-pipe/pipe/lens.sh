@@ -37,7 +37,7 @@ export PR_LENS_API_KEY="${API_KEY}"
 
 TOKEN="${!TOKEN_VARIABLE:-}"
 if [ "${COMMENT}" = "true" ] && [ -z "${TOKEN}" ]; then
-  fail "posting the comment needs a repository access token (pullrequest:write and repository:write scopes — the second publishes the diagrams to Downloads) in the secured repository variable ${TOKEN_VARIABLE}. Pipelines provides no token of its own for the Bitbucket API, and app passwords are retired."
+  fail "posting the comment needs a repository access token with the pullrequest:write and repository:write scopes in the secured repository variable ${TOKEN_VARIABLE}. repository:write publishes the diagrams to Downloads. Pipelines has no built-in token for the Bitbucket API, and app passwords are retired."
 fi
 
 # A pipe runs as root in its own container over a checkout the runner's own
@@ -128,14 +128,14 @@ overtaken() {
   local current
   if ! current="$(api "${API}/pullrequests/${BITBUCKET_PR_ID}" \
     | json 'const pr=JSON.parse(d);const h=pr.source?.commit?.hash;if(!h)process.exit(1);console.log(h)')"; then
-    fail "could not ask Bitbucket what pull request #${BITBUCKET_PR_ID} points at, so this run cannot tell whether its diagram is still the current one."
+    fail "could not ask Bitbucket for the head commit of pull request #${BITBUCKET_PR_ID}, so this run cannot tell whether its diagram is still current."
   fi
 
   if [ "${current}" = "${BITBUCKET_COMMIT:0:${#current}}" ]; then
     return 1
   fi
 
-  echo "Pull request #${BITBUCKET_PR_ID} has moved on to ${current}; leaving the comment to the run that is drawing it."
+  echo "Pull request #${BITBUCKET_PR_ID} now points at ${current}; leaving the comment to the run for that commit."
   return 0
 }
 
@@ -298,7 +298,7 @@ report_insight() {
     "${API}/commit/${BITBUCKET_COMMIT}/reports/pr-lens" > "${WORK}/report-response" 2> "${WORK}/report-error"; then
     echo "✓ the PR Lens report is on commit ${BITBUCKET_COMMIT}"
   else
-    echo "note: Bitbucket would not take the Code Insights report; the comment is posted."
+    echo "note: Bitbucket refused the Code Insights report; the comment was still posted."
     echo "note: $(tr -d '\n' < "${WORK}/report-error" | head -c 400)"
   fi
 }
