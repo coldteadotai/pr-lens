@@ -40,6 +40,12 @@ if [ "${COMMENT}" = "true" ] && [ -z "${TOKEN}" ]; then
   fail "posting the comment needs a repository access token (pullrequest:write and repository:write scopes — the second publishes the diagrams to Downloads) in the secured repository variable ${TOKEN_VARIABLE}. Pipelines provides no token of its own for the Bitbucket API, and app passwords are retired."
 fi
 
+# A pipe runs as root in its own container over a checkout the runner's own
+# user made, and git refuses a repository owned by somebody else until it is
+# told the directory is safe. Without this, every git call below fails and
+# the failure reads as "no common ancestor".
+git config --global --add safe.directory "$(pwd)" 2>/dev/null || true
+
 # The explicit refspec matters: a shallow default clone is single-branch, so
 # a plain fetch of the destination would land only in FETCH_HEAD and
 # origin/<dest> would never exist.
@@ -53,8 +59,11 @@ if ! git merge-base HEAD "origin/${DEST}" > /dev/null 2>&1; then
   git fetch --quiet --unshallow origin "${DEST_REFSPEC}" 2>/dev/null \
     || git fetch --quiet --depth=1000 origin "${DEST_REFSPEC}" 2>/dev/null \
     || true
+  # git's own words are kept: a refused directory or a failed fetch reads
+  # very differently from a clone that is merely too shallow.
+  reason="$(git merge-base HEAD "origin/${DEST}" 2>&1 > /dev/null | head -c 300 || true)"
   git merge-base HEAD "origin/${DEST}" > /dev/null 2>&1 \
-    || fail "cannot find a common ancestor of HEAD and origin/${DEST}. Give the step full history: clone: depth: full in bitbucket-pipelines.yml."
+    || fail "cannot find a common ancestor of HEAD and origin/${DEST}${reason:+ (git: ${reason})}. Give the step full history: clone: depth: full in bitbucket-pipelines.yml."
 fi
 
 WORK="${PR_LENS_WORK:-$(mktemp -d)}"
