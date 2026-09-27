@@ -99,10 +99,10 @@ cli analyze \
   ${LENS:+--lens "${LENS}"} \
   --out "${WORK}/graph.json"
 
-# Neutral, not the light/dark pair: neither GitLab nor Bitbucket can swap
-# on the reader's theme, and a single render tuned for a light page is a
-# glaring rectangle for every dark-mode reader.
-cli render "${WORK}/graph.json" --out "${WORK}/assets" --theme neutral
+# One light render, not the light/dark pair: neither GitLab nor Bitbucket can
+# swap on the reader's theme, both default to a light page, and a light
+# diagram looks native there.
+cli render "${WORK}/graph.json" --out "${WORK}/assets" --theme light
 
 if [ "${COMMENT}" != "true" ]; then
   echo "Comment disabled; the render is in ${WORK}/assets."

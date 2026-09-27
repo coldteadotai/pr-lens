@@ -11,7 +11,12 @@ minor adds a variable, or changes a default in a way that cannot fail a
 pipeline that did not set it. A major changes or removes a variable, or
 changes a default in a way that could.
 
-## Unreleased
+## 0.1.1
+
+- The diagrams are rendered in the light theme. Bitbucket cannot swap an
+  image on the reader's theme and opens light by default, so the one render
+  is the one most readers see on its own ground. It used to be the neutral
+  render, which sat mid-way and looked at home nowhere.
 
 - `pipe.yml` has the shape Atlassian validates: `maintainer` and `vendor` are
   objects with a name and a website, and `category` is declared. The Bitbucket

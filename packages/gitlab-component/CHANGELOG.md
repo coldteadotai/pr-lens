@@ -13,7 +13,12 @@ pipeline that did not set it. A major changes or removes an input, or changes
 a default in a way that could. Pin a major and let minors arrive; nothing
 within one major will break a pipeline.
 
-## Unreleased
+## 0.1.1
+
+- The diagrams are rendered in the light theme. GitLab strips the
+  `<picture>` a theme swap needs and opens light by default, so the one render
+  is the one most readers see on its own ground. It used to be the neutral
+  render, which sat mid-way and looked at home nowhere.
 
 - Every input is typed, and inputs with a fixed set of values declare
   `options` or a `regex`, so GitLab refuses a bad value when it creates the
