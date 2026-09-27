@@ -8,7 +8,6 @@ import { travellingPulses } from "./pulse.js";
 import type { ScopedGraph } from "../scope.js";
 import { canvasFor, union } from "../bounds.js";
 import { coord, type Box } from "../geometry.js";
-import { placeLabelPills } from "../layout/labels.js";
 import { relieveCongestion } from "../layout/congestion.js";
 import { lines, tag, textNode, wrap } from "./primitives.js";
 import { curveBounds, type RoutedEdge } from "../layout/edges.js";
@@ -28,6 +27,7 @@ import {
   cardTextWidth,
   deltaBadgeText,
   laneHeaderText,
+  occupiedBoxes,
   type PlacedNode,
 } from "../layout/architecture.js";
 import {
@@ -267,14 +267,10 @@ export const paintArchitecture = (
   hints: LayoutHints | undefined,
   palette: Palette,
 ): ArchitecturePainting => {
-  const { layout, routed } = relieveCongestion(graph, hints);
+  const { layout, routed, pills } = relieveCongestion(graph, hints);
   const styles = stylesFor(palette);
-  const pills = placeLabelPills(routed);
+  const drawn: Box[] = occupiedBoxes(layout.nodes);
 
-  const drawn: Box[] = layout.nodes.flatMap((node) => {
-    const row = badgeRow(node);
-    return row === undefined ? [node.box] : [node.box, row.box];
-  });
   const edgeMarkup: string[] = [];
   const pillMarkup: string[] = [];
   for (const edge of routed) {

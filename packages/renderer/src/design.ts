@@ -76,6 +76,11 @@ export const PILL_PADDING_X = 8;
 export const PILL_TEXT_SIZE = 9.5;
 /** Two label pills never sit closer than this, in either direction. */
 export const PILL_CLEARANCE = 2;
+/**
+ * A pill never comes closer than this to a card or its badges: any nearer and
+ * the label reads as part of the card instead of the line it rides.
+ */
+export const PILL_CARD_CLEARANCE = 6;
 
 /**
  * Routes travel in the gaps of the grid: vertical corridors beside lanes and

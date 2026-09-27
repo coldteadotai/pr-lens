@@ -2,13 +2,17 @@ import type { GraphEdge } from "@coldtea/pr-lens-schema";
 import { assertNever } from "@coldtea/pr-lens-schema";
 import {
   BEND_RADIUS_MAX,
+  CARD_HEIGHT,
+  PILL_CARD_CLEARANCE,
   PORT_INSET,
   PORT_PITCH,
+  ROW_GAP,
   TRACK_CLEARANCE,
   TRACK_PITCH_MAX,
 } from "../design.js";
 import { boxCentre, coord, type Box, type Point, type Side } from "../geometry.js";
 import type { ArchitectureLayout, LayoutGrid, PlacedLane, PlacedNode } from "./architecture.js";
+import { pillSize } from "./labels.js";
 
 /**
  * A route, kept as its own segments rather than as a path string, because the
@@ -24,7 +28,7 @@ export type RoutedEdge = {
   edge: GraphEdge;
   path: string;
   curve: Curve;
-  /** Centre of the longest straight run — where this edge's label pill sits. */
+  /** Centre of the longest straight run — where a pill with no room on its route starts looking. */
   labelAnchor: Point | undefined;
 };
 
@@ -154,12 +158,11 @@ type Route = {
 const isDead = (placed: PlacedNode): boolean => placed.node.delta === "removed";
 
 /**
- * A retired connection with a living end never threads the living graph: it
- * exits past the last lane and comes back. Only a connection wholly between
- * dead cards keeps its short run inside the dead band — that is the internal
- * structure of the retired path.
+ * A retired connection with a living end goes directly or into exile, out
+ * past the last lane and back.
+ * One wholly between dead cards always keeps its short run in the dead band.
  */
-const isExiled = (edge: GraphEdge, from: PlacedNode, to: PlacedNode): boolean =>
+const isRetiredWithLivingEnd = (edge: GraphEdge, from: PlacedNode, to: PlacedNode): boolean =>
   !(isDead(from) && isDead(to)) && (edge.delta === "removed" || isDead(from) || isDead(to));
 
 const clampBand = (index: number, grid: LayoutGrid): number =>
@@ -600,14 +603,80 @@ const labelAnchorOf = (curve: Curve): Point => {
   return best?.middle ?? pointAt(curve, 0.5);
 };
 
+export type RetiredRoutes = ReadonlyMap<string, "direct" | "exile">;
+
+/** A crossing of a living line is worth one row's pitch of extra travel. */
+const CROSSING_COST = CARD_HEIGHT + ROW_GAP;
+
+/**
+ * Direct or exile for each retired connection, whichever costs less in
+ * length plus crossings. Exile keeps retired paths out of the living graph,
+ * but in a wide diagram it sends the reader around everything. Decided on
+ * the first layout and held, so widening a gap can never flip a route.
+ */
+export const chooseRetiredRoutes = (
+  edges: readonly GraphEdge[],
+  layout: ArchitectureLayout,
+): RetiredRoutes => {
+  const nodes = new Map(layout.nodes.map((node) => [node.node.id, node]));
+  const retired = edges.filter((edge) => {
+    const from = nodes.get(edge.from);
+    const to = nodes.get(edge.to);
+    if (from === undefined || to === undefined || edge.from === edge.to) return false;
+    return isRetiredWithLivingEnd(edge, from, to);
+  });
+  if (retired.length === 0) return new Map();
+
+  const everyone = (way: "direct" | "exile"): RetiredRoutes =>
+    new Map(retired.map(({ id }) => [id, way]));
+  const retiredIds = new Set(retired.map(({ id }) => id));
+  const costs = (pass: Pass): Map<string, number> => {
+    const living = [...pass.waypoints]
+      .filter(([id]) => !retiredIds.has(id))
+      .map(([, points]) => points);
+    return new Map(
+      retired.map(({ id }) => {
+        const points = pass.waypoints.get(id) ?? [];
+        const crossings = living.reduce((sum, other) => sum + crossingCount(points, other), 0);
+        return [id, polylineLength(points) + crossings * CROSSING_COST];
+      }),
+    );
+  };
+
+  const directPass = finalPass(edges, layout, everyone("direct"));
+  const direct = costs(directPass);
+  const exile = costs(finalPass(edges, layout, everyone("exile")));
+  return new Map(
+    retired.map(({ id, label }) => {
+      const points = directPass.waypoints.get(id) ?? [];
+      const fits = label === undefined || holdsPill(points, pillSize(label));
+      const cheaper = (direct.get(id) ?? Number.POSITIVE_INFINITY) < (exile.get(id) ?? 0);
+      return [id, fits && cheaper ? "direct" : "exile"];
+    }),
+  );
+};
+
+/** No label fits on the direct line between a pair's halves; exile gives it room. */
+const holdsPill = (points: readonly Point[], pill: { width: number; height: number }): boolean =>
+  points.some((point, index) => {
+    const previous = points[index - 1];
+    if (previous === undefined) return false;
+    const horizontal = Math.abs(point.y - previous.y) < EPSILON;
+    const length = Math.hypot(point.x - previous.x, point.y - previous.y);
+    return length >= (horizontal ? pill.width : pill.height) + PILL_CARD_CLEARANCE * 2;
+  });
+
 export const routeEdges = (
   edges: readonly GraphEdge[],
   layout: ArchitectureLayout,
-): RoutedEdge[] => finalPass(edges, layout).routed;
+  retired: RetiredRoutes,
+): RoutedEdge[] => finalPass(edges, layout, retired).routed;
 
 export type ChannelTraffic = {
   corridors: ReadonlyMap<number, number>;
   bands: ReadonlyMap<number, number>;
+  /** Where room for each edge's label would have to come from. */
+  corridorsByEdge: ReadonlyMap<string, readonly number[]>;
 };
 
 /**
@@ -619,28 +688,46 @@ export type ChannelTraffic = {
 export const channelTraffic = (
   edges: readonly GraphEdge[],
   layout: ArchitectureLayout,
-): ChannelTraffic => {
+  retired: RetiredRoutes,
+): ChannelTraffic => routeAndCount(edges, layout, retired).traffic;
+
+/** One routing pass, shared by drawing and gap sizing. */
+export const routeAndCount = (
+  edges: readonly GraphEdge[],
+  layout: ArchitectureLayout,
+  retired: RetiredRoutes,
+): { routed: RoutedEdge[]; traffic: ChannelTraffic } => {
+  const pass = finalPass(edges, layout, retired);
   const corridors = new Map<number, number>();
   const bands = new Map<number, number>();
-  for (const route of finalPass(edges, layout).plans)
+  const corridorsByEdge = new Map<string, number[]>();
+  for (const route of pass.plans)
     for (const channel of route.channels)
       switch (channel.kind) {
-        case "corridor":
+        case "corridor": {
           corridors.set(channel.index, (corridors.get(channel.index) ?? 0) + 1);
+          const through = corridorsByEdge.get(route.edge.id) ?? [];
+          through.push(channel.index);
+          corridorsByEdge.set(route.edge.id, through);
           break;
+        }
         case "band":
           bands.set(channel.index, (bands.get(channel.index) ?? 0) + 1);
           break;
         default:
           assertNever(channel, "Unhandled channel");
       }
-  return { corridors, bands };
+  return { routed: pass.routed, traffic: { corridors, bands, corridorsByEdge } };
 };
 
-const finalPass = (edges: readonly GraphEdge[], layout: ArchitectureLayout): Pass => {
-  const first = routePass(edges, layout, new Set());
+const finalPass = (
+  edges: readonly GraphEdge[],
+  layout: ArchitectureLayout,
+  retired: RetiredRoutes,
+): Pass => {
+  const first = routePass(edges, layout, new Set(), retired);
   const braiding = braidingTrunks(first.branches);
-  return braiding.size === 0 ? first : routePass(edges, layout, braiding);
+  return braiding.size === 0 ? first : routePass(edges, layout, braiding, retired);
 };
 
 type Pass = {
@@ -648,12 +735,15 @@ type Pass = {
   plans: Route[];
   /** Per trunk group, each member's waypoints minus the shared head segment. */
   branches: Map<string, Point[][]>;
+  /** Every planned route's waypoints, before its corners are rounded. */
+  waypoints: Map<string, Point[]>;
 };
 
 const routePass = (
   edges: readonly GraphEdge[],
   layout: ArchitectureLayout,
   blockedTrunks: ReadonlySet<string>,
+  retired: RetiredRoutes,
 ): Pass => {
   const nodes = new Map(layout.nodes.map((node) => [node.node.id, node]));
   const blocked = blockedFaces(layout.nodes);
@@ -671,7 +761,7 @@ const routePass = (
 
   const trunkCounts = new Map<string, number>();
   for (const { edge, from, to } of drawable) {
-    if (loops.has(edge.id) || isExiled(edge, from, to) || isDead(from)) continue;
+    if (loops.has(edge.id) || isRetiredWithLivingEnd(edge, from, to) || isDead(from)) continue;
     const key = trunkKey(edge, from, to);
     if (key === undefined || blockedTrunks.has(key)) continue;
     trunkCounts.set(key, (trunkCounts.get(key) ?? 0) + 1);
@@ -680,14 +770,16 @@ const routePass = (
   const routes: Route[] = drawable
     .filter(({ edge }) => !loops.has(edge.id))
     .map(({ edge, order, from, to }) => {
-      if (isExiled(edge, from, to))
+      if (isRetiredWithLivingEnd(edge, from, to))
         return {
           edge,
           order,
           from,
           to,
           trunk: undefined,
-          ...planExile(from, to, grid, laneCount, blocked),
+          ...(retired.get(edge.id) === "direct"
+            ? planRoute(from, to, layout.lanes, grid, blocked)
+            : planExile(from, to, grid, laneCount, blocked)),
         };
 
       const key = isDead(from) ? undefined : trunkKey(edge, from, to);
@@ -703,6 +795,7 @@ const routePass = (
   const tracks = allocateTracks(routes, ports, grid);
 
   const branches = new Map<string, Point[][]>();
+  const waypoints = new Map<string, Point[]>();
   const routedById = new Map<string, RoutedEdge>();
 
   for (const route of routes) {
@@ -713,6 +806,7 @@ const routePass = (
       (index) => tracks.get(`${route.edge.id}#${index}`) ?? 0,
     );
 
+    waypoints.set(route.edge.id, points);
     if (route.trunk !== undefined) {
       const list = branches.get(route.trunk) ?? [];
       list.push(points.slice(1));
@@ -740,7 +834,7 @@ const routePass = (
     };
   });
 
-  return { routed, plans: routes, branches };
+  return { routed, plans: routes, branches, waypoints };
 };
 
 type Port = { along: number };
@@ -1012,7 +1106,8 @@ const braidingTrunks = (branches: ReadonlyMap<string, Point[][]>): Set<string> =
   return braiding;
 };
 
-const polylinesCross = (a: readonly Point[], b: readonly Point[]): boolean => {
+const crossingCount = (a: readonly Point[], b: readonly Point[]): number => {
+  let count = 0;
   for (let i = 0; i + 1 < a.length; i += 1)
     for (let j = 0; j + 1 < b.length; j += 1) {
       const a1 = a[i];
@@ -1020,10 +1115,20 @@ const polylinesCross = (a: readonly Point[], b: readonly Point[]): boolean => {
       const b1 = b[j];
       const b2 = b[j + 1];
       if (a1 === undefined || a2 === undefined || b1 === undefined || b2 === undefined) continue;
-      if (segmentsCross(a1, a2, b1, b2)) return true;
+      if (segmentsCross(a1, a2, b1, b2)) count += 1;
     }
-  return false;
+  return count;
 };
+
+const polylineLength = (points: readonly Point[]): number =>
+  points.reduce((sum, point, index) => {
+    const previous = points[index - 1];
+    if (previous === undefined) return sum;
+    return sum + Math.hypot(point.x - previous.x, point.y - previous.y);
+  }, 0);
+
+const polylinesCross = (a: readonly Point[], b: readonly Point[]): boolean =>
+  crossingCount(a, b) > 0;
 
 const EPSILON = 0.01;
 

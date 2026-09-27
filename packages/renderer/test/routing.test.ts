@@ -3,8 +3,9 @@ import { postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
 import { render, THEMES } from "../src/index.js";
 import { layoutArchitecture } from "../src/layout/architecture.js";
-import { routeEdges } from "../src/layout/edges.js";
+import { chooseRetiredRoutes, routeEdges } from "../src/layout/edges.js";
 import { denseGraph } from "./dense.js";
+import { fixture, tiers } from "./tiers.js";
 
 const layoutOf = (doc: typeof denseGraph) =>
   layoutArchitecture(
@@ -12,7 +13,10 @@ const layoutOf = (doc: typeof denseGraph) =>
     doc.layout,
   );
 
-const routesOf = (doc: typeof denseGraph) => routeEdges(doc.edges, layoutOf(doc));
+const drawn = (doc: typeof denseGraph, layout: ReturnType<typeof layoutOf>) =>
+  routeEdges(doc.edges, layout, chooseRetiredRoutes(doc.edges, layout));
+
+const routesOf = (doc: typeof denseGraph) => drawn(doc, layoutOf(doc));
 
 const isStraight = (path: string): boolean => /^M[-\d.,]+ L[-\d.,]+$/.test(path);
 
@@ -46,7 +50,7 @@ describe("the right line for the job, on the reference pull request", () => {
 
 describe("the dead band and its exile corridor", () => {
   const layout = layoutOf(denseGraph);
-  const routed = routeEdges(denseGraph.edges, layout);
+  const routed = drawn(denseGraph, layout);
   const lastContentRight = Math.max(...layout.nodes.map(({ box }) => box.x + box.width));
   const boundsOf = (id: string) => {
     const route = routed.find(({ edge }) => edge.id === id);
@@ -64,9 +68,34 @@ describe("the dead band and its exile corridor", () => {
     }
   });
 
-  it("exiles a removed edge with a living endpoint past the last lane, in both directions", () => {
-    expect(boundsOf("gateway-to-poller").right).toBeGreaterThan(lastContentRight);
-    expect(boundsOf("queue-to-blobs").right).toBeGreaterThan(lastContentRight);
+  it("exiles a removed edge with a living endpoint past the last lane, in both directions, when asked to", () => {
+    const exiled = routeEdges(
+      denseGraph.edges,
+      layout,
+      new Map([
+        ["gateway-to-poller", "exile"],
+        ["queue-to-blobs", "exile"],
+      ]),
+    );
+    const rightOf = (id: string) =>
+      Math.max(
+        ...[...(exiled.find(({ edge }) => edge.id === id)?.path ?? "").matchAll(/([-\d.]+),[-\d.]+/g)].map(
+          (match) => Number(match[1]),
+        ),
+      );
+    expect(rightOf("gateway-to-poller")).toBeGreaterThan(lastContentRight);
+    expect(rightOf("queue-to-blobs")).toBeGreaterThan(lastContentRight);
+  });
+
+  it("routes those same edges directly, since exile would be the long way round", () => {
+    expect(chooseRetiredRoutes(denseGraph.edges, layout)).toEqual(
+      new Map([
+        ["gateway-to-poller", "direct"],
+        ["queue-to-blobs", "direct"],
+      ]),
+    );
+    expect(boundsOf("gateway-to-poller").right).toBeLessThan(lastContentRight);
+    expect(boundsOf("queue-to-blobs").right).toBeLessThan(lastContentRight);
   });
 
   it("keeps the dead-to-dead edge inside the dead band", () => {
@@ -107,7 +136,15 @@ describe("exile around a living endpoint's pair partner", () => {
   });
 
   const layout = layoutOf(doc);
-  const routed = routeEdges(doc.edges, layout);
+  const routed = routeEdges(
+    doc.edges,
+    layout,
+    new Map([
+      ["dead-to-living", "exile"],
+      ["living-to-dead", "exile"],
+    ]),
+  );
+  const direct = drawn(doc, layout);
   const partner = layout.nodes.find(({ node }) => node.id === "b")?.box;
   const contentRight = Math.max(...layout.nodes.map(({ box }) => box.x + box.width));
 
@@ -166,12 +203,72 @@ describe("exile around a living endpoint's pair partner", () => {
         expect(hitsBox(leg, partner), `${leg.join(",")} crosses the partner`).toBe(false);
     });
 
+    it(`keeps ${id} clear of the partner card on its direct route too`, () => {
+      const route = direct.find(({ edge }) => edge.id === id);
+      expect(route).toBeDefined();
+      expect(partner).toBeDefined();
+      if (route === undefined || partner === undefined) return;
+      for (const leg of chords(route.path))
+        expect(hitsBox(leg, partner), `${leg.join(",")} crosses the partner`).toBe(false);
+    });
+
     it(`still sends ${id} through the exile corridor`, () => {
       const route = routed.find(({ edge }) => edge.id === id);
       const xs = [...(route?.path ?? "").matchAll(/([-\d.]+),[-\d.]+/g)].map((m) => Number(m[1]));
       expect(Math.max(...xs)).toBeGreaterThan(contentRight);
     });
   }
+});
+
+describe("retired connections from issue 30", () => {
+  it("keeps a retired connection within its own lane's side instead of circling the next lane", () => {
+    const doc = fixture("removed-route.json");
+    const layout = layoutOf(doc);
+    const route = drawn(doc, layout).find(({ edge }) => edge.id === "retired");
+    const service = layout.lanes.find(({ lane }) => lane.id === "service")?.box;
+    expect(route).toBeDefined();
+    expect(service).toBeDefined();
+    if (route === undefined || service === undefined) return;
+    const xs = [...route.path.matchAll(/([-\d.]+),[-\d.]+/g)].map((match) => Number(match[1]));
+    expect(Math.max(...xs)).toBeLessThan(service.x);
+  });
+
+  it("exiles a labelled retired connection whose direct route has no room for its label", () => {
+    const pair = (label: string | undefined) =>
+      parseGraphDoc({
+        schemaVersion: "0.1.0",
+        kind: "graph",
+        title: "Retired link inside a pair",
+        lenses: ["architecture"],
+        provenance: {
+          repo: { owner: "coldteadotai", name: "pr-lens" },
+          base: { sha: "1111111" },
+          head: { sha: "2222222" },
+        },
+        lanes: [{ id: "one", label: "One" }],
+        nodes: [
+          { id: "a", label: "a", kind: "function", delta: "unchanged", lane: "one", group: "g" },
+          { id: "b", label: "b", kind: "function", delta: "unchanged", lane: "one", group: "g" },
+        ],
+        edges: [
+          { id: "a-to-b", from: "a", to: "b", kind: "call", delta: "removed", ...(label ? { label } : {}) },
+        ],
+      });
+
+    const labelled = pair("legacy handoff");
+    expect(chooseRetiredRoutes(labelled.edges, layoutOf(labelled)).get("a-to-b")).toBe("exile");
+    const bare = pair(undefined);
+    expect(chooseRetiredRoutes(bare.edges, layoutOf(bare)).get("a-to-b")).toBe("direct");
+  });
+
+  it("still exiles a retired connection whose direct route would cut through the living graph", () => {
+    const monorepo = tiers.find(({ name }) => name === "tier5-monorepo")?.doc;
+    expect(monorepo).toBeDefined();
+    if (monorepo === undefined) return;
+    const choice = chooseRetiredRoutes(monorepo.edges, layoutOf(monorepo));
+    expect(choice.get("legacysync-to-postgres")).toBe("exile");
+    expect(choice.get("dashboard-to-legacy")).toBe("direct");
+  });
 });
 
 describe("labels", () => {

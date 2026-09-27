@@ -8,7 +8,7 @@ import { denseGraph } from "./dense.js";
 
 const FIXTURE_DIR = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
-const fixture = (name: string): GraphDoc =>
+export const fixture = (name: string): GraphDoc =>
   parseGraphDoc(JSON.parse(readFileSync(join(FIXTURE_DIR, name), "utf8")));
 
 /**

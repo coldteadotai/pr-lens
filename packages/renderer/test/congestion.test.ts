@@ -1,14 +1,21 @@
 import type { GraphDoc, GraphEdge } from "@coldtea/pr-lens-schema";
 import { parseGraphDoc } from "@coldtea/pr-lens-schema";
 import { describe, expect, it } from "vitest";
-import { PILL_HEIGHT, TRACK_CLEARANCE, TRACK_PITCH_MAX, TRACK_PITCH_MIN } from "../src/design.js";
-import type { Point } from "../src/geometry.js";
+import {
+  PILL_CARD_CLEARANCE,
+  TRACK_CLEARANCE,
+  TRACK_PITCH_MAX,
+  TRACK_PITCH_MIN,
+} from "../src/design.js";
+import { gapBetween } from "../src/bounds.js";
+import type { Box, Point } from "../src/geometry.js";
+import { occupiedBoxes } from "../src/layout/architecture.js";
 import { relieveCongestion } from "../src/layout/congestion.js";
-import { channelTraffic } from "../src/layout/edges.js";
+import { channelTraffic, chooseRetiredRoutes } from "../src/layout/edges.js";
 import { placeLabelPills } from "../src/layout/labels.js";
 import { render, THEMES } from "../src/index.js";
 import { expectGolden } from "./goldens.js";
-import { tiers } from "./tiers.js";
+import { fixture, tiers } from "./tiers.js";
 
 const scoped = (doc: GraphDoc) => ({
   lanes: doc.lanes,
@@ -16,6 +23,11 @@ const scoped = (doc: GraphDoc) => ({
   edges: doc.edges,
   flows: doc.flows,
 });
+
+const issueFixtures = ["label-clearance", "short-connection", "removed-route"].map((name) => ({
+  name,
+  doc: fixture(`${name}.json`),
+}));
 
 const stress = tiers.filter(({ name }) => name.startsWith("tier4") || name.startsWith("tier5"));
 
@@ -66,41 +78,106 @@ describe("no two label pills intersect, and every label appears exactly once", (
     });
 });
 
-const distanceToLeg = (point: Point, from: Point, to: Point): number => {
+/** How far a box sits from a straight leg: zero when the leg runs through it. */
+const boxToLeg = (box: Box, from: Point, to: Point): number => {
+  let t0 = 0;
+  let t1 = 1;
   const dx = to.x - from.x;
   const dy = to.y - from.y;
-  const lengthSquared = dx * dx + dy * dy;
-  const t =
-    lengthSquared === 0
-      ? 0
-      : Math.min(Math.max(((point.x - from.x) * dx + (point.y - from.y) * dy) / lengthSquared, 0), 1);
-  return Math.hypot(point.x - (from.x + dx * t), point.y - (from.y + dy * t));
+  const checks: [number, number][] = [
+    [-dx, from.x - box.x],
+    [dx, box.x + box.width - from.x],
+    [-dy, from.y - box.y],
+    [dy, box.y + box.height - from.y],
+  ];
+  let crosses = true;
+  for (const [p, q] of checks) {
+    if (p === 0) {
+      if (q < 0) crosses = false;
+      continue;
+    }
+    const t = q / p;
+    if (p < 0) t0 = Math.max(t0, t);
+    else t1 = Math.min(t1, t);
+  }
+  if (crosses && t0 <= t1) return 0;
+
+  const toPoint = (point: Point) =>
+    Math.hypot(
+      Math.max(box.x - point.x, 0, point.x - (box.x + box.width)),
+      Math.max(box.y - point.y, 0, point.y - (box.y + box.height)),
+    );
+  let nearest = Number.POSITIVE_INFINITY;
+  for (let step = 0; step <= 64; step += 1)
+    nearest = Math.min(nearest, toPoint({ x: from.x + (dx * step) / 64, y: from.y + (dy * step) / 64 }));
+  return nearest;
 };
 
+/** A pill threaded by its line, or at worst sitting just beside it. */
+const BESIDE_TOLERANCE = 4;
+
 describe("every pill stays with its own line", () => {
-  for (const { name, doc } of tiers)
+  for (const { name, doc } of [...tiers, ...issueFixtures])
     it(name, () => {
-      const { routed } = relieveCongestion(scoped(doc), doc.layout);
-      const pills = placeLabelPills(routed);
+      const { routed, pills } = relieveCongestion(scoped(doc), doc.layout);
       for (const { edge, curve } of routed) {
         const box = pills.get(edge.id);
         if (box === undefined) continue;
-        const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
         let start = curve.from;
         let nearest = Number.POSITIVE_INFINITY;
         for (const segment of curve.segments) {
-          nearest = Math.min(nearest, distanceToLeg(centre, start, segment.to));
+          nearest = Math.min(nearest, boxToLeg(box, start, segment.to));
           start = segment.to;
         }
         expect(nearest, `the ${edge.id} pill drifted from its line`).toBeLessThanOrEqual(
-          PILL_HEIGHT,
+          BESIDE_TOLERANCE,
         );
       }
     });
 });
 
+describe("every pill keeps clear of every card and badge", () => {
+  for (const { name, doc } of [...tiers, ...issueFixtures])
+    it(name, () => {
+      const { layout, pills } = relieveCongestion(scoped(doc), doc.layout);
+      for (const [id, pill] of pills)
+        for (const box of occupiedBoxes(layout.nodes))
+          expect(gapBetween(pill, box), `the ${id} pill crowds a card`).toBeGreaterThanOrEqual(
+            PILL_CARD_CLEARANCE,
+          );
+    });
+});
+
+describe("the labels from issue 30", () => {
+  const pillOf = (doc: GraphDoc, id: string) => {
+    const { layout, routed, pills } = relieveCongestion(scoped(doc), doc.layout);
+    return { layout, routed, pill: pills.get(id) };
+  };
+
+  it("gives the label under a card room to read as the line's, not the card's", () => {
+    const { layout, pill } = pillOf(fixture("label-clearance.json"), "write");
+    const runner = layout.nodes.find(({ node }) => node.id === "runner")?.box;
+    expect(pill).toBeDefined();
+    expect(runner).toBeDefined();
+    if (pill === undefined || runner === undefined) return;
+    expect(pill.y - (runner.y + runner.height)).toBeGreaterThanOrEqual(12);
+  });
+
+  it("widens a corridor too narrow for the label of the straight line across it", () => {
+    const doc = fixture("short-connection.json");
+    const { routed, pill } = pillOf(doc, "formats-request");
+    const route = routed.find(({ edge }) => edge.id === "formats-request");
+    expect(pill).toBeDefined();
+    expect(route).toBeDefined();
+    if (pill === undefined || route === undefined) return;
+    expect(route.curve.segments).toHaveLength(1);
+    expect(route.curve.from.y).toBeGreaterThan(pill.y);
+    expect(route.curve.from.y).toBeLessThan(pill.y + pill.height);
+  });
+});
+
 describe("label settling", () => {
-  it("leaves a clear self-loop label exactly on its anchor", () => {
+  it("threads a self-loop label on its loop, clear of its own card", () => {
     const doc = parseGraphDoc({
       schemaVersion: "0.1.0",
       kind: "graph",
@@ -116,14 +193,19 @@ describe("label settling", () => {
       edges: [{ id: "a-to-a", from: "a", to: "a", kind: "call", delta: "unchanged", label: "retry" }],
     });
 
-    const { routed } = relieveCongestion(scoped(doc), doc.layout);
+    const { layout, routed, pills } = relieveCongestion(scoped(doc), doc.layout);
     const loop = routed.find(({ edge }) => edge.id === "a-to-a");
-    const box = placeLabelPills(routed).get("a-to-a");
+    const box = pills.get("a-to-a");
+    const card = layout.nodes[0]?.box;
     expect(loop?.labelAnchor).toBeDefined();
     expect(box).toBeDefined();
-    if (loop?.labelAnchor === undefined || box === undefined) return;
-    expect(box.x + box.width / 2).toBe(loop.labelAnchor.x);
-    expect(box.y + box.height / 2).toBe(loop.labelAnchor.y);
+    expect(card).toBeDefined();
+    if (loop?.labelAnchor === undefined || box === undefined || card === undefined) return;
+    expect(box.x).toBeLessThan(loop.labelAnchor.x);
+    expect(box.x + box.width).toBeGreaterThan(loop.labelAnchor.x);
+    expect(box.y).toBeLessThan(loop.labelAnchor.y);
+    expect(box.y + box.height).toBeGreaterThan(loop.labelAnchor.y);
+    expect(gapBetween(box, card)).toBeGreaterThanOrEqual(PILL_CARD_CLEARANCE);
   });
 
   it("keeps a colliding label on its own longest run instead of hopping to a shorter one", () => {
@@ -138,23 +220,25 @@ describe("label settling", () => {
       files: [],
       label: "aa",
     });
-    // Two identical L-shaped routes: a 100px horizontal anchor run, then a
-    // 40px vertical tail a migrating pill would find room on.
-    const curve = {
-      from: { x: 0, y: 0 },
+    // A 100px anchor run, then a 40px tail a migrating pill would find room on.
+    const curveAt = (y: number) => ({
+      from: { x: 0, y },
       segments: [
-        { kind: "line" as const, to: { x: 100, y: 0 } },
-        { kind: "line" as const, to: { x: 100, y: 40 } },
+        { kind: "line" as const, to: { x: 100, y } },
+        { kind: "line" as const, to: { x: 100, y: y + 40 } },
       ],
-    };
-    const routes = ["first", "second"].map((id) => ({
+    });
+    const routes = [
+      { id: "first", y: 0 },
+      { id: "second", y: 16 },
+    ].map(({ id, y }) => ({
       edge: edge(id),
       path: "",
-      curve,
-      labelAnchor: { x: 50, y: 0 },
+      curve: curveAt(y),
+      labelAnchor: { x: 50, y },
     }));
 
-    const pills = placeLabelPills(routes);
+    const pills = placeLabelPills(routes, []).boxes;
     const first = pills.get("first");
     const second = pills.get("second");
     expect(first).toBeDefined();
@@ -163,7 +247,7 @@ describe("label settling", () => {
     expect(first.x + first.width / 2).toBe(50);
     expect(first.y + first.height / 2).toBe(0);
     // Nudged along the horizontal run, not resettled on the vertical tail.
-    expect(second.y + second.height / 2).toBe(0);
+    expect(second.y + second.height / 2).toBe(16);
     expect(second.x + second.width / 2).not.toBe(50);
   });
 });
@@ -175,7 +259,7 @@ describe("no track pitch below the floor", () => {
   for (const { name, doc } of tiers)
     it(name, () => {
       const { layout } = relieveCongestion(scoped(doc), doc.layout);
-      const traffic = channelTraffic(doc.edges, layout);
+      const traffic = channelTraffic(doc.edges, layout, chooseRetiredRoutes(doc.edges, layout));
       const { rows, corridors, laneBottom } = layout.grid;
 
       for (const [index, count] of traffic.corridors) {
