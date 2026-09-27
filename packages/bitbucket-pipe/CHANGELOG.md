@@ -3,7 +3,7 @@
 Versions are semantic, and a consumer pins one:
 
 ```yaml
-- pipe: coldtea/pr-lens-pipe:0.1.0
+- pipe: coldteadotai/pr-lens-pipe:0.1.0
 ```
 
 **What a bump means for a pinned pipeline.** A patch fixes behaviour without

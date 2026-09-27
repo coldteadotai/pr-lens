@@ -19,7 +19,7 @@ pipelines:
       - step:
           name: PR Lens
           script:
-            - pipe: docker://coldtea/pr-lens-pipe:0.1.0
+            - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
               variables:
                 GEMINI_API_KEY: $GEMINI_API_KEY
                 PR_LENS_TOKEN: $PR_LENS_TOKEN
@@ -98,7 +98,7 @@ and a shallow clone does not reach it.
 
 ```yaml
 script:
-  - pipe: docker://coldtea/pr-lens-pipe:0.1.0
+  - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
     variables:
       GEMINI_API_KEY: $GEMINI_API_KEY
       PR_LENS_TOKEN: $PR_LENS_TOKEN
@@ -108,7 +108,7 @@ script:
 
 ```yaml
 script:
-  - pipe: docker://coldtea/pr-lens-pipe:0.1.0
+  - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
     variables:
       MODEL_PROVIDER: "openai-compatible"
       MODEL: "your-model-name"
@@ -122,7 +122,7 @@ script:
 
 ```yaml
 script:
-  - pipe: docker://coldtea/pr-lens-pipe:0.1.0
+  - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
     variables:
       COMMENT: "false"
       GEMINI_API_KEY: $GEMINI_API_KEY
@@ -132,7 +132,7 @@ script:
 
 ```yaml
 script:
-  - pipe: docker://coldtea/pr-lens-pipe:0.1.0
+  - pipe: docker://coldteadotai/pr-lens-pipe:0.1.0
     variables:
       LENS: "architecture"
       GEMINI_API_KEY: $GEMINI_API_KEY
@@ -170,9 +170,9 @@ Open an issue at
 ## Publishing (maintainers)
 
 The pipe is a Docker image: build from this directory's `Dockerfile` and
-push as `coldtea/pr-lens-pipe:<version>`, keeping `pipe.yml`'s `image:` pin
+push as `coldteadotai/pr-lens-pipe:<version>`, keeping `pipe.yml`'s `image:` pin
 in step. The `docker://` reference works from that push alone. The short
-`coldtea/pr-lens-pipe:0.1.0` form resolves through a Bitbucket repository of
+`coldteadotai/pr-lens-pipe:0.1.0` form resolves through a Bitbucket repository of
 the same name holding this `pipe.yml`, which is also what the Pipes listing
 reads; until one exists, the examples say `docker://`. The image carries only `pipe/lens.sh` plus node, git and curl.
 
