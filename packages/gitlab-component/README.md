@@ -1,21 +1,22 @@
 # PR Lens for GitLab CI/CD
 
-Draws a merge request as architecture and data-flow diagrams, posted as one
-comment on the merge request itself — the same diagrams the
+Draws a merge request as architecture and data-flow diagrams and posts them
+as one comment on the merge request. They are the same diagrams the
 [GitHub Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action)
-posts, from your own CI with your own model key.
+posts, made in your own CI with your own model key.
 
 ## Setup
 
-Two CI/CD variables (Settings → CI/CD → Variables, both masked):
+Add two CI/CD variables (Settings → CI/CD → Variables, both masked):
 
-- **`GEMINI_API_KEY`** — your model key. `provider` defaults to Gemini; name a
-  different variable with the `api_key_variable` input for another provider.
-- **`PR_LENS_TOKEN`** — a [project access token](https://docs.gitlab.com/user/project/settings/project_access_tokens/)
-  with the `api` scope. The comment is posted with it, and appears from the
-  token's own bot user. `CI_JOB_TOKEN` cannot post notes, so this one is not
-  optional. On GitLab.com, project access tokens need a Premium or Ultimate
-  plan; on Free, a personal access token works and posts as its owner.
+- `GEMINI_API_KEY`: your model key. `provider` defaults to Gemini. For another
+  provider, name a different variable with the `api_key_variable` input.
+- `PR_LENS_TOKEN`: a [project access token](https://docs.gitlab.com/user/project/settings/project_access_tokens/)
+  with the `api` scope. The job posts the comment with it, so the comment
+  appears under the token's bot user. `CI_JOB_TOKEN` cannot post notes, so
+  this token is required. On GitLab.com, project access tokens need a Premium
+  or Ultimate plan. On Free, a personal access token works instead, and the
+  comment posts as its owner.
 
 Then include the component:
 
@@ -29,20 +30,21 @@ include:
   - component: gitlab.com/coldteadotai/pr-lens/pr-lens@0.1.0
 ```
 
-The `workflow: rules` block is yours to write, not the component's: merge
-request pipelines only exist when the consuming `.gitlab-ci.yml` triggers
-them itself, and rules inside an included component do not count. The
-component's job then runs only in those pipelines.
+The `workflow: rules` block has to be in your own `.gitlab-ci.yml`. Merge
+request pipelines only exist when that file triggers them, and rules inside
+an included component do not count. The component's job then runs only in
+those pipelines.
 
 ## What a run does
 
-Reads the diff between `CI_MERGE_REQUEST_DIFF_BASE_SHA` and the head, asks
-your model to describe it, renders the SVGs, uploads them as project
-attachments — served to anyone who can read the comment, private projects
-included, with no data branch and no raw-URL permissions to reason about —
-and keeps exactly one sticky comment per merge request, updated in place on
-every push. A run whose commit is no longer the head stands down instead of
-overwriting a newer drawing.
+A run reads the diff between `CI_MERGE_REQUEST_DIFF_BASE_SHA` and the head,
+asks your model to describe it, and renders the SVGs. It uploads them as
+project attachments, which load for anyone who can read the comment, private
+projects included. That needs no data branch and no raw-URL permissions.
+
+The job keeps one sticky comment per merge request and updates it in place on
+every push. If the merge request's head has moved past a run's commit, that
+run leaves the comment alone so it cannot overwrite a newer drawing.
 
 ## Inputs
 
@@ -63,38 +65,39 @@ overwriting a newer drawing.
 | `timeout`          | `15 minutes`     | Job timeout, deliberately under a project default          |
 | `interruptible`    | `true`           | Cancel the job when a newer commit supersedes the pipeline |
 
-Every input is typed, and the ones with a closed set of values declare it —
-so `provider: maybe` or a malformed `cli_version` is refused when the
-pipeline is created rather than failing part-way through the job.
+Every input is typed, and inputs with a fixed set of values declare that
+set. GitLab refuses `provider: maybe` or a malformed `cli_version` when it
+creates the pipeline, before the job starts.
 
-**A PR Lens failure does not fail your pipeline.** `allow_failure` defaults
-to `true`: this draws a picture, it does not judge the code, and a model
-outage is no reason to hold a merge. Set it to `false` if you want the
-opposite. The job also retries only transient runner and API failures —
-never a real analysis failure, which would just spend the model call again.
+A PR Lens failure does not fail your pipeline, because `allow_failure`
+defaults to `true`. PR Lens draws a picture of the change and does not judge
+the code, so a model outage should not hold up a merge. Set `allow_failure`
+to `false` if you want failures to block. The job retries transient runner
+and API failures only. Retrying a real analysis failure would spend another
+model call and fail the same way.
 
-The render is saved as a job artifact under `.pr-lens/`, kept for a week,
-so the diagrams are downloadable even on a run where the comment could not
-be posted.
+The job saves the render as an artifact under `.pr-lens/` and keeps it for a
+week, so you can download the diagrams even when the comment could not be
+posted.
 
-The CLI is fetched from npm at the pinned version on each run, which is what
-the [GitHub Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action)
-does too. There is no image to point `image` at: one existed briefly, and it
-bought a marginal saving at the price of a CLI version pinned by hand in two
-places that had to be bumped in lockstep. If the per-run fetch is worth
-removing, it is worth removing for all three forges at once.
+Each run fetches the pinned CLI version from npm, as the
+[GitHub Action](https://github.com/coldteadotai/pr-lens/tree/main/packages/action)
+does. There is no PR Lens image to set as `image`. Baking the CLI into one
+would mean pinning its version by hand in two places and bumping both
+together, so if the per-run fetch ever goes, it should go for all three
+forges at once.
 
-The key and token are named by variable, never passed as values, so neither
-ever appears in a pipeline definition or a job log.
+You pass the names of the key and token variables, not their values, so
+neither value appears in a pipeline definition or a job log.
 
 ## Publishing (maintainers)
 
-The component is consumed from a mirror at `gitlab.com/coldteadotai/pr-lens`:
-a project marked as a CI/CD catalog resource, releasing `templates/` and
-`scripts/` from this directory with the `release` keyword on semver tags.
-`templates/pr-lens.yml` embeds `scripts/lens.sh` verbatim — a test holds the
-two in lockstep, so edit the script and regenerate rather than editing the
-template by hand.
+Pipelines include the component from a mirror at
+`gitlab.com/coldteadotai/pr-lens`. That project is marked as a CI/CD catalog
+resource and releases `templates/` and `scripts/` from this directory with the
+`release` keyword on semver tags. `templates/pr-lens.yml` embeds
+`scripts/lens.sh` verbatim, and a test fails if the two differ. Edit the
+script and regenerate the template instead of editing it by hand.
 
 ## License
 
