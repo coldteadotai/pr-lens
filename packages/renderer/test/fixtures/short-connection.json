@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "0.1.1",
+  "kind": "graph",
+  "lenses": [
+    "architecture"
+  ],
+  "provenance": {
+    "repo": {
+      "owner": "example",
+      "name": "diagram-demo"
+    },
+    "base": {
+      "sha": "1111111"
+    },
+    "head": {
+      "sha": "2222222"
+    }
+  },
+  "title": "Long label on a short connection",
+  "lanes": [
+    {
+      "id": "worker",
+      "label": "Image worker",
+      "order": 0
+    },
+    {
+      "id": "service",
+      "label": "Image service",
+      "order": 1
+    }
+  ],
+  "nodes": [
+    {
+      "id": "results",
+      "label": "Image results",
+      "kind": "datastore",
+      "delta": "modified",
+      "lane": "worker"
+    },
+    {
+      "id": "batch",
+      "label": "Convert image batch",
+      "kind": "function",
+      "delta": "added",
+      "lane": "worker"
+    },
+    {
+      "id": "payload",
+      "label": "Build image request",
+      "kind": "function",
+      "delta": "added",
+      "lane": "worker"
+    },
+    {
+      "id": "formats",
+      "label": "Load format list",
+      "kind": "function",
+      "delta": "added",
+      "lane": "worker"
+    },
+    {
+      "id": "utils",
+      "label": "Image helpers",
+      "kind": "package",
+      "delta": "added",
+      "lane": "worker"
+    },
+    {
+      "id": "service",
+      "label": "Image API",
+      "kind": "external",
+      "delta": "modified",
+      "lane": "service"
+    }
+  ],
+  "edges": [
+    {
+      "id": "prepare-payload",
+      "from": "batch",
+      "to": "payload",
+      "kind": "call",
+      "delta": "added"
+    },
+    {
+      "id": "prepare-formats",
+      "from": "batch",
+      "to": "formats",
+      "kind": "call",
+      "delta": "added"
+    },
+    {
+      "id": "prepare-utils",
+      "from": "batch",
+      "to": "utils",
+      "kind": "call",
+      "delta": "added"
+    },
+    {
+      "id": "formats-request",
+      "from": "formats",
+      "to": "service",
+      "label": "Fetch supported formats",
+      "kind": "http",
+      "delta": "added"
+    },
+    {
+      "id": "convert",
+      "from": "batch",
+      "to": "service",
+      "label": "Convert image batch",
+      "kind": "http",
+      "delta": "added"
+    },
+    {
+      "id": "save",
+      "from": "batch",
+      "to": "results",
+      "label": "Write image results",
+      "kind": "data",
+      "delta": "added"
+    }
+  ]
+}

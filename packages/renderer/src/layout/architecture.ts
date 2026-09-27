@@ -122,6 +122,13 @@ export const badgeRow = (placed: PlacedNode): { badges: string[]; box: Box } | u
   };
 };
 
+/** Every card and badge strip: what a label pill must keep clear of. */
+export const occupiedBoxes = (nodes: readonly PlacedNode[]): Box[] =>
+  nodes.flatMap((node) => {
+    const row = badgeRow(node);
+    return row === undefined ? [node.box] : [node.box, row.box];
+  });
+
 /**
  * The gaps of the grid, for the router: the vertical corridors beside each
  * lane's cards and the horizontal extents of every row. Corridor `i` runs to

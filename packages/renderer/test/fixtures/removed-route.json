@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "0.1.1",
+  "kind": "graph",
+  "lenses": [
+    "architecture"
+  ],
+  "provenance": {
+    "repo": {
+      "owner": "example",
+      "name": "diagram-demo"
+    },
+    "base": {
+      "sha": "1111111"
+    },
+    "head": {
+      "sha": "2222222"
+    }
+  },
+  "title": "Retired converter beside a busy lane",
+  "lanes": [
+    {
+      "id": "worker",
+      "label": "Image worker",
+      "order": 0
+    },
+    {
+      "id": "service",
+      "label": "Image service",
+      "order": 1
+    }
+  ],
+  "nodes": [
+    {
+      "id": "runner",
+      "label": "Batch runner",
+      "lane": "worker",
+      "delta": "unchanged",
+      "kind": "function"
+    },
+    {
+      "id": "loader",
+      "label": "Load images",
+      "lane": "worker",
+      "delta": "unchanged",
+      "kind": "function"
+    },
+    {
+      "id": "validator",
+      "label": "Validate images",
+      "lane": "worker",
+      "delta": "unchanged",
+      "kind": "function"
+    },
+    {
+      "id": "writer",
+      "label": "Write images",
+      "lane": "worker",
+      "delta": "unchanged",
+      "kind": "function"
+    },
+    {
+      "id": "legacy",
+      "label": "Legacy converter",
+      "lane": "worker",
+      "delta": "removed",
+      "kind": "function"
+    },
+    {
+      "id": "service",
+      "label": "Image API",
+      "lane": "service",
+      "delta": "unchanged",
+      "kind": "function"
+    }
+  ],
+  "edges": [
+    {
+      "id": "step-0",
+      "from": "runner",
+      "to": "loader",
+      "delta": "unchanged",
+      "kind": "call"
+    },
+    {
+      "id": "step-1",
+      "from": "loader",
+      "to": "validator",
+      "delta": "unchanged",
+      "kind": "call"
+    },
+    {
+      "id": "step-2",
+      "from": "validator",
+      "to": "writer",
+      "delta": "unchanged",
+      "kind": "call"
+    },
+    {
+      "id": "retired",
+      "from": "runner",
+      "to": "legacy",
+      "label": "Legacy image conversion",
+      "delta": "removed",
+      "kind": "call"
+    }
+  ]
+}

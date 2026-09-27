@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "0.1.1",
+  "kind": "graph",
+  "lenses": [
+    "architecture"
+  ],
+  "provenance": {
+    "repo": {
+      "owner": "example",
+      "name": "diagram-demo"
+    },
+    "base": {
+      "sha": "1111111"
+    },
+    "head": {
+      "sha": "2222222"
+    }
+  },
+  "title": "Labels between adjacent cards",
+  "lanes": [
+    {
+      "id": "worker",
+      "label": "Worker"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "runner",
+      "label": "Batch runner",
+      "lane": "worker",
+      "delta": "unchanged",
+      "kind": "function"
+    },
+    {
+      "id": "loader",
+      "label": "Load input",
+      "lane": "worker",
+      "delta": "modified",
+      "kind": "function"
+    },
+    {
+      "id": "writer",
+      "label": "Write output",
+      "lane": "worker",
+      "delta": "unchanged",
+      "kind": "function"
+    }
+  ],
+  "edges": [
+    {
+      "id": "load",
+      "from": "runner",
+      "to": "loader",
+      "label": "Load input records",
+      "delta": "modified",
+      "kind": "call"
+    },
+    {
+      "id": "write",
+      "from": "runner",
+      "to": "writer",
+      "label": "Store validated output",
+      "delta": "unchanged",
+      "kind": "call"
+    }
+  ]
+}
