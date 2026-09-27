@@ -304,15 +304,15 @@ test("files a Code Insights report beside the comment, linking the diagram", asy
   expect(log).toContain("-X PUT");
 });
 
-test("the report claims no report_type, because a diagram is not one of them", async () => {
-  // Bitbucket's values are SECURITY, COVERAGE, TEST and BUG. Filing a drawing
-  // under one of those puts it in somebody's defect tooling under a heading
-  // it does not belong to — and annotations would render it as findings
-  // against lines, which PR Lens does not produce.
+test("the report is filed as a TEST, the type Bitbucket demands that claims the least", async () => {
+  // Bitbucket refuses a report without one of SECURITY, COVERAGE, TEST and
+  // BUG. A passed TEST says only that a tool ran and had nothing to flag;
+  // annotations would render as findings against lines, which PR Lens does
+  // not produce, so there are none.
   const { report } = await runScript({});
 
   expect(report).toBeDefined();
-  expect(report).not.toHaveProperty("report_type");
+  expect(report).toHaveProperty("report_type", "TEST");
   expect(report).not.toHaveProperty("annotations");
   expect(report).toMatchObject({ reporter: "PR Lens", result: "PASSED" });
   expect(String(report?.link)).toContain("bitbucket.org/acme/rocket/downloads/");

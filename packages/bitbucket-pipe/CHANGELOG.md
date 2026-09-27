@@ -24,9 +24,9 @@ removes a variable, or changes a default in a way that could.
   whatever the registry served that minute inside a pipeline holding the
   repository's variables, and billed the install to the repository.
 - Files a Code Insights report on the commit, so the pull request's Reports
-  tab records the run and links to the diagram. No `report_type` and no
-  annotations — a drawing is not a defect, and filing it as one puts it in
-  somebody's defect tooling under a heading it does not belong to.
+  tab records the run and links to the diagram. Filed as `TEST`, because
+  Bitbucket refuses a report without one of its four types and that one
+  claims the least; no annotations, which would render as findings.
 - Renders `--theme neutral`: Bitbucket renders no HTML and shows one image,
   and the light render was a glaring rectangle for every dark-mode reader.
 

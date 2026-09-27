@@ -234,11 +234,12 @@ fi
 # second surface that survives a collapsed comment thread and shows up where
 # a reviewer looks for what ran on a commit.
 #
-# Deliberately no `report_type`. Bitbucket's values are SECURITY, COVERAGE,
-# TEST and BUG, and a diagram is none of them — claiming one would file this
-# under a heading it does not belong to. For the same reason there are no
-# annotations: those render as findings against lines, and PR Lens does not
-# produce findings.
+# Bitbucket requires one of its four types — SECURITY, COVERAGE, TEST, BUG —
+# and refuses the report without one (proved live: "required attributes are
+# not set [type]"). A diagram is none of them; TEST is the least misleading,
+# since a passed test report says only that a tool ran and had nothing to
+# flag. There are no annotations: those render as findings against lines,
+# and PR Lens does not produce findings.
 #
 # Fail-soft throughout. This is the secondary surface; a Bitbucket that
 # refuses it must not fail a run whose comment was posted.
@@ -269,6 +270,7 @@ report_insight() {
       title: "PR Lens",
       details: "Architecture and data flow, drawn from this change.",
       reporter: "PR Lens",
+      report_type: "TEST",
       link,
       result: "PASSED",
       data: [
@@ -279,12 +281,9 @@ report_insight() {
     }));
   ' "${link}" "${nodes}" "${edges}" > "${WORK}/report.json" || return 0
 
-  # The refusal is printed rather than swallowed. `report_type` is omitted
-  # deliberately — Bitbucket's four values all assert something about the
-  # code and a diagram asserts none of them — but that is a judgement made
-  # without a live API to check it against, so if Bitbucket does require the
-  # field this is where anyone finds out, rather than from a customer
-  # noticing nothing appears.
+  # The refusal is printed rather than swallowed, so a change in what
+  # Bitbucket accepts is found here rather than by a customer noticing
+  # nothing appears on the Reports tab.
   if api --show-error -X PUT --header "Content-Type: application/json" \
     --data "@${WORK}/report.json" \
     "${API}/commit/${BITBUCKET_COMMIT}/reports/pr-lens" > "${WORK}/report-response" 2> "${WORK}/report-error"; then
