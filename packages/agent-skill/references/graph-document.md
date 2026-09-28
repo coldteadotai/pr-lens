@@ -290,6 +290,8 @@ The validator checks:
 
 Hints, not instructions: the renderer owns final placement, so a diagram stays deterministic and a stale hint cannot break it. Absolute coordinates are not expressible. Omitting `layout` entirely is normal.
 
+`rank` is a floor. A card sits at its hint or one row below the deepest card that connects into it, whichever is further down the page, so a hint can push a card down and never up, and two cards joined by a connection never share a row. Hinting a few cards usually changes nothing, because the connections already put them there. Rank every card from the real call order when the lines matter. A connection between two lanes turns at least twice whatever you hint, since a route moves along one axis at a time and connected cards never share a row.
+
 ## File references
 
 ```json

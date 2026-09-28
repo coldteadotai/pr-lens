@@ -197,6 +197,7 @@ A reviewer should understand the change before reading the diff, so the diagram 
 
 - **Include what did not change.** A diagram of only the changed nodes says nothing about blast radius. The unchanged neighbours a change touches are the context; mark them `delta: "unchanged"`.
 - **Lanes are the reader's mental model** (a runtime, a tier, a boundary), not the folder tree.
+- **Rank every card or none.** `layout.rank` only pushes a card down: it sits at its hint or one row below the deepest card that connects into it, whichever is further down the page. A hint on a few cards usually moves nothing, because the connections already put them there. Rank all of them from the real call order when the lines matter.
 - **One hero edge**, two at the outside: the connection the change is really about.
 - **Add a flow only when there is a sequence** worth animating. One good flow beats three thin ones.
 - **Attach file refs**: they become the permalinks a reviewer clicks.
