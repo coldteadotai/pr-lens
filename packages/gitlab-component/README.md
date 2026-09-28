@@ -27,7 +27,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 include:
-  - component: gitlab.com/coldteadotai/pr-lens/pr-lens@0.1.1
+  - component: gitlab.com/coldteadotai/pr-lens/pr-lens@0.1.2
 ```
 
 The `workflow: rules` block has to be in your own `.gitlab-ci.yml`. Merge

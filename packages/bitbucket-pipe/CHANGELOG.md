@@ -11,6 +11,11 @@ minor adds a variable, or changes a default in a way that cannot fail a
 pipeline that did not set it. A major changes or removes a variable, or
 changes a default in a way that could.
 
+## 0.1.2
+
+- The baked CLI is 0.11.0, which brings renderer 0.3.1: edge labels stay off
+  the cards and a retired connection takes the short way round.
+
 ## 0.1.1
 
 - The diagrams are rendered in the light theme. Bitbucket cannot swap an
