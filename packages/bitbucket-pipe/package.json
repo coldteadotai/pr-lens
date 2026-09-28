@@ -1,6 +1,6 @@
 {
   "name": "@coldtea/pr-lens-bitbucket-pipe",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The PR Lens Bitbucket pipe: analyze a pull request with your own model key, publish the diagrams to Downloads, keep one sticky comment.",
   "license": "MIT",
   "author": "Coldtea AI",

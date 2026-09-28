@@ -13,6 +13,11 @@ pipeline that did not set it. A major changes or removes an input, or changes
 a default in a way that could. Pin a major and let minors arrive; nothing
 within one major will break a pipeline.
 
+## 0.1.2
+
+- The default `cli_version` is 0.11.0, which brings renderer 0.3.1: edge labels stay off
+  the cards and a retired connection takes the short way round.
+
 ## 0.1.1
 
 - The diagrams are rendered in the light theme. GitLab strips the
