@@ -1,8 +1,8 @@
 import type { SchemaIssue } from "./errors.js";
-import type { GraphDoc, View } from "./graph.js";
+import type { CiteRef, GraphDoc, View } from "./graph.js";
 import { FullSha, MAX_VIEWS, THEME_PAIR, type Delta } from "./primitives.js";
 import { assertNever } from "./utils.js";
-import { indexViews, stagedMessages } from "./walkthrough.js";
+import { citeStands, citeStarts, indexViews, stagedMessages } from "./walkthrough.js";
 
 const duplicates = (ids: readonly string[]): string[] => {
   const seen = new Set<string>();
@@ -19,6 +19,23 @@ const flattenViews = (views: readonly View[], prefix: string): { view: View; pat
     const path = `${prefix}[${index}]`;
     return [{ view, path }, ...flattenViews(view.children, `${path}.children`)];
   });
+
+const citedPlace = (ref: CiteRef): string => {
+  switch (ref.kind) {
+    case "node":
+      return `node '${ref.node}'`;
+    case "message":
+      return `step '${ref.message}' of flow '${ref.flow}'`;
+    case "view":
+      return `view '${ref.view}'`;
+    case "flow":
+      return `flow '${ref.flow}'`;
+    case "file":
+      return `file '${ref.path}'`;
+    default:
+      return assertNever(ref, "Unhandled cite ref");
+  }
+};
 
 /**
  * Structural validation says a field holds an id; these checks say the id
@@ -209,6 +226,24 @@ export const graphIntegrityIssues = (doc: GraphDoc): SchemaIssue[] => {
         default:
           assertNever(step.focus, "Unhandled step focus");
       }
+
+      const detail = step.detail;
+      const cites = detail?.cites ?? [];
+      const starts = citeStarts(detail?.text ?? "", cites);
+      cites.forEach((cite, citeIndex) => {
+        if (starts[citeIndex] === undefined)
+          broken(
+            `${at}.detail.cites[${citeIndex}].text`,
+            detail?.text.includes(cite.text)
+              ? `step '${step.id}' cites '${cite.text}' out of the order its detail says it, or over words another cite took`
+              : `step '${step.id}' cites '${cite.text}', which its detail does not say`,
+          );
+        if (!citeStands(cite.ref, doc))
+          broken(
+            `${at}.detail.cites[${citeIndex}].ref`,
+            `step '${step.id}' cites ${citedPlace(cite.ref)}, which this document does not have`,
+          );
+      });
     });
   }
 

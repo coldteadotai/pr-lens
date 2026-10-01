@@ -55,6 +55,14 @@ walkthrough: {
       body: "One call per batch, and Postmark answers with a result for each message.",
       stage: { kind: "flow", flow: "send-pipeline" },
       focus: { kind: "selection", messages: ["batch-post", "batch-results"] },
+      detail: {
+        text: "sendBroadcastBulk posts each batch to Postmark and reads the results back.",
+        cites: [
+          { text: "sendBroadcastBulk", ref: { kind: "node", node: "send-broadcast-bulk" } },
+          { text: "posts each batch", ref: { kind: "message", flow: "send-pipeline", message: "batch-post" } },
+          { text: "Postmark", ref: { kind: "node", node: "postmark" } },
+        ],
+      },
     },
     {
       id: "blast-radius",
@@ -74,15 +82,25 @@ Each step has:
 - `body`: one line under the heading, up to 140 characters, on what the change means for behaviour. For example "One call per batch instead of one call per person". A heading with no body reads as unfinished, so the parser requires one.
 - `stage`: which diagram to show. A document can have several diagrams: its views (the drill-down diagrams) and its flows (the sequence diagrams). `{ "kind": "view", "view": "overview" }` shows the view called `overview`. `{ "kind": "flow", "flow": "send-pipeline" }` shows the flow called `send-pipeline`. Leave `stage` out and the step uses the diagram the reader is already on.
 - `focus`: what to zoom in on inside that diagram. `{ "kind": "all" }` means the whole diagram. A selection means "just these things": name any lanes, nodes, edges or flow steps (`messages`) by id, and the camera zooms to them while everything else dims. A selection must name at least one thing.
+- `detail`: optional. One or two sentences under the body, up to 240 characters, that name the nodes, flow steps and files the step is about. For example "sendBroadcastBulk posts each batch to Postmark and reads the results back". The body carries no links, so they go here. `text` is the sentence. `cites` lists the words in it that name a place, and what each one points to, and those words are drawn as links. A cite's `text` is copied exactly from the detail's `text`, and its `ref` is one of:
+  - `{ "kind": "node", "node": "postmark" }` for a node,
+  - `{ "kind": "message", "flow": "send-pipeline", "message": "batch-post" }` for a flow step,
+  - `{ "kind": "view", "view": "overview" }` or `{ "kind": "flow", "flow": "send-pipeline" }` for a diagram,
+  - `{ "kind": "file", "path": "functions/src/broadcast/send.ts" }` for a file in the repository.
+
+  List cites in the order the sentence says them. A detail takes one to eight. Leave `detail` out of a step that has nothing to link.
 
 The validator checks:
 
 - Every id you name exists in the document. A flow step you name must belong to the flow the stage shows, because flow step ids are only unique inside their own flow.
 - `messages` needs a stage that shows a flow. Leave it out when the stage is an architecture view.
+- Every cite's words appear in its detail's text, in the order the cites are listed, and no two cites share words. A cited node, flow step, view or flow exists in the document. A cited file only has to be a path inside the repository, because the document does not hold the files and cannot check that one exists.
 - Step ids are unique within the walkthrough. Two steps minimum, twelve maximum.
 - A stored map never carries a walkthrough. A map describes the system; a walkthrough tells the story of one change.
 
-When a patch or a correction removes something from the document, the walkthrough follows: a step loses the names that are gone, a step with nothing left to point at or whose diagram is gone is dropped, and if fewer than two steps remain the walkthrough is dropped. `pruneWalkthrough` does this and is exported for anything else that removes parts of a document.
+When a patch or a correction removes something from the document, the walkthrough follows: a step loses the names that are gone, a step with nothing left to point at or whose diagram is gone is dropped, and if fewer than two steps remain the walkthrough is dropped. A cite of something that is gone is dropped as well, and its words stay in the detail as plain text. A detail left with no cites is dropped, and the step keeps its body. `pruneWalkthrough` does this and is exported for anything else that removes parts of a document.
+
+`detailParts` splits a detail's text into plain runs and cited runs, in reading order. Each cited run carries its `ref`.
 
 ## Deltas
 
@@ -94,7 +112,7 @@ Parsing runs four things in one pass, and reports every problem it finds rather 
 
 1. **Structure**: types, lengths, enums, no unknown keys, and file paths that can actually become a diff permalink (repository-relative, POSIX, no `..` segment).
 2. **Contract version**: the same major, and a minor from the first the contract shipped (`0.1`) up to this package's own. A newer minor is refused, since it may carry a field this parser would take for an invented one.
-3. **Referential integrity**: every node sits in a declared lane, every edge joins declared nodes, every flow step runs between declared participants, every drill-down view and layout hint names elements that exist, every walkthrough step stages a diagram the document has and focuses elements it has, and a document carrying flows declares the `data-flow` lens.
+3. **Referential integrity**: every node sits in a declared lane, every edge joins declared nodes, every flow step runs between declared participants, every drill-down view and layout hint names elements that exist, every walkthrough step stages a diagram the document has, and focuses and cites elements it has, and a document carrying flows declares the `data-flow` lens.
 4. **That a render could describe the document**: see below.
 
 A document nested deeper than the stack can walk is reported as a document too deep to read, not thrown: `safeParse*` returns a result whatever it is handed.
@@ -175,7 +193,7 @@ They describe **what an author may write**: a field with a default is one you ma
 
 Exactly seven rules cannot be stated in JSON Schema and stay the parser's job, each of them a comparison the shape alone cannot make:
 
-1. referential integrity between elements,
+1. referential integrity between elements, which includes a walkthrough cite pointing at words its detail does not say,
 2. a line range that ends before it starts,
 3. the agreement between a self message's endpoints,
 4. a patch whose two commits are the same,

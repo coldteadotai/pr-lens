@@ -443,6 +443,48 @@ const parityCases: ParityCase[] = [
     acceptedByJsonSchema: true,
   },
   {
+    name: "a step with a detail whose words link to a node and a file",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withWalkthrough([
+      {
+        ...twoSteps[0],
+        detail: {
+          text: "The sender builds a whole batch in send.ts.",
+          cites: [
+            { text: "The sender", ref: { kind: "node", node: "send-broadcast-bulk" } },
+            { text: "send.ts", ref: { kind: "file", path: "functions/src/broadcast/send.ts" } },
+          ],
+        },
+      },
+      twoSteps[1],
+    ]),
+    accepted: true,
+  },
+  {
+    name: "a detail that links nothing",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withWalkthrough([
+      { ...twoSteps[0], detail: { text: "The sender builds a whole batch.", cites: [] } },
+      twoSteps[1],
+    ]),
+    accepted: false,
+  },
+  {
+    name: "a cite of a kind of place that does not exist",
+    schema: "graph-doc.schema.json",
+    parse: safeParseGraphDoc,
+    document: withWalkthrough([
+      {
+        ...twoSteps[0],
+        detail: { text: "The sender builds a batch.", cites: [{ text: "The sender", ref: { kind: "lane", lane: "functions" } }] },
+      },
+      twoSteps[1],
+    ]),
+    accepted: false,
+  },
+  {
     name: "a patch that does not say which map it targets",
     schema: "patch-doc.schema.json",
     parse: safeParsePatchDoc,

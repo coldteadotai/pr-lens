@@ -432,6 +432,44 @@ describe("carrying a walkthrough through a patch", () => {
     expect(step.focus.nodes).toEqual(["send-broadcast-bulk", "build-bulk-payload"]);
   });
 
+  it("drops a cite of something that goes, and a detail left with nothing to open", () => {
+    const graph = withSteps([
+      {
+        id: "one",
+        heading: "One",
+        body: "One call per batch.",
+        stage: { kind: "view", view: "overview" },
+        detail: {
+          text: "The sender posts a batch to Postmark.",
+          cites: [
+            { text: "The sender", ref: { kind: "node", node: "send-broadcast-bulk" } },
+            { text: "Postmark", ref: { kind: "node", node: "postmark" } },
+          ],
+        },
+      },
+      {
+        id: "two",
+        heading: "Two",
+        body: "A result comes back for every message.",
+        stage: { kind: "view", view: "overview" },
+        detail: {
+          text: "Postmark answers for every message.",
+          cites: [{ text: "Postmark", ref: { kind: "node", node: "postmark" } }],
+        },
+      },
+    ]);
+
+    const patched = expectApplied([{ op: "remove_node", id: "postmark" }], graph);
+    const [one, two] = patched.walkthrough?.steps ?? [];
+
+    expect(one?.detail).toEqual({
+      text: "The sender posts a batch to Postmark.",
+      cites: [{ text: "The sender", ref: { kind: "node", node: "send-broadcast-bulk" } }],
+    });
+    expect(two?.body).toBe("A result comes back for every message.");
+    expect(two).not.toHaveProperty("detail");
+  });
+
   it("drops a step whose focus loses its last member", () => {
     const patched = expectApplied([{ op: "remove_node", id: "postmark" }]);
 

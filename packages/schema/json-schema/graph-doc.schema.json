@@ -1204,6 +1204,164 @@
                   }
                 ],
                 "description": "What stays lit while a walkthrough step plays."
+              },
+              "detail": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240,
+                    "description": "A sentence or two naming the places a step is about."
+                  },
+                  "cites": {
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 240,
+                          "description": "Words copied exactly from the detail's text. They become the link."
+                        },
+                        "ref": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "node"
+                                },
+                                "node": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                                  "description": "Id of the node the words name."
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "node"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "message"
+                                },
+                                "flow": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                                  "description": "Id of the flow that carries the step."
+                                },
+                                "message": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                                  "description": "Id of the step within that flow."
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "flow",
+                                "message"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "view"
+                                },
+                                "view": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                                  "description": "Id of the view the words name."
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "view"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "flow"
+                                },
+                                "flow": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+                                  "description": "Id of the flow the words name."
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "flow"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "file"
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 1024,
+                                  "pattern": "^(?!\\/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|\\/)\\.\\.(?:\\/|$)).+$",
+                                  "description": "Repository-relative path, POSIX separators."
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "path"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ],
+                          "description": "The place some words of a walkthrough step name."
+                        }
+                      },
+                      "required": [
+                        "text",
+                        "ref"
+                      ],
+                      "additionalProperties": false,
+                      "description": "A run of a detail's text that names a place, and the place it names."
+                    },
+                    "description": "The places the text names, in the order it names them. No two share words."
+                  }
+                },
+                "required": [
+                  "text",
+                  "cites"
+                ],
+                "additionalProperties": false,
+                "description": "A sentence under a step's body whose words link to the places they name."
               }
             },
             "required": [

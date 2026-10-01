@@ -3,6 +3,7 @@ import {
   Beat,
   byteLength,
   Delta,
+  DetailLine,
   FileRef,
   Id,
   jsonDepth,
@@ -15,6 +16,7 @@ import {
   MAX_PAYLOAD_DEPTH,
   MAX_SAMPLE_BYTES,
   MAX_SHAPE_BYTES,
+  RepositoryPath,
   SchemaVersionField,
   Sha,
   Summary,
@@ -401,6 +403,43 @@ export const StepFocus = z
   .describe("What stays lit while a walkthrough step plays.");
 export type StepFocus = z.infer<typeof StepFocus>;
 
+/** The document holds no list of files, so a file cite is only checked as a path. */
+export const CiteRef = z
+  .discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("node"), node: Id.describe("Id of the node the words name.") }),
+    z.strictObject({
+      kind: z.literal("message"),
+      flow: Id.describe("Id of the flow that carries the step."),
+      message: Id.describe("Id of the step within that flow."),
+    }),
+    z.strictObject({ kind: z.literal("view"), view: Id.describe("Id of the view the words name.") }),
+    z.strictObject({ kind: z.literal("flow"), flow: Id.describe("Id of the flow the words name.") }),
+    z.strictObject({ kind: z.literal("file"), path: RepositoryPath }),
+  ])
+  .describe("The place some words of a walkthrough step name.");
+export type CiteRef = z.infer<typeof CiteRef>;
+
+export const StepCite = z
+  .strictObject({
+    text: DetailLine.describe("Words copied exactly from the detail's text. They become the link."),
+    ref: CiteRef,
+  })
+  .describe("A run of a detail's text that names a place, and the place it names.");
+export type StepCite = z.infer<typeof StepCite>;
+
+/** A detail exists to carry links, so it needs at least one cite. */
+export const StepDetail = z
+  .strictObject({
+    text: DetailLine,
+    cites: z
+      .array(StepCite)
+      .min(1)
+      .max(8)
+      .describe("The places the text names, in the order it names them. No two share words."),
+  })
+  .describe("A sentence under a step's body whose words link to the places they name.");
+export type StepDetail = z.infer<typeof StepDetail>;
+
 export const WalkthroughStep = z
   .strictObject({
     id: Id,
@@ -408,6 +447,7 @@ export const WalkthroughStep = z
     body: Line,
     stage: StepStage.optional(),
     focus: StepFocus.default({ kind: "all" }),
+    detail: StepDetail.optional(),
   })
   .describe(
     "One stop on the walkthrough: a heading, a line under it, and the part of one diagram it is about.",

@@ -250,7 +250,15 @@ Optional in the format, but write one for anything that is not trivial: more tha
         "heading": "Postmark now gets 500 emails per call",
         "body": "One call per batch, and Postmark answers with a result for each message.",
         "stage": { "kind": "flow", "flow": "send-pipeline" },
-        "focus": { "kind": "selection", "messages": ["batch-post", "batch-results"] }
+        "focus": { "kind": "selection", "messages": ["batch-post", "batch-results"] },
+        "detail": {
+          "text": "sendBroadcastBulk posts each batch to Postmark and reads the results back.",
+          "cites": [
+            { "text": "sendBroadcastBulk", "ref": { "kind": "node", "node": "send-broadcast-bulk" } },
+            { "text": "posts each batch", "ref": { "kind": "message", "flow": "send-pipeline", "message": "batch-post" } },
+            { "text": "Postmark", "ref": { "kind": "node", "node": "postmark" } }
+          ]
+        }
       },
       {
         "id": "blast-radius",
@@ -274,12 +282,14 @@ Each step has:
 - `body`: one line under the heading, up to 140 characters, on what the change means for behaviour. For example "One call per batch instead of one call per person". Required: a heading with no body reads as unfinished.
 - `stage`: which diagram to show. A document can have several diagrams: its views (the drill-down diagrams) and its flows (the sequence diagrams). `{ "kind": "view", "view": "overview" }` shows the view called `overview`. `{ "kind": "flow", "flow": "send-pipeline" }` shows the flow called `send-pipeline`. Leave `stage` out and the step uses the diagram the reader is already on.
 - `focus`: what to zoom in on inside that diagram. `{ "kind": "all" }`, the default, means the whole diagram. A selection means "just these things": name any lanes, nodes, edges or flow steps (`messages`) by id, and the camera zooms to them while everything else dims. A selection must name at least one thing.
+- `detail`: optional. One or two sentences under the body, up to 240 characters, that name the parts of the diagram the step is about. `text` is the sentence. `cites` turns words in it into links: each cite has `text`, copied letter for letter from the sentence, and a `ref`. A `ref` is `{ "kind": "node", "node": … }`, `{ "kind": "message", "flow": …, "message": … }`, `{ "kind": "view", "view": … }` or `{ "kind": "flow", "flow": … }`. List cites in the order the sentence says them. A detail has one to eight, and no two use the same words. Do not cite files on a canvas you push: with no pull request behind it, a file link shows as plain words.
 
 The validator checks:
 
 - Every id you name exists in the document. A flow step you name must belong to the flow the stage shows, because flow step ids are only unique inside their own flow.
 - `messages` needs a stage that shows a flow. Leave it out when the stage is an architecture view.
 - Step ids are unique within the walkthrough. Two steps minimum, twelve maximum.
+- Every cite's words are in its detail's `text`, in the order the cites are listed. The node, flow step, view or flow it points to exists in the document.
 - A stored map never carries a walkthrough. A map describes the system; a walkthrough tells the story of one change.
 
 ## Layout
