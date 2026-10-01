@@ -13,6 +13,11 @@ pipeline that did not set it. A major changes or removes an input, or changes
 a default in a way that could. Pin a major and let minors arrive; nothing
 within one major will break a pipeline.
 
+## 0.1.3
+
+- The default `cli_version` is 0.12.0, which reads a walkthrough step's `detail`: a
+  second sentence under the body whose words link to the diagram.
+
 ## 0.1.2
 
 - The default `cli_version` is 0.11.0, which brings renderer 0.3.1: edge labels stay off

@@ -19,7 +19,7 @@ pipelines:
       - step:
           name: PR Lens
           script:
-            - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.2
+            - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.3
               variables:
                 GEMINI_API_KEY: $GEMINI_API_KEY
                 PR_LENS_TOKEN: $PR_LENS_TOKEN
@@ -99,7 +99,7 @@ and a shallow clone does not reach it.
 
 ```yaml
 script:
-  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.2
+  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.3
     variables:
       GEMINI_API_KEY: $GEMINI_API_KEY
       PR_LENS_TOKEN: $PR_LENS_TOKEN
@@ -109,7 +109,7 @@ script:
 
 ```yaml
 script:
-  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.2
+  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.3
     variables:
       MODEL_PROVIDER: "openai-compatible"
       MODEL: "your-model-name"
@@ -123,7 +123,7 @@ script:
 
 ```yaml
 script:
-  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.2
+  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.3
     variables:
       COMMENT: "false"
       GEMINI_API_KEY: $GEMINI_API_KEY
@@ -133,7 +133,7 @@ script:
 
 ```yaml
 script:
-  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.2
+  - pipe: docker://ghcr.io/coldteadotai/pr-lens-pipe:0.1.3
     variables:
       LENS: "architecture"
       GEMINI_API_KEY: $GEMINI_API_KEY
@@ -180,8 +180,8 @@ pushed. The short form in Atlassian's listing resolves through a Bitbucket
 repository that holds this `pipe.yml`; setting that up is a later step.
 
 ```bash
-docker buildx build --platform linux/amd64 -t ghcr.io/coldteadotai/pr-lens-pipe:0.1.2 .
-docker push ghcr.io/coldteadotai/pr-lens-pipe:0.1.2
+docker buildx build --platform linux/amd64 -t ghcr.io/coldteadotai/pr-lens-pipe:0.1.3 .
+docker push ghcr.io/coldteadotai/pr-lens-pipe:0.1.3
 ```
 
 ## License
