@@ -30,6 +30,7 @@ export {
 } from "./primitives.js";
 
 export {
+  CiteRef,
   EdgeEmphasis,
   EdgeKind,
   Flow,
@@ -47,6 +48,8 @@ export {
   Provenance,
   StatChip,
   Stats,
+  StepCite,
+  StepDetail,
   StepFocus,
   StepStage,
   View,
@@ -106,7 +109,7 @@ export {
 
 export { applyPatch, applyPatchDoc } from "./apply.js";
 
-export { pruneWalkthrough, type WalkthroughSubject } from "./walkthrough.js";
+export { detailParts, pruneWalkthrough, type StepPart, type WalkthroughSubject } from "./walkthrough.js";
 
 export {
   LiveCommand,

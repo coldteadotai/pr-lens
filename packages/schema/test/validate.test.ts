@@ -7,6 +7,7 @@ import { MAX_RENDER_ASSETS, MAX_VIEWS, THEMES, THEME_PAIR } from "../src/primiti
 import { postmarkRefactorManifestInput } from "../src/examples/postmark-refactor.js";
 import { safeParseConfig, safeParseGraphDoc, safeParseRenderManifest } from "../src/validate.js";
 import { SCHEMA_VERSION } from "../src/version.js";
+import { detailParts } from "../src/walkthrough.js";
 import { clone, expectRejected } from "./helpers.js";
 
 describe("graph document validation", () => {
@@ -342,6 +343,125 @@ describe("walkthroughs", () => {
       ]),
     );
     expect(error.issues).toHaveLength(1);
+  });
+});
+
+describe("the places a step's detail links to", () => {
+  type CiteInput = NonNullable<StepInput["detail"]>["cites"][number];
+  const TEXT = "The sender posts a batch to Postmark, built in sendBroadcastBulk.";
+
+  const cited = (cites: CiteInput[], text = TEXT): GraphDocInput => {
+    const [, second] = stepsOfLength(2);
+    return withSteps([
+      {
+        id: "queued",
+        heading: "The queue now stamps the batch size",
+        body: "One call per batch instead of one call per person.",
+        stage: { kind: "view", view: "overview" },
+        detail: { text, cites },
+      },
+      second!,
+    ]);
+  };
+
+  it("accepts a cite of each kind of place", () => {
+    const result = safeParseGraphDoc(
+      cited([
+        { text: "The sender", ref: { kind: "node", node: "send-broadcast-bulk" } },
+        { text: "posts a batch", ref: { kind: "message", flow: "send-pipeline", message: "batch-post" } },
+        { text: "Postmark", ref: { kind: "view", view: "new-batch-path" } },
+        { text: "sendBroadcastBulk", ref: { kind: "file", path: "functions/src/broadcast/send.ts" } },
+      ]),
+    );
+    if (!result.ok) throw result.error;
+    expect(result.value.walkthrough?.steps[0]?.detail?.cites).toHaveLength(4);
+  });
+
+  it("leaves the field off a step with no detail, so the document reads as it was written", () => {
+    const result = safeParseGraphDoc(withSteps(stepsOfLength(2)));
+    if (!result.ok) throw result.error;
+    expect(result.value.walkthrough?.steps[0]).not.toHaveProperty("detail");
+  });
+
+  it("holds the body to its one line whatever the detail says", () => {
+    const doc = cited([{ text: "The sender", ref: { kind: "node", node: "send-broadcast-bulk" } }]);
+    doc.walkthrough!.steps[0]!.body = "a".repeat(141);
+    expect(safeParseGraphDoc(doc).ok).toBe(false);
+  });
+
+  it("holds a detail to a sentence or two", () => {
+    const cite: CiteInput = { text: "The sender", ref: { kind: "node", node: "send-broadcast-bulk" } };
+    expect(safeParseGraphDoc(cited([cite], `The sender ${"a".repeat(229)}`)).ok).toBe(true);
+    expect(safeParseGraphDoc(cited([cite], `The sender ${"a".repeat(230)}`)).ok).toBe(false);
+  });
+
+  it("rejects a detail that links nothing, which is a second body rather than a way in", () => {
+    expect(safeParseGraphDoc(cited([])).ok).toBe(false);
+  });
+
+  it("rejects words the detail does not say", () => {
+    const error = expectRejected(
+      cited([{ text: "The worker", ref: { kind: "node", node: "send-broadcast-bulk" } }]),
+    );
+    expect(error.code).toBe("BROKEN_REFERENCE");
+    expect(error.issues[0]?.path).toBe("walkthrough.steps[0].detail.cites[0].text");
+    expect(error.message).toContain("which its detail does not say");
+  });
+
+  it("rejects two cites over the same words", () => {
+    const error = expectRejected(
+      cited([
+        { text: "Postmark", ref: { kind: "node", node: "postmark" } },
+        { text: "Postmark", ref: { kind: "view", view: "new-batch-path" } },
+      ]),
+    );
+    expect(error.issues[0]?.path).toBe("walkthrough.steps[0].detail.cites[1].text");
+    expect(error.message).toContain("over words another cite took");
+  });
+
+  it("rejects cites listed out of the order the detail says them", () => {
+    const error = expectRejected(
+      cited([
+        { text: "Postmark", ref: { kind: "node", node: "postmark" } },
+        { text: "The sender", ref: { kind: "node", node: "send-broadcast-bulk" } },
+      ]),
+    );
+    expect(error.issues[0]?.path).toBe("walkthrough.steps[0].detail.cites[1].text");
+  });
+
+  it.each<[string, CiteInput["ref"], string]>([
+    ["node", { kind: "node", node: "ghost" }, "node 'ghost'"],
+    ["flow step", { kind: "message", flow: "send-pipeline", message: "ghost" }, "step 'ghost' of flow 'send-pipeline'"],
+    ["view", { kind: "view", view: "ghost" }, "view 'ghost'"],
+    ["flow", { kind: "flow", flow: "ghost" }, "flow 'ghost'"],
+  ])("rejects a cite of a %s the document does not have", (_kind, ref, named) => {
+    const error = expectRejected(cited([{ text: "The sender", ref }]));
+    expect(error.code).toBe("BROKEN_REFERENCE");
+    expect(error.issues[0]?.path).toBe("walkthrough.steps[0].detail.cites[0].ref");
+    expect(error.message).toContain(`cites ${named}, which this document does not have`);
+  });
+
+  it("rejects a cited file path that could not become a permalink", () => {
+    expect(
+      safeParseGraphDoc(cited([{ text: "The sender", ref: { kind: "file", path: "../outside.ts" } }])).ok,
+    ).toBe(false);
+  });
+
+  it("splits a detail into its plain runs and its links, in reading order", () => {
+    expect(
+      detailParts({
+        text: "The sender posts a batch to Postmark.",
+        cites: [
+          { text: "The sender", ref: { kind: "node", node: "send-broadcast-bulk" } },
+          { text: "Postmark", ref: { kind: "node", node: "postmark" } },
+        ],
+      }),
+    ).toEqual([
+      { text: "The sender", ref: { kind: "node", node: "send-broadcast-bulk" } },
+      { text: " posts a batch to " },
+      { text: "Postmark", ref: { kind: "node", node: "postmark" } },
+      { text: "." },
+    ]);
   });
 });
 

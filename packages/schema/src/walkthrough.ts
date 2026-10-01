@@ -1,4 +1,16 @@
-import type { Flow, GraphEdge, GraphNode, Lane, StepStage, View, Walkthrough } from "./graph.js";
+import type {
+  CiteRef,
+  Flow,
+  GraphEdge,
+  GraphNode,
+  Lane,
+  StepCite,
+  StepDetail,
+  StepStage,
+  View,
+  Walkthrough,
+  WalkthroughStep,
+} from "./graph.js";
 import { assertNever } from "./utils.js";
 
 const NOTHING: ReadonlySet<string> = new Set();
@@ -100,6 +112,68 @@ const focusable = (staged: StagedMessages): ReadonlySet<string> => {
   }
 };
 
+/** Each cite is searched for from where the previous one ended, so two cites cannot overlap. */
+export const citeStarts = (text: string, cites: readonly StepCite[]): (number | undefined)[] => {
+  let cursor = 0;
+  return cites.map((cite) => {
+    const start = text.indexOf(cite.text, cursor);
+    if (start === -1) return undefined;
+    cursor = start + cite.text.length;
+    return start;
+  });
+};
+
+export type StepPart = { text: string; ref?: CiteRef };
+
+export const detailParts = ({ text, cites }: StepDetail): StepPart[] => {
+  const starts = citeStarts(text, cites);
+  const parts: StepPart[] = [];
+  let cursor = 0;
+
+  cites.forEach((cite, index) => {
+    const start = starts[index];
+    if (start === undefined) return;
+    if (start > cursor) parts.push({ text: text.slice(cursor, start) });
+    parts.push({ text: cite.text, ref: cite.ref });
+    cursor = start + cite.text.length;
+  });
+
+  if (cursor < text.length) parts.push({ text: text.slice(cursor) });
+  return parts;
+};
+
+/** A file cite always passes, because the document has no list of files to check it against. */
+export const citeStands = (
+  ref: CiteRef,
+  subject: Pick<WalkthroughSubject, "nodes" | "flows" | "views">,
+): boolean => {
+  switch (ref.kind) {
+    case "node":
+      return subject.nodes.some((node) => node.id === ref.node);
+    case "message":
+      return subject.flows.some(
+        (flow) => flow.id === ref.flow && flow.messages.some((message) => message.id === ref.message),
+      );
+    case "view":
+      return indexViews(subject.views).has(ref.view);
+    case "flow":
+      return subject.flows.some((flow) => flow.id === ref.flow);
+    case "file":
+      return true;
+    default:
+      return assertNever(ref, "Unhandled cite ref");
+  }
+};
+
+/** When every cite is gone, the detail is dropped and the step keeps its body. */
+const withStandingCites = (step: WalkthroughStep, subject: WalkthroughSubject): WalkthroughStep => {
+  const { detail, ...rest } = step;
+  if (detail === undefined) return step;
+
+  const cites = detail.cites.filter((cite) => citeStands(cite.ref, subject));
+  return cites.length === 0 ? rest : { ...rest, detail: { ...detail, cites } };
+};
+
 /**
  * A step that loses the last element it focused is dropped rather than left
  * to widen into a step about everything. A tour of one step is a caption, so
@@ -117,8 +191,9 @@ export const pruneWalkthrough = (
   const flows = new Set(subject.flows.map((flow) => flow.id));
   const views = indexViews(subject.views);
 
-  const steps = walkthrough.steps.flatMap((step) => {
-    if (step.stage !== undefined && !stageSurvives(step.stage, flows, views)) return [];
+  const steps = walkthrough.steps.flatMap((cited): WalkthroughStep[] => {
+    if (cited.stage !== undefined && !stageSurvives(cited.stage, flows, views)) return [];
+    const step = withStandingCites(cited, subject);
 
     switch (step.focus.kind) {
       case "all":

@@ -59,6 +59,13 @@ export const Line = z
   .max(140)
   .describe("A single line under a step heading.");
 
+/** 240 characters fits about thirty words with a file path among them, which is the length of an agent answer's paragraph. */
+export const DetailLine = z
+  .string()
+  .min(1)
+  .max(240)
+  .describe("A sentence or two naming the places a step is about.");
+
 export const Sha = z
   .string()
   .regex(/^[0-9a-f]{7,40}$/, "must be a lowercase hex git object name")
@@ -153,6 +160,16 @@ export const DELTAS = Delta.options;
  */
 const REPOSITORY_PATH = /^(?!\/)(?![A-Za-z]:)(?!.*\\)(?!.*(?:^|\/)\.\.(?:\/|$)).+$/;
 
+export const RepositoryPath = z
+  .string()
+  .min(1)
+  .max(1024)
+  .regex(
+    REPOSITORY_PATH,
+    "must be a repository-relative POSIX path, without a drive letter, a backslash or a '..' segment",
+  )
+  .describe("Repository-relative path, POSIX separators.");
+
 /**
  * A pointer into the head tree, used to build diff permalinks. Line numbers
  * are 1-based and refer to the head revision except on `removed` elements,
@@ -160,15 +177,7 @@ const REPOSITORY_PATH = /^(?!\/)(?![A-Za-z]:)(?!.*\\)(?!.*(?:^|\/)\.\.(?:\/|$)).
  */
 export const FileRef = z
   .strictObject({
-    path: z
-      .string()
-      .min(1)
-      .max(1024)
-      .regex(
-        REPOSITORY_PATH,
-        "must be a repository-relative POSIX path, without a drive letter, a backslash or a '..' segment",
-      )
-      .describe("Repository-relative path, POSIX separators."),
+    path: RepositoryPath,
     startLine: z.int().min(1).optional().describe("1-based first line."),
     endLine: z.int().min(1).optional().describe("1-based last line, inclusive."),
     revision: z
