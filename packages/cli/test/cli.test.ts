@@ -13,9 +13,6 @@ import { CLI_VERSION } from "../src/version.js";
 const GOLDEN = new URL("../../schema/examples/postmark-refactor.graph.json", import.meta.url).pathname;
 const CLI_INVOCATION = "npx @coldtea/pr-lens-cli@latest";
 
-const forBundledCli = (content: string): string =>
-  content.replaceAll(CLI_INVOCATION, "pr-lens");
-
 let out: string[] = [];
 let err: string[] = [];
 const terminal: Terminal = { out: (line) => out.push(line), err: (line) => err.push(line) };
@@ -45,14 +42,13 @@ test("--version is the version stamped on documents", async () => {
 
 test("skill prints the operating manual from the agent skill package", async () => {
   const manual = await readFile(
-    new URL("../../agent-skill/SKILL.md", import.meta.url),
+    new URL("../../agent-skill/manual.md", import.meta.url),
     "utf8",
   );
 
   expect(await invoke("skill")).toBe(0);
-  expect(out).toEqual([forBundledCli(manual)]);
-  expect(out[0]).toContain("pr-lens render");
-  expect(out[0]).not.toContain(CLI_INVOCATION);
+  expect(out).toEqual([manual]);
+  expect(out[0]).toContain(`${CLI_INVOCATION} render`);
 });
 
 test("skill help makes its agent-facing output clear", async () => {
@@ -80,8 +76,8 @@ test("skill references prints the config, graph specification, and example", asy
 
   expect(await invoke("skill", "references")).toBe(0);
   expect(out).toHaveLength(1);
-  expect(out[0]).toContain(forBundledCli(config));
-  expect(out[0]).toContain(forBundledCli(graphDocument));
+  expect(out[0]).toContain(config);
+  expect(out[0]).toContain(graphDocument);
   expect(out[0]).toContain(exampleDocument);
 });
 

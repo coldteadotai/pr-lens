@@ -14,7 +14,7 @@ npm install --save-dev @coldtea/pr-lens-agent-skill
 
 ```bash
 mkdir -p .claude/skills/pr-lens
-cp -R node_modules/@coldtea/pr-lens-agent-skill/{SKILL.md,references} .claude/skills/pr-lens/
+cp node_modules/@coldtea/pr-lens-agent-skill/SKILL.md .claude/skills/pr-lens/
 ```
 
 **Cursor**: the same file works as a rule:
@@ -28,11 +28,14 @@ cp node_modules/@coldtea/pr-lens-agent-skill/SKILL.md .cursor/rules/pr-lens.mdc
 
 ## What is in it
 
-| | |
-| --- | --- |
-| `SKILL.md` | when to reach for PR Lens, and the write → validate → fix → render loop |
-| `references/graph-document.md` | the document, field by field, and what the validator will catch |
-| `references/config.md` | `.github/pr-lens.yml` corrections, with recipes |
+`SKILL.md` is short. It tells the agent when to use PR Lens, then sends it to the CLI for the full instructions:
+
+```bash
+npx @coldtea/pr-lens-cli@latest skill             # the write, validate, fix, render loop
+npx @coldtea/pr-lens-cli@latest skill references  # the graph document, the config format, and an example
+```
+
+The CLI prints the instructions for its own version, so an old copy of `SKILL.md` never sends the agent to commands that have changed. Their source is `manual.md` and `references/`, in this folder of the repository.
 
 The agent is usually the model. Rather than spending a provider key to describe a diff it already understands, it writes the document itself and lets `pr-lens validate` hold it to the contract. Every failure is a path into the document, so the loop closes without a human in it.
 
