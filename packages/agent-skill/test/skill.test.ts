@@ -22,6 +22,7 @@ const read = (name: string) =>
   readFile(new URL(`../${name}`, import.meta.url), "utf8");
 
 const skill = await read("SKILL.md");
+const manual = await read("manual.md");
 const graphGuide = await read("references/graph-document.md");
 const configGuide = await read("references/config.md");
 
@@ -41,8 +42,13 @@ test("the skill declares a name and the situations it is for", () => {
   expect(declared).toHaveProperty("description");
 });
 
-test("every reference the skill sends an agent to ships beside it", async () => {
-  const referenced = [...skill.matchAll(/references\/[\w.-]+/g)].map(
+test("the installed skill sends an agent to the CLI for the manual and its references", () => {
+  expect(skill).toMatch(/npx @coldtea\/pr-lens-cli@latest skill +#/);
+  expect(skill).toMatch(/npx @coldtea\/pr-lens-cli@latest skill references +#/);
+});
+
+test("every reference page the manual names exists", async () => {
+  const referenced = [...manual.matchAll(/references\/[\w.-]+/g)].map(
     (match) => match[0],
   );
 
@@ -55,13 +61,13 @@ test("every reference the skill sends an agent to ships beside it", async () => 
 });
 
 /**
- * `npx skills add` copies the skill folder and nothing else, so a page that
- * sends its reader into node_modules sends them somewhere that install never
- * creates. The packages may be named — an agent that happens to have them is
+ * An agent reads these pages from `pr-lens skill`, with no package installed,
+ * so a page that sends its reader into node_modules sends them somewhere that
+ * may not exist. The packages may be named — an agent that happens to have them is
  * welcome to read them — but never as a path to open.
  */
-test("the skill names no file outside the folder a user installs", () => {
-  for (const page of [skill, graphGuide, configGuide]) {
+test("no page names a file inside node_modules", () => {
+  for (const page of [skill, manual, graphGuide, configGuide]) {
     expect(page).not.toContain("node_modules/");
   }
 });
@@ -77,7 +83,7 @@ test("the worked example the skill ships is the contract's own, and it validates
 
 test("every config the pages teach is a config the contract accepts", () => {
   const configs = [
-    ...fenced(skill, "yaml"),
+    ...fenced(manual, "yaml"),
     ...fenced(configGuide, "yaml"),
   ].filter((block) => block.includes("schemaVersion"));
 
@@ -98,7 +104,7 @@ test("the enums quoted to an agent are the enums the contract implements", () =>
   ])
     expect(graphGuide).toContain(`\`${value}\``);
 
-  for (const lens of LENSES) expect(skill).toContain(lens);
+  for (const lens of LENSES) expect(manual).toContain(lens);
 });
 
 test("the lane rule the pages teach is the lane rule the renderer implements", () => {
@@ -122,7 +128,7 @@ test("the lane rule the pages teach is the lane rule the renderer implements", (
   ).toBe("infrastructure");
 
   expect(configGuide).toContain("creating it");
-  expect(skill).toContain("may name a lane the document never declared");
+  expect(manual).toContain("may name a lane the document never declared");
 });
 
 test("the skill counts the parser-only rules the contract counts", async () => {
@@ -133,12 +139,12 @@ test("the skill counts the parser-only rules the contract counts", async () => {
 
   const contract = await read("../schema/README.md");
 
-  expect(counted(skill)).toBeDefined();
-  expect(counted(contract)).toBe(counted(skill));
+  expect(counted(manual)).toBeDefined();
+  expect(counted(contract)).toBe(counted(manual));
 });
 
 test("the contract version the pages tell an agent to write is the one that ships", () => {
-  for (const page of [skill, graphGuide, configGuide]) {
+  for (const page of [manual, graphGuide, configGuide]) {
     for (const version of page.match(
       /schemaVersion["']?\s*[:=]\s*["']?([\d.]+)/g,
     ) ?? []) {

@@ -1,16 +1,14 @@
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import { readFile } from "node:fs/promises";
-import { filesPresent, skillFiles, SKILL_MIRROR_DIR, SKILL_SOURCE_DIR } from "../scripts/mirror.js";
+import { filesPresent, SKILL_FILES, SKILL_MIRROR_DIR, SKILL_SOURCE_DIR } from "../scripts/mirror.js";
 
-test("the skill a user installs holds every source file and nothing else", async () => {
-  const wanted = [...(await skillFiles(SKILL_SOURCE_DIR))].sort();
-
-  expect(await filesPresent(SKILL_MIRROR_DIR)).toEqual(wanted);
+test("the skill a user installs holds the stub and its license, and nothing else", async () => {
+  expect(await filesPresent(SKILL_MIRROR_DIR)).toEqual([...SKILL_FILES].sort());
 });
 
 test("every installed file is byte-identical to the one it came from", async () => {
-  for (const file of await skillFiles(SKILL_SOURCE_DIR)) {
+  for (const file of SKILL_FILES) {
     const [source, mirrored] = await Promise.all([
       readFile(join(SKILL_SOURCE_DIR, file)),
       readFile(join(SKILL_MIRROR_DIR, file)),

@@ -16,18 +16,11 @@ export const SKILL_SOURCE_DIR = packageRoot;
  */
 export const SKILL_MIRROR_DIR = join(packageRoot, "..", "..", "skills", "pr-lens");
 
-const REFERENCES = "references";
-
 /**
- * What a user receives, as paths relative to a skill root. The reference pages
- * are read from disk rather than listed here, so adding one carries it into
- * the mirror without anyone having to remember this file.
+ * What a user receives. The full manual and its reference pages stay out:
+ * `pr-lens skill` prints them, so they always match the CLI an agent runs.
  */
-export const skillFiles = async (root: string): Promise<readonly string[]> => {
-  const references = await readdir(join(root, REFERENCES));
-
-  return ["LICENSE", "SKILL.md", ...references.sort().map((name) => `${REFERENCES}/${name}`)];
-};
+export const SKILL_FILES: readonly string[] = ["LICENSE", "SKILL.md"];
 
 /** Every file actually present under `dir`, relative and slash-separated. */
 export const filesPresent = async (dir: string, prefix = ""): Promise<readonly string[]> => {

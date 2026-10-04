@@ -21,7 +21,6 @@
   "type": "module",
   "files": [
     "SKILL.md",
-    "references",
     "README.md",
     "LICENSE"
   ],
