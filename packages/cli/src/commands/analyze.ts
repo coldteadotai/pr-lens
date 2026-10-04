@@ -1,5 +1,6 @@
 import { LENSES, PROVIDERS, type GraphDocInput, type Lens, type Provider } from "@coldtea/pr-lens-schema";
 import { dirname } from "node:path";
+import { z } from "zod";
 import { parseOptions, readBoolean, readInt, readList, readString } from "../args.js";
 import { discoverConfig, loadConfig, type LoadedConfig } from "../config-file.js";
 import { PrLensCliError, usageError } from "../errors.js";
@@ -16,6 +17,7 @@ import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
 const DEFAULT_OUT = `${WORKSPACE_DIR}/graph.json`;
 const DEFAULT_MAX_OUTPUT_TOKENS = 32_768;
 const DEFAULT_MAX_DIFF_BYTES = 400_000;
+const DEFAULT_TEMPERATURE = 0;
 
 export const USAGE = `pr-lens analyze --base <ref> [options]
 
@@ -40,6 +42,9 @@ environment, and the diff goes straight to the provider you name.
                             hosted (default read from the remote host)
   --max-diff-bytes <n>      truncate the diff sent to the model (default ${DEFAULT_MAX_DIFF_BYTES})
   --max-output-tokens <n>   room for the answer (default ${DEFAULT_MAX_OUTPUT_TOKENS})
+  --temperature <n|default> sampling temperature (default ${DEFAULT_TEMPERATURE}); "default" sends none,
+                            for models that accept only their own, like OpenAI's
+                            reasoning models
   --dry-run                 report what would be sent, and send nothing
   -o, --out <file>          where to write the document (default ${DEFAULT_OUT})`;
 
@@ -62,6 +67,19 @@ const readForge = (values: Record<string, unknown>): Provider | undefined => {
   if (known === undefined)
     throw usageError(`unknown forge ${JSON.stringify(forge)}`, `known forges: ${PROVIDERS.join(", ")}`);
   return known;
+};
+
+const TemperatureFlag = z.string().trim().min(1).transform(Number).pipe(z.number().nonnegative());
+
+const readTemperature = (values: Record<string, unknown>): number | undefined => {
+  const text = readString(values.temperature, "temperature");
+  if (text === undefined) return DEFAULT_TEMPERATURE;
+  if (text === "default") return undefined;
+
+  const parsed = TemperatureFlag.safeParse(text);
+  if (!parsed.success)
+    throw usageError(`--temperature needs a number of 0 or more, or default, got ${JSON.stringify(text)}`);
+  return parsed.data;
 };
 
 const readProviderId = (values: Record<string, unknown>) => {
@@ -93,6 +111,7 @@ export const analyzeCommand = async (
     forge: { type: "string" },
     "max-diff-bytes": { type: "string" },
     "max-output-tokens": { type: "string" },
+    temperature: { type: "string" },
     "dry-run": { type: "boolean" },
     out: { type: "string", short: "o" },
   });
@@ -105,6 +124,7 @@ export const analyzeCommand = async (
   const repo = readString(values.repo, "repo") ?? process.cwd();
   const head = readString(values.head, "head") ?? "HEAD";
   const maxDiffBytes = readInt(values["max-diff-bytes"], "max-diff-bytes", DEFAULT_MAX_DIFF_BYTES);
+  const temperature = readTemperature(values);
 
   const slugOption = readString(values["repo-slug"], "repo-slug");
   const detected = slugOption === undefined
@@ -203,6 +223,7 @@ export const analyzeCommand = async (
       system: SYSTEM_PROMPT,
       user,
       maxOutputTokens: readInt(values["max-output-tokens"], "max-output-tokens", DEFAULT_MAX_OUTPUT_TOKENS),
+      temperature,
       known: {
         provenance,
         lenses,

@@ -93,6 +93,7 @@ export const extractGraph = async (
     system: string;
     user: string;
     maxOutputTokens: number;
+    temperature: number | undefined;
     known: KnownFields;
     onAttempt?: (attempt: number) => void;
   },
@@ -111,6 +112,7 @@ export const extractGraph = async (
       system: options.system,
       turns,
       maxOutputTokens: options.maxOutputTokens,
+      temperature: options.temperature,
     });
 
     const read = readJsonObject(text);

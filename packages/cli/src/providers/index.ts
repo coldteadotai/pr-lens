@@ -32,6 +32,8 @@ export type JsonCompletion = {
   system: string;
   turns: readonly Turn[];
   maxOutputTokens: number;
+  /** Undefined sends none, for models that accept only their own default. */
+  temperature: number | undefined;
 };
 
 type ProviderDefaults = {

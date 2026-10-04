@@ -31,7 +31,7 @@ export const geminiCompleteJson = async (
       contents: request.turns.map((turn) => ({ role: turn.role, parts: [{ text: turn.text }] })),
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0,
+        ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
         maxOutputTokens: request.maxOutputTokens,
       },
     },

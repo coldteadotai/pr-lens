@@ -38,7 +38,7 @@ export const openAiCompleteJson = async (
     { authorization: `Bearer ${provider.apiKey}` },
     {
       model: provider.model,
-      temperature: 0,
+      ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
       [tokenLimitField]: request.maxOutputTokens,
       response_format: { type: "json_object" },
       messages: [
