@@ -61,7 +61,7 @@ test("truncated JSON buys the same correction round a rejected document gets", a
     .mockResolvedValueOnce(JSON.stringify(modelBody()));
 
   const { attempts } = await extractGraph(
-    { system: "s", user: "u", maxOutputTokens: 1024, known },
+    { system: "s", user: "u", maxOutputTokens: 1024, temperature: undefined, known },
     complete,
   );
 
@@ -74,7 +74,7 @@ test("a model that answers with prose twice fails saying so", async () => {
   const complete = vi.fn().mockResolvedValue("I cannot help with that");
 
   await expect(
-    extractGraph({ system: "s", user: "u", maxOutputTokens: 1024, known }, complete),
+    extractGraph({ system: "s", user: "u", maxOutputTokens: 1024, temperature: undefined, known }, complete),
   ).rejects.toThrow(expect.objectContaining({ code: "MODEL_OUTPUT_INVALID" }));
   expect(complete).toHaveBeenCalledTimes(2);
 });
@@ -88,7 +88,7 @@ test("an invalid document buys one correction round, and the errors go back to t
     .mockResolvedValueOnce(JSON.stringify(modelBody()));
 
   const { document, attempts } = await extractGraph(
-    { system: "s", user: "u", maxOutputTokens: 1024, known },
+    { system: "s", user: "u", maxOutputTokens: 1024, temperature: undefined, known },
     complete,
   );
 
@@ -104,7 +104,7 @@ test("a model that cannot produce a valid document twice fails with the reasons"
   const complete = vi.fn().mockResolvedValue(JSON.stringify({ ...modelBody(), nodes: [] }));
 
   await expect(
-    extractGraph({ system: "s", user: "u", maxOutputTokens: 1024, known }, complete),
+    extractGraph({ system: "s", user: "u", maxOutputTokens: 1024, temperature: undefined, known }, complete),
   ).rejects.toThrow(PrLensCliError);
   expect(complete).toHaveBeenCalledTimes(2);
 });

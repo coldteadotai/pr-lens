@@ -179,6 +179,11 @@ test("an unknown forge is a misuse naming the known ones", async () => {
   expect(err.join("\n")).toContain("known forges: github, gitlab, bitbucket");
 });
 
+test("a temperature that is not a number of 0 or more, or default, is a misuse", async () => {
+  expect(await invoke("analyze", "--base", "main", "--temperature", "warm")).toBe(2);
+  expect(err.join("\n")).toContain('--temperature needs a number of 0 or more, or default, got "warm"');
+});
+
 test("an unknown flag is a misuse rather than a stack trace", async () => {
   expect(await invoke("validate", "--depth", "2")).toBe(2);
   expect(err.join("\n")).toContain("[USAGE]");
