@@ -7,6 +7,8 @@
 
 <h1 align="center">PR Lens</h1>
 
+<p align="center">English · <a href="README.zh-CN.md">简体中文</a></p>
+
 <p align="center">
   <b>Understand a pull request, any codebase, or software visually, before you read a line of code</b><br>
   PR Lens draws every pull request as animated architecture and data-flow diagrams,<br>
