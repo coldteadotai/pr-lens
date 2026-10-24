@@ -27,6 +27,9 @@ inputs:
   response-format:
     description: JSON mode for /chat/completions. Set none to omit response_format. Unset uses json_object.
     default: ""
+  max-diff-bytes:
+    description: Truncate the diff sent to the model. Unset uses the CLI default (400,000 bytes).
+    default: ""
   lens:
     description: Comma-separated lenses to render. Defaults to both.
     default: ""
@@ -110,6 +113,7 @@ runs:
           ${LENS:+--lens "${LENS}"} \
           ${TEMPERATURE:+--temperature "${TEMPERATURE}"} \
           ${RESPONSE_FORMAT:+--response-format "${RESPONSE_FORMAT}"} \
+          ${MAX_DIFF_BYTES:+--max-diff-bytes "${MAX_DIFF_BYTES}"} \
           --out "${RUNNER_TEMP}/pr-lens/graph.json"
         echo "graph=${RUNNER_TEMP}/pr-lens/graph.json" >> "${GITHUB_OUTPUT}"
       env:
@@ -123,6 +127,7 @@ runs:
         LENS: ${{ inputs.lens }}
         TEMPERATURE: ${{ inputs.temperature }}
         RESPONSE_FORMAT: ${{ inputs.response-format }}
+        MAX_DIFF_BYTES: ${{ inputs.max-diff-bytes }}
         PR_LENS_API_KEY: ${{ inputs.api-key }}
         PR_LENS_TOKEN: ${{ inputs.token }}
 

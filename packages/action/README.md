@@ -57,6 +57,7 @@ Finding that comment takes more than the marker: anyone can post the marker them
 | `base-url` | none | required for `openai-compatible`: the endpoint it is compatible with |
 | `temperature` | CLI default (`0`) | non-negative number, or `default` to omit temperature from the request |
 | `response-format` | `json_object` | JSON mode for `/chat/completions`; set `none` to omit `response_format` |
+| `max-diff-bytes` | CLI default (`400000`) | truncate the diff sent to the model |
 | `lens` | both | comma-separated: `architecture`, `data-flow` |
 | `branding` | `true` | the "Rendered by PR Lens" footer |
 | `comment` | `true` | set `false` to render and publish without commenting |

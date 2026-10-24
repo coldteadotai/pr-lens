@@ -18,10 +18,15 @@ const Action = z.object({
 });
 const action = Action.parse(parse(await readFile(new URL("../action.yml", import.meta.url), "utf8")));
 
-const analyzeArguments = async (temperature: string, responseFormat: string): Promise<string[]> => {
+const analyzeArguments = async (
+  temperature: string,
+  responseFormat: string,
+  maxDiffBytes = "",
+): Promise<string[]> => {
   const step = action.runs.steps.find((step) => step.id === "analyze");
   expect(step?.env?.TEMPERATURE).toBe("${{ inputs.temperature }}");
   expect(step?.env?.RESPONSE_FORMAT).toBe("${{ inputs.response-format }}");
+  expect(step?.env?.MAX_DIFF_BYTES).toBe("${{ inputs.max-diff-bytes }}");
   if (step?.run === undefined) throw new Error("Missing analyze step");
 
   const root = await mkdtemp(join(tmpdir(), "pr-lens-analyze-"));
@@ -40,6 +45,7 @@ const analyzeArguments = async (temperature: string, responseFormat: string): Pr
         LENS: "",
         TEMPERATURE: temperature,
         RESPONSE_FORMAT: responseFormat,
+        MAX_DIFF_BYTES: maxDiffBytes,
         RUNNER_TEMP: root,
         GITHUB_OUTPUT: join(root, "output"),
       },
@@ -57,12 +63,22 @@ test.each(["0", "default"])("the Action forwards temperature %s and response for
   expect(args).toContain("test model");
 });
 
+test("the Action forwards max-diff-bytes", async () => {
+  const args = await analyzeArguments("", "", "200000");
+  expect(args.slice(args.indexOf("--max-diff-bytes"), args.indexOf("--max-diff-bytes") + 2)).toEqual([
+    "--max-diff-bytes",
+    "200000",
+  ]);
+});
+
 test("unset inputs leave the CLI defaults intact", async () => {
   expect(action.inputs.temperature?.default).toBe("");
   expect(action.inputs["response-format"]?.default).toBe("");
+  expect(action.inputs["max-diff-bytes"]?.default).toBe("");
   const args = await analyzeArguments("", "");
   expect(args).not.toContain("--temperature");
   expect(args).not.toContain("--response-format");
+  expect(args).not.toContain("--max-diff-bytes");
 });
 
 test("input values stay one argument and cannot run shell commands", async () => {
