@@ -1,4 +1,4 @@
-name: PR Lens
+PR Lens
 description: Post the architecture and data flow of a pull request as diagrams in its comments, using your own model key.
 author: Coldtea AI
 
