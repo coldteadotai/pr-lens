@@ -19,10 +19,16 @@ export type RenderAtlas = {
   messages: Record<string, Record<string, Box>>;
   /** The data-model lens's cards; its stores land in `lanes` and its relations in `edges`. */
   tables: Record<string, Box>;
+  /**
+   * The rows a table card draws, keyed by table then column name. A folded
+   * card lists only the columns it shows, so a column with no box here is one
+   * the picture left out, not one the surface may place by counting rows.
+   */
+  columns: Record<string, Record<string, Box>>;
 };
 
 /** An atlas for a drawing that has placed nothing. */
-export const emptyAtlas = (): RenderAtlas => ({ lanes: {}, nodes: {}, edges: {}, messages: {}, tables: {} });
+export const emptyAtlas = (): RenderAtlas => ({ lanes: {}, nodes: {}, edges: {}, messages: {}, tables: {}, columns: {} });
 
 export type AtlasEntry = { id: string; box: Box };
 

@@ -35,6 +35,7 @@ import {
   LANE_RADIUS,
   LANE_TOP,
   SUBTITLE_SIZE,
+  TABLE_ROW_HEIGHT,
   TABLE_ROW_TEXT_SIZE,
   TABLE_ROW_TYPE_SIZE,
 } from "../design.js";
@@ -335,6 +336,18 @@ export const paintDataModel = (graph: ScopedGraph, palette: Palette): DataModelP
       ...emptyAtlas(),
       lanes: atlasBoxes(layout.stores.map(({ store, box }) => ({ id: store.id, box })), canvas),
       tables: atlasBoxes(layout.tables.map(({ table, box }) => ({ id: table.id, box })), canvas),
+      columns: Object.fromEntries(
+        layout.tables.map(({ table, box, columns }) => [
+          table.id,
+          atlasBoxes(
+            columns.map(({ column, top }) => ({
+              id: column.name,
+              box: { x: box.x, y: top, width: box.width, height: TABLE_ROW_HEIGHT },
+            })),
+            canvas,
+          ),
+        ]),
+      ),
       edges: atlasBoxes(
         routed.map(({ relation, curve }) => ({ id: relation.id, box: curveBounds(curve) })),
         canvas,
