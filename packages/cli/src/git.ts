@@ -152,14 +152,15 @@ export const pullRequestUrl = (slug: RepoSlug, pr: number): string => {
   }
 };
 
-const REMOTE_URL = /^(?:(?:ssh|git|https?):\/\/)?(?:[^@/]+@)?([^/:]+)[:/](.+?)(?:\.git)?\/?$/;
+const REMOTE_URL = /^(?:(?:ssh|git|https?):\/\/)?(?:[^@/]+@)?([^@/:]+)[:/](.+)$/;
 
 export const parseRemoteUrl = (url: string): RepoSlug | undefined => {
   const match = REMOTE_URL.exec(url.trim());
   if (!match) return undefined;
 
-  const [, host, path] = match;
-  if (host === undefined || path === undefined) return undefined;
+  const [, host, rawPath] = match;
+  if (host === undefined || rawPath === undefined) return undefined;
+  const path = rawPath.replace(/\/+$/, "").replace(/\.git$/, "");
 
   const segments = path.split("/").filter((segment) => segment !== "");
   const name = segments.at(-1);

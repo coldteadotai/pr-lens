@@ -161,18 +161,44 @@ describe("selector globs", () => {
     expect(matchesGlob("src/index.ts", "src/index.ts")).toBe(true);
   });
 
-  it("keeps a single star inside one segment", () => {
+  it("keeps a single star inside one segment, including an empty match", () => {
     expect(matchesGlob("src/*.ts", "src/index.ts")).toBe(true);
     expect(matchesGlob("src/*.ts", "src/deep/index.ts")).toBe(false);
+    expect(matchesGlob("foo*bar", "foobar")).toBe(true);
   });
 
-  it("lets a double star cross directories", () => {
+  it("lets a double star cross zero or more directories", () => {
     expect(matchesGlob("src/**/*.ts", "src/deep/nested/index.ts")).toBe(true);
+    expect(matchesGlob("src/**/*.ts", "src/index.ts")).toBe(true);
+    expect(matchesGlob("**/file.txt", "file.txt")).toBe(true);
+    expect(matchesGlob("**/file.txt", "a/b/file.txt")).toBe(true);
+    expect(matchesGlob("**/file.txt", "xfile.txt")).toBe(false);
+    expect(matchesGlob("**/**/file.txt", "file.txt")).toBe(true);
+    expect(matchesGlob("**/**/file.txt", "a/b/file.txt")).toBe(true);
+    expect(matchesGlob("a/**/b/**/c", "a/x/y/b/z/c")).toBe(true);
+    expect(matchesGlob("a/**/b/**/c", "a/b/c")).toBe(true);
+    expect(matchesGlob("a/**/b/**/c", "a/x/y/z/c")).toBe(false);
+    expect(matchesGlob("src/**/test/*.ts", "src/not-matching/test/index.ts")).toBe(true);
+    expect(matchesGlob("src/**/test/*.ts", "src/not-matching/other/index.ts")).toBe(false);
+  });
+
+  it("matches multiple wildcards in series", () => {
+    expect(matchesGlob("*.*", "file.txt")).toBe(true);
+    expect(matchesGlob("*.*", "dir/file.txt")).toBe(false);
+    expect(matchesGlob("*/*", "src/index.ts")).toBe(true);
+    expect(matchesGlob("*/*", "src/deep/index.ts")).toBe(false);
   });
 
   it("treats regular expression syntax as literal text", () => {
     expect(matchesGlob("src/a+b.ts", "src/aaab.ts")).toBe(false);
     expect(matchesGlob("src/a+b.ts", "src/a+b.ts")).toBe(true);
+  });
+
+  it("matches repeated wildcards in linear time without backtracking", () => {
+    const start = performance.now();
+    expect(matchesGlob(`${"a*".repeat(30)}b`, "a".repeat(200))).toBe(false);
+    expect(matchesGlob(`${"**a".repeat(30)}b`, `${"a/".repeat(100)}c`)).toBe(false);
+    expect(performance.now() - start).toBeLessThan(100);
   });
 });
 

@@ -4,6 +4,7 @@ import { parseRemoteUrl, parseRepoSlug, providerForHost, pullRequestUrl } from "
 test.each([
   ["git@github.com:coldteadotai/pr-lens.git", "coldteadotai", "pr-lens", "github.com", "github"],
   ["https://github.com/coldteadotai/pr-lens.git", "coldteadotai", "pr-lens", "github.com", "github"],
+  ["https://user:token@github.com/coldteadotai/pr-lens.git", "coldteadotai", "pr-lens", "github.com", "github"],
   ["https://github.com/coldteadotai/pr-lens", "coldteadotai", "pr-lens", "github.com", "github"],
   ["ssh://git@github.com/coldteadotai/pr-lens.git", "coldteadotai", "pr-lens", "github.com", "github"],
   ["https://gitlab.example.com/team/group/app.git", "team/group", "app", "gitlab.example.com", "gitlab"],
@@ -16,6 +17,12 @@ test.each([
 
 test("a remote that names no repository is not guessed at", () => {
   expect(parseRemoteUrl("/srv/git/bare-repo")).toBeUndefined();
+});
+
+test("parseRemoteUrl rejects long adversarial inputs without backtracking", () => {
+  const start = performance.now();
+  expect(parseRemoteUrl(`${"a@".repeat(5_000)}host`)).toBeUndefined();
+  expect(performance.now() - start).toBeLessThan(100);
 });
 
 test("--repo-slug takes owner/name and nothing longer", () => {
