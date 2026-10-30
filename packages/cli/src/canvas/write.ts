@@ -17,11 +17,14 @@ export const readApi = (
   env: Record<string, string | undefined>,
 ): string => {
   const api = readString(value, "api") ?? (env[API_ENV] || DEFAULT_API);
+  let parsed: URL;
   try {
-    new URL(api);
+    parsed = new URL(api);
   } catch {
     throw usageError(`--api needs a URL, got ${JSON.stringify(api)}`);
   }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:")
+    throw usageError(`--api needs an http:// or https:// URL, got ${JSON.stringify(api)}`);
   return api.replace(/\/+$/, "");
 };
 

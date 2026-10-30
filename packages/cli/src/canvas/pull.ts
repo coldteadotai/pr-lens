@@ -41,7 +41,13 @@ export const readCanvasRef = (value: string): CanvasRef => {
 
   const [, c, last, ...deeper] = url.pathname.split("/");
   const id = last?.replace(/\.svg$/, "");
-  if (c !== "c" || id === undefined || deeper.length > 0 || !isCanvasId(id))
+  if (
+    (url.protocol !== "https:" && url.protocol !== "http:") ||
+    c !== "c" ||
+    id === undefined ||
+    deeper.length > 0 ||
+    !isCanvasId(id)
+  )
     throw usageError(`${value} is not a canvas URL`, "expected {app}/c/{id}");
 
   const fragment = new URLSearchParams(url.hash.replace(/^#/, ""));

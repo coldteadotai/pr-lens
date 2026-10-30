@@ -9,7 +9,7 @@ import {
   type View,
 } from "@coldtea/pr-lens-schema";
 
-import { readToken } from "../auth.js";
+import { readToken, TOKEN_ENV } from "../auth.js";
 import { readJsonFile } from "../io.js";
 import { readGraphDoc } from "../document.js";
 import type { Terminal } from "../terminal.js";
@@ -356,6 +356,18 @@ const onlyPushed = (registry: CanvasRegistry): Registered => {
 /** One file per canvas, so another open or an `analyze` cannot overwrite the ids answers are checked against. */
 const fetchedDrawingPath = (id: string): string => `${WORKSPACE_DIR}/canvases/${id}.graph.json`;
 
+const matchesConfiguredApi = (api: string, apiFlag: unknown, env: Env): boolean => {
+  try {
+    return new URL(api).origin === new URL(readApi(apiFlag, env)).origin;
+  } catch {
+    return false;
+  }
+};
+
+/** `PR_LENS_TOKEN` belongs to the configured store; a link to another host only uses a sign-in saved for that host. */
+const envForOrigin = (env: Env, api: string, apiFlag: unknown): Env =>
+  matchesConfiguredApi(api, apiFlag, env) ? env : { ...env, [TOKEN_ENV]: undefined };
+
 /** Recorded like a view-link pull, so later commands can find it and check ids against it. */
 const fetchForOpen = async (
   registry: CanvasRegistry,
@@ -372,7 +384,7 @@ const fetchForOpen = async (
   const out = fetchedDrawingPath(id);
   const { fetched, recorded } = await pullCanvas(
     registry,
-    { api, id, writeToken, out, token: await readToken(env, api) },
+    { api, id, writeToken, out, token: await readToken(envForOrigin(env, api, apiFlag), api) },
     terminal,
   ).catch((error: unknown) => {
     throw privateOrMissing(error, id, api);
@@ -417,11 +429,12 @@ export const openLiveCommand = async (args: readonly string[], terminal: Termina
   const [drawing] = positionals;
   const ref = readString(values.canvas, "canvas");
   const { api, selected } = await openTarget(await readRegistry(), drawing, ref, values.api, terminal, env);
+  const scopedEnv = envForOrigin(env, api, values.api);
 
-  const target = await settlePendingRotation(api, selected, terminal, env);
+  const target = await settlePendingRotation(api, selected, terminal, scopedEnv);
   // No credential is fine: the app picks writer or reader, and refuses only a private canvas.
   const writeToken = target.entry.writeToken;
-  const opened = await openLive(api, target.id, writeToken ?? (await readToken(env, api))).catch((error: unknown) => {
+  const opened = await openLive(api, target.id, writeToken ?? (await readToken(scopedEnv, api))).catch((error: unknown) => {
     throw writeToken === undefined ? privateOrMissing(error, target.id, api) : error;
   });
 

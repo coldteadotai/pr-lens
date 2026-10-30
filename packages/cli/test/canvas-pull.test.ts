@@ -118,6 +118,12 @@ test("a link with something that is not a token after #w= is a misuse", async ()
   expect(app.seen).toEqual([]);
 });
 
+test("non-http schemes are rejected as canvas URLs and --api values", async () => {
+  expect(await invoke("canvas", "pull", `file:///c/${FIRST}`)).toBe(2);
+  expect(await invoke("canvas", "pull", FIRST, "--api", "file:///tmp")).toBe(2);
+  expect(app.seen).toEqual([]);
+});
+
 test("a proof made against one entry is not acted on once another command has changed it", async () => {
   expect(await invoke("canvas", "push", "drawn.graph.json", "--api", API)).toBe(
     0,
