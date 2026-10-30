@@ -48,7 +48,7 @@
   },
   "scripts": {
     "prepublishOnly": "pnpm run build",
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && pnpm run schema:emit",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json && pnpm run schema:emit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "schema:emit": "tsx scripts/emit-artifacts.ts",
     "test": "vitest run",
