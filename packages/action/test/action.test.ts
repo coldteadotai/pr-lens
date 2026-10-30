@@ -145,3 +145,17 @@ test("a run without the token is the run there was before", async () => {
     expect(await script(name), `${name} reads the token`).not.toContain("PR_LENS_TOKEN");
   }
 });
+
+test("every npx call isolates npm from the checked-out repository's config and scripts", async () => {
+  const analyze = action.runs.steps.find((step) => step.id === "analyze");
+  expect(analyze?.run).toContain('mkdir -p "${RUNNER_TEMP}/pr-lens"');
+
+  for (const step of action.runs.steps) {
+    const body = step.run ?? "";
+    if (!body.includes("npx")) continue;
+    expect(body, step.name).toContain('--prefix "${RUNNER_TEMP}/pr-lens" --userconfig /dev/null --ignore-scripts');
+  }
+  expect(await script("comment.sh")).toContain(
+    'npx --yes --prefix "${WORK}" --userconfig /dev/null --ignore-scripts "@coldtea/pr-lens-cli@${CLI_VERSION}"',
+  );
+});

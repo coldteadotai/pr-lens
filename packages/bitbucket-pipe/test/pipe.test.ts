@@ -127,7 +127,9 @@ test("the image bakes the CLI at the version the metadata pins", () => {
 test("the script prefers the baked CLI and keeps npx only as the override path", () => {
   expect(script).toContain("command -v pr-lens");
   expect(script).toContain('pr-lens "$@"');
-  expect(script).toContain('npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}"');
+  expect(script).toContain(
+    'npx --yes --prefix "${NPM_PREFIX}" --userconfig /dev/null --ignore-scripts "@coldtea/pr-lens-cli@${CLI_VERSION}"',
+  );
 });
 
 test("the image tag the metadata pins is this package's own version", async () => {

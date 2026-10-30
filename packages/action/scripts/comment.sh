@@ -7,7 +7,7 @@ WORK="${RUNNER_TEMP}/pr-lens"
 BODY="${WORK}/comment.md"
 
 cli() {
-  npx --yes "@coldtea/pr-lens-cli@${CLI_VERSION}" "$@"
+  npx --yes --prefix "${WORK}" --userconfig /dev/null --ignore-scripts "@coldtea/pr-lens-cli@${CLI_VERSION}" "$@"
 }
 
 # Whether this run still describes the pull request as it stands. A run that
