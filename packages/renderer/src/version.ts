@@ -6,4 +6,4 @@
  */
 export const RENDERER_NAME = "@coldtea/pr-lens-renderer";
 
-export const RENDERER_VERSION = "0.4.0";
+export const RENDERER_VERSION = "0.4.1";

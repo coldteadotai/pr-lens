@@ -3,11 +3,12 @@ import { assertNever, parseGraphDoc } from "@coldtea/pr-lens-schema";
 import { postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
 import { union } from "../src/bounds.js";
-import { FLOW_MAX_PULSES_PER_MESSAGE } from "../src/design.js";
+import { FLOW_MAX_PULSES_PER_MESSAGE, TABLE_ROW_HEIGHT } from "../src/design.js";
 import { render, THEMES, type Box, type RenderAtlas } from "../src/index.js";
 import { layoutDataFlow } from "../src/layout/dataflow.js";
 import { resolveScope, type ScopedGraph } from "../src/scope.js";
 import { tiers } from "./tiers.js";
+import { oneStoreGraph } from "./one-store.js";
 
 /** Every lens a document declares that it can actually draw something in. */
 const drawableLenses = (doc: GraphDoc): Lens[] =>
@@ -244,5 +245,34 @@ describe("a node drawn twice", () => {
     expect(Object.keys(atlas.messages)).toEqual(["first", "second"]);
     expect(Object.keys(atlas.messages["first"] ?? {})).toEqual(["enqueue"]);
     expect(Object.keys(atlas.messages["second"] ?? {})).toEqual(["post"]);
+  });
+});
+
+describe("the rows of a table card", () => {
+  const { atlas } = render(oneStoreGraph, { lens: "data-model", theme: "light" });
+
+  it("places every drawn column inside its card, one row height tall, in the card's order", () => {
+    for (const table of oneStoreGraph.dataModel?.tables ?? []) {
+      const card = atlas.tables[table.id];
+      const rows = atlas.columns[table.id];
+      if (card === undefined || rows === undefined) throw new Error(`no card for ${table.id}`);
+
+      const names = table.columns.map((column) => column.name);
+      let previousTop = -Infinity;
+      for (const [name, row] of Object.entries(rows)) {
+        expect(names).toContain(name);
+        expect(row.x).toBe(card.x);
+        expect(row.width).toBe(card.width);
+        expect(row.height).toBe(TABLE_ROW_HEIGHT);
+        expect(row.y).toBeGreaterThan(card.y);
+        expect(row.y + row.height).toBeLessThanOrEqual(card.y + card.height);
+        expect(row.y).toBeGreaterThan(previousTop);
+        previousTop = row.y;
+      }
+    }
+  });
+
+  it("draws the other lenses with no rows at all", () => {
+    expect(render(oneStoreGraph, { lens: "architecture", theme: "light" }).atlas.columns).toEqual({});
   });
 });
