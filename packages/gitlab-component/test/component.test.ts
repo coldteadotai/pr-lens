@@ -151,7 +151,9 @@ test("secrets are named by variable, never taken as values", () => {
 test("the CLI is fetched at the pinned version, the same way the Action does", () => {
   // There is no image and nothing baked: the component runs on whatever
   // `image` the consumer names, and the GitHub Action fetches per run too.
-  expect(script).toContain('npx --yes "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}"');
+  expect(script).toContain(
+    'npx --yes --prefix "${NPM_PREFIX}" --userconfig /dev/null --ignore-scripts "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}"',
+  );
   expect(script).not.toContain("PR_LENS_BAKED_CLI_VERSION");
 });
 

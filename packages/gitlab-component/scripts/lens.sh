@@ -44,6 +44,7 @@ WORK="${PR_LENS_WORK:-$(mktemp -d)}"
 # The variable may name a path that does not exist yet: the component
 # points it inside the project so artifacts: can collect the render.
 mkdir -p "${WORK}"
+NPM_PREFIX="$(mktemp -d)"
 
 cli() {
   # The same fetch the GitHub Action makes on every run. There was a baked-CLI
@@ -53,7 +54,7 @@ cli() {
   # the image bought it at the price of a version pinned by hand in two places,
   # which is a trap that has already sprung once. Fixing it properly means
   # pinning an integrity hash for all three forges, not shipping one image.
-  npx --yes "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}" "$@"
+  npx --yes --prefix "${NPM_PREFIX}" --userconfig /dev/null --ignore-scripts "@coldtea/pr-lens-cli@${PR_LENS_CLI_VERSION}" "$@"
 }
 
 cli analyze \
