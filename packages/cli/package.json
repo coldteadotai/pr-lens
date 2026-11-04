@@ -47,6 +47,7 @@
   "dependencies": {
     "@coldtea/pr-lens-renderer": "workspace:^",
     "@coldtea/pr-lens-schema": "workspace:^",
+    "transliteration": "2.7.0",
     "yaml": "^2.8.1",
     "zod": "^4.6.6"
   },
