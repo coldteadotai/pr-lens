@@ -83,6 +83,9 @@ importers:
       '@coldtea/pr-lens-schema':
         specifier: workspace:^
         version: link:../schema
+      transliteration:
+        specifier: 2.7.0
+        version: 2.7.0
       yaml:
         specifier: ^2.8.1
         version: 2.9.0
@@ -770,6 +773,11 @@ packages:
     resolution: {integrity: sha512-yau8yJdTt989Mm0Bd/236QnzEiPf2xLLTqUZRUJOo/3CB078LSwzei343DgtJVmfJKJE3TMINY1u42SQsP6mXw==}
     engines: {node: '>=14.0.0'}
 
+  transliteration@2.7.0:
+    resolution: {integrity: sha512-rCVoWvYXlRMKdwymthS6IR25z2XQnV3Iad3mQPpC+CEdvF7Q8yhq4a3HRPCIDf42nij2v5w7lItxn6cwqcSKiw==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+
   tsx@4.23.12:
     resolution: {integrity: sha512-FDf4L4sYzKtzWYhU/Xm0AQFdTjdIxNo9ElTf2mxXM6k8YMHXzYUe4yODVaXP4V9uMFbVg8c0qyBccK2OOxb45Q==}
     engines: {node: '>=18.0.0'}
@@ -1304,6 +1312,8 @@ snapshots:
       picomatch: 4.0.5
 
   tinyrainbow@3.1.1: {}
+
+  transliteration@2.7.0: {}
 
   tsx@4.23.12:
     dependencies:

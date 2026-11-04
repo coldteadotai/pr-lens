@@ -15,24 +15,26 @@ import { PrLensCliError, usageError } from "../errors.js";
 import { repositoryRoot } from "../git.js";
 import { writeJsonFile, writeTextFile } from "../io.js";
 import type { Terminal } from "../terminal.js";
-import { slugify } from "../slug.js";
-import { prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
+import { FALLBACK_SLUG, slugify, unicodeFallbackSlug } from "../slug.js";
+import { DRAWN_NAME, prepareWorkspace, WORKSPACE_DIR } from "../workspace.js";
 
 /** Same title, same directory, so a redraw updates its canvas instead of minting one. */
-const defaultOut = (title: string): string => join(WORKSPACE_DIR, slugify(title));
+const defaultOut = async (title: string): Promise<string> => {
+  const slug = slugify(title);
+  const legacy = join(WORKSPACE_DIR, slug);
+  if (slug !== FALLBACK_SLUG) return legacy;
+  const fallback = unicodeFallbackSlug(title);
+  if (fallback === undefined) return legacy;
+
+  // A canvas with a custom name may only be found by its original source path.
+  const previous = await readGraphDoc(join(legacy, DRAWN_NAME)).catch((error: unknown) => {
+    if (error instanceof PrLensCliError) return undefined;
+    throw error;
+  });
+  return previous?.title === title ? legacy : join(WORKSPACE_DIR, fallback);
+};
 
 const MANIFEST = "manifest.json";
-
-/**
- * The document as it was drawn, written beside the manifest.
- *
- * Corrections are applied here, so the document on the way in and the
- * diagrams on the way out can describe different systems — a view whose every
- * element was excluded is drawn by neither. Whatever composes the comment has
- * to read the one the pictures came from, and it is a different file from the
- * one analyze wrote so that neither overwrites the other.
- */
-const DRAWN = "drawn.graph.json";
 
 export const USAGE = `pr-lens render <graph.json> [options]
 
@@ -89,7 +91,7 @@ export const renderCommand = async (args: readonly string[], terminal: Terminal)
   });
 
   const graph = await readGraphDoc(expectOne(positionals, "one graph document to render"));
-  const out = readString(values.out, "out") ?? defaultOut(graph.title);
+  const out = readString(values.out, "out") ?? (await defaultOut(graph.title));
 
   const configPath = readString(values.config, "config");
   const configured = readBoolean(values["no-config"])
@@ -135,7 +137,8 @@ export const renderCommand = async (args: readonly string[], terminal: Terminal)
       throw new PrLensCliError("RENDER_FAILED", `the render named no file for asset '${id}'`);
     await writeTextFile(join(out, path), drawing.svg);
   }
-  await writeJsonFile(join(out, DRAWN), drawn);
+  // Comments need the corrected document that produced the diagrams.
+  await writeJsonFile(join(out, DRAWN_NAME), drawn);
   await writeJsonFile(join(out, MANIFEST), rendered.manifest);
 
   const diagrams = new Set(rendered.assets.map((asset) => asset.asset.view ?? asset.lens));
