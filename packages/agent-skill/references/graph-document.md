@@ -228,7 +228,7 @@ The drill-down tree in the comment: up to 32 at the root, nesting up to 32 child
 }
 ```
 
-`scope` is either `{ "kind": "all" }` (the default) or a selection naming at least one lane, node, edge, flow or table. The two are distinct states on purpose: removing the last element a view pointed at can never quietly turn it into a view of everything. A view's `lens` must be one the document declares.
+`scope` is either `{ "kind": "all" }` (the default) or a selection naming at least one lane, node, edge, flow or table. The two are distinct states on purpose: removing the last element a view pointed at can never quietly turn it into a view of everything. A view's `lens` must be one the document declares. Leave `lanes` out of a selection: a lane draws every node in it, wanted or not.
 
 ### Choosing architecture views
 
@@ -317,11 +317,11 @@ Optional in the format, but write one for anything that is not trivial: more tha
         }
       },
       {
-        "id": "blast-radius",
-        "heading": "4 parts added, 2 removed, across 3 lanes",
-        "body": "A 2,000-person broadcast used to make 2,000 calls to Postmark. It now makes 4.",
-        "stage": { "kind": "view", "view": "overview" },
-        "focus": { "kind": "all" }
+        "id": "old-path-goes-dark",
+        "heading": "processBroadcast and sendSingleEmail removed",
+        "body": "sendBroadcastBulk does their job for whole batches.",
+        "stage": { "kind": "view", "view": "retired-path" },
+        "focus": { "kind": "selection", "nodes": ["process-broadcast", "send-single-email"] }
       }
     ]
   }
@@ -330,14 +330,14 @@ Optional in the format, but write one for anything that is not trivial: more tha
 
 A walkthrough is a short guided tour of the diagrams. It has two to twelve steps. Each step shows one diagram, points at one part of it, and says a few words about it.
 
-Every step is one change, never a description of the diagram: the heading names the thing and what happened to it, built from change words such as added, removed, replaced, now, moved and split, and the body is one line on what that means for behaviour, with the numbers when they matter. The headline change is step one. Write it all for a smart twelve-year-old, in short common words and active voice. The skill page has the rule in full, with examples of a step written well and the same step written badly.
+Every step is one change, never a description of the diagram: the heading names the thing and what happened to it, built from change words such as added, removed, replaced, now, moved and split, and the body is one line on what that means for behaviour, with the numbers when they matter. The headline change is step one and the last step is the last real change. Do not end on a recap: the reader already saw the whole picture when the canvas opened. Write it all for a smart twelve-year-old, in short common words and active voice. The skill page has the rule in full, with examples of a step written well and the same step written badly.
 
 Each step has:
 
 - `heading`: the thing and what happened to it, up to 48 characters, in sentence case. For example "Postmark now gets 500 emails per call".
 - `body`: one line under the heading, up to 140 characters, on what the change means for behaviour. For example "One call per batch instead of one call per person". Required: a heading with no body reads as unfinished.
 - `stage`: which diagram to show. A document can have several diagrams: its views (the drill-down diagrams) and its flows (the sequence diagrams). `{ "kind": "view", "view": "overview" }` shows the view called `overview`. `{ "kind": "flow", "flow": "send-pipeline" }` shows the flow called `send-pipeline`. Leave `stage` out and the step uses the diagram the reader is already on.
-- `focus`: what to zoom in on inside that diagram. `{ "kind": "all" }`, the default, means the whole diagram. A selection means "just these things": name any lanes, nodes, edges, tables or flow steps (`messages`) by id, and the camera zooms to them while everything else dims. A selection must name at least one thing.
+- `focus`: what to zoom in on inside that diagram. `{ "kind": "all" }`, the default, means the whole diagram. A selection means "just these things": name any lanes, nodes, edges, tables or flow steps (`messages`) by id, and the camera zooms to them while everything else dims. A selection must name at least one thing. The canvas lights everything inside one box around what a focus names, so keep it small: up to three nodes and the edges between them on a view of four cards or fewer, one node on a bigger view, and up to three flow steps in a row on a flow. Never name a lane. The skill page has the rule in full.
 - `detail`: optional. One or two sentences under the body, up to 240 characters, that name the parts of the diagram the step is about. `text` is the sentence. `cites` turns words in it into links: each cite has `text`, copied letter for letter from the sentence, and a `ref`. A `ref` is `{ "kind": "node", "node": … }`, `{ "kind": "message", "flow": …, "message": … }`, `{ "kind": "view", "view": … }`, `{ "kind": "flow", "flow": … }`, `{ "kind": "table", "table": … }` or `{ "kind": "column", "table": …, "column": … }`. List cites in the order the sentence says them. A detail has one to eight, and no two use the same words. Do not cite files on a canvas you push: with no pull request behind it, a file link shows as plain words.
 
 The validator checks:

@@ -440,12 +440,12 @@ describe("layout hints survive a correction", () => {
   it("take an excluded node out of the step that pointed at it", () => {
     const corrected = applyCorrections(
       postmarkRefactorGraph,
-      corrections({ exclude: ["id:build-bulk-payload"] }),
+      corrections({ exclude: ["id:send-single-email"] }),
     );
-    const step = corrected.walkthrough?.steps.find(({ id }) => id === "batches-of-500");
+    const step = corrected.walkthrough?.steps.find(({ id }) => id === "old-path-goes-dark");
 
     if (step?.focus.kind !== "selection") throw new Error("expected a selection focus");
-    expect(step.focus.nodes).toEqual(["send-broadcast-bulk", "postmark"]);
+    expect(step.focus.nodes).toEqual(["process-broadcast"]);
   });
 
   it("drop a step whose selection lost its last member", () => {
@@ -465,8 +465,9 @@ describe("layout hints survive a correction", () => {
       }),
     );
     expect(corrected.flows).toEqual([]);
-    expect(stepIds(corrected)).not.toContain("sequence-start-to-finish");
+    expect(stepIds(corrected)).not.toContain("route-queues");
     expect(stepIds(corrected)).not.toContain("four-batch-calls");
+    expect(stepIds(postmarkRefactorGraph)).toContain("route-queues");
   });
 
   it("keep the entries that still name something", () => {

@@ -12,7 +12,7 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
 
    If not expressing a code diff, read the code to be visually represented
 
-2. **Write the document** to `.pr-lens/graph.json`, following `references/graph-document.md`. `references/example.graph.json` is valid reference with three lanes, all four delta states, a hero edge, a seven-step flow, a nested drill-down tree and a six-step walkthrough. Read it before you write your first one. It is quicker than reading the reference. If it is going to a canvas, give every flow step (`messages`) that moves data a `payload` as you write it. "Sample traffic on a flow step" below says what goes in one. Only a flow step carries one. Flows need the `data-flow` lens, so an architecture view draws none. A change that touches a migration, an ORM model or a schema file also gets a `dataModel`, under the `data-model` lens: the tables it changes, a delta per column, and a relation per foreign key. "Data model" in the reference says what goes in one.
+2. **Write the document** to `.pr-lens/graph.json`, following `references/graph-document.md`. `references/example.graph.json` is valid reference with three lanes, all four delta states, a hero edge, a seven-step flow, a nested drill-down tree and a five-step walkthrough. Read it before you write your first one. It is quicker than reading the reference. If it is going to a canvas, give every flow step (`messages`) that moves data a `payload` as you write it. "Sample traffic on a flow step" below says what goes in one. Only a flow step carries one. Flows need the `data-flow` lens, so an architecture view draws none. A change that touches a migration, an ORM model or a schema file also gets a `dataModel`, under the `data-model` lens: the tables it changes, a delta per column, and a relation per foreign key. "Data model" in the reference says what goes in one.
 
 3. **Validate, and fix**
 
@@ -205,17 +205,19 @@ Every child moves down one level and covers a materially narrower scope. Skip em
 
 Keep data-flow views as separate roots rather than nesting them in the architecture tree. Set `defaultOpen: true` on the highest useful architecture view. Lower levels should normally keep the default, `false`.
 
+Scope a child view by its nodes and edges, and leave `lanes` out. A lane in a scope draws every node in that lane, wanted or not, and the lanes your nodes sit in are drawn anyway.
+
 ## Writing a walkthrough
 
 A walkthrough is a short guided tour of the diagrams. It has two to twelve steps. Each step shows one diagram, points at one part of it, and says a few words about it. A canvas plays it, and the reader scrolls through it.
 
 The contract leaves a walkthrough optional. Write one anyway for anything that is not trivial: more than one diagram, a diagram with several changed parts, or any flow. Skip it only when the document is one small diagram whose single step would just repeat the title.
 
-Aim for three to seven steps.
+Aim for three to nine steps.
 
 A walkthrough is the fastest read of a pull request. Each step is one change: something added, changed, removed or moved, in the order a reviewer needs it. A step is never a description of the diagram.
 
-What counts as a step: a behaviour change, an API change, an architecture change, a data-flow change, or an addition. Unchanged parts appear only where a step needs them to make sense. The headline change is step one. An overview of everything touched, if there is one, is the last step.
+What counts as a step: a behaviour change, an API change, an architecture change, a data-flow change, or an addition. Unchanged parts appear only where a step needs them to make sense. The headline change is step one. The last step is the last real change, staged and focused like every other, such as the old path going away or the one thing a person now sees. Do not end on a recap of everything touched. The reader already saw the whole picture when the canvas opened.
 
 ```json
 "walkthrough": {
@@ -236,10 +238,11 @@ What counts as a step: a behaviour change, an API change, an architecture change
       }
     },
     {
-      "id": "blast-radius",
-      "heading": "4 parts added, 2 removed, across 3 lanes",
-      "body": "A 2,000-person broadcast used to make 2,000 calls to Postmark. It now makes 4.",
-      "stage": { "kind": "view", "view": "overview" }
+      "id": "old-path-goes-dark",
+      "heading": "processBroadcast and sendSingleEmail removed",
+      "body": "sendBroadcastBulk does their job for whole batches.",
+      "stage": { "kind": "view", "view": "retired-path" },
+      "focus": { "kind": "selection", "nodes": ["process-broadcast", "send-single-email"] }
     }
   ]
 }
@@ -249,8 +252,8 @@ Each step has:
 
 - `heading`: the thing and what happened to it, up to 48 characters, in sentence case. Build it from change words: added, removed, replaced, now, moved, split. If a heading could have been true before the pull request, it is not a change heading.
 - `body`: one line under the heading, up to 140 characters, on what the change means for behaviour: what happens now that did not before, or what stops happening, with the numbers when they matter. Not a restatement of the heading, and not a description of the code. A heading with no body reads as unfinished, so the body is required.
-- `stage`: which diagram to show. A document can have several diagrams: its views (the drill-down diagrams) and its flows (the sequence diagrams). `{ "kind": "view", "view": "overview" }` shows the view called `overview`. `{ "kind": "flow", "flow": "send-pipeline" }` shows the flow called `send-pipeline`. Leave `stage` out and the step uses the diagram the reader is already on. Open on the widest view with the focus left out, so the reader sees the whole thing before it narrows.
-- `focus`: what to zoom in on inside that diagram. `{ "kind": "all" }`, the default, means the whole diagram. A selection means "just these things": name any lanes, nodes, edges or flow steps (`messages`) by id, and the camera zooms to them while everything else dims. Focus the elements the step's change touched, so the veil lights the change. Point at two or three of them. A step that lights half the diagram has not said anything.
+- `stage`: which diagram to show. A document can have several diagrams: its views (the drill-down diagrams) and its flows (the sequence diagrams). `{ "kind": "view", "view": "overview" }` shows the view called `overview`. `{ "kind": "flow", "flow": "send-pipeline" }` shows the flow called `send-pipeline`. Leave `stage` out and the step uses the diagram the reader is already on. Stage each step on the smallest diagram that draws what it names, usually a child view or a flow.
+- `focus`: what to zoom in on inside that diagram. `{ "kind": "all" }`, the default, means the whole diagram. A selection means "just these things": name nodes, edges or flow steps (`messages`) by id, and the camera zooms to them while everything else dims. Give every step a selection on what its change touched, so the veil lights the change. See "Lighting one change" below for how much one step can name.
 - `detail`: optional. A second sentence under the body, with links into the diagram. See "Links under a step" below.
 
 Write every word for a smart twelve-year-old: short common words, one idea per line, active voice, things named as the diagram names them, numbers as digits. If a line needs a second read, rewrite it. Words like leverages, orchestrates, asynchronous pipeline and fan-out never belong in a step. This holds in whatever language the document is written in.
@@ -262,6 +265,18 @@ The same three steps, written well and written badly. Heading first, then the bo
 | Route now queues the job instead of sending / The API call finishes at once. A worker sends the mail later. | Broadcast fan-out moves behind the queue / The API route now enqueues broadcast jobs for asynchronous batch processing instead of sending emails inline. |
 | Postmark now gets 500 emails per call / One call per batch instead of one call per person. | Batched delivery replaces single sends / The worker leverages the shared library to send emails in chunks of 500 via Postmark's batch endpoint. |
 | processBroadcast and sendSingleEmail removed / sendBroadcastBulk does their job for whole batches. | Single send functions are retired / sendBroadcastBulk replaces processBroadcast and sendSingleEmail to handle bulk deliveries in chunks. |
+
+### Lighting one change
+
+The canvas cuts one box around everything a focus names and lights every card inside that box, named or not. Two things far apart light everything between them, and the reader can no longer tell what the step is about. How much a focus can name depends on the diagram under it:
+
+- On a view that draws four cards or fewer, up to three nodes and the edges between them.
+- On a bigger view, one node.
+- On a flow, up to three flow steps that follow one another. Steps with a gap between them light the steps in the gap.
+
+Count a view's cards before you name a second node: the nodes its scope names, plus both ends of every edge it names. When a step is about two or three nodes (one replacing another, a pair removed together) and its view draws five or more, add a child view of only them and stage the step there, or focus the flow step between them. Name an edge only when the edge is itself the change. Never name a lane in a focus, because it lights every card in that lane.
+
+When a change needs more than one focus can hold, split it into steps, each with its own heading, body and focus. A step that names a page, its route and two services the route calls lights half the diagram. Write one step on the page, one on the route, and one on the flow step that matters.
 
 ### Links under a step
 
@@ -278,7 +293,7 @@ A click on a node or a diagram moves the camera there. A click on a flow step al
 
 Do not cite files. A canvas you push has no pull request behind it, so a file link has nothing to open and shows as plain words.
 
-Leave the detail off the overview step, and off any step where it would only say the body again.
+Leave the detail off any step where it would only say the body again.
 
 Keep consecutive steps on the same stage together. Every change of stage flies the camera across the canvas, so a tour that alternates between two diagrams spends its time travelling.
 

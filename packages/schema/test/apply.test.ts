@@ -425,11 +425,11 @@ const stepIds = (graph: GraphDoc): string[] | undefined =>
 
 describe("carrying a walkthrough through a patch", () => {
   it("drops the members a step focused and keeps the step", () => {
-    const patched = expectApplied([{ op: "remove_node", id: "postmark" }]);
-    const step = patched.walkthrough?.steps.find(({ id }) => id === "batches-of-500");
+    const patched = expectApplied([{ op: "remove_node", id: "send-single-email" }]);
+    const step = patched.walkthrough?.steps.find(({ id }) => id === "old-path-goes-dark");
 
     if (step?.focus.kind !== "selection") throw new Error("expected a selection focus");
-    expect(step.focus.nodes).toEqual(["send-broadcast-bulk", "build-bulk-payload"]);
+    expect(step.focus.nodes).toEqual(["process-broadcast"]);
   });
 
   it("drops a cite of something that goes, and a detail left with nothing to open", () => {
@@ -474,11 +474,10 @@ describe("carrying a walkthrough through a patch", () => {
     const patched = expectApplied([{ op: "remove_node", id: "postmark" }]);
 
     expect(stepIds(patched)).toEqual([
+      "route-queues",
       "batches-of-500",
       "suppression-first",
       "old-path-goes-dark",
-      "sequence-start-to-finish",
-      "blast-radius",
     ]);
   });
 
@@ -489,7 +488,6 @@ describe("carrying a walkthrough through a patch", () => {
       "batches-of-500",
       "suppression-first",
       "old-path-goes-dark",
-      "blast-radius",
     ]);
   });
 
