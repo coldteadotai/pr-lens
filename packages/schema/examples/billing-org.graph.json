@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "0.3.0",
+  "schemaVersion": "0.3.1",
   "kind": "graph",
   "generatedAt": "2026-10-24T09:12:00.000Z",
   "title": "Move subscriptions to organizations",

@@ -1,0 +1,832 @@
+{
+  "schemaVersion": "0.1.0",
+  "kind": "graph",
+  "title": "Per-seat billing replaces metered credits",
+  "summary": "PR Lens switches GitHub installation billing from metered per-run credits with spending caps to licensed per-seat plans (Essentials and Team) with a 5-day trial. Private pull requests are admitted by developer seat rather than monthly credit counters, auto-expanding capacity in Stripe or prompting for approval. New plan selection and seat management routes allow approvers to manage seats, toggling auto-expansion or freeing seats.",
+  "lenses": [
+    "architecture",
+    "data-flow"
+  ],
+  "provenance": {
+    "repo": {
+      "owner": "coldteadotai",
+      "name": "pr-lens-app",
+      "host": "github.com"
+    },
+    "base": {
+      "sha": "0000000000000000000000000000000000000000",
+      "ref": "main"
+    },
+    "head": {
+      "sha": "efadaf409a22a539df0efd4100e4422433e25f94",
+      "ref": "feat/seat-count"
+    },
+    "generator": {
+      "name": "pr-lens",
+      "version": "0.1.0"
+    }
+  },
+  "lanes": [
+    {
+      "id": "client",
+      "label": "Browser",
+      "order": 0
+    },
+    {
+      "id": "web",
+      "label": "Next.js App",
+      "order": 1
+    },
+    {
+      "id": "services",
+      "label": "Services",
+      "order": 2
+    },
+    {
+      "id": "data",
+      "label": "Data Store",
+      "order": 3
+    },
+    {
+      "id": "external",
+      "label": "External",
+      "order": 4
+    }
+  ],
+  "nodes": [
+    {
+      "id": "github-webhook-handler",
+      "label": "GitHub Webhook",
+      "kind": "route",
+      "delta": "modified",
+      "lane": "web",
+      "summary": "Ingests GitHub events and enforces plan admission before triggering draw workflows.",
+      "files": [
+        {
+          "path": "src/app/api/webhooks/github/route.ts"
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "seat-admission",
+      "label": "Seat Admission",
+      "kind": "module",
+      "delta": "added",
+      "lane": "services",
+      "summary": "Admits private pull requests based on 5-day trial status or available developer seats.",
+      "files": [
+        {
+          "path": "src/seats/admit.ts",
+          "startLine": 1,
+          "endLine": 69
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "seat-record",
+      "label": "Seat Record",
+      "kind": "module",
+      "delta": "added",
+      "lane": "services",
+      "summary": "Tracks active developer seats for an installation within a monthly Redis hash.",
+      "files": [
+        {
+          "path": "src/seats/record.ts",
+          "startLine": 1,
+          "endLine": 77
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "billing-service",
+      "label": "Billing Service",
+      "kind": "service",
+      "delta": "modified",
+      "lane": "services",
+      "summary": "Coordinates installation plans, seat provisioning, approver controls, and trial tracking.",
+      "files": [
+        {
+          "path": "src/billing/installation.ts",
+          "startLine": 1,
+          "endLine": 365
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "stripe-client",
+      "label": "Stripe Client",
+      "kind": "module",
+      "delta": "modified",
+      "lane": "services",
+      "summary": "Calls Stripe API for subscriptions, seat quantity prorations, and checkout sessions.",
+      "files": [
+        {
+          "path": "src/billing/stripe.ts",
+          "startLine": 1,
+          "endLine": 268
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "rate-limiter",
+      "label": "Rate Limiter",
+      "kind": "module",
+      "delta": "modified",
+      "lane": "services",
+      "summary": "Enforces weekly fair-use windows for open source and legacy installations.",
+      "files": [
+        {
+          "path": "src/ratelimit/index.ts",
+          "startLine": 1,
+          "endLine": 224
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "seats-page",
+      "label": "Seats Page",
+      "kind": "route",
+      "delta": "modified",
+      "lane": "web",
+      "summary": "Renders seat assignments, approver listings, and plan configuration.",
+      "files": [
+        {
+          "path": "src/app/upgrade/done/page.tsx",
+          "startLine": 1,
+          "endLine": 235
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "seats-action-route",
+      "label": "Seats Action Route",
+      "kind": "route",
+      "delta": "added",
+      "lane": "web",
+      "summary": "Handles seat count updates, seat releases, and approver assignment.",
+      "files": [
+        {
+          "path": "src/app/upgrade/seats/route.ts",
+          "startLine": 1,
+          "endLine": 125
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "plan-selection-page",
+      "label": "Plan Selection Page",
+      "kind": "route",
+      "delta": "added",
+      "lane": "web",
+      "summary": "Allows users to select between Essentials and Team plans before Stripe checkout.",
+      "files": [
+        {
+          "path": "src/app/upgrade/page.tsx",
+          "startLine": 1,
+          "endLine": 100
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "checkout-route",
+      "label": "Checkout Route",
+      "kind": "route",
+      "delta": "modified",
+      "lane": "web",
+      "summary": "Creates licensed seat checkout sessions in Stripe.",
+      "files": [
+        {
+          "path": "src/app/upgrade/checkout/route.ts"
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "limit-route",
+      "label": "Limit Route",
+      "kind": "route",
+      "delta": "removed",
+      "lane": "web",
+      "summary": "Previously updated monthly spending caps for metered billing.",
+      "files": [
+        {
+          "path": "src/app/upgrade/limit/route.ts"
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "comment-manager",
+      "label": "Comment Manager",
+      "kind": "module",
+      "delta": "modified",
+      "lane": "services",
+      "summary": "Composes PR comment annotations displaying trial countdowns or seat limits.",
+      "files": [
+        {
+          "path": "src/comment/composer.ts",
+          "startLine": 74,
+          "endLine": 465
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "redis-store",
+      "label": "Redis Store",
+      "kind": "datastore",
+      "delta": "modified",
+      "lane": "data",
+      "summary": "Stores installation plans, monthly seat hashes, trials, and billing locks.",
+      "files": [
+        {
+          "path": "src/store/keys.ts",
+          "startLine": 57,
+          "endLine": 75
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "stripe-api",
+      "label": "Stripe API",
+      "kind": "external",
+      "delta": "unchanged",
+      "lane": "external",
+      "files": [],
+      "badges": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "webhook-to-seat-admit",
+      "from": "github-webhook-handler",
+      "to": "seat-admission",
+      "kind": "call",
+      "delta": "added",
+      "label": "admits private PR",
+      "emphasis": "hero",
+      "animated": true,
+      "files": []
+    },
+    {
+      "id": "seat-admit-to-billing",
+      "from": "seat-admission",
+      "to": "billing-service",
+      "kind": "call",
+      "delta": "added",
+      "label": "takes seat",
+      "emphasis": "normal",
+      "animated": true,
+      "files": []
+    },
+    {
+      "id": "seat-admit-to-record",
+      "from": "seat-admission",
+      "to": "seat-record",
+      "kind": "call",
+      "delta": "added",
+      "label": "records author",
+      "emphasis": "normal",
+      "animated": true,
+      "files": []
+    },
+    {
+      "id": "billing-to-stripe",
+      "from": "billing-service",
+      "to": "stripe-client",
+      "kind": "call",
+      "delta": "modified",
+      "label": "updates seat quantity",
+      "emphasis": "normal",
+      "animated": true,
+      "files": []
+    },
+    {
+      "id": "billing-to-redis",
+      "from": "billing-service",
+      "to": "redis-store",
+      "kind": "data",
+      "delta": "modified",
+      "label": "plans and locks",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "seat-record-to-redis",
+      "from": "seat-record",
+      "to": "redis-store",
+      "kind": "data",
+      "delta": "added",
+      "label": "monthly seats hash",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "stripe-client-to-api",
+      "from": "stripe-client",
+      "to": "stripe-api",
+      "kind": "http",
+      "delta": "modified",
+      "label": "seat subscription items",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "seats-action-to-billing",
+      "from": "seats-action-route",
+      "to": "billing-service",
+      "kind": "call",
+      "delta": "added",
+      "label": "updates count / approvers",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "seats-action-to-record",
+      "from": "seats-action-route",
+      "to": "seat-record",
+      "kind": "call",
+      "delta": "added",
+      "label": "frees seat",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "plan-selection-to-checkout",
+      "from": "plan-selection-page",
+      "to": "checkout-route",
+      "kind": "call",
+      "delta": "added",
+      "label": "submits choice",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "checkout-to-stripe",
+      "from": "checkout-route",
+      "to": "stripe-client",
+      "kind": "call",
+      "delta": "modified",
+      "label": "creates seat checkout",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    },
+    {
+      "id": "webhook-to-comment",
+      "from": "github-webhook-handler",
+      "to": "comment-manager",
+      "kind": "call",
+      "delta": "modified",
+      "label": "trial ended / seats full",
+      "emphasis": "normal",
+      "animated": false,
+      "files": []
+    }
+  ],
+  "flows": [
+    {
+      "id": "seat-admission-flow",
+      "title": "Admitting a private pull request by seat",
+      "delta": "added",
+      "participants": [
+        {
+          "node": "github-webhook-handler"
+        },
+        {
+          "node": "seat-admission"
+        },
+        {
+          "node": "billing-service"
+        },
+        {
+          "node": "stripe-client"
+        },
+        {
+          "node": "seat-record"
+        }
+      ],
+      "messages": [
+        {
+          "id": "msg-admit-seat",
+          "from": "github-webhook-handler",
+          "to": "seat-admission",
+          "label": "admitSeat",
+          "kind": "sync",
+          "delta": "added",
+          "animated": true,
+          "files": []
+        },
+        {
+          "id": "msg-take-seat",
+          "from": "seat-admission",
+          "to": "billing-service",
+          "label": "takeSeat",
+          "kind": "sync",
+          "delta": "added",
+          "animated": true,
+          "files": []
+        },
+        {
+          "id": "msg-expand-stripe",
+          "from": "billing-service",
+          "to": "stripe-client",
+          "label": "setSeatQuantity",
+          "kind": "sync",
+          "delta": "added",
+          "animated": true,
+          "files": []
+        },
+        {
+          "id": "msg-record-seat",
+          "from": "seat-admission",
+          "to": "seat-record",
+          "label": "recordSeat",
+          "kind": "sync",
+          "delta": "added",
+          "animated": true,
+          "files": []
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "filesChanged": 52,
+    "additions": 2464,
+    "deletions": 1256,
+    "chips": []
+  },
+  "views": [
+    {
+      "id": "architecture-overview",
+      "title": "Container view — Architecture",
+      "lens": "architecture",
+      "scope": {
+        "kind": "selection",
+        "lanes": [
+          "web",
+          "services",
+          "data",
+          "external"
+        ],
+        "nodes": [
+          "github-webhook-handler",
+          "seat-admission",
+          "billing-service",
+          "seats-action-route",
+          "plan-selection-page",
+          "checkout-route",
+          "limit-route",
+          "comment-manager",
+          "stripe-client",
+          "redis-store",
+          "stripe-api"
+        ],
+        "edges": [
+          "webhook-to-seat-admit",
+          "seat-admit-to-billing",
+          "billing-to-stripe",
+          "billing-to-redis",
+          "stripe-client-to-api",
+          "seats-action-to-billing",
+          "plan-selection-to-checkout",
+          "checkout-to-stripe",
+          "webhook-to-comment"
+        ],
+        "flows": []
+      },
+      "defaultOpen": true,
+      "children": [
+        {
+          "id": "seat-admission-component",
+          "title": "Component view — Seat admission & tracking",
+          "lens": "architecture",
+          "summary": "Internal modules managing seat validation, seat taking under billing locks, and Redis storage",
+          "scope": {
+            "kind": "selection",
+            "lanes": [
+              "services",
+              "data",
+              "external"
+            ],
+            "nodes": [
+              "seat-admission",
+              "seat-record",
+              "billing-service",
+              "stripe-client",
+              "redis-store",
+              "stripe-api"
+            ],
+            "edges": [
+              "seat-admit-to-billing",
+              "seat-admit-to-record",
+              "seat-record-to-redis",
+              "billing-to-stripe",
+              "billing-to-redis",
+              "stripe-client-to-api"
+            ],
+            "flows": []
+          },
+          "defaultOpen": false,
+          "children": []
+        },
+        {
+          "id": "seat-management-component",
+          "title": "Component view — Web upgrade & seat controls",
+          "lens": "architecture",
+          "summary": "Web routes and pages allowing plan selection, checkout, and approver seat controls",
+          "scope": {
+            "kind": "selection",
+            "lanes": [
+              "web",
+              "services"
+            ],
+            "nodes": [
+              "seats-page",
+              "seats-action-route",
+              "plan-selection-page",
+              "checkout-route",
+              "limit-route",
+              "billing-service",
+              "seat-record"
+            ],
+            "edges": [
+              "plan-selection-to-checkout",
+              "seats-action-to-billing",
+              "seats-action-to-record"
+            ],
+            "flows": []
+          },
+          "defaultOpen": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "walkthrough": {
+    "steps": [
+      {
+        "id": "seat-admission-replaces-credits",
+        "heading": "Seat admission replaces metered draw credits",
+        "body": "Private pull requests now check seats or trial status instead of consuming monthly credit counters.",
+        "stage": {
+          "kind": "flow",
+          "flow": "seat-admission-flow"
+        },
+        "focus": {
+          "kind": "selection",
+          "lanes": [],
+          "nodes": [],
+          "edges": [],
+          "messages": [
+            "msg-admit-seat",
+            "msg-take-seat"
+          ]
+        },
+        "detail": {
+          "text": "GitHub Webhook calls admitSeat in src/seats/admit.ts and takes a seat via Billing Service.",
+          "cites": [
+            {
+              "text": "GitHub Webhook",
+              "ref": {
+                "kind": "node",
+                "node": "github-webhook-handler"
+              }
+            },
+            {
+              "text": "admitSeat",
+              "ref": {
+                "kind": "message",
+                "flow": "seat-admission-flow",
+                "message": "msg-admit-seat"
+              }
+            },
+            {
+              "text": "src/seats/admit.ts",
+              "ref": {
+                "kind": "file",
+                "path": "src/seats/admit.ts"
+              }
+            },
+            {
+              "text": "Billing Service",
+              "ref": {
+                "kind": "node",
+                "node": "billing-service"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "automatic-seat-expansion",
+        "heading": "New developers now expand seat count in Stripe",
+        "body": "When all seats are in use and mode is automatic, PR Lens increments subscription quantity with prorations.",
+        "stage": {
+          "kind": "flow",
+          "flow": "seat-admission-flow"
+        },
+        "focus": {
+          "kind": "selection",
+          "lanes": [],
+          "nodes": [],
+          "edges": [],
+          "messages": [
+            "msg-expand-stripe",
+            "msg-record-seat"
+          ]
+        },
+        "detail": {
+          "text": "Billing Service calls setSeatQuantity in src/billing/stripe.ts and records the developer in Seat Record.",
+          "cites": [
+            {
+              "text": "Billing Service",
+              "ref": {
+                "kind": "node",
+                "node": "billing-service"
+              }
+            },
+            {
+              "text": "setSeatQuantity",
+              "ref": {
+                "kind": "message",
+                "flow": "seat-admission-flow",
+                "message": "msg-expand-stripe"
+              }
+            },
+            {
+              "text": "src/billing/stripe.ts",
+              "ref": {
+                "kind": "file",
+                "path": "src/billing/stripe.ts"
+              }
+            },
+            {
+              "text": "Seat Record",
+              "ref": {
+                "kind": "node",
+                "node": "seat-record"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "plan-selection-route-added",
+        "heading": "Plan selection page added before checkout",
+        "body": "Users now choose between Essentials and Team with a starting seat count rather than subscribing to metered credits.",
+        "stage": {
+          "kind": "view",
+          "view": "seat-management-component"
+        },
+        "focus": {
+          "kind": "selection",
+          "lanes": [],
+          "nodes": [
+            "plan-selection-page",
+            "checkout-route"
+          ],
+          "edges": [
+            "plan-selection-to-checkout"
+          ],
+          "messages": []
+        },
+        "detail": {
+          "text": "Plan Selection Page in src/app/upgrade/page.tsx forwards chosen plan and seats to Checkout Route.",
+          "cites": [
+            {
+              "text": "Plan Selection Page",
+              "ref": {
+                "kind": "node",
+                "node": "plan-selection-page"
+              }
+            },
+            {
+              "text": "src/app/upgrade/page.tsx",
+              "ref": {
+                "kind": "file",
+                "path": "src/app/upgrade/page.tsx"
+              }
+            },
+            {
+              "text": "Checkout Route",
+              "ref": {
+                "kind": "node",
+                "node": "checkout-route"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "seats-action-controls-added",
+        "heading": "Seat management and approver controls added",
+        "body": "Approvers can now adjust seats, change expansion modes, assign approvers, or free inactive seats.",
+        "stage": {
+          "kind": "view",
+          "view": "seat-management-component"
+        },
+        "focus": {
+          "kind": "selection",
+          "lanes": [],
+          "nodes": [
+            "seats-action-route",
+            "seats-page"
+          ],
+          "edges": [
+            "seats-action-to-billing",
+            "seats-action-to-record"
+          ],
+          "messages": []
+        },
+        "detail": {
+          "text": "Seats Action Route in src/app/upgrade/seats/route.ts checks approver permissions and updates Billing Service.",
+          "cites": [
+            {
+              "text": "Seats Action Route",
+              "ref": {
+                "kind": "node",
+                "node": "seats-action-route"
+              }
+            },
+            {
+              "text": "src/app/upgrade/seats/route.ts",
+              "ref": {
+                "kind": "file",
+                "path": "src/app/upgrade/seats/route.ts"
+              }
+            },
+            {
+              "text": "Billing Service",
+              "ref": {
+                "kind": "node",
+                "node": "billing-service"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "spending-limit-route-removed",
+        "heading": "Spending limit route removed",
+        "body": "Monthly spending caps and per-credit charges are deleted in favour of fixed seat counts.",
+        "stage": {
+          "kind": "view",
+          "view": "seat-management-component"
+        },
+        "focus": {
+          "kind": "selection",
+          "lanes": [],
+          "nodes": [
+            "limit-route"
+          ],
+          "edges": [],
+          "messages": []
+        },
+        "detail": {
+          "text": "Removed Limit Route in src/app/upgrade/limit/route.ts, replacing dollar thresholds with seat allocations.",
+          "cites": [
+            {
+              "text": "Limit Route",
+              "ref": {
+                "kind": "node",
+                "node": "limit-route"
+              }
+            },
+            {
+              "text": "src/app/upgrade/limit/route.ts",
+              "ref": {
+                "kind": "file",
+                "path": "src/app/upgrade/limit/route.ts"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "whole-change-overview",
+        "heading": "Everything this change touched",
+        "body": "The new seat admission and tracking services, plan selection flows, and comment updates in one picture.",
+        "focus": {
+          "kind": "all"
+        }
+      }
+    ]
+  }
+}

@@ -25,10 +25,12 @@ Decide where the diagram lands before you write it: a canvas, or an SVG and a pu
 4. **Render.**
 
    ```bash
-   npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json --theme light
+   npx @coldtea/pr-lens-cli@latest render .pr-lens/graph.json
    ```
 
-   Render light by default unless the user requests another theme. The SVGs, the manifest and `drawn.graph.json` land in a directory of their own under `.pr-lens/`, named after the document's title. The render prints that path, so read it from there. The CLI adds `.pr-lens/` to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
+   This draws the light and dark pair, which is what GitHub takes in step 5; the stills attached on their own there are the light half. Render with `--theme neutral` only for GitLab or Bitbucket, as step 5 says. The SVGs, the manifest and `drawn.graph.json` land in a directory of their own under `.pr-lens/`, named after the document's title. The render prints that path, so read it from there. The CLI adds `.pr-lens/` to the repository's .gitignore. Do not commit any of it. These files are rebuilt from the diff whenever anyone wants them again. Each SVG is named after its view, the theme and a content hash; `manifest.json` lists them by lens and view, so read the names from there or from the directory.
+
+   A document with a walkthrough also gets the walkthrough embed, `walkthrough-light-<hash>.svg` and `walkthrough-dark-<hash>.svg`: the whole tour as one animated SVG that plays by itself wherever an image shows, flying between the diagrams with each step's caption above. `manifest.json` lists the two under `walkthrough`.
 
    If the user asked for a diagram, an explanation or a picture of the architecture and nothing more, put it on a canvas and hand back the link:
 
@@ -53,12 +55,13 @@ How the diagram gets there depends on the forge. Run `git remote get-url origin`
    ```markdown
    Moves bulk sending off the per-recipient trigger and onto a batch endpoint.
 
-   ![Architecture after this change: the queue route, the new bulk sender and the retired per-recipient path](.pr-lens/overview-light-4f9bd6c1.svg)
+   ![Walkthrough of this change in six steps: the queue route, the new bulk sender and the retired per-recipient path](.pr-lens/batch-broadcast-sends/walkthrough-light-4f9bd6c1.svg)
    ```
 
    ```bash
    gh pr create --title "Batch broadcast sends" --body-file .pr-lens/body.md \
-     --attach .pr-lens/overview-light-4f9bd6c1.svg
+     --attach .pr-lens/batch-broadcast-sends/walkthrough-light-4f9bd6c1.svg \
+     --attach .pr-lens/batch-broadcast-sends/walkthrough-dark-4f9bd6c1.svg
    ```
 
    On a pull request that already exists, `gh pr edit <number>` with the same two flags puts the diagram in the description, and `gh pr comment <number>` puts it in a comment. Repeat `--attach` for each diagram the body references.
@@ -68,7 +71,20 @@ How the diagram gets there depends on the forge. Run `git remote get-url origin`
    - The alt text is the caption a reader without images gets. Say what the diagram shows, in one line.
    - `--attach` arrived in GitHub CLI 2.99. Check with `gh --version` before you write a body around it.
 
-   Attach the views a reviewer needs and leave the rest in `.pr-lens/`: the top architecture view first, then a data flow if the change has a sequence worth following. A body with four diagrams reads worse than one with two, except the four are really needed to understand the change e.g., in the case of a complex feature or refactor.
+   Attach the walkthrough embed first when the document has one. It plays the tour in the pull request itself, so a reviewer reads the change before reading the diff, with nothing to open. It opens on the top architecture view and tours the rest, so do not attach that view beside it; the two would show the same picture twice. Then a data flow, if the change has a sequence worth following and the tour does not already dwell on it. A document with no walkthrough gets the top architecture view first instead, then the data flow. Leave the rest in `.pr-lens/`. A body with four diagrams reads worse than one with two, except when the four are really needed to understand the change, as with a complex feature or refactor.
+
+   The embed sits on the page's own colour and is drawn once per theme, so a dark-mode reader given the light half sees dark captions on a dark page. GitHub chooses between the two halves only through a `<picture>` pair, and gh leaves HTML alone, so the pair takes one more step. Pass both halves to `--attach`, as above: the light one is the Markdown image the body references, and the dark one, referenced nowhere, lands at the end of the body as a Markdown image of its own. Read the body back, take the two `https://github.com/user-attachments/assets/...` URLs, light first, and replace both image lines with the pair, on one line, since a newline inside the `<a>` shows as a stray underline:
+
+   ```html
+   <a href="LIGHT_URL"><picture><source media="(prefers-color-scheme: dark)" srcset="DARK_URL"><img alt="Walkthrough of this change, in six steps" src="LIGHT_URL" width="870"></picture></a>
+   ```
+
+   ```bash
+   gh pr view <number> --json body --jq .body
+   gh pr edit <number> --body-file .pr-lens/body.md
+   ```
+
+   For a comment, `gh pr comment <number> --edit-last --body-file .pr-lens/body.md` rewrites the one you just posted. The stills keep the single Markdown image, since each carries its own ground.
 
    **GitLab.** Nothing uploads the file with the description for you, so upload each SVG to the project first. The response includes the Markdown to paste into the description:
 
@@ -81,7 +97,7 @@ How the diagram gets there depends on the forge. Run `git remote get-url origin`
    glab mr create --title "Batch broadcast sends" --description "$(cat .pr-lens/body.md)"
    ```
 
-An uploaded image loads for every reader of the merge request. A raw file URL on a private project does not. The catch is that the attachment URL is the permission: it is unguessable, but anyone who has it can see the diagram, member or not. Tell the user this if the project is private. GitLab strips `<picture>`, so render with `--theme neutral` and reference that single SVG. The neutral render has its own background and reads in both light and dark mode. Either half of the light/dark pair looks wrong in one of them.
+An uploaded image loads for every reader of the merge request. A raw file URL on a private project does not. The catch is that the attachment URL is the permission: it is unguessable, but anyone who has it can see the diagram, member or not. Tell the user this if the project is private. GitLab strips `<picture>`, so render with `--theme neutral` and reference that single SVG. The neutral render has its own background and reads in both light and dark mode. Either half of the light/dark pair looks wrong in one of them. There is no neutral walkthrough embed, so GitLab and Bitbucket get the stills.
 
    **Bitbucket.** Comments and descriptions are plain Markdown with no HTML, so there are no collapsible sections or theme pairs. Render with `--theme neutral` here too. Publish the SVGs somewhere durable, such as the repository's Downloads or a canvas, and reference them as ordinary Markdown images.
 
@@ -186,7 +202,7 @@ After `answer`, `show` and `fork`, the CLI says where the reader is. If it says 
 
 ## The pull request body, when there is one
 
-A reviewer should understand the change before reading the diff, so the diagram goes where they look first: the description, not a trailing comment. Open with one sentence on why the change exists, then the architecture diagram, then whatever proves the change works, such as a screenshot of the result or a recording of the interaction. Use one visual per idea. A diagram that needs a paragraph of explanation has a document problem; go back to step 2.
+A reviewer should understand the change before reading the diff, so the diagram goes where they look first: the description, not a trailing comment. Open with one sentence on why the change exists, then the walkthrough embed, or the architecture diagram when the document has no walkthrough, then whatever proves the change works, such as a screenshot of the result or a recording of the interaction. Use one visual per idea. A diagram that needs a paragraph of explanation has a document problem; go back to step 2.
 
 ## What makes a document worth reading
 
@@ -388,7 +404,7 @@ Seven rules cannot be expressed in JSON Schema and are checked only by the parse
 When someone says the diagram is wrong (a node is misnamed, a folder should not be on it, something sits in the wrong lane), do not edit the generated document. It is regenerated on every run. Write the correction into `.github/pr-lens.yml`, which is an overlay applied over fresh inference every time:
 
 ```yaml
-schemaVersion: 0.3.0
+schemaVersion: 0.3.1
 map:
   rename:
     - match: functions/src/broadcast/sendBroadcastBulk.ts

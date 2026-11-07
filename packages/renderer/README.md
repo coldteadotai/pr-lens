@@ -77,6 +77,21 @@ The atlas is as deterministic as the SVG. Same document, same boxes, in the same
 
 Each lens fills in what it draws. The architecture lens places lanes, cards and edges and no flow step; the data-flow lens places the cards heading its columns and the steps of each flow, and no lane or edge. A node the same render draws twice, heading a column in two stacked flows, gets the box covering both of them: a reader sent to that node is being sent to all of it. A card's box is the card, not the badge strip above it, which is context a veil may dim.
 
+## The walkthrough embed
+
+```ts
+import { renderWalkthroughEmbed } from "@coldtea/pr-lens-renderer";
+
+const result = renderWalkthroughEmbed(doc, { theme: "dark" });
+if (result.type === "rendered") write(result.embed.svg);
+```
+
+A document's walkthrough as one animated SVG, 870 wide, for a surface that shows images and runs no script: a pull request comment, a README. The caption above the stage is styled as a GitHub alert, the camera flies between the diagrams on the canvas's own path and at its pace, and the context outside each step's focus is dimmed through a mask rather than a veil, because the picture cannot know the colour of the page it lands on. The tour plays twice and rests on its last step, caption and all; under `prefers-reduced-motion` it is that still. Only the diagrams the tour visits travel with it.
+
+The result is `absent` for a document with no walkthrough and `unresolvable`, with the steps at fault, for one whose tour points at something its diagrams do not draw. `renderAll` draws the embed for each half of the pair it was asked for and lists it under `walkthrough` in the manifest; a `neutral` render gets none, since the embed is transparent and tuned per half.
+
+The canvas and the embed share the strip layout, the camera and the walkthrough resolution (`stripLayout`, `frame`, `interpolateFlight`, `resolveWalkthrough`), so a step framed on one lands the same way on the other. A browser bundle imports them from `@coldtea/pr-lens-renderer/walkthrough`, which reaches nothing of node; `planTiles` and the embed itself stay on the root entry, since they draw.
+
 ## Corrections
 
 A repository's `.github/pr-lens.yml` is an overlay, applied here before layout and never written back into inference, so a correction keeps holding as the code moves:

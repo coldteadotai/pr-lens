@@ -12,6 +12,10 @@ import { assertNever, THEMES, THEME_PAIR, type Theme } from "@coldtea/pr-lens-sc
  */
 export { THEMES, THEME_PAIR, type Theme };
 
+export type PairTheme = (typeof THEME_PAIR)[number];
+
+export const isPairTheme = (theme: Theme): theme is PairTheme => THEME_PAIR.some((half) => half === theme);
+
 /**
  * Every colour the renderer can paint, resolved to a literal before it
  * reaches the document. CSS custom properties would be shorter, but GitHub

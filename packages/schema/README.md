@@ -28,6 +28,8 @@ Every document carries a `schemaVersion`, config included: a repository's correc
 
 ## Views and the render they imply
 
+A manifest also lists the walkthrough embed under `walkthrough`, one entry per half of the theme pair, when the document carries a tour; it sits beside the view assets rather than among them, so it never counts against the view cap below.
+
 A render is one asset per view per theme, so the size of a drill-down tree and the size of a render manifest are one rule, not two numbers:
 
 ```ts
@@ -276,6 +278,8 @@ They tell one story: a real refactor that moved broadcast sending from one Postm
 Contract `0.2.0` added `payload` on a flow step: sample traffic, as JSON values, for a step that moves data.
 
 Contract `0.3.0` added the `data-model` lens and `dataModel` on a document: the tables a change touched and the keys between them, with `tables` in view scopes and step focuses and `table` and `column` cites.
+
+Contract `0.3.1` added `walkthrough` to a render manifest: the walkthrough embed, one entry per half of the theme pair, beside the view assets.
 
 ---
 

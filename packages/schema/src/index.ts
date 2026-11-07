@@ -93,7 +93,7 @@ export {
   type MarkdownDialect,
 } from "./provider.js";
 
-export { RenderAsset, RenderManifest, type RenderManifestInput } from "./manifest.js";
+export { RenderAsset, RenderManifest, WalkthroughAsset, type RenderManifestInput } from "./manifest.js";
 
 export {
   formatIssues,

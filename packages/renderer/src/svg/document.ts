@@ -51,7 +51,8 @@ const TONES = ["added", "modified", "removed", "neutral"] as const satisfies rea
  * fires and forgets. The open head anchors at its tip so the line runs all
  * the way into the point, where a filled head covers its own line end.
  */
-const markers = (palette: Palette): string =>
+/** Exported so a document nesting several pictures can define the arrowheads once. */
+export const markerDefs = (palette: Palette): string =>
   TONES.map(
     (tone) =>
       wrap(
@@ -120,7 +121,7 @@ export const svgDocument = (input: {
       "pattern",
       { id: "dots", width: DOT_PITCH, height: DOT_PITCH, patternUnits: "userSpaceOnUse" },
       tag("circle", { cx: 1.5, cy: 1.5, r: 1, fill: palette.dot }),
-    ) + markers(palette),
+    ) + markerDefs(palette),
   );
 
   return lines([

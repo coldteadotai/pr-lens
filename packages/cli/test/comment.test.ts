@@ -3,13 +3,14 @@ import { minimalGraph, postmarkRefactorGraph, postmarkRefactorManifest } from "@
 import { expect, test } from "vitest";
 import { COMMENT_MARKER, commentMarker, composeComment } from "../src/comment.js";
 
-const localManifest = (assets: RenderManifestInput["assets"]) =>
+const localManifest = (assets: RenderManifestInput["assets"], walkthrough: RenderManifestInput["walkthrough"] = []) =>
   parseRenderManifest({
     schemaVersion: "0.1.0",
     kind: "render-manifest",
     graph: { contentHash: "6a1f0b8c7d2e4359" },
     renderer: { name: "@coldtea/pr-lens-renderer", version: "0.1.0" },
     assets,
+    walkthrough,
   });
 
 const asset = (overrides: Partial<RenderManifestInput["assets"][number]>) => ({
@@ -35,6 +36,51 @@ test("the comment opens with the marker that lets a second run find it", () => {
 
   expect(body.split("\n")[0]).toBe(COMMENT_MARKER);
   expect(body).toContain(postmarkRefactorGraph.title);
+});
+
+const walkthroughAsset = (theme: "light" | "dark") => ({
+  id: `walkthrough-${theme}`,
+  theme,
+  mediaType: "image/svg+xml" as const,
+  contentHash: "4b2d9e6f1a7c8350",
+  bytes: 70_000,
+  width: 870,
+  height: 442,
+  steps: 6,
+  path: `walkthrough-${theme}.svg`,
+});
+
+const withWalkthrough = (assets: RenderManifestInput["assets"]) =>
+  localManifest(assets, [walkthroughAsset("light"), walkthroughAsset("dark")]);
+
+test("the walkthrough embed plays where the architecture still would have stood", () => {
+  const body = composeComment({
+    graph: minimalGraph,
+    manifest: withWalkthrough([
+      asset({}),
+      asset({ id: "architecture-dark", theme: "dark", path: "architecture-dark.svg" }),
+    ]),
+    assetBaseUrl: "https://example.com/a",
+    branding: true,
+  });
+
+  expect(body).toContain('<a href="https://example.com/a/walkthrough-light.svg"><picture>');
+  expect(body).toContain('srcset="https://example.com/a/walkthrough-dark.svg"');
+  expect(body).toContain('<img alt="Walkthrough of Touch the health check, in six steps" src="https://example.com/a/walkthrough-light.svg" width="870">');
+  expect(body).not.toContain("architecture-light.svg");
+});
+
+test("a single-image surface keeps its still, since the embed is drawn for the pair alone", () => {
+  const manifest = withWalkthrough([
+    asset({}),
+    asset({ id: "architecture-neutral", theme: "neutral", path: "architecture-neutral.svg" }),
+  ]);
+
+  for (const target of ["gitlab", "bitbucket"] as const) {
+    const body = composeComment({ graph: minimalGraph, manifest, assetBaseUrl: "https://example.com/a", branding: true, target });
+    expect(body, target).toContain("architecture-neutral.svg");
+    expect(body, target).not.toContain("walkthrough-light.svg");
+  }
 });
 
 test("a light and a dark render become one picture, so both GitHub themes read", () => {

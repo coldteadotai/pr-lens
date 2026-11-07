@@ -5,7 +5,8 @@ import {
   type MarkdownDialect,
   type Provider,
 } from "@coldtea/pr-lens-schema";
-import type { GraphDoc, Lens, RenderAsset, RenderManifest, View } from "@coldtea/pr-lens-schema";
+import type { GraphDoc, Lens, RenderAsset, RenderManifest, View, WalkthroughAsset } from "@coldtea/pr-lens-schema";
+import { walkthroughLabel } from "@coldtea/pr-lens-renderer";
 import { PrLensCliError } from "./errors.js";
 
 /**
@@ -114,7 +115,10 @@ const proseMd = (value: string): string =>
     .replace(/<(?=[A-Za-z/!?])/g, "<\u200B")
     .replace(/([@#])(?=[\w-])/g, "$1\u200B");
 
-const href = (asset: RenderAsset, assetBaseUrl: string | undefined): string => {
+/** What showing an asset needs. The view assets and the walkthrough embed both have it. */
+type Pictured = Pick<RenderAsset, "id" | "url" | "path" | "width">;
+
+const href = (asset: Pictured, assetBaseUrl: string | undefined): string => {
   if (asset.url !== undefined) return asset.url;
   if (asset.path === undefined || assetBaseUrl === undefined)
     throw new PrLensCliError(
@@ -127,13 +131,13 @@ const href = (asset: RenderAsset, assetBaseUrl: string | undefined): string => {
 };
 
 /** A bare markdown destination: the characters that would end or nest it are percent-encoded. */
-const hrefMd = (asset: RenderAsset, assetBaseUrl: string | undefined): string =>
+const hrefMd = (asset: Pictured, assetBaseUrl: string | undefined): string =>
   href(asset, assetBaseUrl).replace(/[<>() ]/g, (found) => `%${found.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
 
 type ThemePair = {
-  light: RenderAsset | undefined;
-  dark: RenderAsset | undefined;
-  neutral: RenderAsset | undefined;
+  light: Pictured | undefined;
+  dark: Pictured | undefined;
+  neutral: Pictured | undefined;
 };
 
 const EMPTY_PAIR: ThemePair = { light: undefined, dark: undefined, neutral: undefined };
@@ -147,6 +151,17 @@ const pairsByLens = (assets: readonly RenderAsset[]): Map<Lens, ThemePair> => {
   return pairs;
 };
 
+/** The embed is drawn for the pair only, so a single-image surface keeps its still. */
+const walkthroughPair = (
+  manifest: RenderManifest,
+  surface: HtmlSurface,
+): { light: WalkthroughAsset; dark: WalkthroughAsset } | undefined => {
+  if (surface.themeStrategy !== "pair") return undefined;
+  const light = manifest.walkthrough.find((asset) => asset.theme === "light");
+  const dark = manifest.walkthrough.find((asset) => asset.theme === "dark");
+  return light === undefined || dark === undefined ? undefined : { light, dark };
+};
+
 /**
  * The one asset a single-image surface shows.
  *
@@ -156,8 +171,7 @@ const pairsByLens = (assets: readonly RenderAsset[]): Map<Lens, ThemePair> => {
  * light` by hand: better a diagram tuned for the wrong ground than no
  * diagram, but it is a fallback and not the intent.
  */
-const single = (pair: ThemePair): RenderAsset | undefined =>
-  pair.neutral ?? pair.light ?? pair.dark;
+const single = (pair: ThemePair): Pictured | undefined => pair.neutral ?? pair.light ?? pair.dark;
 
 /**
  * A `<picture>` is what makes one comment readable in both GitHub themes: the
@@ -287,9 +301,16 @@ const composeHtml = (
   const assets = byView(manifest);
   const roots = pairsByLens(assets.get(ROOT) ?? []);
 
+  // The embed opens on the architecture picture, so that still would appear twice.
+  const embed = walkthroughPair(manifest, surface);
+  const tour =
+    embed === undefined
+      ? []
+      : [picture({ ...embed, neutral: undefined }, walkthroughLabel(graph.title, embed.light.steps), assetBaseUrl, surface)];
+
   const diagrams = graph.lenses.flatMap((lens) => {
     const pair = roots.get(lens);
-    return pair === undefined
+    return pair === undefined || (lens === "architecture" && embed !== undefined)
       ? []
       : [picture(pair, `${graph.title} — ${lensLabel(lens)}`, assetBaseUrl, surface)];
   });
@@ -304,6 +325,7 @@ const composeHtml = (
     `<h3>${text(graph.title, surface.dialect)}</h3>`,
     graph.summary === undefined ? "" : `<p>${text(graph.summary, surface.dialect)}</p>`,
     statsLine(graph, surface),
+    ...tour,
     ...diagrams,
     ...graph.views.slice(0, keptViews).map((view) => viewSection(view, assets, assetBaseUrl, surface)),
     omitted === 0

@@ -3,9 +3,10 @@ import {
   PrLensRenderError,
   renderAll,
   THEME_PAIR,
+  walkthroughRefusal,
   type RenderThemes,
 } from "@coldtea/pr-lens-renderer";
-import { safeParseGraphDoc, type Config, type GraphDoc } from "@coldtea/pr-lens-schema";
+import { assertNever, safeParseGraphDoc, type Config, type GraphDoc } from "@coldtea/pr-lens-schema";
 import { join } from "node:path";
 import { expectOne, parseOptions, readBoolean, readString } from "../args.js";
 import { discoverConfig, loadConfig } from "../config-file.js";
@@ -40,7 +41,9 @@ export const USAGE = `pr-lens render <graph.json> [options]
 
 Draws the document as self-contained SVGs — one per drill-down section per
 lens, in light and dark — and writes the manifest describing them. A document
-with no sections gets one diagram per lens it declares.
+with no sections gets one diagram per lens it declares. A document with a
+walkthrough also gets the walkthrough embed: the tour as one animated SVG per
+theme, which a pull request comment plays in place of the top diagram.
 
   -o, --out <dir>      where the SVGs, the document and the manifest go
                        (default ${WORKSPACE_DIR}/<title>/, one directory per drawing)
@@ -131,18 +134,36 @@ export const renderCommand = async (args: readonly string[], terminal: Terminal)
 
   await prepareWorkspace(out, terminal);
 
-  for (const drawing of rendered.assets) {
-    const { id, path } = drawing.asset;
-    if (path === undefined)
-      throw new PrLensCliError("RENDER_FAILED", `the render named no file for asset '${id}'`);
-    await writeTextFile(join(out, path), drawing.svg);
-  }
+  const write = async ({ asset, svg }: { asset: { id: string; path?: string | undefined }; svg: string }): Promise<void> => {
+    if (asset.path === undefined)
+      throw new PrLensCliError("RENDER_FAILED", `the render named no file for asset '${asset.id}'`);
+    await writeTextFile(join(out, asset.path), svg);
+  };
+
+  for (const drawing of rendered.assets) await write(drawing);
+
+  const embeds = await (async (): Promise<string> => {
+    switch (rendered.walkthrough.type) {
+      case "absent":
+        return "";
+      case "unresolvable":
+        terminal.err(`${walkthroughRefusal(rendered.walkthrough.issues)} The walkthrough embed was not drawn.`);
+        return "";
+      case "rendered": {
+        for (const embed of rendered.walkthrough.assets) await write(embed);
+        return ` and the walkthrough embed in ${rendered.walkthrough.assets.length === 1 ? "one theme" : "both themes"}`;
+      }
+      default:
+        return assertNever(rendered.walkthrough, "Unhandled walkthrough render");
+    }
+  })();
+
   // Comments need the corrected document that produced the diagrams.
   await writeJsonFile(join(out, DRAWN_NAME), drawn);
   await writeJsonFile(join(out, MANIFEST), rendered.manifest);
 
   const diagrams = new Set(rendered.assets.map((asset) => asset.asset.view ?? asset.lens));
   terminal.out(
-    `✓ ${join(out, MANIFEST)} — ${rendered.assets.length} SVGs across ${diagrams.size} ${diagrams.size === 1 ? "diagram" : "diagrams"}${configured === undefined ? "" : `, corrected by ${configured.path}`}`,
+    `✓ ${join(out, MANIFEST)} — ${rendered.assets.length} SVGs across ${diagrams.size} ${diagrams.size === 1 ? "diagram" : "diagrams"}${embeds}${configured === undefined ? "" : `, corrected by ${configured.path}`}`,
   );
 };
