@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/coldteadotai/pr-lens/main/packages/schema/json-schema/patch-doc.schema.json",
   "title": "PR Lens patch document",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "object",
   "properties": {
     "schemaVersion": {
       "type": "string",
       "pattern": "^0\\.(1|2|3)\\.\\d+$",
-      "description": "Contract version the document targets. Current: 0.3.0."
+      "description": "Contract version the document targets. Current: 0.3.1."
     },
     "kind": {
       "type": "string",

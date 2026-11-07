@@ -6,7 +6,7 @@
  * with semver semantics: patch/minor releases only ever add optional fields
  * or widen an enum, a major release may remove or retype a field.
  */
-export const SCHEMA_VERSION = "0.3.0" as const;
+export const SCHEMA_VERSION = "0.3.1" as const;
 
 export type SchemaVersion = typeof SCHEMA_VERSION;
 

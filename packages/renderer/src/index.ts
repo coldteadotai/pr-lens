@@ -1,15 +1,29 @@
 export { RENDERER_NAME, RENDERER_VERSION } from "./version.js";
 
+export { render, type RenderedSvg, type RenderOptions } from "./render.js";
+
 export {
-  render,
   renderAll,
   type RenderAllOptions,
-  type RenderThemes,
   type RenderAllResult,
   type RenderedAsset,
-  type RenderedSvg,
-  type RenderOptions,
-} from "./render.js";
+  type RenderedWalkthrough,
+  type RenderedWalkthroughs,
+  type RenderThemes,
+} from "./render-all.js";
+
+export {
+  EMBED_WIDTH,
+  renderWalkthroughEmbed,
+  walkthroughLabel,
+  type WalkthroughEmbed,
+  type WalkthroughEmbedOptions,
+  type WalkthroughEmbedResult,
+} from "./walkthrough/embed.js";
+
+export { planTiles, renderFlow, type TilePlan } from "./walkthrough/tiles.js";
+
+export * from "./walkthrough/index.js";
 
 export { emptyAtlas, type RenderAtlas } from "./atlas.js";
 
@@ -17,9 +31,10 @@ export { PrLensRenderError, type RenderErrorCode } from "./errors.js";
 
 export type { Box } from "./geometry.js";
 
-export { paletteFor, THEMES, THEME_PAIR, type Palette, type Theme } from "./theme.js";
+export { isPairTheme, paletteFor, THEMES, THEME_PAIR, type PairTheme, type Palette, type Theme } from "./theme.js";
 
 export {
+  assetIdentity,
   buildManifest,
   canonicalJson,
   contentHash,
@@ -27,6 +42,8 @@ export {
   graphContentHash,
   renderAssetFileName,
   renderAssetId,
+  walkthroughAssetFileName,
+  walkthroughAssetId,
   type AssetAddress,
 } from "./manifest.js";
 

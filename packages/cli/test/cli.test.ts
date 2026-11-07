@@ -1,5 +1,6 @@
 import { graphContentHash } from "@coldtea/pr-lens-renderer";
 import { parseGraphDoc, parseRenderManifest } from "@coldtea/pr-lens-schema";
+import { postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -207,6 +208,23 @@ test("rendering writes every SVG the manifest promises, and the manifest validat
     const svg = await readFile(join(directory, asset.path ?? ""), "utf8");
     expect(svg.startsWith("<svg")).toBe(true);
     expect(svg).not.toContain("<script");
+  }
+});
+
+test("a document with a walkthrough also gets the embed, one file per theme, listed in the manifest", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pr-lens-render-"));
+
+  expect(await invoke("render", GOLDEN, "--out", directory, "--no-config")).toBe(0);
+  expect(out.join("\n")).toContain("and the walkthrough embed in both themes");
+
+  const manifest = parseRenderManifest(JSON.parse(await readFile(join(directory, "manifest.json"), "utf8")));
+  expect(manifest.walkthrough.map((asset) => asset.theme)).toEqual(["light", "dark"]);
+
+  for (const asset of manifest.walkthrough) {
+    const svg = await readFile(join(directory, asset.path ?? ""), "utf8");
+    expect(svg.startsWith("<svg")).toBe(true);
+    expect(svg).toContain("@keyframes cam{");
+    expect(asset.steps).toBe(postmarkRefactorGraph.walkthrough?.steps.length);
   }
 });
 

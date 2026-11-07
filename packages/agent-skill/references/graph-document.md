@@ -10,7 +10,7 @@ Every schema here is **strict**: an unknown key is a rejection, not a warning. A
 
 ```json
 {
-  "schemaVersion": "0.3.0",
+  "schemaVersion": "0.3.1",
   "kind": "graph",
   "title": "Batch broadcast sending through Postmark",
   "summary": "One paragraph answering: what does this change do?",

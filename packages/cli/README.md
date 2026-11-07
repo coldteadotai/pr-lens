@@ -77,6 +77,8 @@ pr-lens render .pr-lens/graph.json
 
 Draws the document as self-contained light and dark SVGs (one pair per drill-down section per lens, or one pair per lens when the document has no sections), and writes two files beside them: `manifest.json`, which says what was drawn and under which file name, and `drawn.graph.json`, the document those pictures actually show.
 
+A document with a walkthrough also gets the walkthrough embed, in light and dark: the tour as one animated SVG, which flies the same strip the canvas lays out, on the same path and at the same pace, with each step's caption above it. It plays wherever an image shows and needs no script, so a pull request comment can carry the tour itself rather than a still and a link. `manifest.json` lists the pair under `walkthrough`. A `--theme neutral` render draws none, because the embed sits on the page's own colour and the neutral render is for a surface that cannot say what that is.
+
 Both matter to what comes next. The manifest is where `comment` gets its file names, so neither command re-derives the other's. And `drawn.graph.json` exists because this is where corrections are applied: excluding a node can empty out a whole drill-down section, and the renderer then draws no picture for it. A comment composed from the document that went _in_ would announce a section that came out of nothing.
 
 The SVGs carry no script and no external reference, and the same document renders to the same bytes every time. `--theme light` or `--theme dark` draws one half of the pair.
@@ -90,7 +92,7 @@ pr-lens comment --graph .pr-lens/<drawing>/drawn.graph.json --manifest .pr-lens/
   --asset-base-url https://raw.githubusercontent.com/owner/repo/pr-lens/42
 ```
 
-Composes the markdown (the `<picture>` pairs that read in both GitHub themes, the headline chips, the nested `<details>` tree) and prints it. Each diagram links to itself: a comment column is about 830 pixels wide and a system with several lanes is several times that, so it arrives scaled to fit and one click gives a reader the size the labels were drawn at. The two files have to belong to each other: the manifest records the hash of the document it came from, and a mismatched pair is refused rather than composed into a comment describing diagrams nobody drew. It posts nothing; posting is the caller's business, and `--print-marker` gives that caller the hidden marker that identifies an existing comment to update.
+Composes the markdown (the `<picture>` pairs that read in both GitHub themes, the headline chips, the nested `<details>` tree) and prints it. When the manifest lists the walkthrough embed, the comment plays it where the architecture still would have stood, since the tour opens on that picture; GitLab and Bitbucket keep the still, as the embed has no neutral render. Each diagram links to itself: a comment column is about 830 pixels wide and a system with several lanes is several times that, so it arrives scaled to fit and one click gives a reader the size the labels were drawn at. The two files have to belong to each other: the manifest records the hash of the document it came from, and a mismatched pair is refused rather than composed into a comment describing diagrams nobody drew. It posts nothing; posting is the caller's business, and `--print-marker` gives that caller the hidden marker that identifies an existing comment to update.
 
 ### `validate`
 

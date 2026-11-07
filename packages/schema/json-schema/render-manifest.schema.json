@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/coldteadotai/pr-lens/main/packages/schema/json-schema/render-manifest.schema.json",
   "title": "PR Lens render manifest",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "object",
   "properties": {
     "schemaVersion": {
       "type": "string",
       "pattern": "^0\\.(1|2|3)\\.\\d+$",
-      "description": "Contract version the document targets. Current: 0.3.0."
+      "description": "Contract version the document targets. Current: 0.3.1."
     },
     "kind": {
       "type": "string",
@@ -80,6 +80,41 @@
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
             "description": "Stable identifier, unique within its collection in a document."
           },
+          "mediaType": {
+            "type": "string",
+            "const": "image/svg+xml"
+          },
+          "contentHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{16,64}$",
+            "description": "Hash of the asset bytes; the identity of this render."
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "url": {
+            "description": "Where the asset is published, once it has been uploaded.",
+            "type": "string",
+            "format": "uri"
+          },
+          "path": {
+            "description": "Local path, for surfaces that write files instead of uploading.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
           "lens": {
             "type": "string",
             "enum": [
@@ -105,6 +140,53 @@
             "maxLength": 128,
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"
           },
+          "animated": {
+            "default": false,
+            "description": "Contains SMIL animation.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "mediaType",
+          "contentHash",
+          "bytes",
+          "width",
+          "height",
+          "lens",
+          "theme"
+        ],
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "url"
+            ]
+          },
+          {
+            "required": [
+              "path"
+            ]
+          }
+        ],
+        "description": "One rendered SVG."
+      }
+    },
+    "walkthrough": {
+      "default": [],
+      "description": "The walkthrough embed, one per theme of the pair; empty when the document has no walkthrough.",
+      "maxItems": 2,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+            "description": "Stable identifier, unique within its collection in a document."
+          },
           "mediaType": {
             "type": "string",
             "const": "image/svg+xml"
@@ -129,11 +211,6 @@
             "minimum": 1,
             "maximum": 9007199254740991
           },
-          "animated": {
-            "default": false,
-            "description": "Contains SMIL animation.",
-            "type": "boolean"
-          },
           "url": {
             "description": "Where the asset is published, once it has been uploaded.",
             "type": "string",
@@ -144,17 +221,31 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 1024
+          },
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "description": "Half of a <picture> pair."
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 12,
+            "description": "How many steps the embed plays."
           }
         },
         "required": [
           "id",
-          "lens",
-          "theme",
           "mediaType",
           "contentHash",
           "bytes",
           "width",
-          "height"
+          "height",
+          "theme",
+          "steps"
         ],
         "additionalProperties": false,
         "anyOf": [
@@ -169,7 +260,7 @@
             ]
           }
         ],
-        "description": "One rendered SVG."
+        "description": "The document's walkthrough, rendered as one animated SVG."
       }
     }
   },

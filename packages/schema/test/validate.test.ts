@@ -662,3 +662,39 @@ describe("the data model", () => {
     expect(pruned).toBeUndefined();
   });
 });
+
+describe("the walkthrough embed in a manifest", () => {
+  const manifest = (walkthrough?: unknown) => ({
+    ...postmarkRefactorManifestInput,
+    ...(walkthrough === undefined ? {} : { walkthrough }),
+  });
+
+  const embed = (theme: string) => ({
+    id: `walkthrough-${theme}`,
+    theme,
+    mediaType: "image/svg+xml",
+    contentHash: "4b2d9e6f1a7c8350",
+    bytes: 70_000,
+    width: 870,
+    height: 442,
+    steps: 6,
+    path: `walkthrough-${theme}.svg`,
+  });
+
+  it("is an empty list on a manifest written before the embed existed", () => {
+    const parsed = safeParseRenderManifest(manifest());
+    expect(parsed.ok && parsed.value.walkthrough).toEqual([]);
+  });
+
+  it("carries one entry per half of the pair", () => {
+    const parsed = safeParseRenderManifest(manifest([embed("light"), embed("dark")]));
+    expect(parsed.ok && parsed.value.walkthrough.map((asset) => asset.theme)).toEqual(["light", "dark"]);
+  });
+
+  it("needs a url or a path, and a step count a walkthrough could have", () => {
+    const { path, ...homeless } = embed("light");
+    expect(safeParseRenderManifest(manifest([homeless])).ok).toBe(false);
+    expect(safeParseRenderManifest(manifest([{ ...embed("light"), steps: 1 }])).ok).toBe(false);
+    expect(safeParseRenderManifest(manifest([{ ...embed("light"), url: "https://cdn.example.com/w.svg" }])).ok).toBe(true);
+  });
+});

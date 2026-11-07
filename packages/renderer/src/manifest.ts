@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import type { GraphDoc, Lens, RenderAsset, RenderManifest } from "@coldtea/pr-lens-schema";
+import type { GraphDoc, Lens, RenderAsset, RenderManifest, WalkthroughAsset } from "@coldtea/pr-lens-schema";
 import { SCHEMA_VERSION } from "@coldtea/pr-lens-schema";
-import { THEMES, type Theme } from "./theme.js";
+import { THEMES, type PairTheme, type Theme } from "./theme.js";
 import { RENDERER_NAME, RENDERER_VERSION } from "./version.js";
 
 /**
@@ -22,6 +22,12 @@ export const CONTENT_HASH_LENGTH = 32;
  */
 export const contentHash = (bytes: string): string =>
   createHash("sha256").update(bytes, "utf8").digest("hex").slice(0, CONTENT_HASH_LENGTH);
+
+/** The one place an asset's bytes become its identity. */
+export const assetIdentity = (svg: string): { contentHash: string; bytes: number } => ({
+  contentHash: contentHash(svg),
+  bytes: Buffer.byteLength(svg, "utf8"),
+});
 
 /** JSON with object keys in sorted order, so equal documents hash equal. */
 export const canonicalJson = (value: unknown): string => {
@@ -106,7 +112,17 @@ export const renderAssetId = ({ lens, theme, view }: AssetAddress): string =>
 export const renderAssetFileName = (address: AssetAddress, hash: string): string =>
   `${renderAssetId(address)}-${hash}.svg`;
 
-export const buildManifest = (doc: GraphDoc, assets: readonly RenderAsset[]): RenderManifest => ({
+/** Listed apart from the view assets, so a view called "walkthrough" cannot collide with it. */
+export const walkthroughAssetId = (theme: PairTheme): string => `walkthrough-${theme}`;
+
+export const walkthroughAssetFileName = (theme: PairTheme, hash: string): string =>
+  `${walkthroughAssetId(theme)}-${hash}.svg`;
+
+export const buildManifest = (
+  doc: GraphDoc,
+  assets: readonly RenderAsset[],
+  walkthrough: readonly WalkthroughAsset[],
+): RenderManifest => ({
   schemaVersion: SCHEMA_VERSION,
   kind: "render-manifest",
   graph: {
@@ -116,4 +132,5 @@ export const buildManifest = (doc: GraphDoc, assets: readonly RenderAsset[]): Re
   },
   renderer: { name: RENDERER_NAME, version: RENDERER_VERSION },
   assets: [...assets],
+  walkthrough: [...walkthrough],
 });
