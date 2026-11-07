@@ -228,7 +228,7 @@ The drill-down tree in the comment: up to 32 at the root, nesting up to 32 child
 }
 ```
 
-`scope` is either `{ "kind": "all" }` (the default) or a selection naming at least one lane, node, edge, flow or table. The two are distinct states on purpose: removing the last element a view pointed at can never quietly turn it into a view of everything. A view's `lens` must be one the document declares. Leave `lanes` out of a selection: a lane draws every node in it, wanted or not.
+`scope` is either `{ "kind": "all" }` (the default) or a selection naming at least one node, edge, flow or table. The two are distinct states on purpose: removing the last element a view pointed at can never quietly turn it into a view of everything. A view's `lens` must be one the document declares. A selection may also name lanes, but leave them out: a lane draws every node in it, wanted or not.
 
 ### Choosing architecture views
 
