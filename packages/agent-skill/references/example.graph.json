@@ -570,79 +570,6 @@
   "walkthrough": {
     "steps": [
       {
-        "id": "batches-of-500",
-        "heading": "sendBroadcastBulk and buildBulkPayload added",
-        "body": "Nothing loops over recipients any more. The sender works on a whole batch at a time.",
-        "stage": {
-          "kind": "view",
-          "view": "overview"
-        },
-        "focus": {
-          "kind": "selection",
-          "lanes": [],
-          "nodes": [
-            "send-broadcast-bulk",
-            "build-bulk-payload",
-            "postmark"
-          ],
-          "edges": [],
-          "messages": [],
-          "tables": []
-        }
-      },
-      {
-        "id": "suppression-first",
-        "heading": "getSuppressedEmails added before the send",
-        "body": "It pulls the blocked addresses once, before any batch is built.",
-        "stage": {
-          "kind": "view",
-          "view": "new-batch-path"
-        },
-        "focus": {
-          "kind": "selection",
-          "lanes": [],
-          "nodes": [
-            "get-suppressed-emails",
-            "postmark"
-          ],
-          "edges": [],
-          "messages": [],
-          "tables": []
-        }
-      },
-      {
-        "id": "old-path-goes-dark",
-        "heading": "processBroadcast and sendSingleEmail removed",
-        "body": "sendBroadcastBulk does their job for whole batches.",
-        "stage": {
-          "kind": "view",
-          "view": "overview"
-        },
-        "focus": {
-          "kind": "selection",
-          "lanes": [],
-          "nodes": [
-            "process-broadcast",
-            "send-single-email"
-          ],
-          "edges": [],
-          "messages": [],
-          "tables": []
-        }
-      },
-      {
-        "id": "sequence-start-to-finish",
-        "heading": "The send sequence gained 6 new steps",
-        "body": "The queue write is the only step that was there before, and it now stamps the batch size.",
-        "stage": {
-          "kind": "flow",
-          "flow": "send-pipeline"
-        },
-        "focus": {
-          "kind": "all"
-        }
-      },
-      {
         "id": "four-batch-calls",
         "heading": "Postmark now gets 500 emails per call",
         "body": "One call per batch, and Postmark answers with a result for each message.",
@@ -663,15 +590,80 @@
         }
       },
       {
-        "id": "blast-radius",
-        "heading": "4 parts added, 2 removed, across 3 lanes",
-        "body": "A 2,000-person broadcast used to make 2,000 calls to Postmark. It now makes 4.",
+        "id": "route-queues",
+        "heading": "Route now queues the job instead of sending",
+        "body": "The API call finishes at once. A worker sends the mail later.",
         "stage": {
-          "kind": "view",
-          "view": "overview"
+          "kind": "flow",
+          "flow": "send-pipeline"
         },
         "focus": {
-          "kind": "all"
+          "kind": "selection",
+          "lanes": [],
+          "nodes": [],
+          "edges": [],
+          "messages": [
+            "enqueue"
+          ],
+          "tables": []
+        }
+      },
+      {
+        "id": "batches-of-500",
+        "heading": "sendBroadcastBulk added for whole batches",
+        "body": "Nothing loops over recipients any more. The sender works on a whole batch at a time.",
+        "stage": {
+          "kind": "view",
+          "view": "new-batch-path"
+        },
+        "focus": {
+          "kind": "selection",
+          "lanes": [],
+          "nodes": [
+            "send-broadcast-bulk"
+          ],
+          "edges": [],
+          "messages": [],
+          "tables": []
+        }
+      },
+      {
+        "id": "suppression-first",
+        "heading": "getSuppressedEmails added before the send",
+        "body": "It pulls the blocked addresses once, before any batch is built.",
+        "stage": {
+          "kind": "view",
+          "view": "new-batch-path"
+        },
+        "focus": {
+          "kind": "selection",
+          "lanes": [],
+          "nodes": [
+            "get-suppressed-emails"
+          ],
+          "edges": [],
+          "messages": [],
+          "tables": []
+        }
+      },
+      {
+        "id": "old-path-goes-dark",
+        "heading": "processBroadcast and sendSingleEmail removed",
+        "body": "sendBroadcastBulk does their job for whole batches.",
+        "stage": {
+          "kind": "view",
+          "view": "retired-path"
+        },
+        "focus": {
+          "kind": "selection",
+          "lanes": [],
+          "nodes": [
+            "process-broadcast",
+            "send-single-email"
+          ],
+          "edges": [],
+          "messages": [],
+          "tables": []
         }
       }
     ]

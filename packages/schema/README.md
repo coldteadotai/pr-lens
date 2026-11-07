@@ -109,10 +109,11 @@ walkthrough: {
       },
     },
     {
-      id: "blast-radius",
-      heading: "4 parts added, 2 removed, across 3 lanes",
-      body: "A 2,000-person broadcast used to make 2,000 calls to Postmark. It now makes 4.",
-      stage: { kind: "view", view: "overview" },
+      id: "old-path-goes-dark",
+      heading: "processBroadcast and sendSingleEmail removed",
+      body: "sendBroadcastBulk does their job for whole batches.",
+      stage: { kind: "view", view: "retired-path" },
+      focus: { kind: "selection", nodes: ["process-broadcast", "send-single-email"] },
     },
   ],
 }

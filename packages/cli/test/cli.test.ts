@@ -103,7 +103,7 @@ test("a command's --help prints that command's usage", async () => {
 test("a valid document validates, and says what it holds", async () => {
   expect(await invoke("validate", GOLDEN)).toBe(0);
   expect(out.join("\n")).toContain("10 nodes");
-  expect(out.join("\n")).toContain("6 walkthrough steps");
+  expect(out.join("\n")).toContain("5 walkthrough steps");
 });
 
 /**
