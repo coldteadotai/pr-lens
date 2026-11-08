@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "0.1.0",
+  "kind": "graph",
+  "title": "Checkout rate limits",
+  "lenses": ["architecture"],
+  "provenance": {
+    "repo": { "owner": "coldteadotai", "name": "pr-lens" },
+    "base": { "sha": "1111111" },
+    "head": { "sha": "2222222" }
+  },
+  "lanes": [
+    { "id": "web", "label": "Web" },
+    { "id": "api", "label": "API" },
+    { "id": "store", "label": "Storage" },
+    { "id": "external", "label": "External" }
+  ],
+  "nodes": [
+    { "id": "checkout-ui", "label": "Checkout page", "kind": "ui", "delta": "added", "lane": "web", "files": [{ "path": "web/Checkout.tsx" }] },
+    { "id": "cart-ui", "label": "Cart drawer", "kind": "ui", "delta": "modified", "lane": "web", "files": [{ "path": "web/Cart.tsx" }] },
+    { "id": "orders-api", "label": "Orders API routes", "kind": "route", "delta": "added", "lane": "api", "files": [{ "path": "api/orders.ts" }] },
+    { "id": "auth-routes", "label": "Auth routes", "kind": "route", "delta": "added", "lane": "api", "files": [{ "path": "api/auth.ts" }] },
+    { "id": "session-store", "label": "Session store", "kind": "module", "delta": "added", "lane": "api", "files": [{ "path": "api/sessions.ts" }] },
+    { "id": "rate-limiter", "label": "Rate limiter", "kind": "module", "delta": "modified", "lane": "api", "files": [{ "path": "api/limits.ts" }] },
+    { "id": "redis", "label": "Redis", "kind": "cache", "delta": "modified", "lane": "store", "files": [{ "path": "api/redis.ts" }] },
+    { "id": "payments", "label": "Payments API", "kind": "external", "delta": "unchanged", "lane": "external", "files": [] }
+  ],
+  "edges": [
+    { "id": "cart-to-checkout", "from": "cart-ui", "to": "checkout-ui", "kind": "render", "delta": "added", "label": "opens checkout" },
+    { "id": "checkout-to-orders", "from": "checkout-ui", "to": "orders-api", "kind": "http", "delta": "added", "label": "POST /orders" },
+    { "id": "checkout-to-auth", "from": "checkout-ui", "to": "auth-routes", "kind": "http", "delta": "added", "label": "signs in" },
+    { "id": "auth-to-session", "from": "auth-routes", "to": "session-store", "kind": "call", "delta": "added", "label": "stores session" },
+    { "id": "orders-to-session", "from": "orders-api", "to": "session-store", "kind": "call", "delta": "added", "label": "reads session" },
+    { "id": "orders-to-limiter", "from": "orders-api", "to": "rate-limiter", "kind": "call", "delta": "added", "label": "checks limits" },
+    { "id": "session-to-redis", "from": "session-store", "to": "redis", "kind": "data", "delta": "added", "label": "persists" },
+    { "id": "limiter-to-redis", "from": "rate-limiter", "to": "redis", "kind": "data", "delta": "modified", "label": "counts" },
+    { "id": "auth-to-payments", "from": "auth-routes", "to": "payments", "kind": "http", "delta": "added", "label": "exchanges token" },
+    { "id": "orders-to-payments", "from": "orders-api", "to": "payments", "kind": "http", "delta": "added", "label": "charges card" }
+  ]
+}
