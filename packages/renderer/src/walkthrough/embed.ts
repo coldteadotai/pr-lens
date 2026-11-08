@@ -57,13 +57,14 @@ const SAMPLES = 16;
 
 const EASE_OUT = "cubic-bezier(0.23,1,0.32,1)";
 
-const HEADING_SIZE = 17.5;
-const BODY_SIZE = 16;
-const LINE_HEIGHT = 22;
+/** GitHub shows the embed at about 0.95, so the body lands near its 14px text. */
+const HEADING_SIZE = 16;
+const BODY_SIZE = 14.5;
+const LINE_HEIGHT = 20;
 const BODY_X = 16;
 const HEADING_X = 40;
 const HEADING_Y = 26;
-const BODY_Y = 52;
+const BODY_Y = 49;
 const CAPTION_FOOT = 12;
 /** Short of the full width, since system fonts run up to 8% wider than the width table's face. */
 const CAPTION_WIDTH = 770;
@@ -94,7 +95,7 @@ const tokensFor = (theme: PairTheme): Tokens => {
         accent: "#3fb950",
         track: "rgba(240,246,252,.14)",
         rim: "rgba(230,237,243,.34)",
-        dim: ".24",
+        dim: ".42",
         card: false,
       };
     case "light":
@@ -103,7 +104,7 @@ const tokensFor = (theme: PairTheme): Tokens => {
         accent: "#1a7f37",
         track: "rgba(31,35,40,.14)",
         rim: "rgba(31,35,40,.5)",
-        dim: ".42",
+        dim: ".55",
         card: true,
       };
     default:
@@ -138,9 +139,23 @@ const target = (focus: ResolvedFocus, box: StripBox): { rect: Box; policy: Frami
   }
 };
 
+/** At the canvas's 2x, a lone card's title outgrows the caption. */
+const MAX_ZOOM = 1.1;
+
+/** Keeps the centre `frame` chose. */
+const atReadingSize = (camera: Viewport, rect: Box): Viewport =>
+  camera.scale <= MAX_ZOOM
+    ? camera
+    : {
+        x: STAGE.left + STAGE.width / 2 - (rect.x + rect.width / 2) * MAX_ZOOM,
+        y: STAGE.top + STAGE.height / 2 - (rect.y + rect.height / 2) * MAX_ZOOM,
+        scale: MAX_ZOOM,
+      };
+
 const shotFor = (step: ResolvedStep, box: StripBox): Shot => {
   const { rect, policy } = target(step.focus, box);
-  return { heading: step.heading, body: step.body, tileId: step.tileId, rect, camera: frame(policy, rect, STAGE) };
+  const camera = atReadingSize(frame(policy, rect, STAGE), rect);
+  return { heading: step.heading, body: step.body, tileId: step.tileId, rect, camera };
 };
 
 const legFor = (from: Shot, to: Shot): Leg => {

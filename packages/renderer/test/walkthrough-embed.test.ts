@@ -28,10 +28,10 @@ describe("the walkthrough embed", () => {
   it("is one picture per half of the pair, 870 wide, with the alert above a 340 stage", () => {
     const embed = embedOf(pr124, "dark");
     expect(embed.width).toBe(870);
-    // Two body lines on the longest caption: 86 of alert, 16 of gap, 340 of stage.
-    expect(embed.height).toBe(86 + 16 + 340);
+    // Every caption fits one line: 61 of alert, 16 of gap, 340 of stage.
+    expect(embed.height).toBe(61 + 16 + 340);
     expect(embed.steps).toBe(6);
-    expect(embed.svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 870 442"/);
+    expect(embed.svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 870 417"/);
     expect(embed.svg).toContain('aria-label="Walkthrough of Per-seat billing replaces metered credits, in six steps"');
   });
 
@@ -70,10 +70,10 @@ describe("the walkthrough embed", () => {
   it("tunes the focus per theme: a dimmer mask on dark, a raised card on light", () => {
     const dark = embedOf(pr124, "dark").svg;
     const light = embedOf(pr124, "light").svg;
-    expect(dark).toContain('fill="#fff" fill-opacity=".24"');
+    expect(dark).toContain('fill="#fff" fill-opacity=".42"');
     expect(dark).not.toContain('id="lift"');
     expect(dark).toContain('stroke="rgba(230,237,243,.34)"');
-    expect(light).toContain('fill="#fff" fill-opacity=".42"');
+    expect(light).toContain('fill="#fff" fill-opacity=".55"');
     expect(light).toContain('filter="url(#lift)"');
     expect(light).toContain('stroke="rgba(31,35,40,.5)"');
   });
@@ -96,10 +96,20 @@ describe("the walkthrough embed", () => {
   });
 
   it("wraps a long body onto two balanced lines and keeps a short one on one", () => {
-    const { svg } = embedOf(pr124, "dark");
-    expect(svg).toContain('y="52" font-size="16" fill="#f0f6fc">Users now choose between Essentials and Team with a</text>');
-    expect(svg).toContain('y="74" font-size="16" fill="#f0f6fc">starting seat count rather than subscribing to metered credits.</text>');
+    const input: GraphDocInput = JSON.parse(JSON.stringify(pr124));
+    const first = input.walkthrough?.steps[0];
+    if (first === undefined) throw new Error("pull request 124 has a walkthrough");
+    first.body = "Users now choose between Essentials and Team with a starting seat count, and the old metered credits are gone for every plan.";
+    const { svg } = embedOf(parseGraphDoc(input), "dark");
+    expect(svg).toContain('y="49" font-size="14.5" fill="#f0f6fc">Users now choose between Essentials and Team with a starting</text>');
+    expect(svg).toContain('y="69" font-size="14.5" fill="#f0f6fc">seat count, and the old metered credits are gone for every plan.</text>');
     expect(svg).toContain(">Monthly spending caps and per-credit charges are deleted in favour of fixed seat counts.</text>");
+  });
+
+  it("stops a lone card at reading size, where the canvas would zoom on to 2x", () => {
+    const { svg } = embedOf(pr124, "dark");
+    const scales = [...svg.matchAll(/scale\(([\d.]+)\)/g)].map((match) => Number(match[1]));
+    expect(Math.max(...scales)).toBe(1.1);
   });
 
   it("refuses a tour pointing at something its stage does not draw, rather than guessing", () => {
