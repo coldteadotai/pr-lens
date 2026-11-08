@@ -77,6 +77,12 @@ The atlas is as deterministic as the SVG. Same document, same boxes, in the same
 
 Each lens fills in what it draws. The architecture lens places lanes, cards and edges and no flow step; the data-flow lens places the cards heading its columns and the steps of each flow, and no lane or edge. A node the same render draws twice, heading a column in two stacked flows, gets the box covering both of them: a reader sent to that node is being sent to all of it. A card's box is the card, not the badge strip above it, which is context a veil may dim.
 
+`routes` holds each arrow as drawn, keyed like `edges`: its `path` on the canvas, plus its `label` pill's box when it has one. Use it to light one arrow, since a bent arrow's edge box also covers cards it never touches. The data-flow lens leaves `routes` empty because `messages` already boxes its straight steps.
+
+```ts
+atlas.routes["composer-to-queue"]; // { path: "M218,154 L218,206", label: { x: 175.58, y: 172.5, width: 84.85, height: 15 } }
+```
+
 ## The walkthrough embed
 
 ```ts

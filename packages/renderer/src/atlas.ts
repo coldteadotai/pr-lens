@@ -25,10 +25,27 @@ export type RenderAtlas = {
    * the picture left out, not one the surface may place by counting rows.
    */
   columns: Record<string, Record<string, Box>>;
+  /** Arrows as drawn, keyed like `edges`: a bent arrow's box covers cards it never touches. */
+  routes: Record<string, AtlasRoute>;
+};
+
+export type AtlasRoute = {
+  /** The file's `d`, shifted onto the canvas. */
+  path: string;
+  /** The label's pill. */
+  label?: Box;
 };
 
 /** An atlas for a drawing that has placed nothing. */
-export const emptyAtlas = (): RenderAtlas => ({ lanes: {}, nodes: {}, edges: {}, messages: {}, tables: {}, columns: {} });
+export const emptyAtlas = (): RenderAtlas => ({
+  lanes: {},
+  nodes: {},
+  edges: {},
+  messages: {},
+  tables: {},
+  columns: {},
+  routes: {},
+});
 
 export type AtlasEntry = { id: string; box: Box };
 
@@ -53,12 +70,14 @@ export const atlasBoxes = (
   }
 
   const boxes: Record<string, Box> = {};
-  for (const [id, box] of grown)
-    boxes[id] = {
-      x: roundCoord(box.x + canvas.shiftX),
-      y: roundCoord(box.y + canvas.shiftY),
-      width: roundCoord(box.width),
-      height: roundCoord(box.height),
-    };
+  for (const [id, box] of grown) boxes[id] = boxOnCanvas(box, canvas);
   return boxes;
 };
+
+/** Shifted and rounded as the file writes it. */
+export const boxOnCanvas = (box: Box, canvas: Canvas): Box => ({
+  x: roundCoord(box.x + canvas.shiftX),
+  y: roundCoord(box.y + canvas.shiftY),
+  width: roundCoord(box.width),
+  height: roundCoord(box.height),
+});
