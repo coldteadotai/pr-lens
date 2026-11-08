@@ -998,6 +998,47 @@ const snapNeighbours = (routes: readonly Route[], ports: Map<string, Port>): voi
   }
 };
 
+/** `toward`: -1 if the leg leaves the gap above or left, 1 if below or right. */
+type Turn = { at: number; toward: number };
+
+type TrackDemand = {
+  key: string;
+  heading: number;
+  at: number;
+  nest: number;
+  order: number;
+  source: string;
+  turns: Turn[];
+};
+
+/** Both legs on one line across the gap read as one arrow. */
+const legsMeet = (near: TrackDemand, far: TrackDemand): boolean =>
+  near.source !== far.source &&
+  near.turns.some(
+    (mine) =>
+      mine.toward > 0 &&
+      far.turns.some((theirs) => theirs.toward < 0 && Math.abs(theirs.at - mine.at) < EPSILON),
+  );
+
+/** Moves only the near run: a swap would carry the far one across the runs between. */
+const untangle = (ordered: TrackDemand[]): TrackDemand[] => {
+  const runs = [...ordered];
+  let moves = runs.length * runs.length;
+  for (let i = 0; i < runs.length && moves > 0; i += 1)
+    for (let j = runs.length - 1; j > i; j -= 1) {
+      const near = runs[i];
+      const far = runs[j];
+      if (near === undefined || far === undefined) continue;
+      if (!legsMeet(near, far) || legsMeet(far, near)) continue;
+      runs.splice(i, 1);
+      runs.splice(j, 0, near);
+      moves -= 1;
+      i -= 1;
+      break;
+    }
+  return runs;
+};
+
 /**
  * Every run through a gap gets its own track. Traffic in one gap is spread
  * around its centre, ordered by heading first — outbound before returning —
@@ -1009,8 +1050,7 @@ const allocateTracks = (
   ports: ReadonlyMap<string, Port>,
   grid: LayoutGrid,
 ): Map<string, number> => {
-  type Demand = { key: string; heading: number; at: number; nest: number; order: number };
-  const byChannel = new Map<string, { span: ChannelSpan; demands: Demand[] }>();
+  const byChannel = new Map<string, { span: ChannelSpan; demands: TrackDemand[] }>();
 
   for (const route of routes) {
     const from = resolvedPort(ports, fromSlot(route), route.from.box, route.fromSide);
@@ -1028,6 +1068,8 @@ const allocateTracks = (
         at: run.at,
         nest: run.nest,
         order: route.order,
+        source: route.from.node.id,
+        turns: run.turns,
       });
       byChannel.set(key, entry);
     });
@@ -1035,8 +1077,10 @@ const allocateTracks = (
 
   const tracks = new Map<string, number>();
   for (const { span, demands } of byChannel.values()) {
-    const ordered = [...demands].sort(
-      (a, b) => b.heading - a.heading || a.at - b.at || a.nest - b.nest || a.order - b.order,
+    const ordered = untangle(
+      [...demands].sort(
+        (a, b) => b.heading - a.heading || a.at - b.at || a.nest - b.nest || a.order - b.order,
+      ),
     );
     const positions = spread(span.centre, span.room, ordered.length, TRACK_PITCH_MAX);
     ordered.forEach((demand, index) => {
@@ -1063,7 +1107,7 @@ const buildApprox = (
   from: Point,
   to: Point,
   grid: LayoutGrid,
-): { heading: number; at: number; nest: number }[] => {
+): { heading: number; at: number; nest: number; turns: Turn[] }[] => {
   const coordinates: Point[] = [from];
   let x = from.x;
   let y = from.y;
@@ -1091,9 +1135,15 @@ const buildApprox = (
   coordinates.push(to);
 
   return route.channels.map((channel, index) => {
+    const before = coordinates[index] ?? from;
     const here = coordinates[index + 1] ?? from;
     const next = coordinates[index + 2] ?? to;
     const after = coordinates[index + 3] ?? to;
+    // Only a turn to a port can line up with another run; gap tracks are never shared.
+    const atPorts = (entry: Turn, exit: Turn): Turn[] => [
+      ...(index === 0 ? [entry] : []),
+      ...(index === route.channels.length - 1 ? [exit] : []),
+    ];
     switch (channel.kind) {
       case "corridor": {
         const length = Math.abs(next.y - here.y);
@@ -1101,6 +1151,10 @@ const buildApprox = (
           heading: Math.sign(next.y - here.y),
           at: here.y,
           nest: after.x > next.x ? -length : length,
+          turns: atPorts(
+            { at: here.y, toward: Math.sign(before.x - here.x) },
+            { at: next.y, toward: Math.sign(after.x - next.x) },
+          ),
         };
       }
       case "band": {
@@ -1109,6 +1163,10 @@ const buildApprox = (
           heading: Math.sign(next.x - here.x),
           at: here.x,
           nest: after.y > next.y ? -length : length,
+          turns: atPorts(
+            { at: here.x, toward: Math.sign(before.y - here.y) },
+            { at: next.x, toward: Math.sign(after.y - next.y) },
+          ),
         };
       }
       default:
