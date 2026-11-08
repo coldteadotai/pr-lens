@@ -8,8 +8,12 @@ test.each([
   ["https://github.com/coldteadotai/pr-lens", "coldteadotai", "pr-lens", "github.com", "github"],
   ["ssh://git@github.com/coldteadotai/pr-lens.git", "coldteadotai", "pr-lens", "github.com", "github"],
   ["https://gitlab.example.com/team/group/app.git", "team/group", "app", "gitlab.example.com", "gitlab"],
+  ["https://gitlab.example.com:8443/team/group/app.git", "team/group", "app", "gitlab.example.com:8443", "gitlab"],
+  ["https://user:token@gitlab.example.com:8443/team/group/app.git", "team/group", "app", "gitlab.example.com:8443", "gitlab"],
   ["git@gitlab.com:group/subgroup/app.git", "group/subgroup", "app", "gitlab.com", "gitlab"],
+  ["git@gitlab.com:8443/group/app.git", "8443/group", "app", "gitlab.com", "gitlab"],
   ["https://bitbucket.org/workspace/repo.git", "workspace", "repo", "bitbucket.org", "bitbucket"],
+  ["https://bitbucket.org:443/workspace/repo.git", "workspace", "repo", "bitbucket.org:443", "bitbucket"],
   ["git@bitbucket.org:workspace/repo.git", "workspace", "repo", "bitbucket.org", "bitbucket"],
 ])("%s names a repository", (url, owner, name, host, provider) => {
   expect(parseRemoteUrl(url)).toEqual({ owner, name, host, provider });
@@ -17,6 +21,13 @@ test.each([
 
 test("a remote that names no repository is not guessed at", () => {
   expect(parseRemoteUrl("/srv/git/bare-repo")).toBeUndefined();
+});
+
+test("a GitLab merge request link keeps the HTTPS port in the authority", () => {
+  const slug = parseRemoteUrl("https://gitlab.example.com:8443/team/group/app.git");
+  expect(slug).toBeDefined();
+  if (slug !== undefined)
+    expect(pullRequestUrl(slug, 42)).toBe("https://gitlab.example.com:8443/team/group/app/-/merge_requests/42");
 });
 
 test("parseRemoteUrl rejects long adversarial inputs without backtracking", () => {
