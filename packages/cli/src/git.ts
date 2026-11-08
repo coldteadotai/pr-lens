@@ -153,9 +153,10 @@ export const pullRequestUrl = (slug: RepoSlug, pr: number): string => {
 };
 
 const REMOTE_URL = /^(?:(?:ssh|git|https?):\/\/)?(?:[^@/]+@)?([^@/:]+)[:/](.+)$/;
+const HTTP_REMOTE_URL = /^https?:\/\/(?:[^@/]+@)?([^@/]+)\/(.+)$/;
 
 export const parseRemoteUrl = (url: string): RepoSlug | undefined => {
-  const match = REMOTE_URL.exec(url.trim());
+  const match = HTTP_REMOTE_URL.exec(url.trim()) ?? REMOTE_URL.exec(url.trim());
   if (!match) return undefined;
 
   const [, host, rawPath] = match;
@@ -167,7 +168,7 @@ export const parseRemoteUrl = (url: string): RepoSlug | undefined => {
   const owner = segments.slice(0, -1).join("/");
   if (name === undefined || owner === "") return undefined;
 
-  return { owner, name, host, provider: providerForHost(host) };
+  return { owner, name, host, provider: providerForHost(host.replace(/:\d+$/, "")) };
 };
 
 export const parseRepoSlug = (slug: string): RepoSlug | undefined => {
