@@ -2,7 +2,7 @@ import type { GraphDoc, Lens } from "@coldtea/pr-lens-schema";
 import { assertNever, parseGraphDoc } from "@coldtea/pr-lens-schema";
 import { postmarkRefactorGraph } from "@coldtea/pr-lens-schema/examples";
 import { describe, expect, it } from "vitest";
-import { union } from "../src/bounds.js";
+import { inflate, union } from "../src/bounds.js";
 import { FLOW_MAX_PULSES_PER_MESSAGE, TABLE_ROW_HEIGHT } from "../src/design.js";
 import { render, THEMES, type Box, type RenderAtlas } from "../src/index.js";
 import { layoutDataFlow } from "../src/layout/dataflow.js";
@@ -152,10 +152,13 @@ const everyBox = (atlas: RenderAtlas): Box[] => [
  * the painting is. The atlas would be worth nothing if it could drift from
  * the drawing it describes, so it is checked against the bytes.
  */
-const cardRects = (svg: string): string[] => {
+const shiftOf = (svg: string): { x: number; y: number } => {
   const shift = /<g transform="translate\((-?[\d.]+),(-?[\d.]+)\)">/.exec(svg);
-  const shiftX = Number(shift?.[1] ?? 0);
-  const shiftY = Number(shift?.[2] ?? 0);
+  return { x: Number(shift?.[1] ?? 0), y: Number(shift?.[2] ?? 0) };
+};
+
+const cardRects = (svg: string): string[] => {
+  const { x: shiftX, y: shiftY } = shiftOf(svg);
 
   return [
     ...svg.matchAll(
@@ -274,5 +277,74 @@ describe("the rows of a table card", () => {
 
   it("draws the other lenses with no rows at all", () => {
     expect(render(oneStoreGraph, { lens: "architecture", theme: "light" }).atlas.columns).toEqual({});
+  });
+});
+
+const numbers = (path: string): number[] => [...path.matchAll(/-?[\d.]+/g)].map(([n]) => Number(n));
+
+/** A coordinate from the file, moved onto the canvas and rounded as the atlas rounds it. */
+const moved = (value: number, by: number): number => Math.round((value + by) * 100) / 100;
+
+/** Every arrow's `d` as the file writes it, moved onto the canvas, pair by pair. */
+const drawnRoutes = (svg: string): string[] => {
+  const { x, y } = shiftOf(svg);
+  return [...svg.matchAll(/<path class="edge[^"]*" d="([^"]+)"/g)].map(([, d]) =>
+    numbers(d ?? "")
+      .map((n, i) => moved(n, i % 2 === 0 ? x : y))
+      .join(","),
+  );
+};
+
+const drawnPills = (svg: string): string[] => {
+  const { x, y } = shiftOf(svg);
+  const pills = svg.matchAll(/<rect class="lpill" x="(-?[\d.]+)" y="(-?[\d.]+)" width="(-?[\d.]+)" height="(-?[\d.]+)"/g);
+  return [...pills].map(([, px, py, w, h]) => `${moved(Number(px), x)},${moved(Number(py), y)},${Number(w)},${Number(h)}`);
+};
+
+const onBorder = (x: number, y: number, box: Box): boolean => {
+  const near = inflate(box, 1.5);
+  return x >= near.x && x <= near.x + near.width && y >= near.y && y <= near.y + near.height;
+};
+
+describe("every arrow's route", () => {
+  for (const { name, doc } of tiers)
+    // A flow's steps carry pills too, and `messages` already boxes them exactly.
+    for (const lens of drawableLenses(doc).filter((lens) => lens !== "data-flow"))
+      it(`is keyed like its box and matches the file, ${name}, ${lens}`, () => {
+        const { svg, atlas } = render(doc, { lens, theme: "dark" });
+
+        expect(sorted(Object.keys(atlas.routes))).toEqual(sorted(Object.keys(atlas.edges)));
+        expect(sorted(Object.values(atlas.routes).map((route) => numbers(route.path).join(",")))).toEqual(
+          sorted(drawnRoutes(svg)),
+        );
+        expect(
+          sorted(
+            Object.values(atlas.routes).flatMap((route) =>
+              route.label === undefined ? [] : [`${route.label.x},${route.label.y},${route.label.width},${route.label.height}`],
+            ),
+          ),
+        ).toEqual(sorted(drawnPills(svg)));
+      });
+
+  it("starts and ends on the two cards it joins", () => {
+    for (const { name, doc } of tiers) {
+      const { atlas } = render(doc, { lens: "architecture", theme: "dark" });
+      for (const edge of doc.edges) {
+        const route = atlas.routes[edge.id];
+        const from = atlas.nodes[edge.from];
+        const to = atlas.nodes[edge.to];
+        if (route === undefined || from === undefined || to === undefined) continue;
+
+        const points = numbers(route.path);
+        const [startX = NaN, startY = NaN] = points;
+        const [endX = NaN, endY = NaN] = points.slice(-2);
+        expect(onBorder(startX, startY, from), `${name}: ${edge.id} leaves ${edge.from}`).toBe(true);
+        expect(onBorder(endX, endY, to), `${name}: ${edge.id} reaches ${edge.to}`).toBe(true);
+      }
+    }
+  });
+
+  it("is empty in the data-flow lens, whose steps are boxed exactly", () => {
+    expect(render(postmarkRefactorGraph, { lens: "data-flow", theme: "dark" }).atlas.routes).toEqual({});
   });
 });

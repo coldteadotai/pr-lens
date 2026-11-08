@@ -5,7 +5,7 @@ import type { Palette } from "../theme.js";
 import type { ScopedGraph } from "../scope.js";
 import { canvasFor, union } from "../bounds.js";
 import { coord, type Box } from "../geometry.js";
-import { curveBounds } from "../layout/edges.js";
+import { atlasRoutes, curveBounds } from "../layout/edges.js";
 import { lines, tag, textNode, wrap } from "./primitives.js";
 import { tableGlyph } from "./icons.js";
 import { atlasBoxes, emptyAtlas, type RenderAtlas } from "../atlas.js";
@@ -350,6 +350,10 @@ export const paintDataModel = (graph: ScopedGraph, palette: Palette): DataModelP
       ),
       edges: atlasBoxes(
         routed.map(({ relation, curve }) => ({ id: relation.id, box: curveBounds(curve) })),
+        canvas,
+      ),
+      routes: atlasRoutes(
+        routed.map(({ relation, curve, pill }) => ({ id: relation.id, curve, label: pill })),
         canvas,
       ),
     },

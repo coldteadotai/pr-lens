@@ -11,6 +11,8 @@ import {
   TRACK_PITCH_MAX,
 } from "../design.js";
 import { boxCentre, coord, type Box, type Point, type Side } from "../geometry.js";
+import { boxOnCanvas, type AtlasRoute } from "../atlas.js";
+import type { Canvas } from "../bounds.js";
 import type { ArchitectureLayout, LayoutGrid, PlacedLane, PlacedNode } from "./architecture.js";
 import { pillSize } from "./labels.js";
 
@@ -81,6 +83,37 @@ export const pathOf = (curve: Curve): string =>
       }
     })
     .join("");
+
+/** The same route moved by a fixed offset, as a translated group would draw it. */
+const shiftCurve = (curve: Curve, dx: number, dy: number): Curve => {
+  const move = (point: Point): Point => ({ x: point.x + dx, y: point.y + dy });
+  return {
+    from: move(curve.from),
+    segments: curve.segments.map((segment): Segment => {
+      switch (segment.kind) {
+        case "line":
+          return { kind: "line", to: move(segment.to) };
+        case "cubic":
+          return { kind: "cubic", first: move(segment.first), second: move(segment.second), to: move(segment.to) };
+        default:
+          return assertNever(segment, "Unhandled path segment");
+      }
+    }),
+  };
+};
+
+/** The atlas's routes, moved by the same shift the painting is wrapped in, so a route and the arrow the file draws cannot disagree. */
+export const atlasRoutes = (
+  entries: readonly { id: string; curve: Curve; label: Box | undefined }[],
+  canvas: Canvas,
+): Record<string, AtlasRoute> => {
+  const routes: Record<string, AtlasRoute> = {};
+  for (const { id, curve, label } of entries) {
+    const path = pathOf(shiftCurve(curve, canvas.shiftX, canvas.shiftY));
+    routes[id] = label === undefined ? { path } : { path, label: boxOnCanvas(label, canvas) };
+  }
+  return routes;
+};
 
 /**
  * A box the route cannot leave. A cubic stays inside the hull of its own
