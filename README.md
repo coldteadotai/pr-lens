@@ -11,8 +11,9 @@
 
 <p align="center">
   <b>Understand a pull request, any codebase, or software visually, before you read a line of code</b><br>
-  PR Lens draws every pull request as animated architecture and data-flow diagrams,<br>
-  posted as a comment inside the pull request itself. For your coding agents, leverage it for understanding any codebase or code change with a live canvas of animated explainers
+  PR Lens maps the architecture and data flow of every pull request,<br>
+  inside the pull request itself, and flags what could break.<br>
+  Open it on a live canvas for a guided tour, or let your coding agent walk you through any codebase
 </p>
 
 <p align="center">
@@ -30,13 +31,13 @@
 </p>
 
 <p align="center">
-  <sub>Free for open source &nbsp;&nbsp;·&nbsp;&nbsp; Or have your coding agent draw it: <code>npx skills add coldteadotai/pr-lens</code></sub>
+  <sub>Free for open source &nbsp;&nbsp;·&nbsp;&nbsp; Or have your coding agent map it: <code>npx skills add coldteadotai/pr-lens</code></sub>
 </p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/brand/cta-strip.dark.svg">
-    <img alt="Three steps: install the GitHub App on any repository, open a pull request, and the diagram shows up and updates on every push" src="docs/brand/cta-strip.light.svg" width="960">
+    <img alt="Three steps: install the GitHub App on any repository, open a pull request, and read the map, which updates on every push" src="docs/brand/cta-strip.light.svg" width="960">
   </picture>
 </p>
 
@@ -55,7 +56,7 @@
 
 ### Not Mermaid, better
 
-We built a custom renderer from scratch. It draws rich animated visuals, reduces cognitive overload, represents code additions, removals and changes and still works for representing very large systems
+We built a custom renderer from scratch. It renders rich visuals, reduces cognitive overload, represents code additions, removals and changes and still works for representing very large systems
 
 </td>
 <td width="54%" valign="middle">
@@ -68,7 +69,7 @@ We built a custom renderer from scratch. It draws rich animated visuals, reduces
 
 ### Architecture blast radius
 
-The diagram shows the parts of your system that the code change touches, drawn against the system around it: the components involved, and the calls that run between them.
+The map shows the parts of your system that the code change touches, set against the system around it: the components involved, and the calls that run between them.
 
 Colors show what changed: **green** is new, **amber** is changed, and **red** is removed.
 
@@ -86,7 +87,7 @@ Colors show what changed: **green** is new, **amber** is changed, and **red** is
 
 ### Intuitive Data flow
 
-Understand how data flows through your any code change or codebase. The diagram plays the steps of the change in order with a moving dot one step at a time
+Understand how data flows through any code change or codebase. The map plays the steps of the change in order, with a moving dot, one step at a time. Animation is usually a distraction. Here it is intentional.
 
 </td>
 <td width="54%" valign="middle">
@@ -102,7 +103,7 @@ Understand how data flows through your any code change or codebase. The diagram 
 
 ### See the payload on every data flow
 
-Click any arrow to see the data it carries. A panel opens next to the diagram with the request and the response. Each one shows either the expected shape or a sample. New fields are green and removed fields are red, the same colors the diagram uses.
+Click any arrow to see the data it carries. A panel opens next to the map with the request and the response. Each one shows either the expected shape or a sample. New fields are green and removed fields are red, the same colors the map uses.
 
 </td>
 <td width="54%" valign="middle">
@@ -113,9 +114,26 @@ Click any arrow to see the data it carries. A panel opens next to the diagram wi
 <tr>
 <td width="46%" valign="middle">
 
+### What could break?
+
+PR Lens also reviews the change. It flags bugs, security holes and design problems in the same comment, with a fix for each and a prompt you can hand to your coding agent.
+
+On GitHub, each finding also goes on the line of the diff it's about, and PR Lens checks it again on every push.
+
+<sub>Only in the hosted app, on GitHub, GitLab and Bitbucket. Every other way to run PR Lens (the Action, the CI component, the pipe, the CLI and the skill) gives you the map without the review.</sub>
+
+</td>
+<td width="54%" valign="middle">
+<img alt="A PR Lens finding in the pull request comment: a high-severity security problem, what could go wrong, the fix, and a prompt for AI agents" src="docs/showcase/finding.comment.png">
+</td>
+</tr>
+
+<tr>
+<td width="46%" valign="middle">
+
 ### Zoom in without leaving the page
 
-The comment has folding sections (`<details>`) that you can open and close. Each one has its own diagram for one part of the change. The whole change is on top. Below it is the new path, and then what was removed.
+The comment has folding sections (`<details>`) that you can open and close. Each one has its own map for one part of the change. The whole change is on top. Below it is the new path, and then what was removed.
 
 </td>
 
@@ -132,7 +150,7 @@ The comment has folding sections (`<details>`) that you can open and close. Each
 
 ### Interactive canvas
 
-Every comment or drawing can link to an interactive canvas. It has the same diagrams at full size. You can move around, zoom, and switch between a light and a dark theme. A big change gets all the room it needs instead of squeezing into a narrow comment or static image.
+Every comment or map can link to an interactive canvas. It has the same maps at full size. You can move around, zoom, and switch between a light and a dark theme. A big change gets all the room it needs instead of squeezing into a narrow comment or static image.
 
 </td>
 <td width="54%" valign="middle">
@@ -145,7 +163,7 @@ Every comment or drawing can link to an interactive canvas. It has the same diag
 
 ### Walk through the change
 
-PR Lens ships with animated explainers called walkthroughs. Walkthroughs let you explore a system or code change step by step, without overwhelm. Start a walkthrough by pressing play on the canvas, or press W.
+Every map comes with a guided tour of the change, called a walkthrough. Walkthroughs let you explore a system or code change step by step, without overwhelm. Start a walkthrough by pressing play on the canvas, or press W.
 
 </td>
 <td width="54%" valign="middle">
@@ -156,9 +174,9 @@ PR Lens ships with animated explainers called walkthroughs. Walkthroughs let you
 <tr>
 <td width="46%" valign="middle">
 
-### Your agent, live on the canvas
+### Ask your agent, and watch it show you
 
-Ask your local coding agent to connect to a canvas. Then use it to understand any codebase or code change. You can ask follow-up questions, zoom into any part of the diagram, or drag across a few cards and ask your agent about them. Watch it interact live with the canvas!
+Ask your local coding agent to connect to a canvas. Then use it to understand any codebase or code change. You can ask follow-up questions, zoom into any part of the map, or drag across a few cards and ask your agent about them. Watch it interact live with the canvas!
 
 </td>
 <td width="54%" valign="middle">
@@ -189,7 +207,7 @@ For what it's worth, you should not open a pull request this big.
 
 ### Light or dark theme
 
-With the GitHub App, every diagram comes in a light and a dark version. GitHub shows the one that matches the reader's theme. You can also draw either theme on your own computer with your coding agent.
+With the GitHub App, every map comes in a light and a dark version. GitHub shows the one that matches the reader's theme. You can also render either theme on your own computer with your coding agent.
 
 </td>
 <td width="54%" valign="middle">
@@ -223,7 +241,7 @@ Set it up for [GitLab](https://prlens.dev/gitlab) or [Bitbucket](https://prlens.
 
 ## Hall of Fame
 
-We ran the pull requests behind React Hooks, Node fetch and Kubernetes Ingress through PR Lens. They were drawn with the same renderer and the same format as the diagrams above.
+We ran the pull requests behind React Hooks, Node fetch and Kubernetes Ingress through PR Lens. They were mapped with the same renderer and the same format as the maps above.
 
 <a href="https://prlens.dev/gallery/react/react/13968"><img alt="React Hooks, drawn again: four lanes across the React package, the reconciler, the server renderer and shared config" src="docs/showcase/gallery/react-hooks.svg"></a>
 
@@ -271,7 +289,7 @@ We ran the pull requests behind React Hooks, Node fetch and Kubernetes Ingress t
 
 </details>
 
-<b><a href="https://prlens.dev/gallery">Open the Hall of Fame</a></b>. Every diagram there is live.
+<b><a href="https://prlens.dev/gallery">Open the Hall of Fame</a></b>. Every map there is live.
 
 <br />
 
@@ -281,7 +299,7 @@ Add a `.github/pr-lens.yml` file to change how PR Lens works. GitLab and Bitbuck
 
 ### Fix names and mistakes
 
-When you draw with the CLI, put your fixes in `.github/pr-lens.yml`. Don't edit the SVG files it makes:
+When you map a change with the CLI, put your fixes in `.github/pr-lens.yml`. Don't edit the SVG files it makes:
 
 ```yaml
 schemaVersion: 0.1.0
@@ -299,7 +317,7 @@ These fixes sit on top of what the model finds. They keep working as the code ch
 
 ## Other ways to run it
 
-For most people, the App is all they need. The options below cover what it doesn't: your own CI, your own model, or a diagram before the pull request exists.
+For most people, the App is all they need. The options below cover what it doesn't: your own CI, your own model, or a map before the pull request exists.
 
 <details open>
 <summary><b>Via your coding agent</b></summary>
@@ -321,14 +339,14 @@ npx skills add coldteadotai/pr-lens
 
 Then ask your coding agent something like:
 
-> Diagram the change you just made with PR Lens and attach it to the pull request.
+> Map the change you just made with PR Lens and attach it to the pull request.
 
-The agent reads the diff and writes the diagram file. It runs `npx @coldtea/pr-lens-cli validate` until the file passes every check. Then it draws the diagram and adds it to the pull request description with `gh pr create --attach`, so the diagram is there as soon as the pull request opens. If a diagram gets a name wrong, the skill teaches the agent to fix `.github/pr-lens.yml` instead of editing the files it made. See [`packages/agent-skill`](packages/agent-skill) for more.
+The agent reads the diff and writes the map file. It runs `npx @coldtea/pr-lens-cli validate` until the file passes every check. Then it renders the map and adds it to the pull request description with `gh pr create --attach`, so the map is there as soon as the pull request opens. If a map gets a name wrong, the skill teaches the agent to fix `.github/pr-lens.yml` instead of editing the files it made. See [`packages/agent-skill`](packages/agent-skill) for more.
 
 Want the agent to do the whole setup? Paste this:
 
 ```text
-Set up PR Lens for me. It draws code changes as moving diagrams of the system and how data flows through it.
+Set up PR Lens for me. It maps how code changes touch the system and how data flows through it.
 
 1. Install the agent skill: `npx skills add coldteadotai/pr-lens`.
 
@@ -336,7 +354,7 @@ Set up PR Lens for me. It draws code changes as moving diagrams of the system an
 
 3. If I'd rather run it from CI with my own model key, offer the Action instead: `.github/workflows/pr-lens.yml` using `coldteadotai/pr-lens/packages/action@v0`, with the key saved as a repository secret. It works with any service that speaks `/chat/completions`, such as OpenAI or Gemini.
 
-4. Then test it: diagram the latest change in this repository and show me the SVGs or the canvas.
+4. Then test it: map the latest change in this repository and show me the SVGs or the canvas.
 ```
 
 </details>
@@ -345,7 +363,7 @@ Set up PR Lens for me. It draws code changes as moving diagrams of the system an
 <summary><b>As a workflow: the GitHub Action</b> · your CI · your key · one comment that stays the same</summary>
 <br>
 
-This posts the same comment from your own CI, drawn with your own model key. Save the key as a repository secret. The example below uses `GEMINI_API_KEY` because `provider` is Gemini by default. Then commit this file as `.github/workflows/pr-lens.yml`:
+This posts the same comment from your own CI, mapped with your own model key. Save the key as a repository secret. The example below uses `GEMINI_API_KEY` because `provider` is Gemini by default. Then commit this file as `.github/workflows/pr-lens.yml`:
 
 ```yaml
 name: PR Lens
@@ -381,7 +399,7 @@ You can use any model. `provider` can be `gemini` (the default), `openai`, or `o
 <summary><b>On GitLab: the CI/CD component</b> · your pipeline · your key · one comment that updates</summary>
 <br>
 
-GitLab CI can post the same diagrams on a merge request. Add two masked variables: your model key, and a project access token with the `api` scope. The token is what posts the comment. Then add the component:
+GitLab CI can post the same maps on a merge request. Add two masked variables: your model key, and a project access token with the `api` scope. The token is what posts the comment. Then add the component:
 
 ```yaml
 workflow:
@@ -395,7 +413,7 @@ include:
 
 The `workflow: rules` block must be in your own `.gitlab-ci.yml`. GitLab only runs merge request pipelines when that file asks for them, and rules inside an included component don't count. You need the access token because `CI_JOB_TOKEN` can't post comments. On GitLab.com, project access tokens need the Premium or Ultimate plan. On the Free plan, a personal access token with the `api` scope works too, but the comment shows your name instead of a bot's.
 
-The SVGs are uploaded to the project as attachments. That way everyone who reads the merge request can see them, even people who can't open files in the repository. On a private project, there is a downside. Anyone who has the attachment link can see the diagram, even if they are not a member. The link can't be guessed, but it is the only thing that protects the image. If a project turns on **Require authentication to view media files**, the images won't load. Readers can still open the diagrams from the canvas link in the comment. See [`packages/gitlab-component`](packages/gitlab-component) for more.
+The SVGs are uploaded to the project as attachments. That way everyone who reads the merge request can see them, even people who can't open files in the repository. On a private project, there is a downside. Anyone who has the attachment link can see the map, even if they are not a member. The link can't be guessed, but it is the only thing that protects the image. If a project turns on **Require authentication to view media files**, the images won't load. Readers can still open the maps from the canvas link in the comment. See [`packages/gitlab-component`](packages/gitlab-component) for more.
 
 </details>
 
@@ -421,9 +439,9 @@ pipelines:
                 PR_LENS_TOKEN: $PR_LENS_TOKEN
 ```
 
-A pipe only sees the variables its step gives it, so the step passes in two secured variables by name. The first is your model key. The second is a repository access token with the `pullrequest:write` and `repository:write` scopes. The `repository:write` scope lets the pipe save the diagrams to the repository's Downloads. Every Bitbucket plan has repository access tokens. Tokens for a whole workspace need Premium.
+A pipe only sees the variables its step gives it, so the step passes in two secured variables by name. The first is your model key. The second is a repository access token with the `pullrequest:write` and `repository:write` scopes. The `repository:write` scope lets the pipe save the maps to the repository's Downloads. Every Bitbucket plan has repository access tokens. Tokens for a whole workspace need Premium.
 
-Bitbucket shows comments as plain Markdown. So the comment has no sections to open and close, and no light and dark pair. It shows the headline, the numbers, one diagram per lens, and then the zoomed-in views in order. Bitbucket never runs a pipeline for a pull request opened from a fork, so the pipe can't draw those pull requests, no matter how you set it up. If your repository gets a lot of help from forks, use the hosted app. See [`packages/bitbucket-pipe`](packages/bitbucket-pipe) for more.
+Bitbucket shows comments as plain Markdown. So the comment has no sections to open and close, and no light and dark pair. It shows the headline, the numbers, one map per lens, and then the zoomed-in views in order. Bitbucket never runs a pipeline for a pull request opened from a fork, so the pipe can't map those pull requests, no matter how you set it up. If your repository gets a lot of help from forks, use the hosted app. See [`packages/bitbucket-pipe`](packages/bitbucket-pipe) for more.
 
 </details>
 
@@ -461,10 +479,10 @@ Everything goes in `.pr-lens/`. The first time the CLI writes there, it adds tha
 </details>
 
 <details>
-<summary><b>In your terminal</b> · the diagram before the pull request exists</summary>
+<summary><b>In your terminal</b> · the map before the pull request exists</summary>
 <br>
 
-The diagrams don't need a pull request. Draw them on your computer and look at the change before anyone else does:
+The maps don't need a pull request. Render them on your computer and look at the change before anyone else does:
 
 ```bash
 npx @coldtea/pr-lens-cli analyze --base origin/main
@@ -472,7 +490,7 @@ npx @coldtea/pr-lens-cli render .pr-lens/graph.json
 open .pr-lens/*-dark-*.svg    # macOS; the SVGs are self-contained, any browser reads them
 ```
 
-This also helps when you review an agent's work. While you read the diff, the agent that wrote it can draw it. With the skill installed, say "render this change with PR Lens and open the SVGs". You get the diagram next to the diff, minutes before the pull request shows the same picture.
+This also helps when you review an agent's work. While you read the diff, the agent that wrote it can map it. With the skill installed, say "render this change with PR Lens and open the SVGs". You get the map next to the diff, minutes before the pull request shows the same picture.
 
 </details>
 
@@ -484,11 +502,11 @@ This also helps when you review an agent's work. While you read the diff, the ag
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | [`packages/schema`](packages/schema)                     | `@coldtea/pr-lens-schema`: the format every other part uses                                                               |
 | [`packages/renderer`](packages/renderer)                 | `@coldtea/pr-lens-renderer`: turns a JSON graph into the moving light and dark SVGs on this page, the same way every time |
-| [`packages/cli`](packages/cli)                           | `@coldtea/pr-lens-cli`: reads a diff with your own model key, draws it, and writes the comment                            |
-| [`packages/action`](packages/action)                     | the GitHub Action: analyzes the change, publishes the diagrams, and posts one comment                                     |
+| [`packages/cli`](packages/cli)                           | `@coldtea/pr-lens-cli`: reads a diff with your own model key, maps it, and writes the comment                            |
+| [`packages/action`](packages/action)                     | the GitHub Action: analyzes the change, publishes the maps, and posts one comment                                     |
 | [`packages/gitlab-component`](packages/gitlab-component) | the GitLab CI/CD component: does the same on a merge request                                                              |
 | [`packages/bitbucket-pipe`](packages/bitbucket-pipe)     | the Bitbucket pipe: does the same on a pull request                                                                       |
-| [`packages/agent-skill`](packages/agent-skill)           | `@coldtea/pr-lens-agent-skill`: teaches a coding agent to draw the change it just made                                    |
+| [`packages/agent-skill`](packages/agent-skill)           | `@coldtea/pr-lens-agent-skill`: teaches a coding agent to map the change it just made                                    |
 
 <br />
 
@@ -511,7 +529,7 @@ Start with [docs/canvas-api.md](docs/canvas-api.md).
 
 ## Community
 
-Ask questions or share your diagrams on [Discord](https://discord.gg/sGDwjs8yHK). We post new releases and features on X at [@drawwithlens](https://x.com/drawwithlens).
+Ask questions or share your maps on [Discord](https://discord.gg/sGDwjs8yHK). We post new releases and features on X at [@ColdteaAI](https://x.com/ColdteaAI).
 
 <br />
 

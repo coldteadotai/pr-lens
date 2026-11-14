@@ -13,8 +13,9 @@
 
 <p align="center">
   <b>先通过图示了解拉取请求、代码库或软件，再阅读具体代码</b><br>
-  PR Lens 将拉取请求画成动态架构图和数据流图，<br>
-  并作为评论发布到拉取请求中。编码智能体也可以连接实时画布，通过动画讲解帮助你理解代码库和代码改动。
+  PR Lens 直接在拉取请求中呈现每个改动的架构和数据流地图，<br>
+  并指出可能出问题的地方。<br>
+  在实时画布中打开即可跟随导览查看，也可以让编码智能体带你了解任何代码库。
 </p>
 
 <p align="center">
@@ -32,13 +33,13 @@
 </p>
 
 <p align="center">
-  <sub>开源项目免费 &nbsp;&nbsp;·&nbsp;&nbsp; 也可以让编码智能体绘图： <code>npx skills add coldteadotai/pr-lens</code></sub>
+  <sub>开源项目免费 &nbsp;&nbsp;·&nbsp;&nbsp; 也可以让编码智能体生成地图： <code>npx skills add coldteadotai/pr-lens</code></sub>
 </p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/brand/cta-strip.dark.svg">
-    <img alt="三个步骤：在仓库安装 GitHub App、创建拉取请求，随后自动生成图并在每次推送时更新" src="docs/brand/cta-strip.light.svg" width="960">
+    <img alt="三个步骤：在仓库安装 GitHub App、创建拉取请求，随后查看地图，地图会在每次推送时更新" src="docs/brand/cta-strip.light.svg" width="960">
   </picture>
 </p>
 
@@ -55,9 +56,9 @@
 <tr>
 <td width="46%" valign="middle">
 
-### 自定义动画渲染器
+### 自定义渲染器
 
-我们从零构建了自定义渲染器，用动画图示呈现代码的新增、删除和修改，帮助读者理解复杂改动，也能展示大型系统。
+我们从零构建了自定义渲染器，以丰富的视觉效果呈现代码的新增、删除和修改，帮助读者理解复杂改动，也能展示大型系统。
 
 </td>
 <td width="54%" valign="middle">
@@ -70,7 +71,7 @@
 
 ### 改动影响的架构范围
 
-图中会标出代码改动涉及的系统模块，以及周围的组件和它们之间的调用关系。
+地图会标出代码改动涉及的系统模块，以及周围的组件和它们之间的调用关系。
 
 颜色表示改动类型：**绿色**表示新增，**琥珀色**表示修改，**红色**表示删除。
 
@@ -88,7 +89,7 @@
 
 ### 按顺序查看数据流
 
-查看数据如何在代码库或本次改动中流转。图中的移动圆点会依次演示每个步骤。
+查看数据如何在代码库或本次改动中流转。地图中的移动圆点会依次演示每个步骤。动画通常会分散注意力，而在这里，它是有意为之。
 
 </td>
 <td width="54%" valign="middle">
@@ -104,7 +105,7 @@
 
 ### 查看数据流携带的内容
 
-点击任意箭头，即可在图旁的面板中查看请求和响应。面板会展示预期的数据结构或示例，并沿用图中的颜色：新增字段为绿色，删除字段为红色。
+点击任意箭头，即可在地图旁的面板中查看请求和响应。面板会展示预期的数据结构或示例，并沿用地图中的颜色：新增字段为绿色，删除字段为红色。
 
 </td>
 <td width="54%" valign="middle">
@@ -115,9 +116,26 @@
 <tr>
 <td width="46%" valign="middle">
 
+### 会出什么问题？
+
+PR Lens 还会审查改动。它在同一条评论中指出 bug、安全漏洞和设计问题，为每个问题给出修复建议，并附上可以直接交给编码智能体的提示词。
+
+在 GitHub 上，每个问题还会发布到 diff 中对应的代码行，并在每次推送后重新检查。
+
+<sub>仅托管 App 提供，支持 GitHub、GitLab 和 Bitbucket。其他运行方式（Action、CI 组件、pipe、CLI 和 Skill）只提供地图，不含审查。</sub>
+
+</td>
+<td width="54%" valign="middle">
+<img alt="PR Lens 在拉取请求评论中给出的问题：一个高严重度的安全问题、可能的后果、修复建议，以及给 AI 智能体的提示词" src="docs/showcase/finding.comment.png">
+</td>
+</tr>
+
+<tr>
+<td width="46%" valign="middle">
+
 ### 在当前页面展开细节
 
-评论包含可展开和收起的区域（`<details>`），每个区域用一张图展示部分改动。顶部先展示整体变化，下面依次展示新增路径和已删除的部分。
+评论包含可展开和收起的区域（`<details>`），每个区域用一张地图展示部分改动。顶部先展示整体变化，下面依次展示新增路径和已删除的部分。
 
 </td>
 
@@ -134,7 +152,7 @@
 
 ### 交互画布
 
-每条评论或绘图都可以链接到交互画布。画布以完整尺寸展示同样的图，支持平移、缩放和明暗主题切换，为大型改动提供更充足的查看空间。
+每条评论或地图都可以链接到交互画布。画布以完整尺寸展示同样的地图，支持平移、缩放和明暗主题切换，为大型改动提供更充足的查看空间。
 
 </td>
 <td width="54%" valign="middle">
@@ -147,7 +165,7 @@
 
 ### 逐步讲解改动
 
-PR Lens 提供称为 walkthrough 的动画讲解，带你逐步了解系统或代码改动。点击画布上的播放按钮，或按 W 键即可开始。
+每张地图都附带一段改动导览，称为 walkthrough，带你逐步了解系统或代码改动。点击画布上的播放按钮，或按 W 键即可开始。
 
 </td>
 <td width="54%" valign="middle">
@@ -158,9 +176,9 @@ PR Lens 提供称为 walkthrough 的动画讲解，带你逐步了解系统或�
 <tr>
 <td width="46%" valign="middle">
 
-### 让智能体连接实时画布
+### 问你的智能体，看它为你演示
 
-让本地编码智能体连接画布，协助你理解代码库或代码改动。你可以继续提问、放大图中的任意部分，或框选几张卡片让智能体解释；画布会实时呈现它的讲解。
+让本地编码智能体连接画布，协助你理解代码库或代码改动。你可以继续提问、放大地图中的任意部分，或框选几张卡片让智能体解释；画布会实时呈现它的讲解。
 
 </td>
 <td width="54%" valign="middle">
@@ -191,7 +209,7 @@ PR Lens 提供称为 walkthrough 的动画讲解，带你逐步了解系统或�
 
 ### 明暗主题
 
-通过 GitHub App 生成的每张图都有明暗两个版本，GitHub 会根据读者的主题显示对应版本。你也可以在本地让编码智能体生成任一主题的图。
+通过 GitHub App 生成的每张地图都有明暗两个版本，GitHub 会根据读者的主题显示对应版本。你也可以在本地让编码智能体生成任一主题的地图。
 
 </td>
 <td width="54%" valign="middle">
@@ -225,7 +243,7 @@ PR Lens 支持这三个平台。在 GitHub 上安装 App；在 GitLab 流水线�
 
 ## 经典 PR 图解
 
-我们用 PR Lens 重新绘制了引入 React Hooks、Node fetch 和 Kubernetes Ingress 的拉取请求，使用的渲染器和格式与上面的图相同。
+我们用 PR Lens 为引入 React Hooks、Node fetch 和 Kubernetes Ingress 的拉取请求生成了地图，使用的渲染器和格式与上面的地图相同。
 
 <a href="https://prlens.dev/gallery/react/react/13968"><img alt="React Hooks 图解：四条泳道分别覆盖 React 包、协调器、服务端渲染器和共享配置" src="docs/showcase/gallery/react-hooks.svg"></a>
 
@@ -281,9 +299,9 @@ PR Lens 支持这三个平台。在 GitHub 上安装 App；在 GitLab 流水线�
 
 通过 `.github/pr-lens.yml` 调整 PR Lens 的行为。GitLab 和 Bitbucket 没有 `.github/` 目录时，也可以使用 `.gitlab/pr-lens.yml` 或仓库根目录的 `pr-lens.yml`，作用相同。[配置参考](packages/schema#repository-config)列出了各项设置、默认值和示例。
 
-### 修正名称和绘图问题
+### 修正名称和错误
 
-使用 CLI 绘图时，把修正写入 `.github/pr-lens.yml`，不要直接编辑生成的 SVG 文件：
+使用 CLI 生成地图时，把修正写入 `.github/pr-lens.yml`，不要直接编辑生成的 SVG 文件：
 
 ```yaml
 schemaVersion: 0.1.0
@@ -301,7 +319,7 @@ map:
 
 ## 其他运行方式
 
-多数用户使用 App 即可。需要在自己的 CI 中运行、使用自己的模型，或在创建拉取请求前绘图时，可以选择下面的方式。
+多数用户使用 App 即可。需要在自己的 CI 中运行、使用自己的模型，或在创建拉取请求前生成地图时，可以选择下面的方式。
 
 <details open>
 <summary><b>通过编码智能体</b></summary>
@@ -323,14 +341,14 @@ npx skills add coldteadotai/pr-lens
 
 然后向编码智能体提出类似这样的请求：
 
-> 用 PR Lens 画出你刚完成的改动，并把图附到拉取请求中。
+> 用 PR Lens 为你刚完成的改动生成地图，并附到拉取请求中。
 
-智能体读取 diff 并编写图文档，然后运行 `npx @coldtea/pr-lens-cli validate`，直到文档通过所有检查。接着生成图，并用 `gh pr create --attach` 将其加入拉取请求描述，创建 PR 时即可看到。如果图中的名称有误，Skill 会指导智能体修改 `.github/pr-lens.yml`，而不是编辑生成的文件。详情见 [`packages/agent-skill`](packages/agent-skill)。
+智能体读取 diff 并编写地图文档，然后运行 `npx @coldtea/pr-lens-cli validate`，直到文档通过所有检查。接着渲染地图，并用 `gh pr create --attach` 将其加入拉取请求描述，创建 PR 时即可看到。如果地图中的名称有误，Skill 会指导智能体修改 `.github/pr-lens.yml`，而不是编辑生成的文件。详情见 [`packages/agent-skill`](packages/agent-skill)。
 
 也可以把下面的提示词交给智能体，让它协助完成配置：
 
 ```text
-Set up PR Lens for me. It draws code changes as moving diagrams of the system and how data flows through it.
+Set up PR Lens for me. It maps how code changes touch the system and how data flows through it.
 
 1. Install the agent skill: `npx skills add coldteadotai/pr-lens`.
 
@@ -338,7 +356,7 @@ Set up PR Lens for me. It draws code changes as moving diagrams of the system an
 
 3. If I'd rather run it from CI with my own model key, offer the Action instead: `.github/workflows/pr-lens.yml` using `coldteadotai/pr-lens/packages/action@v0`, with the key saved as a repository secret. It works with any service that speaks `/chat/completions`, such as OpenAI or Gemini.
 
-4. Then test it: diagram the latest change in this repository and show me the SVGs or the canvas.
+4. Then test it: map the latest change in this repository and show me the SVGs or the canvas.
 ```
 
 </details>
@@ -347,7 +365,7 @@ Set up PR Lens for me. It draws code changes as moving diagrams of the system an
 <summary><b>作为工作流：GitHub Action</b> · 自己的 CI · 自己的密钥 · 静态评论</summary>
 <br>
 
-这种方式在你自己的 CI 中使用自己的模型密钥绘图并发布评论。先把密钥保存为仓库 Secret。下面的示例使用 `GEMINI_API_KEY`，因为 `provider` 默认是 Gemini。将以下内容保存为 `.github/workflows/pr-lens.yml` 并提交：
+这种方式在你自己的 CI 中使用自己的模型密钥生成地图并发布评论。先把密钥保存为仓库 Secret。下面的示例使用 `GEMINI_API_KEY`，因为 `provider` 默认是 Gemini。将以下内容保存为 `.github/workflows/pr-lens.yml` 并提交：
 
 ```yaml
 name: PR Lens
@@ -383,7 +401,7 @@ jobs:
 <summary><b>在 GitLab 上：CI/CD 组件</b> · 自己的流水线 · 自己的密钥 · 可更新的评论</summary>
 <br>
 
-GitLab CI 可以在合并请求中发布同样的图。添加两个 Masked 变量：模型密钥，以及具有 `api` 权限范围的项目访问令牌；后者用于发布评论。然后添加该组件：
+GitLab CI 可以在合并请求中发布同样的地图。添加两个 Masked 变量：模型密钥，以及具有 `api` 权限范围的项目访问令牌；后者用于发布评论。然后添加该组件：
 
 ```yaml
 workflow:
@@ -397,7 +415,7 @@ include:
 
 `workflow: rules` 必须写在你自己的 `.gitlab-ci.yml` 中。GitLab 只有在该文件明确启用时才运行合并请求流水线，仅在被引入组件中定义规则不起作用。由于 `CI_JOB_TOKEN` 无法发布评论，需要另行提供访问令牌。在 GitLab.com 上，项目访问令牌需要 Premium 或 Ultimate 套餐；Free 套餐也可以使用具有 `api` 权限范围的个人访问令牌，但评论会显示你的用户名。
 
-SVG 作为附件上传到项目中，因此能够阅读合并请求的人即使没有仓库文件访问权限，也可以看到图。私有项目需要注意：任何持有附件链接的人都能查看图片，包括项目外的人；链接难以猜中，但图片访问仅依赖该链接保护。如果项目启用了 **Require authentication to view media files**，图片将无法加载，读者仍可通过评论中的画布链接查看图。详情见 [`packages/gitlab-component`](packages/gitlab-component)。
+SVG 作为附件上传到项目中，因此能够阅读合并请求的人即使没有仓库文件访问权限，也可以看到地图。私有项目需要注意：任何持有附件链接的人都能查看图片，包括项目外的人；链接难以猜中，但图片访问仅依赖该链接保护。如果项目启用了 **Require authentication to view media files**，图片将无法加载，读者仍可通过评论中的画布链接查看地图。详情见 [`packages/gitlab-component`](packages/gitlab-component)。
 
 </details>
 
@@ -423,9 +441,9 @@ pipelines:
                 PR_LENS_TOKEN: $PR_LENS_TOKEN
 ```
 
-pipe 只能访问所在步骤显式传入的变量，因此示例按名称传入两个 Secured 变量。第一个是模型密钥；第二个是具有 `pullrequest:write` 和 `repository:write` 权限范围的仓库访问令牌，其中 `repository:write` 用于将图保存到仓库的 Downloads。所有 Bitbucket 套餐都提供仓库访问令牌，工作区级令牌则需要 Premium 套餐。
+pipe 只能访问所在步骤显式传入的变量，因此示例按名称传入两个 Secured 变量。第一个是模型密钥；第二个是具有 `pullrequest:write` 和 `repository:write` 权限范围的仓库访问令牌，其中 `repository:write` 用于将地图保存到仓库的 Downloads。所有 Bitbucket 套餐都提供仓库访问令牌，工作区级令牌则需要 Premium 套餐。
 
-Bitbucket 以普通 Markdown 显示评论，不支持折叠区域或明暗主题配对。评论依次展示标题、统计数字、每个视图的一张图，以及局部放大图。Bitbucket 不会为来自 fork 的拉取请求运行流水线，因此 pipe 无法为这类 PR 绘图。如果仓库经常收到来自 fork 的贡献，可以使用托管 App。详情见 [`packages/bitbucket-pipe`](packages/bitbucket-pipe)。
+Bitbucket 以普通 Markdown 显示评论，不支持折叠区域或明暗主题配对。评论依次展示标题、统计数字、每个视图的一张地图，以及局部放大图。Bitbucket 不会为来自 fork 的拉取请求运行流水线，因此 pipe 无法为这类 PR 生成地图。如果仓库经常收到来自 fork 的贡献，可以使用托管 App。详情见 [`packages/bitbucket-pipe`](packages/bitbucket-pipe)。
 
 </details>
 
@@ -463,10 +481,10 @@ npx @coldtea/pr-lens-cli export .pr-lens/graph.json -o .github/pr-lens.map.json
 </details>
 
 <details>
-<summary><b>在终端中使用</b> · 在创建拉取请求前绘图</summary>
+<summary><b>在终端中使用</b> · 在创建拉取请求前生成地图</summary>
 <br>
 
-创建拉取请求之前，也可以在本地绘图，先检查自己的改动：
+创建拉取请求之前，也可以在本地生成地图，先检查自己的改动：
 
 ```bash
 npx @coldtea/pr-lens-cli analyze --base origin/main
@@ -474,7 +492,7 @@ npx @coldtea/pr-lens-cli render .pr-lens/graph.json
 open .pr-lens/*-dark-*.svg    # macOS; the SVGs are self-contained, any browser reads them
 ```
 
-审查智能体生成的代码时，也可以一边阅读 diff，一边让编写代码的智能体绘图。安装 Skill 后，告诉它“用 PR Lens 渲染这次改动并打开 SVG”，即可在创建 PR 前结合图示查看 diff。
+审查智能体生成的代码时，也可以一边阅读 diff，一边让编写代码的智能体生成地图。安装 Skill 后，告诉它“用 PR Lens 渲染这次改动并打开 SVG”，即可在创建 PR 前结合地图查看 diff。
 
 </details>
 
@@ -486,11 +504,11 @@ open .pr-lens/*-dark-*.svg    # macOS; the SVGs are self-contained, any browser 
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | [`packages/schema`](packages/schema)                     | `@coldtea/pr-lens-schema`: 其他所有模块共用的格式                                                               |
 | [`packages/renderer`](packages/renderer)                 | `@coldtea/pr-lens-renderer`: 以确定性的方式，将 JSON 图文档转换成本页展示的明暗主题动态 SVG |
-| [`packages/cli`](packages/cli)                           | `@coldtea/pr-lens-cli`: 使用你自己的模型密钥分析 diff、绘图并生成评论                            |
-| [`packages/action`](packages/action)                     | GitHub Action：分析改动、发布图并发表评论                                     |
+| [`packages/cli`](packages/cli)                           | `@coldtea/pr-lens-cli`: 使用你自己的模型密钥分析 diff、生成地图并撰写评论                            |
+| [`packages/action`](packages/action)                     | GitHub Action：分析改动、发布地图并发表评论                                     |
 | [`packages/gitlab-component`](packages/gitlab-component) | GitLab CI/CD 组件：在合并请求中执行相同操作                                                              |
 | [`packages/bitbucket-pipe`](packages/bitbucket-pipe)     | Bitbucket pipe：在拉取请求中执行相同操作                                                                       |
-| [`packages/agent-skill`](packages/agent-skill)           | `@coldtea/pr-lens-agent-skill`: 指导编码智能体绘制它刚完成的改动                                    |
+| [`packages/agent-skill`](packages/agent-skill)           | `@coldtea/pr-lens-agent-skill`: 指导编码智能体为它刚完成的改动生成地图                                    |
 
 <br />
 
@@ -513,7 +531,7 @@ pnpm verify      # build, typecheck, test
 
 ## 社区
 
-可以在 [Discord](https://discord.gg/sGDwjs8yHK) 提问或分享图示。新版本和功能会发布在 X 账号 [@drawwithlens](https://x.com/drawwithlens)。
+可以在 [Discord](https://discord.gg/sGDwjs8yHK) 提问或分享地图。新版本和功能会发布在 X 账号 [@ColdteaAI](https://x.com/ColdteaAI)。
 
 <br />
 

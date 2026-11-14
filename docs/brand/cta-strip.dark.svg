@@ -32,8 +32,8 @@
 <g class="cardsh"><rect class="card card-added" x="668" y="34" width="272" height="64" rx="10"/>
 <rect class="chip" x="682" y="52" width="26" height="26" rx="7"/>
 <text class="num" x="695" y="69.5" text-anchor="middle">3</text>
-<text class="ntitle" x="718" y="61" font-size="13">The diagram appears</text>
-<text class="nsub" x="718" y="79">redrawn on every push</text>
-<g class="bdg"><rect x="880" y="26" width="46" height="16" rx="8"/><text x="903" y="37" text-anchor="middle">DRAWN</text></g>
+<text class="ntitle" x="718" y="61" font-size="13">Read the map</text>
+<text class="nsub" x="718" y="79">updated on every push</text>
+<g class="bdg"><rect x="873" y="26" width="53" height="16" rx="8"/><text x="899.5" y="37" text-anchor="middle">MAPPED</text></g>
 </g>
 </svg>
