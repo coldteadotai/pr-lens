@@ -51,7 +51,8 @@ const GAP = 16;
 const FEATHER = 28;
 /** Room for the focus mask to cover past the strip at any zoom. */
 const OVERSCAN = 4000;
-const PASSES = 2;
+/** Seconds on the last step before the tour replays, so the loop is mostly still. */
+const REST = 15;
 /** Keyframes per flight. CSS interpolates linearly between them. */
 const SAMPLES = 16;
 
@@ -192,6 +193,8 @@ type Clock = {
   spans: number[];
   starts: number[];
   total: number;
+  /** One pass plus REST. */
+  cycle: number;
   /** Where the embed rests. */
   last: Frame;
   /** A moment in one pass as a keyframe percentage. */
@@ -207,7 +210,9 @@ const clockFor = (shots: Shot[]): Clock => {
   const last = lastLeg?.frames[lastLeg.frames.length - 1];
   if (last === undefined) throw new Error("a walkthrough has at least two steps, so it has a flight");
 
-  return { shots, legs, spans, starts, total, last, at: (seconds) => `${fixed((seconds / total) * 100, 3)}%` };
+  const cycle = total + REST;
+
+  return { shots, legs, spans, starts, total, cycle, last, at: (seconds) => `${fixed((seconds / cycle) * 100, 3)}%` };
 };
 
 /** Every flight's frames in a row, each last frame held through the dwell. */
@@ -230,7 +235,7 @@ const holeRule = ({ rect }: Frame): string =>
 
 /** The static values are the resting state, so reduced motion shows the picture the tour ends on. */
 const baseCss = (clock: Clock): string[] => [
-  `.a{animation-duration:${fixed(clock.total, 2)}s;animation-iteration-count:${PASSES};animation-fill-mode:both;animation-timing-function:linear}`,
+  `.a{animation-duration:${fixed(clock.cycle, 2)}s;animation-iteration-count:infinite;animation-fill-mode:both;animation-timing-function:linear}`,
   ".pip{transform-box:fill-box;transform-origin:left center}",
   `@keyframes cam{${track(clock, cameraRule)}}`,
   `@keyframes hole{${track(clock, holeRule)}}`,
@@ -338,7 +343,7 @@ const bar = (clock: Clock, captionsByStep: Caption[], tokens: Tokens): { markup:
     markup: `<rect class="bar" width="3" height="${lastHeight}" rx="1.5" fill="${tokens.accent}"/>`,
     css: [
       `@keyframes bar{${keyframes}100%{height:${lastHeight}px}}`,
-      `.bar{animation:bar ${fixed(clock.total, 2)}s linear ${PASSES} both}`,
+      `.bar{animation:bar ${fixed(clock.cycle, 2)}s linear infinite both}`,
     ],
   };
 };

@@ -78,9 +78,10 @@ describe("the walkthrough embed", () => {
     expect(light).toContain('stroke="rgba(31,35,40,.5)"');
   });
 
-  it("plays the tour twice and rests on its last step, which is also the reduced-motion still", () => {
+  it("loops the tour, resting on its last step, which is also the reduced-motion still", () => {
     const { svg } = embedOf(pr124, "dark");
-    expect(svg).toContain("animation-iteration-count:2");
+    expect(svg).toContain("animation-iteration-count:infinite");
+    expect(svg).toContain("linear infinite both}");
     expect(svg.match(/<g class="a" style="animation-name:h\d" opacity="0">/g)).toHaveLength(5);
     expect(svg).toContain('<g class="a" style="animation-name:h5"><text');
     expect(svg).toContain("@media (prefers-reduced-motion: reduce){.a,.bar{animation:none!important}}");
