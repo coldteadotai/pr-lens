@@ -92,7 +92,7 @@ const result = renderWalkthroughEmbed(doc, { theme: "dark" });
 if (result.type === "rendered") write(result.embed.svg);
 ```
 
-A document's walkthrough as one animated SVG, 870 wide, for a surface that shows images and runs no script: a pull request comment, a README. The caption above the stage is styled as a GitHub alert, the camera flies between the diagrams on the canvas's own path and at its pace, and the context outside each step's focus is dimmed through a mask rather than a veil, because the picture cannot know the colour of the page it lands on. The tour plays twice and rests on its last step, caption and all; under `prefers-reduced-motion` it is that still. Only the diagrams the tour visits travel with it.
+A document's walkthrough as one animated SVG, 870 wide, for a surface that shows images and runs no script: a pull request comment, a README. The caption above the stage is styled as a GitHub alert, the camera flies between the diagrams on the canvas's own path and at its pace, and the context outside each step's focus is dimmed through a mask rather than a veil, because the picture cannot know the colour of the page it lands on. The tour loops and holds its last step, caption and all, for fifteen seconds between runs. Under `prefers-reduced-motion` it shows only that step. The embed carries only the diagrams the tour visits.
 
 The result is `absent` for a document with no walkthrough and `unresolvable`, with the steps at fault, for one whose tour points at something its diagrams do not draw. `renderAll` draws the embed for each half of the pair it was asked for and lists it under `walkthrough` in the manifest; a `neutral` render gets none, since the embed is transparent and tuned per half.
 
