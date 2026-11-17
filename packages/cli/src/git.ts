@@ -95,9 +95,10 @@ export const collectDiff = async (
   head: string,
   maxPatchBytes: number,
 ): Promise<Diff> => {
-  const files = parseNumstat(await git(repo, ["diff", "--numstat", "--find-renames", base, head]));
+  const diffArgs = ["-c", "core.quotePath=false", "diff"];
+  const files = parseNumstat(await git(repo, [...diffArgs, "--numstat", "--find-renames", base, head]));
   const patch = await git(repo, [
-    "diff",
+    ...diffArgs,
     "--no-color",
     "--find-renames",
     "--unified=3",
