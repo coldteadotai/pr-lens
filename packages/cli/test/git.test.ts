@@ -1,5 +1,34 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, test } from "vitest";
-import { parseRemoteUrl, parseRepoSlug, providerForHost, pullRequestUrl } from "../src/git.js";
+import { collectDiff, git, parseRemoteUrl, parseRepoSlug, providerForHost, pullRequestUrl } from "../src/git.js";
+
+test("collectDiff preserves a Chinese filename in the file list and patch", async () => {
+  const repo = await mkdtemp(join(tmpdir(), "pr-lens-diff-"));
+  const path = "支付流程.ts";
+  const commit = (message: string) => git(repo, [
+    "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test",
+    "-c", "commit.gpgSign=false", "commit", "-m", message,
+  ]);
+  try {
+    await git(repo, ["init", "--template="]);
+    await git(repo, ["config", "--local", "core.quotePath", "true"]);
+    await writeFile(join(repo, path), "export const payment = 0;\n");
+    await git(repo, ["add", "--", path]);
+    await commit("Add payment flow");
+    await writeFile(join(repo, path), "export const payment = 1;\n");
+    await git(repo, ["add", "--", path]);
+    await commit("Update payment flow");
+
+    const diff = await collectDiff(repo, "HEAD^", "HEAD", 100_000);
+    expect.soft(diff.files).toEqual([{ path, additions: 1, deletions: 1 }]);
+    expect.soft(diff.patch).toContain(`diff --git a/${path} b/${path}`);
+    expect((await git(repo, ["config", "--local", "--get", "core.quotePath"])).trim()).toBe("true");
+  } finally {
+    await rm(repo, { recursive: true, force: true });
+  }
+});
 
 test.each([
   ["git@github.com:coldteadotai/pr-lens.git", "coldteadotai", "pr-lens", "github.com", "github"],
