@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -39,7 +39,9 @@ describe("the walkthrough entry", () => {
   });
 
   it("leaves the drawing, hashing and manifest behind", () => {
-    const names = [...graph.files].map((file) => file.slice(SOURCE.length + 1)).sort();
+    const names = [...graph.files]
+      .map((file) => relative(SOURCE, file).split(sep).join("/"))
+      .sort();
     for (const file of names) expect(file).not.toMatch(/^(render|manifest|svg\/|layout\/|walkthrough\/(embed|tiles|nest|caption))/);
     expect(names).toContain("walkthrough/camera.ts");
     expect(names).toContain("walkthrough/resolve.ts");
