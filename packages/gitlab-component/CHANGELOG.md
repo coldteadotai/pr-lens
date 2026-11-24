@@ -13,6 +13,13 @@ pipeline that did not set it. A major changes or removes an input, or changes
 a default in a way that could. Pin a major and let minors arrive; nothing
 within one major will break a pipeline.
 
+## 0.1.6
+
+- The default `cli_version` is 0.15.3. It builds the right merge request link
+  when the remote is an `ssh://` or HTTPS URL with a port, which is common on
+  self-managed GitLab, and it keeps Unicode file names whole in the diff it
+  reads. 0.14.0 put the port into the project path and escaped those names.
+
 ## 0.1.5
 
 - The default `cli_version` is 0.14.0, which draws the data-model lens: the
