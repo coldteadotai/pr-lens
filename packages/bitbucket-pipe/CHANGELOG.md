@@ -11,6 +11,13 @@ minor adds a variable, or changes a default in a way that cannot fail a
 pipeline that did not set it. A major changes or removes a variable, or
 changes a default in a way that could.
 
+## 0.1.6
+
+- The baked CLI is 0.15.3. It builds the right pull request link when the
+  remote is an `ssh://` or HTTPS URL with a port, and it keeps Unicode file
+  names whole in the diff it reads. 0.14.0 put the port into the repository
+  path and escaped those names.
+
 ## 0.1.5
 
 - The baked CLI is 0.14.0, which draws the data-model lens: the tables a
