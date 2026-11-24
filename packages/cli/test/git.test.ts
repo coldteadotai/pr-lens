@@ -44,12 +44,32 @@ test.each([
   ["https://bitbucket.org/workspace/repo.git", "workspace", "repo", "bitbucket.org", "bitbucket"],
   ["https://bitbucket.org:443/workspace/repo.git", "workspace", "repo", "bitbucket.org:443", "bitbucket"],
   ["git@bitbucket.org:workspace/repo.git", "workspace", "repo", "bitbucket.org", "bitbucket"],
+  ["ssh://git@gitlab.example.com:2222/team/group/app.git", "team/group", "app", "gitlab.example.com", "gitlab"],
+  ["ssh://git@gitlab.example.com:22/team/group/app.git", "team/group", "app", "gitlab.example.com", "gitlab"],
+  ["ssh://gitlab.example.com:2222/team/group/app.git", "team/group", "app", "gitlab.example.com", "gitlab"],
+  ["git://gitlab.example.com:9418/team/group/app.git", "team/group", "app", "gitlab.example.com", "gitlab"],
+  ["git+ssh://git@gitlab.example.com:2222/team/group/app.git", "team/group", "app", "gitlab.example.com", "gitlab"],
+  ["ssh://git@[::1]:2222/team/app.git", "team", "app", "[::1]", "github"],
+  ["https://user:p@ss@github.com/coldteadotai/pr-lens.git", "coldteadotai", "pr-lens", "github.com", "github"],
+  ["https://github.com/team/répo.git", "team", "répo", "github.com", "github"],
+  ["ssh://git@github.com:2222/team/répo.git", "team", "répo", "github.com", "github"],
 ])("%s names a repository", (url, owner, name, host, provider) => {
   expect(parseRemoteUrl(url)).toEqual({ owner, name, host, provider });
 });
 
 test("a remote that names no repository is not guessed at", () => {
   expect(parseRemoteUrl("/srv/git/bare-repo")).toBeUndefined();
+  expect(parseRemoteUrl("file:///srv/git/team/app.git")).toBeUndefined();
+  expect(parseRemoteUrl("file://host/srv/team/app.git")).toBeUndefined();
+  expect(parseRemoteUrl("ssh://gitlab.example.com")).toBeUndefined();
+  expect(parseRemoteUrl("ext::ssh -p 2222 git@host %S team/app")).toBeUndefined();
+});
+
+test("a merge request link leaves out the SSH port, which is not the web port", () => {
+  const slug = parseRemoteUrl("ssh://git@gitlab.example.com:2222/team/group/app.git");
+  expect(slug).toBeDefined();
+  if (slug !== undefined)
+    expect(pullRequestUrl(slug, 42)).toBe("https://gitlab.example.com/team/group/app/-/merge_requests/42");
 });
 
 test("a GitLab merge request link keeps the HTTPS port in the authority", () => {
@@ -62,6 +82,7 @@ test("a GitLab merge request link keeps the HTTPS port in the authority", () => 
 test("parseRemoteUrl rejects long adversarial inputs without backtracking", () => {
   const start = performance.now();
   expect(parseRemoteUrl(`${"a@".repeat(5_000)}host`)).toBeUndefined();
+  expect(parseRemoteUrl(`ssh://${"a@".repeat(5_000)}host`)).toBeUndefined();
   expect(performance.now() - start).toBeLessThan(100);
 });
 

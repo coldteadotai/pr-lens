@@ -153,16 +153,36 @@ export const pullRequestUrl = (slug: RepoSlug, pr: number): string => {
   }
 };
 
-const REMOTE_URL = /^(?:(?:ssh|git|https?):\/\/)?(?:[^@/]+@)?([^@/:]+)[:/](.+)$/;
-const HTTP_REMOTE_URL = /^https?:\/\/(?:[^@/]+@)?([^@/]+)\/(.+)$/;
+const SCP_REMOTE = /^(?:[^@/]+@)?([^@/:]+):([^:].*)$/;
+const URL_REMOTE =
+  /^(https?|ssh|git|git\+ssh|ssh\+git):\/\/(?:[^/]*@)?(\[[^\]]+\]|[^@/:]+)(:\d*)?\/(.+)$/i;
+
+/**
+ * Git has two remote forms and the colon means something different in each:
+ * with a scheme it starts a port, without one it starts the path. A web
+ * remote keeps its port because that is where the forge answers; an SSH or
+ * git port belongs to another daemon and says nothing about the web address.
+ * The URL form is matched by hand because `new URL` percent-encodes the path,
+ * and the same repository would then be named differently by its two forms.
+ */
+const splitRemote = (url: string): { host: string; path: string } | undefined => {
+  if (!url.includes("://")) {
+    const [, host, path] = SCP_REMOTE.exec(url) ?? [];
+    return host === undefined || path === undefined ? undefined : { host, path };
+  }
+
+  const [, scheme, host, port = "", path] = URL_REMOTE.exec(url) ?? [];
+  if (scheme === undefined || host === undefined || path === undefined) return undefined;
+  const isWeb = scheme.toLowerCase().startsWith("http");
+  return { host: isWeb ? host + port : host, path };
+};
 
 export const parseRemoteUrl = (url: string): RepoSlug | undefined => {
-  const match = HTTP_REMOTE_URL.exec(url.trim()) ?? REMOTE_URL.exec(url.trim());
-  if (!match) return undefined;
+  const remote = splitRemote(url.trim());
+  if (remote === undefined) return undefined;
 
-  const [, host, rawPath] = match;
-  if (host === undefined || rawPath === undefined) return undefined;
-  const path = rawPath.replace(/\/+$/, "").replace(/\.git$/, "");
+  const { host } = remote;
+  const path = remote.path.replace(/\/+$/, "").replace(/\.git$/, "");
 
   const segments = path.split("/").filter((segment) => segment !== "");
   const name = segments.at(-1);
