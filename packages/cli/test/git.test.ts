@@ -52,6 +52,8 @@ test.each([
   ["ssh://git@[::1]:2222/team/app.git", "team", "app", "[::1]", "github"],
   ["https://user:p@ss@github.com/coldteadotai/pr-lens.git", "coldteadotai", "pr-lens", "github.com", "github"],
   ["https://github.com/team/répo.git", "team", "répo", "github.com", "github"],
+  ["https://gitlab.example.com:/team/group/app.git", "team/group", "app", "gitlab.example.com", "gitlab"],
+  ["ssh://git@gitlab.example.com:/team/group/app.git", "team/group", "app", "gitlab.example.com", "gitlab"],
   ["ssh://git@github.com:2222/team/répo.git", "team", "répo", "github.com", "github"],
 ])("%s names a repository", (url, owner, name, host, provider) => {
   expect(parseRemoteUrl(url)).toEqual({ owner, name, host, provider });

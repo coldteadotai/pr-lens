@@ -155,7 +155,7 @@ export const pullRequestUrl = (slug: RepoSlug, pr: number): string => {
 
 const SCP_REMOTE = /^(?:[^@/]+@)?([^@/:]+):([^:].*)$/;
 const URL_REMOTE =
-  /^(https?|ssh|git|git\+ssh|ssh\+git):\/\/(?:[^/]*@)?(\[[^\]]+\]|[^@/:]+)(:\d*)?\/(.+)$/i;
+  /^(https?|ssh|git|git\+ssh|ssh\+git):\/\/(?:[^/]*@)?(\[[^\]]+\]|[^@/:]+)(?::(\d*))?\/(.+)$/i;
 
 /**
  * Git has two remote forms and the colon means something different in each:
@@ -174,7 +174,7 @@ const splitRemote = (url: string): { host: string; path: string } | undefined =>
   const [, scheme, host, port = "", path] = URL_REMOTE.exec(url) ?? [];
   if (scheme === undefined || host === undefined || path === undefined) return undefined;
   const isWeb = scheme.toLowerCase().startsWith("http");
-  return { host: isWeb ? host + port : host, path };
+  return { host: isWeb && port !== "" ? `${host}:${port}` : host, path };
 };
 
 export const parseRemoteUrl = (url: string): RepoSlug | undefined => {
